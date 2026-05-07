@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import AlertsSignupForm from '../../components/AlertsSignupForm';
 
 export const metadata = {
   title: "Deal Alerts | Lindah's Flight Finds",
@@ -12,11 +13,8 @@ export default function AlertsPage() {
       <section className="panel white section">
         <span className="badge blue">Deal alerts</span>
         <h1>Get Lindah's best finds first</h1>
-        <p>This is the static preview page for deal alerts. In production, this should connect to the chosen email platform and capture consent clearly.</p>
-        <div className="search-grid">
-          <label className="field"><span>Email</span><input placeholder="Enter email address" /></label>
-          <button className="btn btn-orange">Join list</button>
-        </div>
+        <p>The form below is wired to the site signup backend. Once provider credentials are added, signups can flow into the live audience system without changing the UI.</p>
+        <AlertsSignupForm source="alerts-page" />
         <p><strong>Consent note:</strong> deal alerts should only be sent to people who actively sign up or where a lawful soft opt-in applies.</p>
       </section>
     </main>
