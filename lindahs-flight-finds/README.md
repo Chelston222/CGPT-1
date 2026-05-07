@@ -24,10 +24,11 @@ npm run dev
 ## Important launch notes
 
 - Prices are sample data only.
-- Replace `appConfig.baseUrl` in `data/deals.js` after Vercel gives the real deployment URL.
+- Set `NEXT_PUBLIC_SITE_URL` in Vercel to the live deployment or custom domain URL.
 - Review Privacy, Terms, Cookies and Affiliate Disclosure before public promotion.
 - Connect a real email provider before using deal alerts.
 - Add analytics only after the cookie/consent approach is decided.
+- Use `/launch` after deploy for an operator-facing readiness checklist.
 
 ## Current score
 
