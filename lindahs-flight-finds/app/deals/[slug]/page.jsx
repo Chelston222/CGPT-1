@@ -72,6 +72,10 @@ export default function DealPage({ params }) {
         {deal.itinerary.map(([day, title, body]) => (
           <div className="check" key={day}><strong>{day}: {title}</strong><br />{body}</div>
         ))}
+        <div className="top-row pad-top">
+          <Link className="btn btn-orange" href="/alerts">Get alerts for live versions of this deal</Link>
+          <Link className="btn btn-soft" href="/affiliate-disclosure">Affiliate disclosure</Link>
+        </div>
       </section>
     </main>
   );
