@@ -1,0 +1,140 @@
+{
+  "purpose": "CLI-first agent tooling plan for 222Emails and Lindah's Flight Finds.",
+  "sourceCatalogs": [
+    "https://printingpress.dev/",
+    "https://github.com/mvanhorn/printing-press-library"
+  ],
+  "installCommands": {
+    "starterPack": "npx -y @mvanhorn/printing-press install starter-pack",
+    "pressBinary": "go install github.com/mvanhorn/cli-printing-press/v4/cmd/printing-press@latest",
+    "verifyPressBinary": "printing-press --version",
+    "catalogList": "npx -y @mvanhorn/printing-press list",
+    "catalogSearch": "npx -y @mvanhorn/printing-press search <task-or-category>"
+  },
+  "environmentRequirements": {
+    "node": ">=20.0.0",
+    "go": ">=1.26.3 for Printing Press generator and direct Go installs",
+    "optionalTokens": [
+      "GITHUB_TOKEN or GH_TOKEN for private catalog/skill fetches when required by Printing Press Library",
+      "Per-tool credentials such as KLAVIYO_API_KEY, GOOGLE_APPLICATION_CREDENTIALS, SENTRY_AUTH_TOKEN, or DUB_API_KEY only when those CLIs are used"
+    ]
+  },
+  "recommendedTools": [
+    {
+      "name": "flight-goat",
+      "binary": "flightgoat-pp-cli",
+      "skill": "/pp-flight-goat",
+      "priority": "high",
+      "fit": "Lindah's Flight Finds",
+      "useCases": [
+        "Research live flight deals before turning sample deals into real deal pages.",
+        "Compare Google Flights, Kayak long-haul scans, and FlightAware reliability in one terminal workflow.",
+        "Refresh itinerary assumptions before publishing or promoting a route."
+      ],
+      "safetyNotes": [
+        "Keep visible price disclaimers unless a human verifies the fare immediately before publication.",
+        "Always re-check the final provider page before publication or booking guidance.",
+        "Do not imply fare availability is guaranteed."
+      ]
+    },
+    {
+      "name": "google-search-console",
+      "binary": "google-search-console-pp-cli",
+      "skill": "/pp-google-search-console",
+      "priority": "high",
+      "fit": "Lindah's Flight Finds SEO and 222Emails SEO reporting",
+      "useCases": [
+        "Pull search performance, compare periods, and prioritize content updates from local cached data.",
+        "Find pages with impressions but weak clicks for title/meta refreshes."
+      ],
+      "safetyNotes": [
+        "Requires authenticated property access.",
+        "Treat exported query data as operational analytics, not public copy."
+      ]
+    },
+    {
+      "name": "klaviyo",
+      "binary": "klaviyo-pp-cli",
+      "skill": "/pp-klaviyo",
+      "priority": "high",
+      "fit": "222Emails retention workflows only",
+      "useCases": [
+        "Inspect opted-in profiles, events, flows, campaigns, and segments from the terminal.",
+        "Audit retention setup and draft improvement plans without using Klaviyo for raw cold outreach."
+      ],
+      "safetyNotes": [
+        "Do not use as the default cold acquisition engine.",
+        "Preserve the repository compliance rail that uncertain categories fail closed."
+      ]
+    },
+    {
+      "name": "company-goat",
+      "binary": "company-goat-pp-cli",
+      "skill": "/pp-company-goat",
+      "priority": "medium",
+      "fit": "222Emails lead qualification",
+      "useCases": [
+        "Research company context across authoritative sources before scoring an ICP fit.",
+        "Spot inconsistencies between a public claim and filings before writing outreach."
+      ],
+      "safetyNotes": [
+        "Use for business-level qualification; avoid collecting unnecessary personal data.",
+        "Human review remains required before outreach."
+      ]
+    },
+    {
+      "name": "dub",
+      "binary": "dub-pp-cli",
+      "skill": "/pp-dub",
+      "priority": "medium",
+      "fit": "Campaign attribution",
+      "useCases": [
+        "Create and inspect short links for campaign attribution.",
+        "Measure link performance from the terminal when configured."
+      ],
+      "safetyNotes": [
+        "Keep affiliate or commercial disclosure clear where links are public."
+      ]
+    },
+    {
+      "name": "nvd",
+      "binary": "nvd-pp-cli",
+      "skill": "/pp-nvd",
+      "priority": "medium",
+      "fit": "Security hygiene",
+      "useCases": [
+        "Check CVEs by keyword, CPE, ID, or date range during dependency and deployment reviews.",
+        "Summarize severity and references without leaving the terminal."
+      ],
+      "safetyNotes": [
+        "Use as triage input; still verify remediation from primary vendor advisories."
+      ]
+    },
+    {
+      "name": "pypi",
+      "binary": "pypi-pp-cli",
+      "skill": "/pp-pypi",
+      "priority": "low",
+      "fit": "Future Python automation",
+      "useCases": [
+        "Inspect Python package metadata, releases, and vulnerability data before adding dependencies."
+      ],
+      "safetyNotes": [
+        "The current app is Next.js; only use this when Python scripts or services are introduced."
+      ]
+    },
+    {
+      "name": "wikipedia",
+      "binary": "wikipedia-pp-cli",
+      "skill": "/pp-wikipedia",
+      "priority": "low",
+      "fit": "Destination and background research",
+      "useCases": [
+        "Pull public article summaries and related topics as seed context for destination content."
+      ],
+      "safetyNotes": [
+        "Do not treat Wikipedia alone as final travel, legal, medical, or safety authority."
+      ]
+    }
+  ]
+}

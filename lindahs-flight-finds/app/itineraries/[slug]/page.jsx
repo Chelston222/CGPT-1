@@ -5,8 +5,9 @@ export function generateStaticParams() {
   return deals.map((deal) => ({ slug: deal.slug }));
 }
 
-export function generateMetadata({ params }) {
-  const deal = findDeal(params.slug);
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const deal = findDeal(slug);
   if (!deal) return { title: "Itinerary not found" };
 
   return {
@@ -15,8 +16,9 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function ItineraryPage({ params }) {
-  const deal = findDeal(params.slug);
+export default async function ItineraryPage({ params }) {
+  const { slug } = await params;
+  const deal = findDeal(slug);
   if (!deal) {
     return (
       <main className="shell section">

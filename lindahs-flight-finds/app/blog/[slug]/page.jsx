@@ -5,8 +5,9 @@ export function generateStaticParams() {
   return blogPosts.map((post) => ({ slug: post.slug }));
 }
 
-export function generateMetadata({ params }) {
-  const post = findBlogPost(params.slug);
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const post = findBlogPost(slug);
   if (!post) return { title: "Post not found" };
 
   return {
@@ -15,8 +16,9 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function BlogPostPage({ params }) {
-  const post = findBlogPost(params.slug);
+export default async function BlogPostPage({ params }) {
+  const { slug } = await params;
+  const post = findBlogPost(slug);
   if (!post) {
     return (
       <main className="shell section">

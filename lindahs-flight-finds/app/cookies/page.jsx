@@ -13,7 +13,7 @@ export default function CookiePolicyPage() {
         <h1>Cookie Policy</h1>
         <p>This starter cookie policy is included for launch planning. The preview build should avoid non-essential tracking until a consent approach has been chosen.</p>
         <p>In production, cookies may be used for analytics, saved trips, affiliate tracking and performance measurement. Visitors should be told what is used and given appropriate choices where required.</p>
-        <p>Before launch, connect this page to the actual analytics, email and affiliate tools used by Lindah's Flight Finds.</p>
+        <p>Before launch, connect this page to the actual analytics, email and affiliate tools used by Lindah&apos;s Flight Finds.</p>
       </section>
     </main>
   );
