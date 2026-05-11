@@ -1,0 +1,21 @@
+name: Daily 222Emails hygiene
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 7 * * 1-5"
+
+jobs:
+  sample-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run sample outbound pipeline
+        run: python scripts/outbound_pipeline.py
+      - name: Run pipeline tests
+        run: python -m unittest discover -s tests

@@ -2,3 +2,7 @@ lindahs-flight-finds/.next/
 lindahs-flight-finds/node_modules/
 lindahs-flight-finds/.env.local
 lindahs-flight-finds/.env*.local
+__pycache__/
+*.py[cod]
+config/*.local.json
+data/*.local.csv
