@@ -1,0 +1,143 @@
+name: LinkedIn Autopost via Buffer
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  publish:
+    if: startsWith(github.event.issue.title, '[APPROVED LINKEDIN]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate secrets
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_LINKEDIN_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_CHANNEL_ID }}
+        run: |
+          test -n "$BUFFER_API_KEY" || (echo "Missing BUFFER_API_KEY" && exit 1)
+          test -n "$BUFFER_LINKEDIN_CHANNEL_ID" || (echo "Missing BUFFER_LINKEDIN_CHANNEL_ID" && exit 1)
+
+      - name: Create Buffer post
+        id: buffer
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_LINKEDIN_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_CHANNEL_ID }}
+        with:
+          script: |
+            const body = context.payload.issue.body || '';
+            const lines = body.split(/\r?\n/);
+            const header = {};
+            let separator = -1;
+
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].trim() === '---') {
+                separator = i;
+                break;
+              }
+              const match = lines[i].match(/^([A-Z_]+):\s*(.*)$/);
+              if (match) header[match[1]] = match[2].trim();
+            }
+
+            if (separator < 0) {
+              throw new Error('Missing --- separator. Use the approved post template.');
+            }
+
+            const text = lines.slice(separator + 1).join('\n').trim();
+            if (!text) throw new Error('Post text is empty.');
+            if (text.length > 3000) throw new Error('Post exceeds LinkedIn text limit used by this workflow.');
+
+            const mode = (header.MODE || 'schedule').toLowerCase();
+            const channelId = process.env.BUFFER_LINKEDIN_CHANNEL_ID;
+            const input = [
+              `text: ${JSON.stringify(text)}`,
+              `channelId: ${JSON.stringify(channelId)}`,
+              'schedulingType: automatic',
+              'aiAssisted: true'
+            ];
+
+            if (mode === 'schedule') {
+              if (!header.SCHEDULE_AT) throw new Error('SCHEDULE_AT is required when MODE is schedule.');
+              const dueAt = new Date(header.SCHEDULE_AT);
+              if (Number.isNaN(dueAt.getTime())) throw new Error('SCHEDULE_AT is not a valid ISO date/time.');
+              if (dueAt.getTime() <= Date.now() + 60_000) throw new Error('SCHEDULE_AT must be at least one minute in the future.');
+              input.push('mode: customScheduled');
+              input.push(`dueAt: ${JSON.stringify(dueAt.toISOString())}`);
+            } else if (mode === 'queue') {
+              input.push('mode: addToQueue');
+            } else if (mode === 'draft') {
+              input.push('mode: addToQueue');
+              input.push('saveToDraft: true');
+            } else {
+              throw new Error('MODE must be schedule, queue, or draft.');
+            }
+
+            const query = `
+              mutation CreatePost {
+                createPost(input: { ${input.join(', ')} }) {
+                  ... on PostActionSuccess {
+                    post { id text dueAt status }
+                  }
+                  ... on MutationError { message }
+                }
+              }
+            `;
+
+            const response = await fetch('https://api.buffer.com', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.BUFFER_API_KEY}`
+              },
+              body: JSON.stringify({ query })
+            });
+
+            const payload = await response.json();
+            if (!response.ok) throw new Error(`Buffer HTTP ${response.status}`);
+            if (payload.errors?.length) throw new Error(payload.errors.map(e => e.message).join('; '));
+
+            const result = payload.data?.createPost;
+            if (!result) throw new Error('Buffer returned no createPost result.');
+            if (result.message) throw new Error(result.message);
+            if (!result.post?.id) throw new Error('Buffer did not return a post ID.');
+
+            core.setOutput('post_id', result.post.id);
+            core.setOutput('due_at', result.post.dueAt || 'Buffer queue/draft');
+            core.setOutput('status', result.post.status || 'created');
+
+      - name: Confirm success and close issue
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const postId = '${{ steps.buffer.outputs.post_id }}';
+            const dueAt = '${{ steps.buffer.outputs.due_at }}';
+            const status = '${{ steps.buffer.outputs.status }}';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `✅ Sent to Buffer successfully.\n\n- Buffer post ID: \`${postId}\`\n- Status: **${status}**\n- Scheduled/queue value: **${dueAt}**`
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed'
+            });
+
+      - name: Report failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '❌ LinkedIn autopost failed. Open the Actions run for the exact validation or Buffer error. The issue remains open and nothing should be assumed published.'
+            });
