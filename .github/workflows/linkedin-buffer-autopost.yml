@@ -43,6 +43,10 @@ jobs:
             if (text.length > 3000) throw new Error('Post exceeds the 3,000-character safety limit.');
 
             const target = (header.TARGET || 'personal').toLowerCase();
+            if (!['personal', 'business', 'both'].includes(target)) {
+              throw new Error('TARGET must be personal, business, or both.');
+            }
+
             const targets = [];
             if (target === 'personal' || target === 'both') {
               if (!process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID) {
@@ -56,14 +60,14 @@ jobs:
               }
               targets.push({ name: 'LinkedIn business', id: process.env.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID });
             }
-            if (!['personal', 'business', 'both'].includes(target)) {
-              throw new Error('TARGET must be personal, business, or both.');
-            }
 
             const mode = (header.MODE || 'schedule').toLowerCase();
-            let modeFields = '';
-            let scheduleLabel = 'Buffer queue';
+            if (!['schedule', 'queue', 'draft'].includes(mode)) {
+              throw new Error('MODE must be schedule, queue, or draft.');
+            }
 
+            let dueAtIso = null;
+            let scheduleLabel = 'Buffer queue';
             if (mode === 'schedule') {
               if (!header.SCHEDULE_AT) throw new Error('SCHEDULE_AT is required when MODE is schedule.');
               const dueAt = new Date(header.SCHEDULE_AT);
@@ -71,39 +75,46 @@ jobs:
               if (dueAt.getTime() <= Date.now() + 60_000) {
                 throw new Error('SCHEDULE_AT must be at least one minute in the future.');
               }
-              modeFields = `mode: customScheduled, dueAt: ${JSON.stringify(dueAt.toISOString())}`;
-              scheduleLabel = dueAt.toISOString();
-            } else if (mode === 'queue') {
-              modeFields = 'mode: addToQueue';
+              dueAtIso = dueAt.toISOString();
+              scheduleLabel = dueAtIso;
             } else if (mode === 'draft') {
-              modeFields = 'mode: addToQueue, saveToDraft: true';
               scheduleLabel = 'Saved as Buffer draft';
-            } else {
-              throw new Error('MODE must be schedule, queue, or draft.');
             }
 
-            let assetFields = '';
+            let mediaUrl = null;
             if (header.MEDIA_URL) {
-              let mediaUrl;
               try {
                 mediaUrl = new URL(header.MEDIA_URL);
               } catch {
                 throw new Error('MEDIA_URL is invalid.');
               }
               if (mediaUrl.protocol !== 'https:') throw new Error('MEDIA_URL must use HTTPS.');
-              assetFields = `, assets: [{ image: { url: ${JSON.stringify(mediaUrl.toString())} } }]`;
             }
 
             const results = [];
             for (const channel of targets) {
+              const fields = [
+                `text: ${JSON.stringify(text)}`,
+                `channelId: ${JSON.stringify(channel.id)}`,
+                'schedulingType: automatic'
+              ];
+
+              if (mode === 'schedule') {
+                fields.push('mode: customScheduled');
+                fields.push(`dueAt: ${JSON.stringify(dueAtIso)}`);
+              } else {
+                fields.push('mode: addToQueue');
+                if (mode === 'draft') fields.push('saveToDraft: true');
+              }
+
+              if (mediaUrl) {
+                fields.push(`assets: [{ image: { url: ${JSON.stringify(mediaUrl.toString())} } }]`);
+              }
+
               const query = `
                 mutation CreatePost {
                   createPost(input: {
-                    text: ${JSON.stringify(text)},
-                    channelId: ${JSON.stringify(channel.id)},
-                    schedulingType: automatic,
-                    ${modeFields}
-                    ${assetFields}
+                    ${fields.join(',\n                    ')}
                   }) {
                     ... on PostActionSuccess {
                       post {
@@ -126,7 +137,13 @@ jobs:
                 body: JSON.stringify({ query })
               });
 
-              const payload = await response.json();
+              let payload;
+              try {
+                payload = await response.json();
+              } catch {
+                throw new Error(`${channel.name}: Buffer returned a non-JSON response.`);
+              }
+
               if (!response.ok) throw new Error(`${channel.name}: Buffer HTTP ${response.status}`);
               if (payload.errors?.length) {
                 throw new Error(`${channel.name}: ${payload.errors.map(e => e.message).join('; ')}`);
@@ -144,7 +161,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `✅ Sent to Buffer successfully.\n\n${results.join('\n')}\n- Mode: **${mode}**\n- Scheduled/queue value: **${scheduleLabel}**${header.MEDIA_URL ? '\n- Media: attached from approved HTTPS URL' : ''}`
+              body: `✅ Sent to Buffer successfully.\n\n${results.join('\n')}\n- Mode: **${mode}**\n- Scheduled/queue value: **${scheduleLabel}**${mediaUrl ? '\n- Media: attached from approved HTTPS URL' : ''}`
             });
 
             await github.rest.issues.update({
