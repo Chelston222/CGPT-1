@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   publish:
-    if: startsWith(github.event.issue.title, '[APPROVED LINKEDIN]')
+    if: startsWith(github.event.issue.title, '[APPROVED LINKEDIN]') && github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
     steps:
       - name: Validate and create Buffer post
