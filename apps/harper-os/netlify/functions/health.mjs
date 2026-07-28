@@ -1,0 +1,2 @@
+import { json } from './_shared.mjs';
+export default async()=>{const checks={retell:Boolean(process.env.RETELL_API_KEY&&process.env.RETELL_AGENT_ID&&process.env.RETELL_FROM_NUMBER),openai:Boolean(process.env.OPENAI_API_KEY),webhook:Boolean(process.env.RETELL_WEBHOOK_SECRET),admin:Boolean(process.env.HARPER_ADMIN_TOKEN),calendar:Boolean(process.env.CALENDAR_BOOKING_URL),email:Boolean(process.env.FOLLOWUP_WEBHOOK_URL)};const ready=Object.values(checks).every(Boolean);return json(ready?200:503,{ok:true,mode:ready?'live-ready':'safe',ready,checks,version:'2.0.0'})};
