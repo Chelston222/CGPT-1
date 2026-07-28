@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "agent_name": "222Emails Outbound Retention V3.3 - Harper Import Safe",
+  "source_export": "222Emails_Retell_Harper_ImportSafe_v3_3.json",
+  "source_sha256": "46a567cfac7522f47a77fc3549f8df1dfa839d4372b435543b25e142d37e7372",
+  "language": "en-GB",
+  "channel": "voice",
+  "retell_agent_id_historical": "agent_d4cd49d68dc5a1b497a9e7456f",
+  "retell_conversation_flow_id": "conversation_flow_eb9c7e0af6e0",
+  "historical_from_number": "+441254963222",
+  "historical_webhook": "https://retell-outbound-agent-v1.vercel.app/api/webhooks/retell",
+  "calendar_booking_url": "https://calendly.com/tripletwochelston/10min",
+  "storage_retention_days": 30,
+  "safe_defaults": {
+    "published": false,
+    "live_dialling": false,
+    "calling_mode": "test_only",
+    "sms_follow_up": false,
+    "human_approval_required": true,
+    "unknown_permission_dial_allowed": false
+  },
+  "required_release_gates": [
+    "retell_credentials_verified",
+    "telephone_binding_verified",
+    "webhook_signature_verified",
+    "internal_qa_call_passed",
+    "opt_out_suppression_passed",
+    "calendar_follow_up_passed",
+    "uk_compliance_review_recorded"
+  ]
+}
