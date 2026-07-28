@@ -1,0 +1,32 @@
+name: HARPER OS CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/harper-os/**'
+      - '.github/workflows/harper-os-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/harper-os/**'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/harper-os
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/harper-os/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - name: Validate recovered agent manifest
+        run: node -e "const m=require('./config/harper-v3.3-manifest.json'); if(!m.required_release_gates?.length||m.safe_defaults.live_dialling!==false) process.exit(1)"
