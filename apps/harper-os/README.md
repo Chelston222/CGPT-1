@@ -1,48 +1,39 @@
 # HARPER OS
 
-HARPER OS is the 222 Emails control plane for a consent-led AI revenue agent. The interface is deliberately safe-by-default: live dialling is locked until telephony, OpenAI, webhook security and UK compliance requirements are connected and validated.
+HARPER OS is the 222 Emails control plane for permission-led AI voice outreach, prospect intelligence, call quality, suppression and follow-up orchestration.
 
-## Included in this first build
+## Current architecture
 
-- Responsive management dashboard
-- Prospect intelligence briefs
-- Human approval queue
-- Permission-aware call gating
-- Permanent suppression register
-- Call outcome and QA views
-- 100-point conversation-quality rubric
-- Agent policy and escalation boundaries
-- Integration-readiness screen
-- Browser-local prototype storage and JSON export
+- Responsive management interface
+- Netlify Functions backend
+- Netlify Blobs persistent storage
+- Bearer-token protected management APIs
+- Guarded Retell outbound call creation
+- Signed Retell webhook ingestion
+- Automatic opt-out suppression
+- Follow-up webhook handoff
+- Truthful readiness health endpoint
+- Security headers and safe-mode defaults
 
-## What remains before live calls
+## Production endpoints
 
-1. Recover or export the original Retell HARPER agent and conversation-flow JSON.
-2. Add encrypted deployment variables: `RETELL_API_KEY`, `RETELL_AGENT_ID`, `OPENAI_API_KEY`, `WEBHOOK_SIGNING_SECRET` and approved calendar/CRM credentials.
-3. Implement authenticated server-side storage. Do not store real prospect data in browser localStorage.
-4. Add signed Retell webhook ingestion and idempotency.
-5. Add explicit opt-in callback flow first.
-6. Obtain UK legal/compliance review for the intended outbound use case, scripts, suppression process and data retention.
-7. Run simulator, adversarial and opt-out test suites before enabling any live dial action.
+- `GET /api/health`
+- `GET|POST /api/prospects`
+- `POST /api/calls`
+- `POST /api/retell-webhook`
 
-## Intended architecture
+## Required encrypted environment variables
 
-```text
-HARPER OS dashboard
-  -> authenticated API
-  -> prospect + suppression database
-  -> approval and policy engine
-  -> Retell voice orchestrator
-  -> OpenAI reasoning / summaries / evaluations
-  -> calendar, CRM and email tools
-  -> signed webhook outcome pipeline
-  -> QA and optimisation dashboard
-```
+Copy the names from `.env.example` into the hosting provider's encrypted environment-variable store. Never commit real values.
 
-## Current status
+## Launch gates
 
-This branch contains a working management-interface prototype, not a live autonomous caller. Unknown or unverified contacts cannot be approved, and no API secrets are committed.
+HARPER must remain in safe mode unless `/api/health` reports `ready: true`. Live calls additionally require an approved prospect, an opted-in or existing-enquiry permission state, and no suppression match.
 
-## Local preview
+## Validation
 
-Open `index.html` directly in a browser, or serve the directory with any static server.
+Run `npm install` followed by `npm run check`. Test the callback journey before enabling any outbound campaign. Verify the Retell webhook signature scheme against the exact Retell account configuration before production use.
+
+## Compliance boundary
+
+The system is deliberately designed for opted-in callbacks and existing enquiries first. It is not a substitute for legal advice or for current TPS/CTPS and PECR compliance review.
