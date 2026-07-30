@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S&S Steel Shearing | Live V3 Preview</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+html,body{margin:0;min-height:100%;background:#0b0d0e;color:#f7f5ef;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#status{min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center}.card{max-width:560px;border:1px solid #313537;border-radius:18px;padding:28px;background:#151819;box-shadow:0 24px 80px rgba(0,0,0,.35)}.mark{display:inline-grid;place-items:center;width:50px;height:50px;margin-bottom:16px;background:#f26a21;color:#111;font-weight:900;border-radius:8px}h1{font-size:clamp(1.5rem,4vw,2.4rem);margin:.2rem 0 1rem}p{color:#b8bcbc;line-height:1.6}iframe{display:none;width:100%;height:100vh;border:0;background:#0b0d0e}.error{color:#ffb59c}a{color:#ff8a4d}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+<body>
+<div id="status"><div class="card"><div class="mark">S&amp;S</div><h1>Loading the checked V3 site</h1><p>Reassembling the verified release package and connecting the live quote form.</p></div></div>
+<iframe id="site" title="S&S Steel Shearing website preview"></iframe>
+<script>
+(async()=>{
+  const status=document.getElementById('status');
+  const frame=document.getElementById('site');
+  try{
+    if(!window.JSZip) throw new Error('The preview library could not load.');
+    const parts=[];
+    for(let i=1;i<=5;i++){
+      const r=await fetch(`../deploy-assets/ss-steel-v3.part${i}.b64`,{cache:'no-store'});
+      if(!r.ok) throw new Error(`Release package part ${i} could not be loaded.`);
+      parts.push((await r.text()).trim());
+    }
+    const binary=atob(parts.join(''));
+    const bytes=new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    const zip=await JSZip.loadAsync(bytes);
+    const text=async name=>{
+      const file=zip.file(name); if(!file) throw new Error(`${name} is missing from the release package.`);
+      return file.async('text');
+    };
+    const blobUrl=(content,type)=>URL.createObjectURL(new Blob([content],{type}));
+    const cssUrl=blobUrl(await text('styles.css'),'text/css');
+    const jsUrl=blobUrl(await text('script.js'),'text/javascript');
+    const faviconUrl=blobUrl(await text('favicon.svg'),'image/svg+xml');
+    const privacyUrl=blobUrl(await text('privacy.html'),'text/html');
+    const termsUrl=blobUrl(await text('terms.html'),'text/html');
+    let html=await text('index.html');
+    html=html.replace(/<link rel="preload"[^>]+>/,'')
+      .replace('href="/styles.css"',`href="${cssUrl}"`)
+      .replace('src="/script.js"',`src="${jsUrl}"`)
+      .replace('href="/favicon.svg"',`href="${faviconUrl}"`)
+      .replaceAll('href="/privacy.html"',`href="${privacyUrl}"`)
+      .replaceAll('href="/terms.html"',`href="${termsUrl}"`)
+      .replace('https://ss-steel-shearing-blackburn.netlify.app/','https://raw.githack.com/Chelston222/CGPT-1/deploy-ss-steel-v1/preview/index.html');
+    const hosted=`<div class="hosted-enquiry" style="border:1px solid rgba(255,255,255,.14);border-radius:18px;overflow:hidden;background:#fff;min-height:1550px"><iframe title="S&S Steel Shearing request a quote" src="https://form.jotform.com/262102571238046" frameborder="0" style="width:100%;height:1550px;border:0;display:block" scrolling="yes"></iframe></div>`;
+    html=html.replace(/<form name="steel-enquiry"[\s\S]*?<\/form>/,hosted);
+    frame.srcdoc=html;
+    frame.style.display='block';
+    status.remove();
+  }catch(error){
+    console.error(error);
+    status.innerHTML=`<div class="card"><div class="mark">S&amp;S</div><h1>Preview could not load</h1><p class="error">${String(error.message||error)}</p><p>The live enquiry form remains available at <a href="https://form.jotform.com/262102571238046">form.jotform.com/262102571238046</a>.</p></div>`;
+  }
+})();
+</script>
+</body>
+</html>
