@@ -1,0 +1,4 @@
+{"action_taken": "draft_for_review", "error_if_any": "", "input_ref": "1c095293d003", "result": "allowed", "system_step": "lead_pipeline", "timestamp": "2026-05-11T03:12:50+00:00"}
+{"action_taken": "draft_for_review", "error_if_any": "", "input_ref": "dd0df3fc3408", "result": "allowed", "system_step": "lead_pipeline", "timestamp": "2026-05-11T03:12:50+00:00"}
+{"action_taken": "hold", "error_if_any": "company_type_not_clearly_corporate_b2b", "input_ref": "264b5651f762", "result": "needs_review", "system_step": "lead_pipeline", "timestamp": "2026-05-11T03:12:50+00:00"}
+{"action_taken": "hold", "error_if_any": "status_is_bounced", "input_ref": "40483042e023", "result": "blocked", "system_step": "lead_pipeline", "timestamp": "2026-05-11T03:12:50+00:00"}

@@ -1,0 +1,54 @@
+{
+  "operator": {
+    "business_name": "222Emails",
+    "sender_name": "222Emails operator",
+    "reply_to_email": "hello@example.com",
+    "website": "https://example.com"
+  },
+  "pipeline": {
+    "max_daily_drafts": 25,
+    "minimum_score_for_draft": 60,
+    "fail_closed_on_uncertain_compliance": true,
+    "auto_send_enabled": false,
+    "review_required": true
+  },
+  "scoring": {
+    "preferred_sectors": [
+      "beauty",
+      "dental",
+      "fitness",
+      "home services",
+      "wellness"
+    ],
+    "preferred_company_types": [
+      "ltd",
+      "limited company",
+      "partnership",
+      "agency",
+      "studio",
+      "clinic"
+    ],
+    "city_bonus": 5,
+    "sector_bonus": 25,
+    "company_type_bonus": 20,
+    "website_bonus": 10,
+    "notes_bonus": 10
+  },
+  "compliance": {
+    "allowed_company_types": [
+      "ltd",
+      "limited company",
+      "partnership",
+      "agency",
+      "studio",
+      "clinic"
+    ],
+    "blocked_statuses": [
+      "do_not_contact",
+      "unsubscribed",
+      "bounced",
+      "complained"
+    ],
+    "required_opt_out_text": "Reply 'no thanks' and I will not contact you again."
+  }
+}

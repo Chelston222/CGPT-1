@@ -1,0 +1,5 @@
+business_name,contact_name,website,city,sector,company_type,email,source,status,notes,last_checked_at
+Northside Dental,Aisha,https://northside-dental.example,Manchester,dental,limited company,hello@northside-dental.example,manual_research,new,"Offers hygiene plans; visible gap in recall messaging",2026-05-11
+Glow Studio,Sam,https://glow-studio.example,Bristol,beauty,studio,bookings@glow-studio.example,manual_research,new,"Runs seasonal treatments and has quiet weekday slots",2026-05-11
+Solo Therapist,Jo,https://solo-therapist.example,Leeds,wellness,sole trader,jo@solo-therapist.example,manual_research,new,"Likely sole trader so hold for legal review",2026-05-11
+Old Bounce Ltd,Pat,https://old-bounce.example,London,home services,ltd,hello@old-bounce.example,manual_research,bounced,"Previous bounce",2026-05-11
