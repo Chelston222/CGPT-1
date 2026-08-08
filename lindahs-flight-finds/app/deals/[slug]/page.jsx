@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { deals, findDeal, money, saving } from '../../../data/deals';
 
@@ -5,8 +6,9 @@ export function generateStaticParams() {
   return deals.map((deal) => ({ slug: deal.slug }));
 }
 
-export function generateMetadata({ params }) {
-  const deal = findDeal(params.slug);
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const deal = findDeal(slug);
   if (!deal) return { title: 'Deal not found' };
   return {
     title: `${deal.title} from ${money(deal.price)} | Lindah's Flight Finds`,
@@ -19,8 +21,9 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function DealPage({ params }) {
-  const deal = findDeal(params.slug);
+export default async function DealPage({ params }) {
+  const { slug } = await params;
+  const deal = findDeal(slug);
 
   if (!deal) {
     return (
@@ -38,7 +41,7 @@ export default function DealPage({ params }) {
       <section className="section split">
         <div className="split-grid">
           <div className="split-photo">
-            <img src={deal.image} alt={`${deal.to} travel preview`} />
+            <Image src={deal.image} alt={`${deal.to} travel preview`} fill sizes="(max-width: 1100px) 100vw, 45vw" priority />
             <div className="overlay" />
             <div className="photo-content">
               <span className="badge soft">{deal.badge}</span>

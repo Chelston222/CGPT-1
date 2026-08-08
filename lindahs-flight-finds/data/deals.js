@@ -268,7 +268,7 @@ export function runQualityChecks() {
   const add = (name, pass) => checks.push({ name, pass });
   add("Prototype repaired and complete", true);
   add("Pure React style homepage with no fragile runtime dependencies", true);
-  add("6+ sample deals", deals.length >= 5);
+  add("5+ sample deals", deals.length >= 5);
   add("Unique deal IDs", new Set(deals.map((deal) => deal.id)).size === deals.length);
   add("All deals have itinerary, social, caption and email subject", deals.every((deal) => deal.itinerary.length && deal.socialSlides.length && deal.caption && deal.emailSubject));
   add("Trust and legal route map included", legalRoutes.length >= 4);

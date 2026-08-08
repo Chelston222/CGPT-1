@@ -1,1 +1,27 @@
-{"scripts":{"dev":"next dev","build":"next build","start":"next start","lint":"next lint","check:data":"node scripts/check-data.mjs"},"dependencies":{"@next/third-parties":"16.2.4","next":"16.2.4","react":"19.2.5","react-dom":"19.2.5"},"devDependencies":{"eslint":"9.39.4","eslint-config-next":"16.2.4"},"name":"lindahs-flight-finds","version":"1.0.0","private":true,"type":"module","engines":{"node":">=20.0.0"},"description":"A creator-led cheap-flight and itinerary website for Lindah, built with Next.js for Vercel."}
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "check:data": "node scripts/check-data.mjs"
+  },
+  "dependencies": {
+    "@next/third-parties": "16.2.4",
+    "next": "16.2.4",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  },
+  "devDependencies": {
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.4"
+  },
+  "name": "lindahs-flight-finds",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "description": "A creator-led cheap-flight and itinerary website for Lindah, built with Next.js for Vercel."
+}

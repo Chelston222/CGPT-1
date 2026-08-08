@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import AlertsSignupForm from './AlertsSignupForm';
@@ -165,7 +166,7 @@ export default function LindahFlightFindsClient() {
 
             <div className="feature-card">
               <div className="photo-panel">
-                <img src={selectedDeal.image} alt={`${selectedDeal.to} featured trip`} />
+                <Image src={selectedDeal.image} alt={`${selectedDeal.to} featured trip`} fill sizes="(max-width: 1100px) 100vw, 50vw" priority />
                 <div className="overlay" />
                 <div className="photo-content">
                   <div className="top-row">
@@ -283,7 +284,7 @@ export default function LindahFlightFindsClient() {
               >
                 <button className="deal-main" type="button" onClick={() => selectDeal(deal.slug)}>
                   <div className="card-img">
-                    <img src={deal.image} alt={`${deal.to} preview`} />
+                    <Image src={deal.image} alt={`${deal.to} preview`} fill sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw" />
                     <div className="overlay" />
                     <div className="chips">
                       <span className="badge navy">{deal.badge}</span>
@@ -336,7 +337,7 @@ export default function LindahFlightFindsClient() {
         <section className="section split" id="trip">
           <div className="split-grid">
             <div className="split-photo">
-              <img src={selectedDeal.image} alt={`${selectedDeal.to} selected trip`} />
+              <Image src={selectedDeal.image} alt={`${selectedDeal.to} selected trip`} fill sizes="(max-width: 1100px) 100vw, 45vw" />
               <div className="overlay" />
               <div className="photo-content">
                 <div className="top-row">
@@ -411,7 +412,7 @@ export default function LindahFlightFindsClient() {
           </div>
 
           <div className="social-card">
-            <img src={selectedDeal.image} alt={`${selectedDeal.to} social card`} />
+            <Image src={selectedDeal.image} alt={`${selectedDeal.to} social card`} fill sizes="(max-width: 1100px) 100vw, 45vw" />
             <div className="social-inner">
               <div>
                 <span className="badge soft">Social studio</span>

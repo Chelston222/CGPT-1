@@ -5,9 +5,10 @@ export function generateStaticParams() {
   return [...new Set(deals.map((deal) => deal.to.toLowerCase()))].map((city) => ({ city }));
 }
 
-export function generateMetadata({ params }) {
-  const cityDeals = findDealsByCity(params.city);
-  const label = cityDeals[0]?.to || params.city;
+export async function generateMetadata({ params }) {
+  const { city } = await params;
+  const cityDeals = findDealsByCity(city);
+  const label = cityDeals[0]?.to || city;
 
   return {
     title: `${label} deals | Lindah's Flight Finds`,
@@ -15,9 +16,10 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function DestinationPage({ params }) {
-  const cityDeals = findDealsByCity(params.city);
-  const label = cityDeals[0]?.to || params.city;
+export default async function DestinationPage({ params }) {
+  const { city } = await params;
+  const cityDeals = findDealsByCity(city);
+  const label = cityDeals[0]?.to || city;
 
   return (
     <main className="shell section">
