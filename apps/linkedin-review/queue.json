@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-09T12:34:10+01:00",
+  "generatedAt": "2026-08-09T18:30:00+01:00",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -156,14 +156,17 @@
     },
     {
       "id": "tte-li-007",
-      "revision": 1,
+      "revision": 2,
       "title": "Diagnose before you spend",
       "category": "buyer_diagnostics",
       "funnelStage": "mof",
       "format": "text",
-      "targets": ["personal"],
+      "targets": ["personal", "secondary"],
       "mode": "schedule",
-      "scheduledAt": { "personal": "2026-08-24T08:15:00+01:00" },
+      "scheduledAt": {
+        "personal": "2026-08-24T08:15:00+01:00",
+        "secondary": "2026-08-25T09:00:00+01:00"
+      },
       "copy": {
         "default": "When bookings soften, ‘we need more leads’ is an understandable reaction.\n\nIt is not always the right diagnosis.\n\nBefore adding more attention at the top, I would check:\n\nHow many first-time clients never receive a return route?\nHow many existing clients are already due back?\nHow many open quotes have had a useful second contact?\nHow many regulars have gone quiet without a flag?\n\nIf the business is leaking good demand after the first interaction, buying more demand can hide the problem without solving it.\n\nDiagnose the return journey first.\n\nThen you know whether the next pound belongs in acquisition, retention or the customer experience itself."
       },
@@ -174,14 +177,17 @@
     },
     {
       "id": "tte-li-008",
-      "revision": 1,
+      "revision": 2,
       "title": "Map the return journey before writing emails",
       "category": "email_revenue_education",
       "funnelStage": "mof",
       "format": "diagram",
-      "targets": ["main"],
+      "targets": ["main", "secondary"],
       "mode": "schedule",
-      "scheduledAt": { "main": "2026-08-25T09:00:00+01:00" },
+      "scheduledAt": {
+        "main": "2026-08-25T09:00:00+01:00",
+        "secondary": "2026-08-26T09:00:00+01:00"
+      },
       "copy": {
         "default": "Do not start a retention project by writing ten emails.\n\nStart by mapping the moments that matter.\n\nFor an appointment-led business, that often means:\n\nEnquiry → booked\nBooked → attended\nFirst visit → next best step\nDue to return → reminder\nMissed return window → recovery\nLong-lapsed client → respectful reactivation\n\nFor each moment, define the trigger, the message, the owner and the stop condition.\n\nOnly then should the copy be written.\n\nOtherwise, a business can end up with polished emails that fire at the wrong time, overlap with staff activity or continue after somebody has already booked.\n\nSequence before sentences."
       },
@@ -192,14 +198,17 @@
     },
     {
       "id": "tte-li-009",
-      "revision": 1,
+      "revision": 2,
       "title": "What we look for in a Growth Check",
       "category": "proof_customer_outcomes",
       "funnelStage": "bof",
       "format": "text",
-      "targets": ["personal"],
+      "targets": ["personal", "main"],
       "mode": "schedule",
-      "scheduledAt": { "personal": "2026-08-26T08:15:00+01:00" },
+      "scheduledAt": {
+        "personal": "2026-08-26T08:15:00+01:00",
+        "main": "2026-08-27T09:00:00+01:00"
+      },
       "copy": {
         "default": "A useful email Growth Check should not end with ‘send more campaigns’.\n\nWe look for where revenue is already trying to happen — and where the route breaks.\n\nThat includes:\n\n— the first-visit follow-up\n— natural return windows\n— missed rebooking moments\n— lapsed-client recovery\n— quote and enquiry follow-up\n— messages that continue after somebody converts\n— weak hand-offs between software and staff\n\nThe outcome is not a bigger list of ideas.\n\nIt is a ranked view of the leaks, the commercial reason each one matters and the first repair worth making.\n\nClarity before complexity."
       },
@@ -210,14 +219,17 @@
     },
     {
       "id": "tte-li-010",
-      "revision": 1,
+      "revision": 2,
       "title": "The moment matters more than the message volume",
       "category": "email_revenue_education",
       "funnelStage": "mof",
       "format": "text",
-      "targets": ["secondary"],
+      "targets": ["secondary", "main"],
       "mode": "schedule",
-      "scheduledAt": { "secondary": "2026-08-27T09:00:00+01:00" },
+      "scheduledAt": {
+        "secondary": "2026-08-27T09:00:00+01:00",
+        "main": "2026-08-28T12:30:00+01:00"
+      },
       "copy": {
         "default": "More follow-up is not automatically better follow-up.\n\nThe commercial value often sits in the moment:\n\nA first-time client needs confidence about what comes next.\nA quote needs the unanswered question removed.\nA regular client needs a reminder close to their natural return window.\nA lapsed client needs recognition, not a generic discount blast.\n\nThe same ‘book now’ message cannot do all four jobs well.\n\nDefine the customer state first.\n\nThen write the smallest useful message for that moment — and stop the sequence as soon as the next step happens.\n\nRelevant beats relentless."
       },
@@ -228,14 +240,17 @@
     },
     {
       "id": "tte-li-011",
-      "revision": 1,
+      "revision": 2,
       "title": "A Growth Check should give you a decision",
       "category": "offer_community",
       "funnelStage": "bof",
       "format": "text",
-      "targets": ["main"],
+      "targets": ["main", "secondary"],
       "mode": "schedule",
-      "scheduledAt": { "main": "2026-08-28T09:00:00+01:00" },
+      "scheduledAt": {
+        "main": "2026-08-28T09:00:00+01:00",
+        "secondary": "2026-08-29T09:00:00+01:00"
+      },
       "copy": {
         "default": "The £197 Growth Check is designed to answer one practical question:\n\nWhere is your current client journey leaking the most valuable repeat revenue?\n\nWe review the return route, follow-up timing, offer clarity and the hand-offs between your team and your tools.\n\nYou receive a prioritised diagnosis — not a vague marketing report and not a forced retainer pitch.\n\nIf there is a clear repair worth making, you will know what it is and why it comes first.\n\nIf there is not, we will say that too.\n\nFor appointment-led UK businesses that want a clearer path to more repeat bookings, the Growth Check is the sensible place to begin."
       },
@@ -246,14 +261,17 @@
     },
     {
       "id": "tte-li-012",
-      "revision": 1,
+      "revision": 2,
       "title": "A Fit Check is not free consulting",
       "category": "founder_operator_pov",
       "funnelStage": "bof",
       "format": "text",
-      "targets": ["personal"],
+      "targets": ["personal", "secondary"],
       "mode": "schedule",
-      "scheduledAt": { "personal": "2026-08-29T09:30:00+01:00" },
+      "scheduledAt": {
+        "personal": "2026-08-29T09:30:00+01:00",
+        "secondary": "2026-08-30T09:30:00+01:00"
+      },
       "copy": {
         "default": "I want to be clear about what a Fit Check is — and what it is not.\n\nIt is a short conversation to decide whether the problem, timing and working style fit.\n\nIt is not a disguised hour of free consulting.\nIt is not a pressure call.\nIt is not a promise that every business needs our help.\n\nA good fit conversation protects both sides.\n\nYou should leave knowing whether the next step makes sense.\n\nWe should leave knowing whether we can create a useful commercial outcome without forcing a solution.\n\nIf the fit is not there, clarity is still a good result."
       },
@@ -301,14 +319,17 @@
     },
     {
       "id": "tte-li-014",
-      "revision": 1,
+      "revision": 2,
       "title": "Automation should know when to stop",
       "category": "email_revenue_education",
       "funnelStage": "mof",
       "format": "text",
-      "targets": ["personal"],
+      "targets": ["personal", "secondary"],
       "mode": "schedule",
-      "scheduledAt": { "personal": "2026-09-02T08:15:00+01:00" },
+      "scheduledAt": {
+        "personal": "2026-09-02T08:15:00+01:00",
+        "secondary": "2026-09-04T12:30:00+01:00"
+      },
       "copy": {
         "default": "One of the most important parts of an automation is the stop condition.\n\nIf somebody books, the reminder should stop.\nIf a quote is accepted, the chase should stop.\nIf a client asks for space, the sequence should stop.\nIf a member of staff takes over, the system should know.\n\nWithout those rules, automation creates collisions:\n\nThe client acts — then receives a message that ignores what they just did.\n\nThat is not scale. It is a broken hand-off happening faster.\n\nEvery sequence needs a clear trigger, a useful next step and an equally clear reason to stop."
       },
@@ -319,14 +340,17 @@
     },
     {
       "id": "tte-li-015",
-      "revision": 1,
+      "revision": 2,
       "title": "First-visit follow-up has one job",
       "category": "proof_customer_outcomes",
       "funnelStage": "mof",
       "format": "text",
-      "targets": ["secondary"],
+      "targets": ["secondary", "personal"],
       "mode": "schedule",
-      "scheduledAt": { "secondary": "2026-09-03T09:00:00+01:00" },
+      "scheduledAt": {
+        "secondary": "2026-09-03T09:00:00+01:00",
+        "personal": "2026-09-03T12:30:00+01:00"
+      },
       "copy": {
         "default": "First-visit follow-up has one commercial job:\n\nMake the next sensible step clearer.\n\nNot every client should receive the same offer.\nNot every service has the same return window.\nNot every first visit needs an immediate promotion.\n\nThe useful sequence starts with the service delivered, the expected next step and any hesitation the client may still have.\n\nThen it helps them act without forcing urgency that is not real.\n\nThat is how follow-up supports a better client experience and a more dependable return route at the same time."
       },
@@ -337,14 +361,17 @@
     },
     {
       "id": "tte-li-016",
-      "revision": 1,
+      "revision": 2,
       "title": "Proof without invented numbers",
       "category": "proof_customer_outcomes",
       "funnelStage": "trust",
       "format": "text",
-      "targets": ["main"],
+      "targets": ["main", "secondary"],
       "mode": "schedule",
-      "scheduledAt": { "main": "2026-09-04T09:00:00+01:00" },
+      "scheduledAt": {
+        "main": "2026-09-04T09:00:00+01:00",
+        "secondary": "2026-09-05T12:30:00+01:00"
+      },
       "copy": {
         "default": "Useful proof does not need an inflated percentage.\n\nFor retention work, proof can show:\n\n— the leak that was found\n— the sequence that was missing\n— the trigger and stop rules that were added\n— the manual task that became visible\n— the decision the business can now make\n\nCommercial results matter. They should be reported when they are real, measured and attributable.\n\nUntil then, showing the quality of the diagnosis and the system built is more credible than inventing a dramatic outcome.\n\nTrust grows when the evidence is specific — and the limits are honest."
       },
@@ -355,14 +382,17 @@
     },
     {
       "id": "tte-li-017",
-      "revision": 1,
+      "revision": 2,
       "title": "Your visible buyer is not your only buyer",
       "category": "market_research_commentary",
       "funnelStage": "tof",
       "format": "text",
-      "targets": ["personal"],
+      "targets": ["personal", "main"],
       "mode": "schedule",
-      "scheduledAt": { "personal": "2026-09-05T09:30:00+01:00" },
+      "scheduledAt": {
+        "personal": "2026-09-05T09:30:00+01:00",
+        "main": "2026-09-06T09:30:00+01:00"
+      },
       "copy": {
         "default": "The person who likes a post is not always the person shaping the buying decision.\n\nIn B2B work, the quiet reader may be checking whether you understand operations, risk, cost and the reality of implementation.\n\nThat changes what useful content looks like.\n\nA strong post should not only attract attention.\n\nIt should help a buyer explain:\n\nWhat problem exists?\nWhy does it matter now?\nWhat would a sensible first step look like?\nWhat evidence supports the approach?\nWhat are the limits?\n\nWrite for the conversation your reader may need to have after they close LinkedIn."
       },
@@ -373,14 +403,17 @@
     },
     {
       "id": "tte-li-018",
-      "revision": 1,
+      "revision": 2,
       "title": "What a useful retention build leaves behind",
       "category": "proof_customer_outcomes",
       "funnelStage": "bof",
       "format": "text",
-      "targets": ["main"],
+      "targets": ["main", "secondary"],
       "mode": "schedule",
-      "scheduledAt": { "main": "2026-09-08T09:00:00+01:00" },
+      "scheduledAt": {
+        "main": "2026-09-08T09:00:00+01:00",
+        "secondary": "2026-09-09T09:00:00+01:00"
+      },
       "copy": {
         "default": "A useful retention build should leave a business with more than a set of emails.\n\nIt should leave behind:\n\nA mapped client return journey.\nClear triggers and stop conditions.\nMessages matched to real customer moments.\nOwnership between staff and software.\nA way to see what happened.\nA sensible next improvement.\n\nThe work is successful when the business understands the system well enough to operate it — not when it becomes permanently dependent on the person who built it.\n\nThat is the standard we want 222 Emails work to meet."
       },

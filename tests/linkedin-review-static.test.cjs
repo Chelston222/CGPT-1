@@ -54,10 +54,17 @@ test('Swiper is a checked projection of the Master LinkedIn Ledger', () => {
   assert.match(html, /id="master-total"/);
 });
 
-test('daily UI capacity uses ten total account placements', () => {
+test('UI distinguishes the daily safety ceiling from Buffer Free queue capacity', () => {
   assert.equal(queue.capacityPolicy.maximumAccountPlacementsPerDay, 10);
   assert.equal(queue.capacityPolicy.maximumAccountPlacementsPerWeek, 70);
-  assert.match(html, /10 total account placements per day/);
+  assert.equal(queue.capacityPolicy.bufferFreeScheduledPerChannel, 10);
+  const byTarget = Object.fromEntries(['personal', 'main', 'secondary'].map((target) => [
+    target,
+    queue.posts.filter((post) => post.targets.includes(target)).length,
+  ]));
+  assert.deepEqual(byTarget, { personal: 10, main: 10, secondary: 10 });
+  assert.match(html, /10 is Buffer’s queue capacity per account, not a daily posting target/);
+  assert.match(app, /placements\.length} \/ 10 ready/);
   assert.match(app, /\$\{count\}\/10/);
 });
 

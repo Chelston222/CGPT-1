@@ -52,6 +52,22 @@
         </dl>
       </section>
 
+      <section class="buffer-capacity" aria-labelledby="buffer-capacity-title">
+        <div class="capacity-heading">
+          <div>
+            <p class="eyebrow">Buffer Free rolling window</p>
+            <h2 id="buffer-capacity-title">10 ready placements for every account</h2>
+          </div>
+          <p id="buffer-capacity-summary">Checking what is prepared, approved and already in Buffer…</p>
+        </div>
+        <div class="channel-capacity-grid">
+          <article><span>Personal</span><strong id="capacity-personal">—</strong><small id="capacity-personal-detail">Calculating coverage…</small></article>
+          <article><span>Main page</span><strong id="capacity-main">—</strong><small id="capacity-main-detail">Calculating coverage…</small></article>
+          <article><span>Secondary</span><strong id="capacity-secondary">—</strong><small id="capacity-secondary-detail">Calculating coverage…</small></article>
+        </div>
+        <p class="capacity-explainer"><strong>10 is Buffer’s queue capacity per account, not a daily posting target.</strong> When one scheduled post publishes, the four-hour refill check can release the next approved placement into the free slot.</p>
+      </section>
+
       <section class="batch-panel" id="batch-panel" aria-label="Weekly approval summary" hidden>
         <div>
           <p class="eyebrow">Weekly hand-off</p>
@@ -80,7 +96,7 @@
           <article class="week-total"><span>All accounts</span><strong id="week-total">—</strong></article>
         </div>
         <div class="daily-capacity" id="daily-capacity" aria-label="Daily account placement capacity"></div>
-        <p class="capacity-note"><strong>Safe ceiling:</strong> 10 total account placements per day, or 70 per week. A post sent to all three accounts uses three placements. Buffer Free receives only the next available 10 per channel; the approved remainder waits safely in the ledger.</p>
+        <p class="capacity-note"><strong>Daily plan:</strong> these bars count account placements on each date. A post sent to two accounts uses two placements. Buffer Free receives only the next available 10 per channel; any approved remainder waits safely in the ledger.</p>
       </section>
 
       <nav class="filters" aria-label="Filter posts">

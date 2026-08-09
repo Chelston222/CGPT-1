@@ -85,6 +85,18 @@ h2 { font-size: clamp(1.8rem, 4vw, 3rem); }
 .ledger-strip dt { color: var(--muted); font-size: .65rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .ledger-strip dd { margin: 4px 0 0; color: var(--navy); font: 700 1.45rem Georgia, serif; }
 
+.buffer-capacity { margin-bottom: 18px; padding: clamp(22px, 4vw, 32px); color: white; background: var(--navy); border-radius: var(--radius); box-shadow: 0 16px 38px rgba(18,34,63,.13); }
+.capacity-heading { display: flex; justify-content: space-between; align-items: end; gap: 28px; }
+.capacity-heading h2 { color: white; font-size: clamp(1.65rem, 3.5vw, 2.7rem); }
+.capacity-heading > p { max-width: 410px; margin: 0; color: #c4cede; font-size: .82rem; line-height: 1.55; text-align: right; }
+.channel-capacity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 24px; }
+.channel-capacity-grid article { padding: 18px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 14px; }
+.channel-capacity-grid span { display: block; color: #ffb38f; font-size: .7rem; font-weight: 820; letter-spacing: .07em; text-transform: uppercase; }
+.channel-capacity-grid strong { display: block; margin-top: 8px; font: 700 1.55rem Georgia, serif; }
+.channel-capacity-grid small { display: block; margin-top: 8px; color: #c4cede; font-size: .72rem; line-height: 1.45; }
+.capacity-explainer { margin: 18px 0 0; padding-top: 16px; color: #c4cede; border-top: 1px solid rgba(255,255,255,.14); font-size: .76rem; line-height: 1.55; }
+.capacity-explainer strong { color: white; }
+
 .week-control {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -258,6 +270,9 @@ textarea { width: 100%; resize: vertical; padding: 13px; color: var(--ink); back
   .metrics article:nth-child(2) { border-right: 0; }
   .metrics article:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.13); }
   .ledger-strip { grid-template-columns: 1fr; }
+  .capacity-heading { display: block; }
+  .capacity-heading > p { margin-top: 12px; text-align: left; }
+  .channel-capacity-grid { grid-template-columns: 1fr; }
   .ledger-strip dl { width: 100%; }
   .week-control { grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 9px; padding: 20px 14px; }
   .week-arrow { width: 44px; height: 44px; }

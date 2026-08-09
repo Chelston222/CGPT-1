@@ -62,6 +62,13 @@ const elements = {
   masterTotal: document.querySelector('#master-total'),
   projectionTotal: document.querySelector('#projection-total'),
   ledgerState: document.querySelector('#ledger-state'),
+  bufferCapacitySummary: document.querySelector('#buffer-capacity-summary'),
+  capacityPersonal: document.querySelector('#capacity-personal'),
+  capacityMain: document.querySelector('#capacity-main'),
+  capacitySecondary: document.querySelector('#capacity-secondary'),
+  capacityPersonalDetail: document.querySelector('#capacity-personal-detail'),
+  capacityMainDetail: document.querySelector('#capacity-main-detail'),
+  capacitySecondaryDetail: document.querySelector('#capacity-secondary-detail'),
 };
 
 function storageKey() {
@@ -236,9 +243,41 @@ async function load() {
 
   state.posts = state.posts.map((post) => ({ ...post, resolvedStatus: statusFromIssues(post) }));
   state.weeks = [...new Set(state.posts.flatMap((post) => Object.values(post.scheduledAt).map(weekStart)))].sort();
+  renderCapacityOverview();
   populateCategories();
   applyFilters();
   updateMetrics();
+}
+
+function daySpan(first, last) {
+  return Math.round((new Date(`${last}T12:00:00Z`) - new Date(`${first}T12:00:00Z`)) / 86_400_000) + 1;
+}
+
+function renderCapacityOverview() {
+  const targetElements = {
+    personal: [elements.capacityPersonal, elements.capacityPersonalDetail],
+    main: [elements.capacityMain, elements.capacityMainDetail],
+    secondary: [elements.capacitySecondary, elements.capacitySecondaryDetail],
+  };
+  let prepared = 0;
+  let accepted = 0;
+  for (const target of Object.keys(targetElements)) {
+    const placements = state.posts
+      .filter((post) => post.targets.includes(target))
+      .map((post) => ({ post, date: dateOnly(post.scheduledAt[target]) }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const inBuffer = placements.filter(({ post }) => ['scheduled', 'published'].includes(post.resolvedStatus)).length;
+    const first = placements[0]?.date;
+    const last = placements.at(-1)?.date;
+    prepared += placements.length;
+    accepted += inBuffer;
+    targetElements[target][0].textContent = `${placements.length} / 10 ready`;
+    targetElements[target][1].textContent = placements.length
+      ? `${inBuffer} accepted by Buffer · ${daySpan(first, last)} calendar days from ${formatDate(`${first}T12:00:00Z`).primary} to ${formatDate(`${last}T12:00:00Z`).primary}`
+      : 'No placements prepared';
+  }
+  const awaiting = prepared - accepted;
+  elements.bufferCapacitySummary.textContent = `${prepared} placements prepared · ${accepted} accepted by Buffer · ${awaiting} still need your approval`;
 }
 
 function populateCategories() {
