@@ -68,7 +68,7 @@ test('rejects past schedules, unsafe media and empty copy', () => {
   );
 });
 
-test('draft mutation cannot accidentally schedule or publish', () => {
+test('non-publishing test mutation cannot accidentally schedule or publish', () => {
   const mutation = buildCreatePostMutation({ id: 'id', text: 'copy', dueAt: null }, 'draft');
   assert.match(mutation, /saveToDraft: true/);
   assert.doesNotMatch(mutation, /customScheduled/);

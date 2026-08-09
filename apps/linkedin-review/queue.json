@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-08-09T12:00:00+01:00",
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-09T16:30:00+01:00",
   "timezone": "Europe/London",
   "approvalRule": "No queue item is permission to publish. Only a repository-owner GitHub issue beginning [APPROVED LINKEDIN] is explicit approval.",
   "posts": [
@@ -21,7 +21,7 @@
       "sourceType": "notion_archive",
       "status": "review",
       "history": [
-        { "state": "draft", "at": "2026-08-09T10:00:00+01:00", "actor": "Codex" },
+        { "state": "live_ready", "at": "2026-08-09T10:00:00+01:00", "actor": "Codex" },
         { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }
       ]
     },
@@ -44,7 +44,7 @@
       "sourceUrl": "https://app.notion.com/3b0e72eb858781c79397c947e5e61962",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:04:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:04:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-003",
@@ -62,7 +62,7 @@
       "sourceUrl": "https://app.notion.com/3ace72eb85878169a22ed60e14ace23a",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:08:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:08:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-004",
@@ -80,7 +80,7 @@
       "sourceUrl": "https://app.notion.com/3b0e72eb85878185af9bcc7f2efce6c3",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:12:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:12:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-005",
@@ -101,7 +101,7 @@
       "sourceUrl": "https://app.notion.com/3ace72eb8587812a9424c2d52531fcdd",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:16:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:16:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-006",
@@ -119,7 +119,7 @@
       "sourceUrl": "local://linkedin_calendar_live.md",
       "sourceType": "mac_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:20:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:20:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-007",
@@ -137,7 +137,7 @@
       "sourceUrl": "local://linkedin_calendar_live.md",
       "sourceType": "mac_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:24:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:24:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-008",
@@ -155,7 +155,7 @@
       "sourceUrl": "https://app.notion.com/3ace72eb8587810b907afd631bd662c9",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:28:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:28:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-009",
@@ -173,7 +173,7 @@
       "sourceUrl": "https://app.notion.com/3b0e72eb858781c1b82ff613a2ea29e9",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:32:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:32:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-010",
@@ -191,7 +191,7 @@
       "sourceUrl": "local://222_Emails_Prompt_Bank_100.md",
       "sourceType": "mac_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:36:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:36:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-011",
@@ -209,7 +209,7 @@
       "sourceUrl": "https://app.notion.com/3b0e72eb858781c1b82ff613a2ea29e9",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:40:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:40:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-012",
@@ -227,7 +227,7 @@
       "sourceUrl": "https://app.notion.com/3b0e72eb85878162a0e2c66acc42350c",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:44:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:44:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-013",
@@ -253,7 +253,7 @@
       "sourceUrl": "https://app.notion.com/3ace72eb8587812a9424c2d52531fcdd",
       "sourceType": "notion_archive_rebuilt",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:48:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:48:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-014",
@@ -271,7 +271,7 @@
       "sourceUrl": "local://linkedin_calendar_live.md",
       "sourceType": "mac_archive_rebuilt",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:52:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:52:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-015",
@@ -289,7 +289,7 @@
       "sourceUrl": "https://app.notion.com/3b0e72eb858781298502fa1db34fbde6",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T10:56:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:56:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-016",
@@ -307,7 +307,7 @@
       "sourceUrl": "local://222Emails_Proof_Credibility_Pack.md",
       "sourceType": "mac_archive_rebuilt",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T11:00:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T11:00:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-017",
@@ -325,7 +325,7 @@
       "sourceUrl": "https://www.edelman.com/sites/g/files/aatuss191/files/2025-07/2025%20Edelman-LinkedIn%20B2B%20Thought%20Leadership%20Impact%20Report_FINAL.pdf",
       "sourceType": "public_research",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T11:04:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T11:04:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     },
     {
       "id": "tte-li-018",
@@ -343,7 +343,7 @@
       "sourceUrl": "local://222Emails_Delivery_Fulfillment_Context_Pack.md",
       "sourceType": "mac_archive_rebuilt",
       "status": "review",
-      "history": [{ "state": "draft", "at": "2026-08-09T11:08:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T11:08:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
     }
   ]
 }

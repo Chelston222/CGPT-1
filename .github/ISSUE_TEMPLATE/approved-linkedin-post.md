@@ -16,7 +16,7 @@ Paste the final approved LinkedIn post here.
 Rules:
 - Keep the title prefix exactly: [APPROVED LINKEDIN]
 - TARGETS: personal, main, secondary, or a comma-separated combination
-- MODE: schedule, queue, or draft
+- MODE: schedule or queue
 - SCHEDULE_AT is required only for schedule mode and should include a timezone offset
 - Multi-channel posts may use SCHEDULE_AT_PERSONAL, SCHEDULE_AT_MAIN and SCHEDULE_AT_SECONDARY
 - Channel-specific copy may be placed below ---PERSONAL---, ---MAIN--- or ---SECONDARY--- markers
