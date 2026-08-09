@@ -1,15 +1,16 @@
 {
   "schemaVersion": 1,
   "ledgerId": "222-emails-master-linkedin-ledger",
-  "ledgerHash": "02ad967906eb2c48f14aeed85dccea434ff5fbd52b2657a58a193e8be4ee47fe",
-  "generatedAt": "2026-08-09T16:15:42.581Z",
+  "ledgerHash": "2771bf22fb370b4b38944a25a9796166a60b75f0b70c411f2c3b453a4ff6dfc0",
+  "generatedAt": "2026-08-09T16:56:26.977Z",
   "summary": {
     "discoveredChunks": 1177,
     "exactDuplicatesRemoved": 31,
-    "uniqueMasterRecords": 1164,
+    "uniqueMasterRecords": 1178,
     "operationalPosts": 18,
     "archiveCandidates": 1146,
-    "masterIntake": 0
+    "masterIntake": 0,
+    "bufferTestArtifacts": 14
   },
   "publicProjection": {
     "file": "queue.json",
