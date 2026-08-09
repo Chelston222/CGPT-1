@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sha256Hex, verifyPayhipSignature, normalizePayhipEvent, transactionFromEvent, summarizeTransactions, sanitizeTransaction } from '../netlify/functions/_shared/core.mjs';
+import { sha256Hex, verifyPayhipSignature, normalizePayhipEvent, transactionFromEvent, subscriptionFromEvent, summarizeTransactions, sanitizeTransaction } from '../netlify/functions/_shared/core.mjs';
+import openapiHandler from '../netlify/functions/openapi.mjs';
 
 const apiKey = 'payhip-test-secret';
 
@@ -46,4 +47,65 @@ test('recent-sale sanitization hides customer email by default', () => {
   const tx = transactionFromEvent(normalizePayhipEvent(paid()));
   assert.equal('email' in sanitizeTransaction(tx), false);
   assert.equal(sanitizeTransaction(tx, { includeCustomer: true }).email, 'buyer@example.com');
+});
+
+test('full refund marks the transaction refunded and zeroes net after known fees', () => {
+  const first = transactionFromEvent(normalizePayhipEvent(paid()));
+  const refundEvent = normalizePayhipEvent({
+    ...paid(),
+    type: 'refunded',
+    amount_refunded: 2700,
+    date_created: 1786310000,
+    date_refunded: 1786317200,
+  });
+  const refunded = transactionFromEvent(refundEvent, first);
+  assert.equal(refunded.status, 'refunded');
+  assert.equal(refunded.amount_refunded_minor, 2700);
+  assert.equal(refunded.net_after_known_fees_minor, 0);
+});
+
+test('subscription lifecycle preserves identity and marks deletion as canceled', () => {
+  const createdEvent = normalizePayhipEvent({
+    type: 'subscription.created',
+    subscription_id: 'SUB-1',
+    customer_id: 'CUS-1',
+    customer_email: 'Member@Example.com',
+    status: 'active',
+    plan_name: 'Monthly',
+    product_name: 'Retention Membership',
+    product_link: 'https://example.test/product',
+    gdpr_consent: 'yes',
+    date_subscription_started: 1786310000,
+  });
+  const created = subscriptionFromEvent(createdEvent);
+  assert.equal(created.status, 'active');
+  assert.equal(created.email, 'member@example.com');
+
+  const deletedEvent = normalizePayhipEvent({
+    type: 'subscription.deleted',
+    subscription_id: 'SUB-1',
+    customer_id: 'CUS-1',
+    customer_email: 'Member@Example.com',
+    date_subscription_started: 1786310000,
+    date_subscription_deleted: 1786400000,
+  });
+  const deleted = subscriptionFromEvent(deletedEvent, created);
+  assert.equal(deleted.status, 'canceled');
+  assert.equal(deleted.email, 'member@example.com');
+  assert.equal(deleted.started_at, 1786310000);
+  assert.equal(deleted.updated_at, 1786400000);
+});
+
+test('unsupported Payhip event types are rejected', () => {
+  assert.throws(() => normalizePayhipEvent({ type: 'mystery.event' }), /Unsupported Payhip event type/);
+});
+
+test('OpenAPI schema exposes protected reads and marks coupon creation consequential', async () => {
+  const response = await openapiHandler(new Request('https://payhip-control.example/openapi.json'));
+  assert.equal(response.status, 200);
+  const spec = await response.json();
+  assert.equal(spec.openapi, '3.1.0');
+  assert.equal(spec.paths['/api/payhip/summary'].get.operationId, 'getPayhipSummary');
+  assert.equal(spec.paths['/api/payhip/coupons'].post['x-openai-isConsequential'], true);
+  assert.deepEqual(spec.security, [{ bearerAuth: [] }]);
 });
