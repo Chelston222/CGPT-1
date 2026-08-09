@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const app = fs.readFileSync(path.join(root, 'apps/linkedin-review/app.js'), 'utf8');
 const sync = fs.readFileSync(path.join(root, 'apps/linkedin-review/sync.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'apps/linkedin-review/index.html'), 'utf8');
-const fn = fs.readFileSync(path.join(root, 'apps/linkedin-review/netlify/functions/review-decisions.mts'), 'utf8');
+const fn = fs.readFileSync(path.join(root, 'apps/linkedin-review/netlify/functions/review-decisions.mjs'), 'utf8');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'apps/linkedin-review/package.json'), 'utf8'));
 
 test('cross-device sync loads after the existing Swiper', () => {
