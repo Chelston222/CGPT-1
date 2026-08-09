@@ -21,6 +21,7 @@ const state = {
   decisions: {},
   weeks: [],
   weekIndex: 0,
+  ledger: null,
 };
 
 const elements = {
@@ -57,6 +58,10 @@ const elements = {
   batchStatus: document.querySelector('#batch-status'),
   sendWeek: document.querySelector('#send-week'),
   clearWeek: document.querySelector('#clear-week'),
+  dailyCapacity: document.querySelector('#daily-capacity'),
+  masterTotal: document.querySelector('#master-total'),
+  projectionTotal: document.querySelector('#projection-total'),
+  ledgerState: document.querySelector('#ledger-state'),
 };
 
 function storageKey() {
@@ -93,7 +98,7 @@ function displayCategory(category) {
 }
 
 function carouselIsPublishable(post) {
-  return post.format !== 'carousel' || post.carousel?.readiness === 'ready';
+  return post.format !== 'carousel' || (post.carousel?.readiness === 'ready' && Boolean(post.mediaUrl) && Boolean(post.documentThumbnailUrl));
 }
 
 function carouselPreviewUrls(post) {
@@ -205,11 +210,21 @@ async function fetchAllIssues() {
 
 async function load() {
   elements.sync.textContent = 'Loading queue…';
-  const queueResponse = await fetch('queue.json', { cache: 'no-store' });
-  if (!queueResponse.ok) throw new Error('The review queue could not be loaded.');
-  const queue = await queueResponse.json();
+  const [queueResponse, ledgerResponse] = await Promise.all([
+    fetch('queue.json', { cache: 'no-store' }),
+    fetch('ledger-manifest.json', { cache: 'no-store' }),
+  ]);
+  if (!queueResponse.ok || !ledgerResponse.ok) throw new Error('The Master LinkedIn Ledger projection could not be loaded.');
+  const [queue, ledger] = await Promise.all([queueResponse.json(), ledgerResponse.json()]);
+  if (!queue.masterLedger || queue.masterLedger.id !== ledger.ledgerId || queue.masterLedger.projection !== 'live_ready_human_review') {
+    throw new Error('The Swiper projection does not match the Master LinkedIn Ledger. Nothing was loaded.');
+  }
   state.queue = queue;
+  state.ledger = ledger;
   state.posts = queue.posts;
+  elements.masterTotal.textContent = Number(ledger.summary.uniqueMasterRecords).toLocaleString('en-GB');
+  elements.projectionTotal.textContent = Number(queue.posts.length).toLocaleString('en-GB');
+  elements.ledgerState.textContent = `Integrity checked · ${ledger.sources.localFilesScanned} local files and ${ledger.sources.notionCalendarRecords} Notion records reconciled · only checked, live-ready content appears here.`;
   loadDecisions();
 
   try {
@@ -291,9 +306,14 @@ function renderWeek() {
 
   const weekPosts = state.posts.filter((post) => postIsInWeek(post, selectedWeek));
   const counts = { personal: 0, main: 0, secondary: 0 };
+  const placementsByDay = Object.fromEntries(Array.from({ length: 7 }, (_, index) => [addDays(selectedWeek, index), 0]));
   for (const post of weekPosts) {
     for (const target of post.targets) {
-      if (scheduleIsInWeek(post.scheduledAt[target] || Object.values(post.scheduledAt)[0], selectedWeek)) counts[target] += 1;
+      const scheduled = post.scheduledAt[target] || Object.values(post.scheduledAt)[0];
+      if (scheduleIsInWeek(scheduled, selectedWeek)) {
+        counts[target] += 1;
+        placementsByDay[dateOnly(scheduled)] = (placementsByDay[dateOnly(scheduled)] || 0) + 1;
+      }
     }
   }
   const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
@@ -303,6 +323,19 @@ function renderWeek() {
   elements.weekMain.textContent = counts.main;
   elements.weekSecondary.textContent = counts.secondary;
   elements.weekTotal.textContent = total;
+  elements.dailyCapacity.replaceChildren(...Object.entries(placementsByDay).map(([date, count]) => {
+    const item = document.createElement('div');
+    item.className = `capacity-day${count === 10 ? ' is-full' : ''}${count > 10 ? ' is-over' : ''}`;
+    item.style.setProperty('--load', `${Math.min(count, 10) * 10}%`);
+    const day = document.createElement('span');
+    day.textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
+    const value = document.createElement('strong');
+    value.textContent = `${count}/10`;
+    const bar = document.createElement('i');
+    bar.setAttribute('aria-hidden', 'true');
+    item.append(day, value, bar);
+    return item;
+  }));
   elements.previousWeek.disabled = state.weekIndex === 0;
   elements.nextWeek.disabled = state.weekIndex === state.weeks.length - 1;
 }

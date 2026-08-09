@@ -74,3 +74,23 @@ test('non-publishing test mutation cannot accidentally schedule or publish', () 
   assert.doesNotMatch(mutation, /customScheduled/);
   assert.doesNotMatch(mutation, /dueAt/);
 });
+
+test('LinkedIn PDF documents require a title and use a document asset', () => {
+  assert.throws(
+    () => validateRequest('TARGETS: personal\nMODE: schedule\nSCHEDULE_AT: 2026-09-01T08:00:00Z\nMEDIA_URL: https://example.com/carousel.pdf\nMEDIA_KIND: document\n---\nCopy', ENV, Date.parse('2026-08-09T00:00:00Z')),
+    /DOCUMENT_TITLE/,
+  );
+  assert.throws(
+    () => validateRequest('TARGETS: personal\nMODE: schedule\nSCHEDULE_AT: 2026-09-01T08:00:00Z\nMEDIA_URL: https://example.com/carousel.pdf\nMEDIA_KIND: document\nDOCUMENT_TITLE: Carousel\n---\nCopy', ENV, Date.parse('2026-08-09T00:00:00Z')),
+    /DOCUMENT_THUMBNAIL_URL/,
+  );
+  const mutation = buildCreatePostMutation(
+    { id: 'id', text: 'copy', dueAt: '2026-09-01T08:00:00.000Z' },
+    'schedule',
+    { url: 'https://example.com/carousel.pdf', kind: 'document', title: 'Five follow-up leaks', thumbnailUrl: 'https://example.com/cover.png' },
+  );
+  assert.match(mutation, /document:/);
+  assert.match(mutation, /Five follow-up leaks/);
+  assert.match(mutation, /thumbnailUrl/);
+  assert.doesNotMatch(mutation, /image:/);
+});

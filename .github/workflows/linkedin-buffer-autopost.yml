@@ -3,20 +3,27 @@ name: LinkedIn Autopost via Buffer
 on:
   issues:
     types: [opened]
+  schedule:
+    - cron: '17 */4 * * *'
+  workflow_dispatch:
 
 permissions:
   issues: write
   contents: read
 
+concurrency:
+  group: linkedin-buffer-capacity-release
+  cancel-in-progress: false
+
 jobs:
   publish:
-    if: (startsWith(github.event.issue.title, '[APPROVED LINKEDIN]') || startsWith(github.event.issue.title, '[APPROVED LINKEDIN WEEK]')) && github.event.issue.user.login == github.repository_owner
+    if: github.event_name != 'issues' || ((startsWith(github.event.issue.title, '[APPROVED LINKEDIN]') || startsWith(github.event.issue.title, '[APPROVED LINKEDIN WEEK]')) && github.event.issue.user.login == github.repository_owner)
     runs-on: ubuntu-latest
     steps:
-      - name: Check out request checks
+      - name: Check out approval checks
         uses: actions/checkout@v4
 
-      - name: Validate, dispatch and audit Buffer posts
+      - name: Validate, release within capacity and audit
         uses: actions/github-script@v7
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
@@ -27,114 +34,115 @@ jobs:
           script: |
             const path = require('node:path');
             const fs = require('node:fs');
-            const {
-              buildCreatePostMutation,
-              validateRequest,
-            } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
+            const { buildCreatePostMutation, validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
             const { validateWeeklyBatch } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
+            const { acceptedMarker, classifyBufferFailure, parseAcceptedMarkers, planCapacityWindow } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
 
-            const results = [];
-            let jobs = [];
-            let batch = null;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const queue = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/queue.json'), 'utf8'));
 
-            try {
-              const isWeekly = context.payload.issue.title.startsWith('[APPROVED LINKEDIN WEEK]');
-              if (isWeekly) {
-                const queue = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/queue.json'), 'utf8'));
-                batch = validateWeeklyBatch(context.payload.issue.body || '', queue, process.env);
-                jobs = batch.jobs;
-              } else {
-                const request = validateRequest(context.payload.issue.body || '', process.env);
-                jobs = [{ post: { id: request.postId, revision: request.revision, category: request.category }, request }];
+            async function buffer(query) {
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.BUFFER_API_KEY}` },
+                body: JSON.stringify({ query }),
+              });
+              let payload;
+              try { payload = await response.json(); } catch { payload = {}; }
+              const messages = [...(payload.errors || []).map((error) => error.message), payload.data?.createPost?.message].filter(Boolean);
+              if (!response.ok || messages.length) {
+                const error = new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
+                error.failure = classifyBufferFailure({ status: response.status, messages, headers: Object.fromEntries(response.headers.entries()) });
+                throw error;
               }
+              return payload.data;
+            }
 
-              // All jobs are fully validated above before the first Buffer request.
-              for (const job of jobs) {
-                for (const channel of job.request.channels) {
-                  const query = buildCreatePostMutation(channel, job.request.mode, job.request.mediaUrl);
-                  const response = await fetch('https://api.buffer.com', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${process.env.BUFFER_API_KEY}`,
-                    },
-                    body: JSON.stringify({ query }),
-                  });
+            async function queueOccupancy(channelIds) {
+              const account = await buffer('query CapacityAccount { account { organizations { id } } }');
+              const organizationId = account.account?.organizations?.[0]?.id;
+              if (!organizationId) throw new Error('Buffer returned no organisation ID for capacity preflight.');
+              const query = `query ScheduledCapacity { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(channelIds)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`;
+              const data = await buffer(query);
+              if (data.posts?.pageInfo?.hasNextPage) throw new Error('Buffer capacity preflight returned more than 100 scheduled posts; refusing an incomplete count.');
+              const counts = Object.fromEntries(channelIds.map((id) => [id, 0]));
+              for (const edge of data.posts?.edges || []) counts[edge.node.channelId] = (counts[edge.node.channelId] || 0) + 1;
+              return counts;
+            }
 
-                  let payload;
-                  try {
-                    payload = await response.json();
-                  } catch {
-                    throw new Error(`${job.post.id} / ${channel.name}: Buffer returned a non-JSON response.`);
+            const issues = context.eventName === 'issues'
+              ? [context.payload.issue]
+              : (await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', creator: owner, per_page: 100 }))
+                .filter((issue) => !issue.pull_request && (issue.title.startsWith('[APPROVED LINKEDIN WEEK]') || issue.title.startsWith('[APPROVED LINKEDIN]')));
+
+            for (const issue of issues) {
+              const results = [];
+              try {
+                const isWeekly = issue.title.startsWith('[APPROVED LINKEDIN WEEK]');
+                const batch = isWeekly ? validateWeeklyBatch(issue.body || '', queue, process.env, Date.parse(issue.created_at)) : null;
+                const request = isWeekly ? null : validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
+                const jobs = batch?.jobs || [{ post: { id: request.postId, revision: request.revision, category: request.category }, request }];
+
+                // Historic acceptance markers are the idempotency ledger for partial multi-channel runs.
+                const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+                const accepted = parseAcceptedMarkers(comments);
+                const channelIdByTarget = Object.fromEntries(jobs.flatMap((job) => job.request.channels.map((channel) => [channel.target, channel.id])));
+                const occupancyById = await queueOccupancy(Object.values(channelIdByTarget));
+                const occupancy = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [target, occupancyById[id] || 0]));
+                const plan = planCapacityWindow(jobs, occupancy, accepted);
+
+                for (const { job, channel, key } of plan.dispatch) {
+                  if (channel.dueAt && new Date(channel.dueAt).getTime() <= Date.now() + 5 * 60_000) {
+                    throw new Error(`${job.post.id} / ${channel.name}: approved time is too close or has passed; revise the schedule and approve the new revision.`);
                   }
-
-                  if (!response.ok) throw new Error(`${job.post.id} / ${channel.name}: Buffer HTTP ${response.status}.`);
-                  if (payload.errors?.length) throw new Error(`${job.post.id} / ${channel.name}: ${payload.errors.map((error) => error.message).join('; ')}`);
-
-                  const result = payload.data?.createPost;
-                  if (!result) throw new Error(`${job.post.id} / ${channel.name}: Buffer returned no createPost result.`);
-                  if (result.message) throw new Error(`${job.post.id} / ${channel.name}: ${result.message}`);
-                  if (!result.post?.id) throw new Error(`${job.post.id} / ${channel.name}: Buffer did not return a post ID.`);
-
-                  results.push({ queueId: job.post.id, revision: job.post.revision, target: channel.target, name: channel.name, postId: result.post.id, dueAt: channel.dueAt });
+                  const media = job.request.mediaUrl ? { url: job.request.mediaUrl, kind: job.request.mediaKind, title: job.request.documentTitle, thumbnailUrl: job.request.documentThumbnailUrl } : null;
+                  const data = await buffer(buildCreatePostMutation(channel, job.request.mode, media));
+                  const result = data.createPost;
+                  if (!result?.post?.id) throw new Error(`${job.post.id} / ${channel.name}: Buffer did not return a post ID.`);
+                  results.push({ key, queueId: job.post.id, revision: job.post.revision, name: channel.name, postId: result.post.id, dueAt: channel.dueAt });
                 }
+
+                const resultLines = results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` — ${result.dueAt}` : ''}\n  ${acceptedMarker(result.key)}`);
+                const waiting = plan.waiting.length;
+                const waitingMarker = `<!-- BUFFER_CAPACITY_WAIT ${waiting} -->`;
+                const alreadyReportedSameWait = comments.some((comment) => String(comment.body || '').includes(waitingMarker));
+                if (results.length || !waiting || !alreadyReportedSameWait) await github.rest.issues.createComment({
+                  owner, repo, issue_number: issue.number, body: [
+                    waiting ? '🕒 Buffer capacity window processed.' : '✅ Buffer accepted every remaining requested destination.',
+                    '',
+                    `- Audit status: **${waiting ? 'approved — waiting for Buffer capacity' : 'scheduled'}**`,
+                    batch ? `- Approved week: **${batch.weekStart} to ${batch.weekEnd}**` : `- Queue post: **${jobs[0].post.id || 'legacy issue'}**`,
+                    `- Already accepted before this run: **${plan.alreadyAccepted.length}**`,
+                    `- Accepted in this run: **${results.length}**`,
+                    `- Waiting for a free queue slot: **${waiting}**`,
+                    ...(resultLines.length ? resultLines : ['- No new Buffer placements were created in this capacity check.']),
+                    '',
+                    waiting ? 'The exact owner approval remains locked. The next automatic capacity check will resume without recreating accepted destinations.' : 'This records Buffer acceptance, not proof of LinkedIn publication. Publication must be recorded separately.',
+                    waiting ? waitingMarker : '',
+                  ].join('\n'),
+                });
+                if (!waiting) await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed' });
+              } catch (error) {
+                const retryable = error.failure?.retryable === true;
+                const partial = results.length
+                  ? results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`\n  ${acceptedMarker(result.key)}`).join('\n')
+                  : '- None';
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: issue.number,
+                  body: [
+                    '❌ LinkedIn Buffer dispatch failed closed.', '',
+                    `- Error: ${error.message}`,
+                    `- Failure class: **${error.failure?.code || 'preflight_failure'}**`,
+                    '- Destinations created before the failure:', partial, '',
+                    retryable ? 'The next capacity check will retry and skip every destination recorded above.' : 'This needs correction and a new revision before scheduling can continue.',
+                    'Nothing should be assumed published.',
+                  ].join('\n'),
+                });
+                if (!retryable) await github.rest.issues.update({
+                  owner, repo, issue_number: issue.number,
+                  title: issue.title.replace('[APPROVED LINKEDIN WEEK]', '[FAILED LINKEDIN WEEK]').replace('[APPROVED LINKEDIN]', '[FAILED LINKEDIN]'),
+                });
+                if (context.eventName === 'issues') core.setFailed(error.message);
               }
-
-              const resultLines = results.map((result) =>
-                `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` — ${result.dueAt}` : ''}`,
-              );
-
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: [
-                  '✅ Buffer accepted every requested destination.',
-                  '',
-                  '- Audit status: **scheduled**',
-                  batch ? `- Approved week: **${batch.weekStart} to ${batch.weekEnd}**` : `- Queue post: **${jobs[0].post.id || 'legacy issue'}**`,
-                  `- Locked items: **${jobs.length}**`,
-                  ...resultLines,
-                  '',
-                  'This records Buffer acceptance, not proof of LinkedIn publication. Publication must be recorded separately.',
-                ].join('\n'),
-              });
-
-              await github.rest.issues.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                state: 'closed',
-              });
-            } catch (error) {
-              const partial = results.length
-                ? results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\``).join('\n')
-                : '- None';
-
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: [
-                  '❌ LinkedIn Buffer dispatch failed closed.',
-                  '',
-                  `- Error: ${error.message}`,
-                  '- Destinations created before the failure:',
-                  partial,
-                  '',
-                  results.length
-                    ? 'Do not retry this issue blindly: Buffer cannot roll back a post already created on another channel.'
-                    : 'No Buffer post was created by this run.',
-                  'The approval issue remains open and nothing should be assumed published.',
-                ].join('\n'),
-              });
-              await github.rest.issues.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                title: context.payload.issue.title
-                  .replace('[APPROVED LINKEDIN WEEK]', '[FAILED LINKEDIN WEEK]')
-                  .replace('[APPROVED LINKEDIN]', '[FAILED LINKEDIN]'),
-              });
-              core.setFailed(error.message);
             }

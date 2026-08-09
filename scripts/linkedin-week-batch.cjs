@@ -1,6 +1,7 @@
 'use strict';
 
 const { validateRequest } = require('./linkedin-review-core.cjs');
+const { validateDailyPlacementLimit } = require('./linkedin-buffer-capacity.cjs');
 
 function parseHeaders(body = '') {
   const header = {};
@@ -46,6 +47,11 @@ function postBody(post) {
   if (schedules.length === 1) lines.push(`SCHEDULE_AT: ${schedules[0][1]}`);
   else schedules.forEach(([target, value]) => lines.push(`SCHEDULE_AT_${target.toUpperCase()}: ${value}`));
   lines.push(`MEDIA_URL: ${post.mediaUrl || ''}`, '---', post.copy?.default || '');
+  if (post.mediaUrl) {
+    lines.splice(lines.length - 2, 0, `MEDIA_KIND: ${post.format === 'carousel' ? 'document' : 'image'}`);
+    if (post.format === 'carousel') lines.splice(lines.length - 2, 0, `DOCUMENT_TITLE: ${post.documentTitle || post.title || post.id}`);
+    if (post.format === 'carousel') lines.splice(lines.length - 2, 0, `DOCUMENT_THUMBNAIL_URL: ${post.documentThumbnailUrl || ''}`);
+  }
   for (const target of post.targets) {
     if (post.copy?.[target]) lines.push(`---${target.toUpperCase()}---`, post.copy[target]);
   }
@@ -81,8 +87,8 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now()) {
     if (!['schedule', 'queue'].includes(post.mode)) {
       throw new Error(`${locked.id} is not configured for live scheduling.`);
     }
-    if (post.format === 'carousel' && (post.carousel?.readiness !== 'ready' || !post.mediaUrl)) {
-      throw new Error(`${locked.id} carousel PDF is not verified and publishable.`);
+    if (post.format === 'carousel' && (post.carousel?.readiness !== 'ready' || !post.mediaUrl || !post.documentThumbnailUrl)) {
+      throw new Error(`${locked.id} carousel PDF and public thumbnail are not verified and publishable.`);
     }
     for (const target of post.targets) {
       const scheduled = post.scheduledAt?.[target];
@@ -94,11 +100,14 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now()) {
     return { post, request: validateRequest(postBody(post), env, now) };
   });
 
+  const placementsByDay = validateDailyPlacementLimit(jobs);
+
   return {
     batchId: header.BATCH_ID || `linkedin-week-${header.WEEK_START}`,
     weekStart: header.WEEK_START,
     weekEnd,
     jobs,
+    placementsByDay,
   };
 }
 

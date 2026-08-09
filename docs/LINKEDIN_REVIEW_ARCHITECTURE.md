@@ -1,61 +1,68 @@
-# LinkedIn review control centre
+# LinkedIn Master Ledger, review and Buffer release
 
-## Decision
+## Architecture decision
 
-The repository-backed queue and mobile review interface are the operational source of truth for LinkedIn review, scheduling intent and state history. GitHub Issues are the authenticated approval and dispatch ledger. Notion remains the strategy, archive and reusable-content library.
+The private **Master LinkedIn Ledger** at `../work/master-linkedin-ledger.json` is the canonical inventory for every LinkedIn draft, imported candidate and operational post. It currently reconciles the Mac archive, the Notion calendar and the checked review queue. It stays outside the deployed site because it retains private paths and unreleased copy.
 
-Notion is not retired. It is deliberately removed from the runtime path because the current calendar is valuable editorial memory but is not a reliable publishing ledger: it models only the personal channel, duplicates status concepts across two databases and contains historic approvals that must not be treated as current permission to publish.
+`apps/linkedin-review/queue.json` is the checked, live-ready projection shown in the Content Swiper. GitHub Issues are the authenticated owner-approval and dispatch audit. Notion remains the private strategy, archive and reusable-content reference; its historic Approved field is never permission to publish. This avoids a fragile two-way write while preserving Notion's editorial value.
+
+New copy must enter the Master Ledger before QA or scheduling:
+
+```text
+node scripts/add-linkedin-master-post.mjs --input /absolute/path/to/post.json
+```
+
+The input requires `id`, `title` and `content`; it may include `category` and `source`. Intake is deduplicated and fail-closed, creates a non-publishable draft and never changes the Swiper. After QA, a new immutable revision is promoted into `queue.json`, then the master and public integrity manifest are rebuilt:
+
+```text
+node scripts/build-linkedin-master-ledger.mjs
+```
 
 ## Human-first approval path
 
-1. A fully written, channel-specific post enters `apps/linkedin-review/queue.json` as `live_ready`, then `review`.
-2. Chelston reviews category, destination, time, copy, channel variants and media in the mobile interface.
-   - `Next` is navigation only. It does not create a decision, change the weekly totals, open GitHub or contact Buffer.
-3. **YES** or **NO** is stored locally and the next undecided post appears automatically. NO never contacts Buffer.
-4. The app keeps choices separate by selected week and queue version, and preserves them across refreshes on the same device.
-5. Once the week is fully decided, one weekly hand-off opens a compact GitHub record for Chelston to review and submit while signed in.
-6. Only a new issue authored by the repository owner with the `[APPROVED LINKEDIN WEEK]` prefix can start a weekly Buffer run. `[APPROVED LINKEDIN]` remains a single-post fallback.
-7. The workflow locks the exact queue version and `post-id@revision` set, then preflights the complete week before its first Buffer request.
-8. Buffer post IDs and per-channel results are appended to the issue. Successful issues close; failed or partial issues remain open with explicit recovery instructions.
+1. A fully checked post enters the Swiper projection with exact copy, channel targets, scheduled times and media.
+2. `Next` navigates only. YES/NO is stored on that device and automatically advances to the next item. NO never contacts Buffer.
+3. A carousel may receive an editorial YES while its slide preview is visible, but weekly sending remains locked until a publishable PDF and document title pass server validation.
+4. Once every item in the selected week is decided, Chelston opens one prefilled GitHub issue and submits it while signed in. This owner action is the explicit approval gate.
+5. The workflow locks the queue version and every `post-id@revision`, validates all destinations and schedules, and checks Buffer's live occupancy before creating anything.
+6. Buffer acceptance is recorded per post revision and channel. It is not treated as proof that LinkedIn published the post.
 
-The interface never contains a GitHub token or Buffer credential. The one weekly GitHub confirmation provides authentication, explicit approval and an immutable audit record without building a custom identity system or forcing one issue per post.
+No Buffer key or GitHub token is exposed in the browser.
 
-## State model
+## Buffer Free capacity model
 
-| State | Evidence |
+Snapshot verified 9 August 2026 from Buffer's official documentation:
+
+- three connected channels;
+- 10 scheduled posts per channel at one time (30 total), not 10 per day;
+- one API key, 100 requests per 15 minutes, 250 per day and 3,000 per 30 days;
+- one PDF document per LinkedIn post, maximum 100 MB and 300 pages, with a required document title; the API additionally requires a public thumbnail URL;
+- Buffer does not provide PDF carousel analytics.
+
+The editorial ceiling is **10 account placements per calendar day across all three accounts**, maximum 70 per week. A single post targeting three accounts consumes three placements. This protects audience quality and makes the load explicit; it does not claim Buffer can hold the full week simultaneously.
+
+The approved week remains locked in GitHub while a capacity window releases only what fits. The workflow rechecks every four hours, fills each channel chronologically up to 10, and resumes automatically as slots open. Previously accepted `post@revision:channel` markers prevent duplicate submission. A concurrency lock prevents two release runs racing.
+
+## Failure and recovery matrix
+
+| Scenario | Result |
 | --- | --- |
-| `live_ready` | Copy, destination and timing are complete; awaits Chelston's decision |
-| `review` | Queue history entry; awaiting Chelston |
-| `approved` | Local YES selection, followed by an owner-created weekly approval issue awaiting dispatch evidence |
-| `rejected` | Local NO selection; the item is excluded from weekly dispatch and returned for revision |
-| `scheduled` | Buffer accepted a queue or custom-scheduled post and the approval issue closed |
-| `published` | Separate `[PUBLISHED LINKEDIN]` evidence record; Buffer acceptance alone is not publication proof |
-| `failed` | `[FAILED LINKEDIN WEEK]`, `[FAILED LINKEDIN]` or an open approval issue with a failed workflow audit |
+| Buffer channel has 10 scheduled items | Item waits in the approved ledger; no failed or duplicate submission |
+| Approval event repeats or a run restarts | Accepted destination markers are skipped |
+| One destination succeeds, next fails | Success is recorded per channel; retry skips it |
+| HTTP 429, 5xx or temporary Buffer failure | Issue stays approved and open for the next automatic check |
+| Channel authorisation is lost | Dispatch fails closed and requires manual reconnection/new revision |
+| PDF/title missing or media rejected | Weekly preflight or dispatch fails closed; no text-only fallback |
+| Scheduled time is within five minutes or has passed | No creation; revise the schedule and explicitly approve the new revision |
+| More than 10 account placements on one date | Entire weekly batch is rejected before Buffer is contacted |
+| Queue/master manifest IDs disagree | Swiper refuses to load the projection |
+| Historic Notion item says Approved | It still re-enters QA and Chelston review; never auto-publishes |
+| Channel is removed from Buffer | Buffer history/queue can be lost; reconnect rather than remove during recovery |
 
-## Target model
+Capacity-wait comments are deduplicated so the four-hour check does not spam the issue. The system can fail safely and recover deterministically; it cannot guarantee Buffer or LinkedIn uptime.
 
-- `personal` → `BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID`
-- `main` → `BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID`
-- `secondary` → `BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID`
+## States
 
-`TARGETS` accepts one slug or comma-separated combinations. Legacy `business`, `both` and `all` inputs remain supported. Multi-channel items can provide channel-specific copy blocks and staggered `SCHEDULE_AT_*` fields.
+`draft` → `live_ready` → `review` → `approved` → `scheduled` → `published`
 
-Buffer does not offer an atomic multi-channel transaction. The workflow therefore validates everything before sending, then records any channel already created if a later network/API call fails. A partial result must never be retried blindly.
-
-## Content consolidation
-
-Run the local-only consolidator against trusted folders and exports:
-
-```text
-node scripts/consolidate-linkedin-content.mjs <source paths> --output .local-linkedin-content-library.json
-```
-
-It inventories Markdown, text, CSV and JSON records, removes exact duplicates and preserves source paths. The generated library is ignored by Git because Mac paths and source copy may be private. Selected material is rewritten, cited and promoted into the public review queue only after editorial review.
-
-Historic Notion approval is metadata, not live publishing consent. Imported content always re-enters as `live_ready` or `review`.
-
-## Carousel media lock
-
-Carousel cards reference a promoted six-slide source set by immutable library ID. A carousel remains undecided and cannot receive YES until a verified PDF URL is present and its readiness is `ready`. The server repeats the same check before any Buffer request, preventing a missing PDF from silently becoming a text-only LinkedIn post.
-
-Buffer and LinkedIn support one PDF document per LinkedIn post, up to 100 MB and 300 pages. The intended runtime asset is a flattened, same-size six-page PDF assembled only from the promoted PNGs. The source render folders remain the editorial masters; the review queue stores only the library ID, publishing URL and audit metadata.
+`review` may become `rejected`; any dispatch can become `failed`. Every transition keeps the immutable post ID/revision, time and evidence. Only separate publication evidence may set `published`.

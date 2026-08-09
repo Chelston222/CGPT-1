@@ -40,6 +40,18 @@
         <article><strong id="metric-rejected">—</strong><span>Rejected</span></article>
       </section>
 
+      <section class="ledger-strip" aria-label="Master LinkedIn Ledger status">
+        <div>
+          <p class="eyebrow">Single content source</p>
+          <h2>Master LinkedIn Ledger</h2>
+          <p id="ledger-state">Checking the private master and its live-ready projection…</p>
+        </div>
+        <dl>
+          <div><dt>Master records</dt><dd id="master-total">—</dd></div>
+          <div><dt>In Swiper</dt><dd id="projection-total">—</dd></div>
+        </dl>
+      </section>
+
       <section class="batch-panel" id="batch-panel" aria-label="Weekly approval summary" hidden>
         <div>
           <p class="eyebrow">Weekly hand-off</p>
@@ -67,7 +79,8 @@
           <article><span>Secondary</span><strong id="week-secondary">—</strong></article>
           <article class="week-total"><span>All accounts</span><strong id="week-total">—</strong></article>
         </div>
-        <p class="capacity-note"><strong>Built for scale:</strong> up to 105 review decisions in one week — five posts × three accounts × seven days — without weakening the individual approval lock.</p>
+        <div class="daily-capacity" id="daily-capacity" aria-label="Daily account placement capacity"></div>
+        <p class="capacity-note"><strong>Safe ceiling:</strong> 10 total account placements per day, or 70 per week. A post sent to all three accounts uses three placements. Buffer Free receives only the next available 10 per channel; the approved remainder waits safely in the ledger.</p>
       </section>
 
       <nav class="filters" aria-label="Filter posts">

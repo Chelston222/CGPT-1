@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "ledgerId": "222-emails-master-linkedin-ledger",
+  "ledgerHash": "f6296992c16b308e76e26fd46f737e18aca595d73d44eae282ac0768ebae487b",
+  "generatedAt": "2026-08-09T12:32:32.492Z",
+  "summary": {
+    "discoveredChunks": 1177,
+    "exactDuplicatesRemoved": 31,
+    "uniqueMasterRecords": 1164,
+    "operationalPosts": 18,
+    "archiveCandidates": 1146,
+    "masterIntake": 0
+  },
+  "publicProjection": {
+    "file": "queue.json",
+    "posts": 18
+  },
+  "sources": {
+    "notionCalendarRecords": 101,
+    "localFilesScanned": 119,
+    "localContentChunks": 1177
+  },
+  "rules": {
+    "newContentEntersMasterFirst": true,
+    "historicalApprovalIsNotPublishPermission": true,
+    "maximumAccountPlacementsPerDay": 10,
+    "bufferFreeScheduledPerChannel": 10,
+    "bufferFreeConnectedChannels": 3
+  }
+}
