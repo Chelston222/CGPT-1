@@ -29,6 +29,7 @@ const elements = {
   swipeHint: document.querySelector('#swipe-hint'),
   approve: document.querySelector('#approve-button'),
   reject: document.querySelector('#reject-button'),
+  manualNext: document.querySelector('#manual-next'),
   refresh: document.querySelector('#refresh-button'),
   position: document.querySelector('#position'),
   progress: document.querySelector('#progress'),
@@ -88,6 +89,10 @@ function displayStatus(post) {
 
 function displayCategory(category) {
   return String(category).split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+function carouselIsPublishable(post) {
+  return post.format !== 'carousel' || post.carousel?.readiness === 'ready';
 }
 
 function formatDate(value) {
@@ -364,7 +369,17 @@ function createPostContent(post) {
     media.hidden = false;
     image.src = post.mediaPreviewUrl;
     image.alt = post.mediaAlt || `Media preview for ${post.title}`;
-    media.querySelector('.media-label').textContent = post.format || 'Media preview';
+    media.querySelector('.media-label').textContent = post.carousel
+      ? `Carousel ${post.carousel.libraryId} · ${post.carousel.slideCount} promoted slides`
+      : post.format || 'Media preview';
+  }
+  if (post.carousel) {
+    const readiness = fragment.querySelector('.media-readiness');
+    readiness.hidden = false;
+    readiness.dataset.ready = String(carouselIsPublishable(post));
+    readiness.textContent = carouselIsPublishable(post)
+      ? 'Carousel PDF is attached and included in the approval lock.'
+      : 'Carousel source is matched and promoted. YES unlocks only after its publishable PDF has been verified.';
   }
   return fragment;
 }
@@ -381,6 +396,7 @@ function renderCurrentPost() {
       : '<p><strong>Nothing is waiting here.</strong><br>Try another filter or refresh the audit.</p>';
     elements.card.append(empty);
     elements.controls.hidden = true;
+    elements.manualNext.hidden = true;
     elements.swipeHint.hidden = true;
     return;
   }
@@ -388,7 +404,18 @@ function renderCurrentPost() {
   elements.card.append(createPostContent(post));
   const canDecide = ['review', 'rejected', 'failed'].includes(post.resolvedStatus);
   elements.controls.hidden = !canDecide;
+  elements.approve.disabled = !carouselIsPublishable(post);
+  elements.approve.title = carouselIsPublishable(post) ? '' : 'This carousel still needs its verified PDF attachment.';
+  elements.manualNext.hidden = false;
+  elements.manualNext.disabled = state.filtered.length < 2;
   elements.swipeHint.hidden = !canDecide;
+}
+
+function showNextWithoutDecision() {
+  if (state.filtered.length < 2) return;
+  state.index = (state.index + 1) % state.filtered.length;
+  render();
+  elements.card.focus({ preventScroll: true });
 }
 
 function renderQueue() {
@@ -437,6 +464,7 @@ function weeklyIssueUrl() {
 function openDecision(decision) {
   const post = state.filtered[state.index];
   if (!post) return;
+  if (decision === 'approve' && !carouselIsPublishable(post)) return;
   state.decision = decision;
   const approved = decision === 'approve';
   elements.sheetEyebrow.textContent = approved ? 'YES selection' : 'Revision route';
@@ -527,6 +555,7 @@ elements.nextWeek.addEventListener('click', () => {
 });
 elements.approve.addEventListener('click', () => openDecision('approve'));
 elements.reject.addEventListener('click', () => openDecision('reject'));
+elements.manualNext.addEventListener('click', showNextWithoutDecision);
 elements.sheetAction.addEventListener('click', commitSheetAction);
 elements.sendWeek.addEventListener('click', openWeeklySend);
 elements.clearWeek.addEventListener('click', () => {
@@ -565,6 +594,7 @@ elements.card.addEventListener('pointerup', (event) => {
 elements.card.addEventListener('keydown', (event) => {
   if (event.key === 'ArrowLeft') openDecision('reject');
   if (event.key === 'ArrowRight') openDecision('approve');
+  if (event.key.toLowerCase() === 'n') showNextWithoutDecision();
 });
 
 function showError(error) {
@@ -577,6 +607,7 @@ function showError(error) {
   wrapper.append(message);
   elements.card.replaceChildren(wrapper);
   elements.controls.hidden = true;
+  elements.manualNext.hidden = true;
   elements.sync.textContent = 'Load failed';
 }
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-09T12:15:00+01:00",
+  "generatedAt": "2026-08-09T12:34:10+01:00",
   "timezone": "Europe/London",
   "approvalRule": "No queue item or saved YES selection is permission to publish. Only a repository-owner GitHub issue beginning [APPROVED LINKEDIN WEEK] or [APPROVED LINKEDIN] is explicit approval.",
   "posts": [
@@ -27,7 +27,7 @@
     },
     {
       "id": "tte-li-002",
-      "revision": 1,
+      "revision": 2,
       "title": "Your booking platform is not your follow-up strategy",
       "category": "email_revenue_education",
       "funnelStage": "mof",
@@ -41,10 +41,16 @@
       "mediaPreviewUrl": "media/booking-platform-preview.svg",
       "mediaAlt": "Preview card reading: Booking confirmation is not a return journey",
       "mediaUrl": "",
+      "carousel": {
+        "libraryId": "028",
+        "slideCount": 6,
+        "readiness": "pdf_required",
+        "sourceFolder": "028 - Your Booking Reminder Cannot Do the Job of a Rebooking Email"
+      },
       "sourceUrl": "https://app.notion.com/3b0e72eb858781c79397c947e5e61962",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "live_ready", "at": "2026-08-09T10:04:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:04:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }, { "state": "media_matched", "at": "2026-08-09T12:34:10+01:00", "actor": "Codex", "note": "Promoted carousel 028 matched; verified PDF packaging still required." }]
     },
     {
       "id": "tte-li-003",
@@ -84,7 +90,7 @@
     },
     {
       "id": "tte-li-005",
-      "revision": 1,
+      "revision": 2,
       "title": "Five places repeat revenue quietly leaks",
       "category": "buyer_diagnostics",
       "funnelStage": "mof",
@@ -98,10 +104,16 @@
       "mediaPreviewUrl": "media/five-leaks-preview.svg",
       "mediaAlt": "Preview card showing five client return leaks",
       "mediaUrl": "",
+      "carousel": {
+        "libraryId": "015",
+        "slideCount": 6,
+        "readiness": "pdf_required",
+        "sourceFolder": "015 - Fix Retention Before You Buy More Leads"
+      },
       "sourceUrl": "https://app.notion.com/3ace72eb8587812a9424c2d52531fcdd",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "live_ready", "at": "2026-08-09T10:16:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:16:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }, { "state": "media_matched", "at": "2026-08-09T12:34:10+01:00", "actor": "Codex", "note": "Promoted carousel 015 matched; verified PDF packaging still required." }]
     },
     {
       "id": "tte-li-006",
@@ -231,7 +243,7 @@
     },
     {
       "id": "tte-li-013",
-      "revision": 1,
+      "revision": 2,
       "title": "The client return leak checklist",
       "category": "buyer_diagnostics",
       "funnelStage": "mof",
@@ -250,10 +262,16 @@
       "mediaPreviewUrl": "media/five-leaks-preview.svg",
       "mediaAlt": "Client return leak checklist preview",
       "mediaUrl": "",
+      "carousel": {
+        "libraryId": "017",
+        "slideCount": 6,
+        "readiness": "pdf_required",
+        "sourceFolder": "017 - 4 Places Rebooking Opportunity Hides Inside Your Client List"
+      },
       "sourceUrl": "https://app.notion.com/3ace72eb8587812a9424c2d52531fcdd",
       "sourceType": "notion_archive_rebuilt",
       "status": "review",
-      "history": [{ "state": "live_ready", "at": "2026-08-09T10:48:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:48:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }, { "state": "media_matched", "at": "2026-08-09T12:34:10+01:00", "actor": "Codex", "note": "Promoted carousel 017 matched; verified PDF packaging still required." }]
     },
     {
       "id": "tte-li-014",

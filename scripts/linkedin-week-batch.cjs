@@ -81,6 +81,9 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now()) {
     if (!['schedule', 'queue'].includes(post.mode)) {
       throw new Error(`${locked.id} is not configured for live scheduling.`);
     }
+    if (post.format === 'carousel' && (post.carousel?.readiness !== 'ready' || !post.mediaUrl)) {
+      throw new Error(`${locked.id} carousel PDF is not verified and publishable.`);
+    }
     for (const target of post.targets) {
       const scheduled = post.scheduledAt?.[target];
       const scheduledDate = dateOnly(scheduled);

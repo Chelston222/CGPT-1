@@ -26,7 +26,7 @@
         <div>
           <p class="eyebrow">One week at a time</p>
           <h1 id="page-title">Your week. Every post. One clear decision.</h1>
-          <p class="lede">Move through one calendar week and swipe or press YES or NO. Each choice brings up the next post automatically. When the week is complete, send every YES selection through one final approval.</p>
+          <p class="lede">Move through one calendar week and swipe or press YES or NO. Each choice brings up the next post automatically. Use Next to look ahead without saving a decision. When the week is complete, send every YES selection through one final approval.</p>
         </div>
         <div class="safety-lock" title="Live publishing always requires Chelston's explicit approval">
           <span aria-hidden="true">●</span> Approval lock on
@@ -99,7 +99,11 @@
             <span class="decision-symbol" aria-hidden="true">✓</span>
           </button>
         </div>
-        <p class="swipe-hint" id="swipe-hint" hidden>Swipe left for NO · Swipe right for YES</p>
+        <button class="manual-next" id="manual-next" type="button" hidden>
+          <span><strong>Next</strong><small>No decision saved</small></span>
+          <span aria-hidden="true">→</span>
+        </button>
+        <p class="swipe-hint" id="swipe-hint" hidden>Swipe left for NO · Swipe right for YES · or use Next to leave it undecided</p>
       </section>
 
       <section class="up-next" aria-labelledby="up-next-title">
@@ -142,6 +146,7 @@
         <img alt="">
         <span class="media-label"></span>
       </div>
+      <p class="media-readiness" hidden></p>
       <div class="post-copy-list"></div>
       <div class="card-footer">
         <span class="post-id"></span>
