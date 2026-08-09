@@ -39,9 +39,9 @@ Snapshot verified 9 August 2026 from Buffer's official documentation:
 - one PDF document per LinkedIn post, maximum 100 MB and 300 pages, with a required document title; the API additionally requires a public thumbnail URL;
 - Buffer does not provide PDF carousel analytics.
 
-The editorial ceiling is **10 account placements per calendar day across all three accounts**, maximum 70 per week. A single post targeting three accounts consumes three placements. This protects audience quality and makes the load explicit; it does not claim Buffer can hold the full week simultaneously.
+The editorial ceiling is **five placements per account per calendar day**, maximum 15 per day and 105 per week across all three accounts. A single post targeting three accounts consumes three placements. This protects audience quality and makes the load explicit; it does not claim Buffer can hold the full week simultaneously.
 
-The approved week remains locked in GitHub while a capacity window releases only what fits. The workflow rechecks every four hours, fills each channel chronologically up to 10, and resumes automatically as slots open. Previously accepted `post@revision:channel` markers prevent duplicate submission. A concurrency lock prevents two release runs racing.
+The approved week remains locked in GitHub while a capacity window releases only what fits. At five posts per account per day, Buffer Free's 10 slots provide a rolling two-day runway. The workflow rechecks every two hours, fills each channel chronologically up to 10, and resumes automatically as slots open. Previously accepted `post@revision:channel` markers prevent duplicate submission. A concurrency lock prevents two release runs racing.
 
 ## Failure and recovery matrix
 
@@ -54,12 +54,12 @@ The approved week remains locked in GitHub while a capacity window releases only
 | Channel authorisation is lost | Dispatch fails closed and requires manual reconnection/new revision |
 | PDF/title missing or media rejected | Weekly preflight or dispatch fails closed; no text-only fallback |
 | Scheduled time is within five minutes or has passed | No creation; revise the schedule and explicitly approve the new revision |
-| More than 10 account placements on one date | Entire weekly batch is rejected before Buffer is contacted |
+| More than 15 total placements, or more than 5 for one account, on one date | Entire weekly batch is rejected before Buffer is contacted |
 | Queue/master manifest IDs disagree | Swiper refuses to load the projection |
 | Historic Notion item says Approved | It still re-enters QA and Chelston review; never auto-publishes |
 | Channel is removed from Buffer | Buffer history/queue can be lost; reconnect rather than remove during recovery |
 
-Capacity-wait comments are deduplicated so the four-hour check does not spam the issue. The system can fail safely and recover deterministically; it cannot guarantee Buffer or LinkedIn uptime.
+Capacity-wait comments are deduplicated so the two-hour check does not spam the issue. The system can fail safely and recover deterministically; it cannot guarantee Buffer or LinkedIn uptime.
 
 ## States
 

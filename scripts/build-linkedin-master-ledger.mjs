@@ -2,6 +2,15 @@
 
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+
+async function readOptionalJson(filePath, fallback) {
+  try {
+    return JSON.parse(await readFile(filePath, 'utf8'));
+  } catch (error) {
+    if (error.code === 'ENOENT') return fallback;
+    throw error;
+  }
+}
 import { dirname, resolve } from 'node:path';
 
 function arg(name, fallback) {
@@ -17,10 +26,57 @@ const manifestPath = resolve(arg('--manifest', 'apps/linkedin-review/ledger-mani
 
 const archive = JSON.parse(await readFile(archivePath, 'utf8'));
 const queue = JSON.parse(await readFile(queuePath, 'utf8'));
-const bufferAudit = await readFile(bufferAuditPath, 'utf8').then(JSON.parse).catch(() => ({ records: [] }));
-const existing = await readFile(outputPath, 'utf8').then(JSON.parse).catch(() => null);
+const bufferAudit = await readOptionalJson(bufferAuditPath, { records: [] });
+const existing = await readOptionalJson(outputPath, null);
 const normalise = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const hash = (value) => createHash('sha256').update(value).digest('hex');
+
+// 9 August is the planning anchor. Since it is already evening in London, the
+// first complete five-per-channel publishing day starts on 10 August. Reflow
+// once, preserving revisions for posts already approved through GitHub so the
+// dispatcher cannot mistake a date correction for fresh approval.
+if (
+  queue.capacityPolicy?.firstPublishDate !== '2026-08-10'
+  || (queue.posts || []).some((post) => Object.hasOwn(post, 'schedule'))
+) {
+  const accepted = new Set(['tte-li-001', 'tte-li-002', 'tte-li-003', 'tte-li-004', 'tte-li-005', 'tte-li-006']);
+  const slots = {
+    personal: ['08:15', '10:15', '12:15', '14:15', '16:15'],
+    main: ['08:30', '10:30', '12:30', '14:30', '16:30'],
+    secondary: ['08:45', '10:45', '12:45', '14:45', '16:45'],
+  };
+  const counters = { personal: 0, main: 0, secondary: 0 };
+  const day = (offset) => `2026-08-${String(10 + offset).padStart(2, '0')}`;
+
+  for (const post of queue.posts || []) {
+    post.scheduledAt = {};
+    delete post.schedule;
+    for (const target of post.targets || []) {
+      const index = counters[target]++;
+      post.scheduledAt[target] = `${day(Math.floor(index / 5))}T${slots[target][index % 5]}:00+01:00`;
+    }
+    post.history ||= [];
+    if (accepted.has(post.id)) {
+      post.history.push({ at: '2026-08-09T20:15:00+01:00', state: 'reschedule_requested', actor: 'system', note: 'Moved from the 17 August example week into the week beginning 9 August; existing human approval retained.' });
+    } else {
+      post.revision = Number(post.revision || 1) + 1;
+      post.status = 'review';
+      post.history.push({ at: '2026-08-09T20:15:00+01:00', state: 'review', actor: 'system', note: 'Reflowed into the new five-per-channel cadence; fresh approval required for this revision.' });
+    }
+  }
+  queue.generatedAt = '2026-08-09T20:15:00+01:00';
+  queue.capacityPolicy = {
+    planningAnchorDate: '2026-08-09',
+    firstPublishDate: '2026-08-10',
+    maximumPlacementsPerChannelPerDay: 5,
+    maximumAccountPlacementsPerDay: 15,
+    maximumAccountPlacementsPerWeek: 105,
+    bufferFreeScheduledPerChannel: 10,
+    bufferRunwayDaysAtConfiguredRate: 2,
+    releaseCheckHours: 2,
+  };
+  await writeFile(queuePath, `${JSON.stringify(queue, null, 2)}\n`);
+}
 
 const records = new Map();
 for (const record of existing?.records || []) {
@@ -90,7 +146,8 @@ const ledger = {
     operationalSourceOfTruth: 'this ledger',
     notionRole: 'editorial archive, strategy and private reference',
     publicReviewRole: 'generated live-ready projection only',
-    maxAccountPlacementsPerDay: 10,
+    maxPlacementsPerChannelPerDay: 5,
+    maxAccountPlacementsPerDay: 15,
     explicitOwnerApprovalRequired: true,
   },
   summary: {
@@ -121,8 +178,11 @@ const manifest = {
   rules: {
     newContentEntersMasterFirst: true,
     historicalApprovalIsNotPublishPermission: true,
-    maximumAccountPlacementsPerDay: 10,
+    maximumPlacementsPerChannelPerDay: 5,
+    maximumAccountPlacementsPerDay: 15,
+    maximumAccountPlacementsPerWeek: 105,
     bufferFreeScheduledPerChannel: 10,
+    bufferRunwayDaysAtConfiguredRate: 2,
     bufferFreeConnectedChannels: 3,
   },
 };

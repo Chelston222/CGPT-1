@@ -17,10 +17,16 @@ function job(id, channels) {
   };
 }
 
-test('enforces ten total account placements per calendar day', () => {
-  const jobs = Array.from({ length: 10 }, (_, index) => job(`p-${index}`, [['personal', '2026-08-17T08:00:00Z']]));
-  assert.equal(validateDailyPlacementLimit(jobs)['2026-08-17'], 10);
-  assert.throws(() => validateDailyPlacementLimit([...jobs, job('overflow', [['main', '2026-08-17T12:00:00Z']])]), /maximum is 10/);
+test('allows fifteen total placements but no more than five on one channel per day', () => {
+  const jobs = ['personal', 'main', 'secondary'].flatMap((target) =>
+    Array.from({ length: 5 }, (_, index) => job(`${target}-${index}`, [[target, '2026-08-17T08:00:00Z']])),
+  );
+  assert.equal(validateDailyPlacementLimit(jobs)['2026-08-17'], 15);
+  assert.throws(() => validateDailyPlacementLimit([...jobs, job('overflow', [['personal', '2026-08-17T12:00:00Z']])]), /maximum is 15/);
+  assert.throws(() => validateDailyPlacementLimit([
+    ...jobs.filter((entry) => !entry.post.id.startsWith('secondary-')),
+    job('personal-six', [['personal', '2026-08-17T12:00:00Z']]),
+  ]), /maximum is 5 per channel/);
 });
 
 test('counts a multi-channel post once per destination', () => {
@@ -44,10 +50,20 @@ test('plans only free Buffer slots and preserves chronological order', () => {
 
 test('accepted audit markers make retries idempotent', () => {
   const marker = acceptedMarker('first@1:personal');
-  const accepted = parseAcceptedMarkers([{ body: `Accepted\n${marker}` }]);
+  const accepted = parseAcceptedMarkers([{ body: `Accepted\n${marker}`, user: { login: 'github-actions[bot]' } }]);
   const plan = planCapacityWindow([job('first', [['personal', '2026-08-17T08:00:00Z']])], {}, accepted);
   assert.equal(plan.dispatch.length, 0);
   assert.equal(plan.alreadyAccepted.length, 1);
+});
+
+test('ignores acceptance markers forged by a human commenter', () => {
+  const marker = acceptedMarker('first@1:personal');
+  assert.equal(parseAcceptedMarkers([{ body: marker, user: { login: 'someone-else' } }]).size, 0);
+});
+
+test('counts Buffer UTC due times on the Europe/London calendar date', () => {
+  const nearMidnight = job('midnight', [['personal', '2026-08-16T23:30:00Z']]);
+  assert.equal(validateDailyPlacementLimit([nearMidnight])['2026-08-17'], 1);
 });
 
 test('classifies retryable and manual-intervention failures', () => {
