@@ -11,11 +11,13 @@ function arg(name, fallback) {
 
 const archivePath = resolve(arg('--archive', '../work/consolidated-linkedin-library.json'));
 const queuePath = resolve(arg('--queue', 'apps/linkedin-review/queue.json'));
+const bufferAuditPath = resolve(arg('--buffer-audit', '../work/buffer-test-drafts-archive.json'));
 const outputPath = resolve(arg('--output', '../work/master-linkedin-ledger.json'));
 const manifestPath = resolve(arg('--manifest', 'apps/linkedin-review/ledger-manifest.json'));
 
 const archive = JSON.parse(await readFile(archivePath, 'utf8'));
 const queue = JSON.parse(await readFile(queuePath, 'utf8'));
+const bufferAudit = await readFile(bufferAuditPath, 'utf8').then(JSON.parse).catch(() => ({ records: [] }));
 const existing = await readFile(outputPath, 'utf8').then(JSON.parse).catch(() => null);
 const normalise = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const hash = (value) => createHash('sha256').update(value).digest('hex');
@@ -52,6 +54,26 @@ for (const post of queue.posts || []) {
   });
 }
 
+for (const artifact of bufferAudit.records || []) {
+  const contentHash = hash(normalise(`${artifact.channelId} ${artifact.content}`));
+  records.set(contentHash, {
+    ...artifact,
+    recordType: 'system_test_artifact',
+    contentHash,
+    source: {
+      type: 'buffer_test_draft',
+      channelId: artifact.channelId,
+      channelName: artifact.channelName,
+      capturedAt: bufferAudit.capturedAt,
+    },
+    qa: {
+      status: 'archived_test_only',
+      publishable: false,
+      approvalEligible: false,
+    },
+  });
+}
+
 const ledger = {
   schemaVersion: 1,
   ledgerId: '222-emails-master-linkedin-ledger',
@@ -62,6 +84,7 @@ const ledger = {
     notionCalendar: 'https://app.notion.com/p/f9d99351b1ad4849af326b374d6e6b44',
     notionCommandCentre: 'https://app.notion.com/p/3abe72eb858781ac9028fde849ebb505',
     reviewProjection: queuePath,
+    bufferTestArchive: bufferAuditPath,
   },
   policy: {
     operationalSourceOfTruth: 'this ledger',
@@ -77,6 +100,7 @@ const ledger = {
     operationalPosts: queue.posts?.length || 0,
     archiveCandidates: [...records.values()].filter((record) => record.recordType === 'archive_candidate').length,
     masterIntake: [...records.values()].filter((record) => record.source?.type === 'master_intake').length,
+    bufferTestArtifacts: [...records.values()].filter((record) => record.recordType === 'system_test_artifact').length,
   },
   records: [...records.values()],
 };
