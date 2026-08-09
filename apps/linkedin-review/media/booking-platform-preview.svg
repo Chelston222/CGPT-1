@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Booking confirmation is not a return journey</title>
+  <desc id="desc">222 Emails editorial preview in navy, cream and orange.</desc>
+  <rect width="1200" height="675" fill="#12223f"/>
+  <circle cx="1080" cy="88" r="190" fill="#f36d2f" opacity=".16"/>
+  <rect x="72" y="65" width="76" height="76" rx="38" fill="none" stroke="#f36d2f" stroke-width="3"/>
+  <text x="110" y="112" fill="#f36d2f" font-family="Georgia,serif" font-size="28" font-weight="700" text-anchor="middle">222</text>
+  <text x="72" y="250" fill="#f6f0e5" font-family="Georgia,serif" font-size="72" font-weight="700">Booking confirmation</text>
+  <text x="72" y="337" fill="#f6f0e5" font-family="Georgia,serif" font-size="72" font-weight="700">is not a return journey.</text>
+  <rect x="72" y="390" width="250" height="8" rx="4" fill="#f36d2f"/>
+  <text x="72" y="486" fill="#bdc8da" font-family="Arial,sans-serif" font-size="31">Five questions separate a transaction tool</text>
+  <text x="72" y="530" fill="#bdc8da" font-family="Arial,sans-serif" font-size="31">from a client retention system.</text>
+  <text x="72" y="616" fill="#f36d2f" font-family="Arial,sans-serif" font-size="22" font-weight="700" letter-spacing="4">222 EMAILS · CLIENT RETURN SYSTEMS</text>
+</svg>
