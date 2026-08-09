@@ -1,6 +1,7 @@
 'use strict';
 
 const REPOSITORY = 'Chelston222/CGPT-1';
+const GITHUB_AUDIT_TIMEOUT_MS = 5000;
 const CHANNEL_LABELS = {
   personal: 'Chelston · Personal',
   main: '222 Emails · Main',
@@ -181,9 +182,15 @@ function statusFromIssues(post) {
 async function fetchAllIssues() {
   const pages = [1, 2, 3];
   const responses = await Promise.all(pages.map(async (page) => {
-    const response = await fetch(`https://api.github.com/repos/${REPOSITORY}/issues?state=all&per_page=100&page=${page}`);
-    if (!response.ok) throw new Error(`GitHub status ${response.status}`);
-    return response.json();
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), GITHUB_AUDIT_TIMEOUT_MS);
+    try {
+      const response = await fetch(`https://api.github.com/repos/${REPOSITORY}/issues?state=all&per_page=100&page=${page}`, { signal: controller.signal });
+      if (!response.ok) throw new Error(`GitHub status ${response.status}`);
+      return response.json();
+    } finally {
+      window.clearTimeout(timeout);
+    }
   }));
   return responses.flat().filter((item) => !item.pull_request);
 }

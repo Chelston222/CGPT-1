@@ -27,3 +27,9 @@ test('carousel YES is guarded in both the interface and server path', () => {
   assert.match(weekly, /carousel PDF is not verified and publishable/);
 });
 
+test('a slow GitHub audit cannot block the review queue indefinitely', () => {
+  assert.match(app, /GITHUB_AUDIT_TIMEOUT_MS = 5000/);
+  assert.match(app, /controller\.abort\(\)/);
+  assert.match(app, /signal: controller\.signal/);
+  assert.match(app, /Queue ready · GitHub audit unavailable/);
+});
