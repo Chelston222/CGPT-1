@@ -51,6 +51,7 @@ function normalizeItems(items) {
     quantity: intOrNull(item?.quantity) ?? 1,
     on_sale: Boolean(item?.on_sale),
     used_coupon: Boolean(item?.used_coupon),
+    used_social_discount: Boolean(item?.used_social_discount),
     used_cross_sell_discount: Boolean(item?.used_cross_sell_discount),
     used_upgrade_discount: Boolean(item?.used_upgrade_discount),
     promoted_by_affiliate: Boolean(item?.promoted_by_affiliate),
