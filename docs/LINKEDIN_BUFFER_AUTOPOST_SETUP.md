@@ -2,7 +2,7 @@
 
 ## What this system does
 
-The mobile Content Swiper presents one scheduled week at a time across all three LinkedIn accounts. Chelston presses YES or NO after reviewing the category, destination, time, copy and media. A rejection returns the item for revision. An approval opens a pre-filled GitHub record; only Chelston's final submission of that record can start the Buffer workflow.
+The mobile Content Swiper presents one scheduled week at a time across all three LinkedIn accounts. Chelston presses YES or NO after reviewing the category, destination, time, copy and media. Each choice is saved on that device and the next post appears automatically. When the week is complete, one GitHub record carries only the YES selections; only Chelston's final submission can start the Buffer workflow.
 
 Buffer can add an approved item to a queue or schedule it for:
 
@@ -20,7 +20,8 @@ The interface and repository never contain Buffer credentials.
 - Workflow: `.github/workflows/linkedin-buffer-autopost.yml`
 - Approval template: `.github/ISSUE_TEMPLATE/approved-linkedin-post.md`
 - Rejection template: `.github/ISSUE_TEMPLATE/rejected-linkedin-post.md`
-- Trigger title prefix: `[APPROVED LINKEDIN]`
+- Weekly trigger title prefix: `[APPROVED LINKEDIN WEEK]`
+- Single-post fallback prefix: `[APPROVED LINKEDIN]`
 
 ## Repository secrets
 
@@ -37,13 +38,13 @@ Never paste the API key into a GitHub issue, chat, Notion or repository file.
 
 1. Codex writes, checks and adds a live-ready post to the review queue.
 2. Chelston opens the mobile Content Swiper.
-3. NO opens a pre-filled `[REJECTED LINKEDIN]` issue. This can never trigger Buffer.
-4. YES opens a plain-language confirmation sheet.
-5. Continue opens a pre-filled `[APPROVED LINKEDIN]` issue.
-6. Chelston checks the exact version and submits the issue while signed into GitHub.
-7. GitHub validates every destination, secret, time, copy variant and media URL before the first Buffer request.
+3. YES or NO saves locally and immediately advances to the next undecided item in the selected week. NO never contacts Buffer.
+4. The weekly hand-off stays disabled until every review item has a decision and at least one item is YES.
+5. “Send approved week” opens one compact `[APPROVED LINKEDIN WEEK]` record containing locked `post-id@revision` references, not the full post copy.
+6. Chelston checks the weekly summary and submits the issue while signed into GitHub.
+7. GitHub checks the exact queue version, every post revision, destination, secret, time, copy variant and media URL for the complete week before the first Buffer request.
 8. The issue records every returned Buffer post ID and closes only after every requested destination succeeds.
-9. Failure or partial success leaves the issue open with exact recovery information.
+9. Failure or partial success leaves the issue open with exact recovery information. Never retry a partial batch blindly.
 
 ## Supported fields
 
@@ -68,10 +69,11 @@ Company-page version
 
 ## Safety behaviour
 
-- Only a newly opened issue beginning `[APPROVED LINKEDIN]` can trigger the workflow.
+- Only a newly opened issue beginning `[APPROVED LINKEDIN WEEK]` or the single-post fallback `[APPROVED LINKEDIN]` can trigger the workflow.
 - The issue author must be the repository owner.
-- The safe internal test route cannot schedule or publish.
-- Rejected issues do not match the trigger.
+- Local YES/NO choices cannot contact Buffer and persist across refreshes on the same device.
+- A queue version or revision change invalidates the affected saved approval.
+- NO selections are excluded from the batch and do not match either trigger.
 - Posts over 3,000 characters fail validation.
 - Schedules must be valid future ISO date/times.
 - Media must use HTTPS.
@@ -81,8 +83,8 @@ Company-page version
 
 ## Activation status — 9 August 2026
 
-- Personal, main and secondary non-publishing routing checks passed.
-- Every two-channel combination and the three-channel combination passed.
+- Personal, main and secondary routing checks passed before activation.
+- Every two-channel combination and the three-channel combination passed before activation.
 - The mobile Content Swiper, initial 18-post queue and three-channel workflow are implemented.
 - `BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID` is securely configured.
 - No scheduled or live post has been approved by this build.

@@ -26,7 +26,7 @@
         <div>
           <p class="eyebrow">One week at a time</p>
           <h1 id="page-title">Your week. Every post. One clear decision.</h1>
-          <p class="lede">Move through the calendar week, then swipe or press YES or NO. Every item is prepared for live scheduling, but nothing reaches Buffer until you approve its exact GitHub record.</p>
+          <p class="lede">Move through one calendar week and swipe or press YES or NO. Each choice brings up the next post automatically. When the week is complete, send every YES selection through one final approval.</p>
         </div>
         <div class="safety-lock" title="Live publishing always requires Chelston's explicit approval">
           <span aria-hidden="true">●</span> Approval lock on
@@ -34,10 +34,23 @@
       </section>
 
       <section class="metrics" aria-label="Queue summary">
-        <article><strong id="metric-review">—</strong><span>To review</span></article>
-        <article><strong id="metric-approved">—</strong><span>Approved</span></article>
+        <article><strong id="metric-review">—</strong><span>To decide</span></article>
+        <article><strong id="metric-approved">—</strong><span>YES selected</span></article>
         <article><strong id="metric-scheduled">—</strong><span>Scheduled</span></article>
         <article><strong id="metric-rejected">—</strong><span>Rejected</span></article>
+      </section>
+
+      <section class="batch-panel" id="batch-panel" aria-label="Weekly approval summary" hidden>
+        <div>
+          <p class="eyebrow">Weekly hand-off</p>
+          <h2>One confirmation. The whole approved week.</h2>
+          <p id="batch-status">0 YES · 0 NO · 0 to decide</p>
+        </div>
+        <div class="batch-actions">
+          <button class="send-week" id="send-week" type="button" disabled>Finish your decisions</button>
+          <button class="clear-week" id="clear-week" type="button" disabled>Clear week choices</button>
+        </div>
+        <p class="batch-safety"><strong>Protected:</strong> every post, revision, account and scheduled time is checked before Buffer receives the first item. One failure stops the remaining work and records exactly what Buffer already accepted.</p>
       </section>
 
       <section class="week-control" aria-labelledby="week-range">
@@ -82,7 +95,7 @@
             <span><strong>NO</strong><small>Return for revision</small></span>
           </button>
           <button class="decision yes" id="approve-button" type="button">
-            <span><strong>YES</strong><small>Approve this version</small></span>
+            <span><strong>YES</strong><small>Add to approved week</small></span>
             <span class="decision-symbol" aria-hidden="true">✓</span>
           </button>
         </div>

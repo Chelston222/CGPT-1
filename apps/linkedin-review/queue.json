@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-09T16:30:00+01:00",
+  "generatedAt": "2026-08-09T12:15:00+01:00",
   "timezone": "Europe/London",
-  "approvalRule": "No queue item is permission to publish. Only a repository-owner GitHub issue beginning [APPROVED LINKEDIN] is explicit approval.",
+  "approvalRule": "No queue item or saved YES selection is permission to publish. Only a repository-owner GitHub issue beginning [APPROVED LINKEDIN WEEK] or [APPROVED LINKEDIN] is explicit approval.",
   "posts": [
     {
       "id": "tte-li-001",

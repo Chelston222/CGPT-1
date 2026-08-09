@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   publish:
-    if: startsWith(github.event.issue.title, '[APPROVED LINKEDIN]') && github.event.issue.user.login == github.repository_owner
+    if: (startsWith(github.event.issue.title, '[APPROVED LINKEDIN]') || startsWith(github.event.issue.title, '[APPROVED LINKEDIN WEEK]')) && github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
     steps:
       - name: Check out request checks
@@ -26,59 +26,62 @@ jobs:
         with:
           script: |
             const path = require('node:path');
+            const fs = require('node:fs');
             const {
               buildCreatePostMutation,
               validateRequest,
             } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
+            const { validateWeeklyBatch } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
 
             const results = [];
-            let request;
+            let jobs = [];
+            let batch = null;
 
             try {
-              // This validates every target, secret, schedule, copy variant and media URL
-              // before the first Buffer mutation. Buffer does not offer a transaction
-              // across channels, so this removes avoidable partial-send failures.
-              request = validateRequest(context.payload.issue.body || '', process.env);
-
-              for (const channel of request.channels) {
-                const query = buildCreatePostMutation(channel, request.mode, request.mediaUrl);
-                const response = await fetch('https://api.buffer.com', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.BUFFER_API_KEY}`,
-                  },
-                  body: JSON.stringify({ query }),
-                });
-
-                let payload;
-                try {
-                  payload = await response.json();
-                } catch {
-                  throw new Error(`${channel.name}: Buffer returned a non-JSON response.`);
-                }
-
-                if (!response.ok) throw new Error(`${channel.name}: Buffer HTTP ${response.status}.`);
-                if (payload.errors?.length) {
-                  throw new Error(`${channel.name}: ${payload.errors.map((error) => error.message).join('; ')}`);
-                }
-
-                const result = payload.data?.createPost;
-                if (!result) throw new Error(`${channel.name}: Buffer returned no createPost result.`);
-                if (result.message) throw new Error(`${channel.name}: ${result.message}`);
-                if (!result.post?.id) throw new Error(`${channel.name}: Buffer did not return a post ID.`);
-
-                results.push({
-                  target: channel.target,
-                  name: channel.name,
-                  postId: result.post.id,
-                  dueAt: channel.dueAt,
-                });
+              const isWeekly = context.payload.issue.title.startsWith('[APPROVED LINKEDIN WEEK]');
+              if (isWeekly) {
+                const queue = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/queue.json'), 'utf8'));
+                batch = validateWeeklyBatch(context.payload.issue.body || '', queue, process.env);
+                jobs = batch.jobs;
+              } else {
+                const request = validateRequest(context.payload.issue.body || '', process.env);
+                jobs = [{ post: { id: request.postId, revision: request.revision, category: request.category }, request }];
               }
 
-              const status = request.mode === 'draft' ? 'buffer_draft' : 'scheduled';
+              // All jobs are fully validated above before the first Buffer request.
+              for (const job of jobs) {
+                for (const channel of job.request.channels) {
+                  const query = buildCreatePostMutation(channel, job.request.mode, job.request.mediaUrl);
+                  const response = await fetch('https://api.buffer.com', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${process.env.BUFFER_API_KEY}`,
+                    },
+                    body: JSON.stringify({ query }),
+                  });
+
+                  let payload;
+                  try {
+                    payload = await response.json();
+                  } catch {
+                    throw new Error(`${job.post.id} / ${channel.name}: Buffer returned a non-JSON response.`);
+                  }
+
+                  if (!response.ok) throw new Error(`${job.post.id} / ${channel.name}: Buffer HTTP ${response.status}.`);
+                  if (payload.errors?.length) throw new Error(`${job.post.id} / ${channel.name}: ${payload.errors.map((error) => error.message).join('; ')}`);
+
+                  const result = payload.data?.createPost;
+                  if (!result) throw new Error(`${job.post.id} / ${channel.name}: Buffer returned no createPost result.`);
+                  if (result.message) throw new Error(`${job.post.id} / ${channel.name}: ${result.message}`);
+                  if (!result.post?.id) throw new Error(`${job.post.id} / ${channel.name}: Buffer did not return a post ID.`);
+
+                  results.push({ queueId: job.post.id, revision: job.post.revision, target: channel.target, name: channel.name, postId: result.post.id, dueAt: channel.dueAt });
+                }
+              }
+
               const resultLines = results.map((result) =>
-                `- ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` — ${result.dueAt}` : ''}`,
+                `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` — ${result.dueAt}` : ''}`,
               );
 
               await github.rest.issues.createComment({
@@ -88,17 +91,12 @@ jobs:
                 body: [
                   '✅ Buffer accepted every requested destination.',
                   '',
-                  `- Audit status: **${status}**`,
-                  `- Queue post: **${request.postId || 'legacy issue'}**`,
-                  `- Revision: **${request.revision}**`,
-                  `- Category: **${request.category}**`,
-                  `- Mode: **${request.mode}**`,
+                  '- Audit status: **scheduled**',
+                  batch ? `- Approved week: **${batch.weekStart} to ${batch.weekEnd}**` : `- Queue post: **${jobs[0].post.id || 'legacy issue'}**`,
+                  `- Locked items: **${jobs.length}**`,
                   ...resultLines,
-                  request.mediaUrl ? '- Media: attached from the explicitly approved HTTPS URL' : '- Media: none',
                   '',
-                  request.mode === 'draft'
-                    ? 'This validation created Buffer drafts only. Nothing was scheduled or published.'
-                    : 'This records Buffer acceptance, not proof of LinkedIn publication. Publication must be recorded separately.',
+                  'This records Buffer acceptance, not proof of LinkedIn publication. Publication must be recorded separately.',
                 ].join('\n'),
               });
 
@@ -110,7 +108,7 @@ jobs:
               });
             } catch (error) {
               const partial = results.length
-                ? results.map((result) => `- ${result.name}: Buffer post ID \`${result.postId}\``).join('\n')
+                ? results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\``).join('\n')
                 : '- None';
 
               await github.rest.issues.createComment({
@@ -134,7 +132,9 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                title: context.payload.issue.title.replace('[APPROVED LINKEDIN]', '[FAILED LINKEDIN]'),
+                title: context.payload.issue.title
+                  .replace('[APPROVED LINKEDIN WEEK]', '[FAILED LINKEDIN WEEK]')
+                  .replace('[APPROVED LINKEDIN]', '[FAILED LINKEDIN]'),
               });
               core.setFailed(error.message);
             }

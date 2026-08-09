@@ -16,6 +16,8 @@ const state = {
   filter: 'review',
   category: 'all',
   decision: null,
+  queue: null,
+  decisions: {},
   weeks: [],
   weekIndex: 0,
 };
@@ -49,10 +51,39 @@ const elements = {
   weekMain: document.querySelector('#week-main'),
   weekSecondary: document.querySelector('#week-secondary'),
   weekTotal: document.querySelector('#week-total'),
+  batchPanel: document.querySelector('#batch-panel'),
+  batchStatus: document.querySelector('#batch-status'),
+  sendWeek: document.querySelector('#send-week'),
+  clearWeek: document.querySelector('#clear-week'),
 };
 
-function escapeForIssue(value) {
-  return String(value || '').trim();
+function storageKey() {
+  return `content-swiper:${REPOSITORY}:${state.queue?.generatedAt || 'unknown'}`;
+}
+
+function loadDecisions() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey()) || '{}');
+    state.decisions = Object.fromEntries(Object.entries(saved).filter(([id, decision]) => {
+      const post = state.posts.find((item) => item.id === id);
+      return post && Number(decision.revision) === Number(post.revision);
+    }));
+  } catch {
+    state.decisions = {};
+  }
+}
+
+function saveDecisions() {
+  localStorage.setItem(storageKey(), JSON.stringify(state.decisions));
+}
+
+function localDecision(post) {
+  return state.decisions[post.id]?.decision || null;
+}
+
+function displayStatus(post) {
+  if (post.resolvedStatus !== 'review') return post.resolvedStatus;
+  return localDecision(post) === 'approve' ? 'yes selected' : localDecision(post) === 'reject' ? 'no selected' : 'review';
 }
 
 function displayCategory(category) {
@@ -105,23 +136,37 @@ function postIsInWeek(post, start) {
 }
 
 function titleHasPostId(issue, postId) {
-  return issue.title.includes(postId) || String(issue.body || '').includes(`POST_ID: ${postId}`);
+  const body = String(issue.body || '');
+  if (issue.title.includes('LINKEDIN WEEK]')) {
+    return batchLineHasPost(body, 'APPROVED_ITEMS', postId);
+  }
+  return issue.title.includes(postId) || body.includes(`POST_ID: ${postId}`);
+}
+
+function batchLineHasPost(body, field, postId) {
+  const line = String(body || '').match(new RegExp(`^${field}:\\s*(.*)$`, 'im'))?.[1] || '';
+  return line.split(',').some((item) => item.trim().startsWith(`${postId}@`));
 }
 
 function statusFromIssues(post) {
+  const weeklyRejection = state.issues
+    .filter((issue) => issue.title.includes('LINKEDIN WEEK]') && batchLineHasPost(issue.body, 'REJECTED_ITEMS', post.id))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+  if (weeklyRejection) return 'rejected';
+
   const matching = state.issues
-    .filter((issue) => titleHasPostId(issue, post.id))
+    .filter((issue) => titleHasPostId(issue, post.id) && !/^MODE:\s*draft$/im.test(String(issue.body || '')))
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   if (!matching.length) return post.status || 'review';
 
   const published = matching.find((issue) => issue.title.startsWith('[PUBLISHED LINKEDIN]'));
   if (published) return 'published';
-  const failed = matching.find((issue) => issue.title.startsWith('[FAILED LINKEDIN]'));
+  const failed = matching.find((issue) => issue.title.startsWith('[FAILED LINKEDIN]') || issue.title.startsWith('[FAILED LINKEDIN WEEK]'));
   if (failed) return 'failed';
 
   const latest = matching[0];
   if (latest.title.startsWith('[REJECTED LINKEDIN]')) return 'rejected';
-  if (latest.title.startsWith('[APPROVED LINKEDIN]')) {
+  if (latest.title.startsWith('[APPROVED LINKEDIN]') || latest.title.startsWith('[APPROVED LINKEDIN WEEK]')) {
     if (latest.state === 'closed') return 'scheduled';
     return 'approved';
   }
@@ -143,7 +188,9 @@ async function load() {
   const queueResponse = await fetch('queue.json', { cache: 'no-store' });
   if (!queueResponse.ok) throw new Error('The review queue could not be loaded.');
   const queue = await queueResponse.json();
+  state.queue = queue;
   state.posts = queue.posts;
+  loadDecisions();
 
   try {
     state.issues = await fetchAllIssues();
@@ -176,9 +223,10 @@ function applyFilters() {
     const selectedWeek = state.weeks[state.weekIndex];
     const weekMatches = selectedWeek && postIsInWeek(post, selectedWeek);
     const categoryMatches = state.category === 'all' || post.category === state.category;
+    const hasDecision = Boolean(localDecision(post));
     const filterMatches = state.filter === 'all'
-      || (state.filter === 'review' && post.resolvedStatus === 'review')
-      || (state.filter === 'decided' && post.resolvedStatus !== 'review');
+      || (state.filter === 'review' && post.resolvedStatus === 'review' && !hasDecision)
+      || (state.filter === 'decided' && (post.resolvedStatus !== 'review' || hasDecision));
     return weekMatches && categoryMatches && filterMatches;
   });
   state.index = Math.min(state.index, Math.max(0, state.filtered.length - 1));
@@ -190,8 +238,13 @@ function updateMetrics() {
   const counts = Object.fromEntries(STATUS_ORDER.map((status) => [status, 0]));
   const selectedWeek = state.weeks[state.weekIndex];
   const weekPosts = state.posts.filter((post) => selectedWeek && postIsInWeek(post, selectedWeek));
-  for (const post of weekPosts) counts[post.resolvedStatus] = (counts[post.resolvedStatus] || 0) + 1;
-  document.querySelector('#metric-review').textContent = counts.review;
+  for (const post of weekPosts) {
+    const decision = localDecision(post);
+    if (post.resolvedStatus === 'review' && decision === 'approve') counts.approved += 1;
+    else if (post.resolvedStatus === 'review' && decision === 'reject') counts.rejected += 1;
+    else counts[post.resolvedStatus] = (counts[post.resolvedStatus] || 0) + 1;
+  }
+  document.querySelector('#metric-review').textContent = weekPosts.filter((post) => post.resolvedStatus === 'review' && !localDecision(post)).length;
   document.querySelector('#metric-approved').textContent = counts.approved;
   document.querySelector('#metric-scheduled').textContent = counts.scheduled + counts.published;
   document.querySelector('#metric-rejected').textContent = counts.rejected + counts.failed;
@@ -199,6 +252,7 @@ function updateMetrics() {
 
 function render() {
   renderWeek();
+  renderBatchPanel();
   renderCurrentPost();
   renderQueue();
   elements.position.textContent = state.filtered.length ? `${state.index + 1} of ${state.filtered.length}` : '0 of 0';
@@ -233,14 +287,34 @@ function renderWeek() {
   elements.nextWeek.disabled = state.weekIndex === state.weeks.length - 1;
 }
 
+function weekDecisionSummary() {
+  const selectedWeek = state.weeks[state.weekIndex];
+  const posts = state.posts.filter((post) => selectedWeek && postIsInWeek(post, selectedWeek) && post.resolvedStatus === 'review');
+  const yes = posts.filter((post) => localDecision(post) === 'approve');
+  const no = posts.filter((post) => localDecision(post) === 'reject');
+  const remaining = posts.filter((post) => !localDecision(post));
+  return { posts, yes, no, remaining };
+}
+
+function renderBatchPanel() {
+  const summary = weekDecisionSummary();
+  elements.batchPanel.hidden = !state.weeks[state.weekIndex] || !summary.posts.length;
+  elements.batchStatus.textContent = `${summary.yes.length} YES · ${summary.no.length} NO · ${summary.remaining.length} to decide`;
+  elements.sendWeek.disabled = summary.remaining.length > 0 || summary.yes.length === 0;
+  elements.sendWeek.textContent = summary.remaining.length
+    ? `Decide ${summary.remaining.length} more`
+    : summary.yes.length ? `Send ${summary.yes.length} approved ${summary.yes.length === 1 ? 'post' : 'posts'}` : 'Nothing approved';
+  elements.clearWeek.disabled = summary.yes.length + summary.no.length === 0;
+}
+
 function createPostContent(post) {
   const fragment = elements.template.content.cloneNode(true);
   const primaryCopy = post.copy.default || post.copy[post.targets[0]];
 
   fragment.querySelector('.category-pill').textContent = displayCategory(post.category);
   const statePill = fragment.querySelector('.state-pill');
-  statePill.textContent = post.resolvedStatus;
-  statePill.dataset.state = post.resolvedStatus;
+  statePill.textContent = displayStatus(post);
+  statePill.dataset.state = localDecision(post) || post.resolvedStatus;
   fragment.querySelector('.post-id').textContent = `${post.id} · revision ${post.revision}`;
   fragment.querySelector('.copy-count').textContent = `${primaryCopy.length.toLocaleString('en-GB')} / 3,000 characters`;
 
@@ -301,7 +375,10 @@ function renderCurrentPost() {
   if (!post) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.innerHTML = '<p><strong>Nothing is waiting here.</strong><br>Try another filter or refresh the audit.</p>';
+    const summary = weekDecisionSummary();
+    empty.innerHTML = summary.posts.length && !summary.remaining.length
+      ? '<p><strong>This week is fully decided.</strong><br>Check the weekly summary, then send all YES selections together.</p>'
+      : '<p><strong>Nothing is waiting here.</strong><br>Try another filter or refresh the audit.</p>';
     elements.card.append(empty);
     elements.controls.hidden = true;
     elements.swipeHint.hidden = true;
@@ -324,7 +401,7 @@ function renderQueue() {
     button.querySelector('.queue-number').textContent = String(index + 1).padStart(2, '0');
     button.querySelector('strong').textContent = post.title;
     button.querySelector('small').textContent = `${displayCategory(post.category)} · ${post.targets.map((target) => CHANNEL_LABELS[target]).join(' + ')}`;
-    button.querySelector('.queue-state').textContent = post.resolvedStatus;
+    button.querySelector('.queue-state').textContent = displayStatus(post);
     button.addEventListener('click', () => {
       state.index = index;
       render();
@@ -334,34 +411,25 @@ function renderQueue() {
   });
 }
 
-function issueBody(post, decision) {
-  const lines = [
-    `POST_ID: ${post.id}`,
-    `REVISION: ${post.revision}`,
-    `CATEGORY: ${post.category}`,
-    `TARGETS: ${post.targets.join(',')}`,
-  ];
-
-  if (decision === 'approve') {
-    lines.push(`MODE: ${post.mode}`);
-    const schedules = Object.entries(post.scheduledAt);
-    if (schedules.length === 1) lines.push(`SCHEDULE_AT: ${schedules[0][1]}`);
-    else schedules.forEach(([target, value]) => lines.push(`SCHEDULE_AT_${target.toUpperCase()}: ${value}`));
-    lines.push(`MEDIA_URL: ${post.mediaUrl || ''}`, '---', post.copy.default || '');
-    for (const target of post.targets) {
-      if (post.copy[target]) lines.push(`---${target.toUpperCase()}---`, post.copy[target]);
-    }
-  } else {
-    lines.push('DECISION: rejected', '---', elements.rejectionNote.value.trim() || 'Please revise this post before it returns to the queue.');
-  }
-  return lines.join('\n');
-}
-
-function githubIssueUrl(post, decision) {
-  const prefix = decision === 'approve' ? '[APPROVED LINKEDIN]' : '[REJECTED LINKEDIN]';
+function weeklyIssueUrl() {
+  const selectedWeek = state.weeks[state.weekIndex];
+  const summary = weekDecisionSummary();
+  const approved = summary.yes.map((post) => `${post.id}@${post.revision}`).join(',');
+  const rejected = summary.no.map((post) => `${post.id}@${post.revision}`).join(',');
+  const body = [
+    `BATCH_ID: 222-linkedin-week-${selectedWeek}`,
+    `WEEK_START: ${selectedWeek}`,
+    `QUEUE_SCHEMA: ${state.queue.schemaVersion}`,
+    `QUEUE_GENERATED_AT: ${state.queue.generatedAt}`,
+    `APPROVED_ITEMS: ${approved}`,
+    `REJECTED_ITEMS: ${rejected}`,
+    `DECISION_AT: ${new Date().toISOString()}`,
+    '---',
+    'I explicitly approve only the locked APPROVED_ITEMS above for their exact copy, target channels and scheduled times in queue.json. Rejected items must not be sent to Buffer.',
+  ].join('\n');
   const params = new URLSearchParams({
-    title: `${prefix} ${post.id} — ${post.title}`,
-    body: issueBody(post, decision),
+    title: `[APPROVED LINKEDIN WEEK] ${selectedWeek} — ${summary.yes.length} approved`,
+    body,
   });
   return `https://github.com/${REPOSITORY}/issues/new?${params.toString()}`;
 }
@@ -371,24 +439,63 @@ function openDecision(decision) {
   if (!post) return;
   state.decision = decision;
   const approved = decision === 'approve';
-  elements.sheetEyebrow.textContent = approved ? 'Explicit approval' : 'Revision route';
-  elements.sheetTitle.textContent = approved ? 'Approve this exact version?' : 'Return this post for revision?';
+  elements.sheetEyebrow.textContent = approved ? 'YES selection' : 'Revision route';
+  elements.sheetTitle.textContent = approved ? 'Add this exact version to YES?' : 'Return this post for revision?';
   elements.sheetCopy.textContent = approved
-    ? `${post.id} will target ${post.targets.map((target) => CHANNEL_LABELS[target]).join(' and ')} at the shown time.`
-    : `${post.id} will be recorded as rejected. Buffer will not be contacted.`;
+    ? `${post.id} will be included in the weekly approval. The next post will appear immediately.`
+    : `${post.id} will be held for revision. The next post will appear immediately.`;
   elements.feedbackField.hidden = approved;
-  elements.sheetAction.textContent = approved ? 'Approve and continue to GitHub' : 'Record NO in GitHub';
+  elements.sheetAction.textContent = approved ? 'Save YES · show next' : 'Save NO · show next';
   elements.sheetAction.classList.toggle('reject', !approved);
   elements.safetyNote.textContent = approved
-    ? 'Safety gate: the next page is a pre-filled GitHub approval record. Review it, then press “Submit new issue”. Only that final owner action can start the Buffer workflow.'
-    : 'Rejection is safe: the record uses a different title and never triggers the Buffer workflow.';
+    ? 'This saves only on this device. Buffer is contacted only after every item is decided and you submit the single weekly GitHub approval.'
+    : 'NO never contacts Buffer. Your note stays with this device for the revision pass.';
   elements.sheet.showModal();
 }
 
 function commitDecision() {
   const post = state.filtered[state.index];
   if (!post || !state.decision) return;
-  window.location.href = githubIssueUrl(post, state.decision);
+  state.decisions[post.id] = {
+    decision: state.decision,
+    note: state.decision === 'reject' ? elements.rejectionNote.value.trim() : '',
+    revision: post.revision,
+    at: new Date().toISOString(),
+  };
+  saveDecisions();
+  elements.sheet.close();
+  elements.rejectionNote.value = '';
+  elements.card.classList.add(state.decision === 'approve' ? 'exit-right' : 'exit-left');
+  state.decision = null;
+  setTimeout(() => {
+    elements.card.classList.remove('exit-right', 'exit-left');
+    state.index = 0;
+    applyFilters();
+    elements.card.focus({ preventScroll: true });
+  }, 190);
+}
+
+function openWeeklySend() {
+  const selectedWeek = state.weeks[state.weekIndex];
+  const summary = weekDecisionSummary();
+  if (!selectedWeek || summary.remaining.length || !summary.yes.length) return;
+  state.decision = 'send_week';
+  elements.sheetEyebrow.textContent = 'Final weekly approval';
+  elements.sheetTitle.textContent = `Send ${summary.yes.length} YES ${summary.yes.length === 1 ? 'post' : 'posts'} to GitHub?`;
+  elements.sheetCopy.textContent = `${weekLabel(selectedWeek)} · ${summary.yes.reduce((total, post) => total + post.targets.length, 0)} Buffer destinations. ${summary.no.length} NO selections stay out.`;
+  elements.feedbackField.hidden = true;
+  elements.sheetAction.textContent = 'Open one weekly approval';
+  elements.sheetAction.classList.remove('reject');
+  elements.safetyNote.textContent = 'GitHub will show one compact, locked weekly record. Check it and press “Submit new issue”. That final owner action starts scheduling after the complete week passes preflight.';
+  elements.sheet.showModal();
+}
+
+function commitSheetAction() {
+  if (state.decision === 'send_week') {
+    window.location.href = weeklyIssueUrl();
+    return;
+  }
+  commitDecision();
 }
 
 document.querySelectorAll('.filter').forEach((button) => {
@@ -420,7 +527,16 @@ elements.nextWeek.addEventListener('click', () => {
 });
 elements.approve.addEventListener('click', () => openDecision('approve'));
 elements.reject.addEventListener('click', () => openDecision('reject'));
-elements.sheetAction.addEventListener('click', commitDecision);
+elements.sheetAction.addEventListener('click', commitSheetAction);
+elements.sendWeek.addEventListener('click', openWeeklySend);
+elements.clearWeek.addEventListener('click', () => {
+  const selectedWeek = state.weeks[state.weekIndex];
+  if (!selectedWeek || !window.confirm(`Clear your saved YES/NO choices for ${weekLabel(selectedWeek)}?`)) return;
+  for (const post of state.posts.filter((item) => postIsInWeek(item, selectedWeek))) delete state.decisions[post.id];
+  saveDecisions();
+  state.index = 0;
+  applyFilters();
+});
 elements.refresh.addEventListener('click', () => load().catch(showError));
 
 let touchStart = null;
