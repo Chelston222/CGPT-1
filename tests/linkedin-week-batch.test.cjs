@@ -82,24 +82,37 @@ test('fails closed instead of sending a carousel as a text-only post', () => {
   };
   assert.throws(
     () => validateWeeklyBatch(body({ items: 'tte-li-001@3' }), carouselQueue, ENV, Date.parse('2026-08-09T00:00:00Z')),
-    /carousel PDF is not verified and publishable/,
+    /carousel PDF and public thumbnail are not verified and publishable/,
   );
 });
 
-test('accepts a compact 105-item approval list', () => {
+test('accepts a compact 70-placement week when no day exceeds ten', () => {
   const largeQueue = {
     ...queue,
-    posts: Array.from({ length: 105 }, (_, index) => ({
+    posts: Array.from({ length: 70 }, (_, index) => ({
       id: `post-${String(index + 1).padStart(3, '0')}`,
       revision: 1,
       category: 'education',
       mode: 'schedule',
       targets: ['personal'],
-      scheduledAt: { personal: '2026-08-17T08:15:00+01:00' },
+      scheduledAt: { personal: `2026-08-${String(17 + Math.floor(index / 10)).padStart(2, '0')}T${String(8 + (index % 10)).padStart(2, '0')}:00:00+01:00` },
       copy: { default: `Useful post ${index + 1}` },
     })),
   };
   const items = largeQueue.posts.map((post) => `${post.id}@1`).join(',');
   const result = validateWeeklyBatch(body({ items }), largeQueue, ENV, Date.parse('2026-08-09T00:00:00Z'));
-  assert.equal(result.jobs.length, 105);
+  assert.equal(result.jobs.length, 70);
+});
+
+test('rejects eleven account placements on one day before Buffer is contacted', () => {
+  const posts = Array.from({ length: 11 }, (_, index) => ({
+    id: `post-${index}`, revision: 1, category: 'education', mode: 'schedule',
+    targets: ['personal'], scheduledAt: { personal: '2026-08-17T08:15:00+01:00' },
+    copy: { default: `Useful post ${index}` },
+  }));
+  const overloaded = { ...queue, posts };
+  assert.throws(
+    () => validateWeeklyBatch(body({ items: posts.map((post) => `${post.id}@1`).join(',') }), overloaded, ENV, Date.parse('2026-08-09T00:00:00Z')),
+    /maximum is 10/,
+  );
 });

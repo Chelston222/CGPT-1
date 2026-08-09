@@ -109,6 +109,12 @@ function validateRequest(body, env = {}, now = Date.now()) {
   if (!env.BUFFER_API_KEY) throw new Error('Missing BUFFER_API_KEY repository secret.');
 
   const mediaUrl = validateHttpsUrl(header.MEDIA_URL);
+  const mediaKind = (header.MEDIA_KIND || (mediaUrl && /\.pdf(?:$|\?)/i.test(mediaUrl) ? 'document' : 'image')).toLowerCase();
+  if (!['image', 'document'].includes(mediaKind)) throw new Error('MEDIA_KIND must be image or document.');
+  const documentTitle = String(header.DOCUMENT_TITLE || '').trim();
+  if (mediaUrl && mediaKind === 'document' && !documentTitle) throw new Error('DOCUMENT_TITLE is required for a LinkedIn PDF carousel.');
+  const documentThumbnailUrl = mediaKind === 'document' ? validateHttpsUrl(header.DOCUMENT_THUMBNAIL_URL, 'DOCUMENT_THUMBNAIL_URL') : null;
+  if (mediaUrl && mediaKind === 'document' && !documentThumbnailUrl) throw new Error('DOCUMENT_THUMBNAIL_URL is required for a LinkedIn PDF carousel.');
   const channels = targets.map((target) => {
     const secretName = TARGET_SECRET_NAMES[target];
     const id = env[secretName];
@@ -128,11 +134,14 @@ function validateRequest(body, env = {}, now = Date.now()) {
     category: header.CATEGORY || 'uncategorised',
     mode,
     mediaUrl,
+    mediaKind,
+    documentTitle,
+    documentThumbnailUrl,
     channels,
   };
 }
 
-function buildCreatePostMutation(channel, mode, mediaUrl = null) {
+function buildCreatePostMutation(channel, mode, media = null) {
   const fields = [
     `text: ${JSON.stringify(channel.text)}`,
     `channelId: ${JSON.stringify(channel.id)}`,
@@ -147,8 +156,11 @@ function buildCreatePostMutation(channel, mode, mediaUrl = null) {
     if (mode === 'draft') fields.push('saveToDraft: true');
   }
 
-  if (mediaUrl) {
-    fields.push(`assets: [{ image: { url: ${JSON.stringify(mediaUrl)} } }]`);
+  const normalisedMedia = typeof media === 'string' ? { url: media, kind: 'image' } : media;
+  if (normalisedMedia?.url && normalisedMedia.kind === 'document') {
+    fields.push(`assets: [{ document: { url: ${JSON.stringify(normalisedMedia.url)}, title: ${JSON.stringify(normalisedMedia.title)}, thumbnailUrl: ${JSON.stringify(normalisedMedia.thumbnailUrl)} } }]`);
+  } else if (normalisedMedia?.url) {
+    fields.push(`assets: [{ image: { url: ${JSON.stringify(normalisedMedia.url)} } }]`);
   }
 
   return `

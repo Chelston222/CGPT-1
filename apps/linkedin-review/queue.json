@@ -2,6 +2,17 @@
   "schemaVersion": 2,
   "generatedAt": "2026-08-09T12:34:10+01:00",
   "timezone": "Europe/London",
+  "masterLedger": {
+    "id": "222-emails-master-linkedin-ledger",
+    "projection": "live_ready_human_review",
+    "manifest": "ledger-manifest.json"
+  },
+  "capacityPolicy": {
+    "maximumAccountPlacementsPerDay": 10,
+    "maximumAccountPlacementsPerWeek": 70,
+    "bufferFreeScheduledPerChannel": 10,
+    "releaseCheckHours": 4
+  },
   "approvalRule": "No queue item or saved YES selection is permission to publish. Only a repository-owner GitHub issue beginning [APPROVED LINKEDIN WEEK] or [APPROVED LINKEDIN] is explicit approval.",
   "posts": [
     {
