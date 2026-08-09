@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
 
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'apps/linkedin-review/index.html'), 'utf8');
@@ -58,4 +59,27 @@ test('daily UI capacity uses ten total account placements', () => {
   assert.equal(queue.capacityPolicy.maximumAccountPlacementsPerWeek, 70);
   assert.match(html, /10 total account placements per day/);
   assert.match(app, /\$\{count\}\/10/);
+});
+
+test('weekly hand-off has explicit send and read-only refresh controls', () => {
+  assert.match(html, /Send approved week to Buffer/);
+  assert.match(html, /Refresh status/);
+  assert.match(app, /Open final scheduling confirmation/);
+  assert.match(app, /complete week is then checked and released to Buffer/);
+});
+
+test('every live-ready carousel has a packaged PDF and public thumbnail', () => {
+  const carousels = queue.posts.filter((post) => post.format === 'carousel');
+  assert.ok(carousels.length > 0);
+  for (const post of carousels) {
+    assert.equal(post.carousel.readiness, 'ready');
+    assert.match(post.mediaUrl, /^https:\/\/222emails-review-desk\.netlify\.app\/.+\.pdf$/);
+    assert.match(post.documentThumbnailUrl, /^https:\/\/222emails-review-desk\.netlify\.app\/.+\.jpg$/);
+    assert.ok(post.carousel.pdfBytes > 0 && post.carousel.pdfBytes < 100 * 1024 * 1024);
+    const pdfPath = path.join(root, 'apps/linkedin-review', new URL(post.mediaUrl).pathname.replace(/^\//, ''));
+    const thumbnailPath = path.join(root, 'apps/linkedin-review', new URL(post.documentThumbnailUrl).pathname.replace(/^\//, ''));
+    assert.equal(fs.statSync(pdfPath).size, post.carousel.pdfBytes);
+    assert.equal(createHash('sha256').update(fs.readFileSync(pdfPath)).digest('hex'), post.carousel.pdfSha256);
+    assert.ok(fs.statSync(thumbnailPath).size > 0);
+  }
 });

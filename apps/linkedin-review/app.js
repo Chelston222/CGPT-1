@@ -359,7 +359,7 @@ function renderBatchPanel() {
     ? `Attach ${awaitingMedia.length} final ${awaitingMedia.length === 1 ? 'PDF' : 'PDFs'}`
     : summary.remaining.length
     ? `Decide ${summary.remaining.length} more`
-    : summary.yes.length ? `Send ${summary.yes.length} approved ${summary.yes.length === 1 ? 'post' : 'posts'}` : 'Nothing approved';
+    : summary.yes.length ? 'Send approved week to Buffer' : 'Nothing approved';
   elements.clearWeek.disabled = summary.yes.length + summary.no.length === 0;
 }
 
@@ -578,12 +578,12 @@ function openWeeklySend() {
   if (!selectedWeek || summary.remaining.length || !summary.yes.length || summary.yes.some((post) => !carouselIsPublishable(post))) return;
   state.decision = 'send_week';
   elements.sheetEyebrow.textContent = 'Final weekly approval';
-  elements.sheetTitle.textContent = `Send ${summary.yes.length} YES ${summary.yes.length === 1 ? 'post' : 'posts'} to GitHub?`;
+  elements.sheetTitle.textContent = 'Send approved week to Buffer?';
   elements.sheetCopy.textContent = `${weekLabel(selectedWeek)} · ${summary.yes.reduce((total, post) => total + post.targets.length, 0)} Buffer destinations. ${summary.no.length} NO selections stay out.`;
   elements.feedbackField.hidden = true;
-  elements.sheetAction.textContent = 'Open one weekly approval';
+  elements.sheetAction.textContent = 'Open final scheduling confirmation';
   elements.sheetAction.classList.remove('reject');
-  elements.safetyNote.textContent = 'GitHub will show one compact, locked weekly record. Check it and press “Submit new issue”. That final owner action starts scheduling after the complete week passes preflight.';
+  elements.safetyNote.textContent = 'One compact GitHub confirmation will open. Press “Submit new issue” there to give the final owner approval. The complete week is then checked and released to Buffer without opening a separate issue for each post.';
   elements.sheet.showModal();
 }
 

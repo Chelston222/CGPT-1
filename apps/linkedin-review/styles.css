@@ -57,7 +57,8 @@ button { cursor: pointer; }
 
 .brand { display: flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; font-weight: 760; letter-spacing: -.02em; }
 .brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid rgba(255,255,255,.32); border-radius: 50%; color: var(--orange); font-family: Georgia, serif; font-weight: 800; }
-.icon-button { width: 42px; height: 42px; color: white; background: transparent; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; font-size: 24px; }
+.icon-button { min-height: 42px; display: flex; align-items: center; gap: 7px; padding: 0 13px; color: white; background: transparent; border: 1px solid rgba(255,255,255,.3); border-radius: 999px; font-size: .76rem; font-weight: 780; }
+.icon-button span[aria-hidden] { font-size: 1.35rem; line-height: 1; }
 .icon-button:focus-visible, button:focus-visible, select:focus-visible, textarea:focus-visible, .review-card:focus-visible { outline: 3px solid #ffb38f; outline-offset: 3px; }
 
 .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 50px 0 90px; }
@@ -250,6 +251,7 @@ textarea { width: 100%; resize: vertical; padding: 13px; color: var(--ink); back
 
 @media (max-width: 680px) {
   .shell { width: min(100% - 24px, 560px); padding-top: 34px; }
+  .icon-button { padding: 0 11px; }
   .intro { display: block; }
   .safety-lock { width: max-content; margin-top: 20px; }
   .metrics { grid-template-columns: repeat(2, 1fr); }
