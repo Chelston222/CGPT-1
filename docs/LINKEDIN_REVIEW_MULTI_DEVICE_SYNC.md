@@ -16,7 +16,7 @@ YES/NO editorial decisions now have a central, private state so Chelston can rev
 
 - Browser add-on: `apps/linkedin-review/sync.js`
 - Server endpoint: `/api/review-decisions`
-- Netlify function: `apps/linkedin-review/netlify/functions/review-decisions.mts`
+- Netlify function: `apps/linkedin-review/netlify/functions/review-decisions.mjs`
 - Storage: Netlify Blobs with strong consistency
 - Authentication: secret `REVIEW_SYNC_TOKEN` stored in Netlify production environment variables
 - Local fallback: the existing browser `localStorage` remains available if remote sync is temporarily unavailable
