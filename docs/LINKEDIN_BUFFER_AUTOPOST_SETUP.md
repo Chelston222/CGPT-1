@@ -1,105 +1,88 @@
-# LinkedIn Autopost via ChatGPT, GitHub and Buffer
+# LinkedIn review, GitHub approval and Buffer scheduling
 
 ## What this system does
 
-ChatGPT creates a GitHub issue only after Chelston explicitly approves a final post. GitHub Actions sends the post to Buffer. Buffer publishes or schedules it to LinkedIn Personal, LinkedIn Business, or both.
+The mobile review desk presents the scheduled 222 Emails queue. Chelston presses YES or NO after reviewing the category, destination, time, copy and media. A rejection returns the item for revision. An approval opens a pre-filled GitHub record; only Chelston's final submission of that record can start the Buffer workflow.
 
-This gives an auditable approval gate and avoids storing Buffer credentials in ChatGPT messages or repository code.
+Buffer can save a draft, add to a queue or schedule for:
+
+- Chelston's personal LinkedIn profile
+- Main 222 Emails LinkedIn page
+- Secondary TTE LinkedIn page
+- Explicit combinations of those destinations
+
+The interface and repository never contain Buffer credentials.
 
 ## Live components
 
+- Review desk: `apps/linkedin-review/`
+- Scheduled queue: `apps/linkedin-review/queue.json`
 - Workflow: `.github/workflows/linkedin-buffer-autopost.yml`
-- Issue template: `.github/ISSUE_TEMPLATE/approved-linkedin-post.md`
+- Approval template: `.github/ISSUE_TEMPLATE/approved-linkedin-post.md`
+- Rejection template: `.github/ISSUE_TEMPLATE/rejected-linkedin-post.md`
 - Trigger title prefix: `[APPROVED LINKEDIN]`
 
-## One-time activation
+## Repository secrets
 
-### 1. Connect LinkedIn channels in Buffer
-
-Connect both destinations in Buffer:
-
-- LinkedIn personal profile
-- LinkedIn business page
-
-### 2. Create a Buffer API key
-
-In Buffer, open Settings, then API, create a key and copy it once.
-
-Never paste the key into an issue, chat message, Notion page or repository file.
-
-### 3. Find the Buffer channel IDs
-
-Use Buffer’s API Explorer or Get Channels query to identify the channel ID for each LinkedIn destination.
-
-### 4. Add three GitHub Actions secrets
-
-Open the `Chelston222/CGPT-1` repository, then:
-
-`Settings > Secrets and variables > Actions > New repository secret`
-
-Create:
+Store these only in `Settings → Secrets and variables → Actions`:
 
 - `BUFFER_API_KEY`
 - `BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID`
 - `BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID`
+- `BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID`
 
-## Publishing flow from ChatGPT
+Never paste the API key into a GitHub issue, chat, Notion or repository file.
 
-1. ChatGPT drafts and quality-checks the post.
-2. Chelston explicitly says to approve, schedule or publish it.
-3. ChatGPT creates an issue using the approved template.
-4. GitHub Actions validates the post, destination, timing and required secrets.
-5. GitHub sends it to Buffer.
-6. Buffer returns a post ID.
-7. The GitHub issue receives a success comment and closes automatically.
-8. If any step fails, the issue stays open and nothing is assumed published.
+## Human approval flow
 
-## Supported commands
+1. Codex drafts, checks and adds a post to the review queue.
+2. Chelston opens the mobile review desk.
+3. NO opens a pre-filled `[REJECTED LINKEDIN]` issue. This can never trigger Buffer.
+4. YES opens a plain-language confirmation sheet.
+5. Continue opens a pre-filled `[APPROVED LINKEDIN]` issue.
+6. Chelston checks the exact version and submits the issue while signed into GitHub.
+7. GitHub validates every destination, secret, time, copy variant and media URL before the first Buffer request.
+8. The issue records every returned Buffer post ID and closes only after every requested destination succeeds.
+9. Failure or partial success leaves the issue open with exact recovery information.
 
-### Personal LinkedIn
+## Supported fields
 
 ```text
-TARGET: personal
+POST_ID: tte-li-013
+REVISION: 1
+CATEGORY: buyer_diagnostics
+TARGETS: personal,main
 MODE: schedule
-SCHEDULE_AT: 2026-07-23T08:30:00+01:00
+SCHEDULE_AT_PERSONAL: 2026-09-01T08:15:00+01:00
+SCHEDULE_AT_MAIN: 2026-09-02T09:00:00+01:00
 MEDIA_URL:
 ---
-Final approved post text
+Fallback copy
+---PERSONAL---
+Founder-led version
+---MAIN---
+Company-page version
 ```
 
-### Business LinkedIn
-
-```text
-TARGET: business
-MODE: queue
-SCHEDULE_AT:
-MEDIA_URL:
----
-Final approved post text
-```
-
-### Both destinations
-
-```text
-TARGET: both
-MODE: draft
-SCHEDULE_AT:
-MEDIA_URL: https://public.example.com/approved-image.png
----
-Final approved post text
-```
+`TARGETS` accepts `personal`, `main`, `secondary` or comma-separated combinations. Legacy `business`, `both` and `all` remain supported. `MODE` accepts `schedule`, `queue` or `draft`. A public HTTPS `MEDIA_URL` is optional.
 
 ## Safety behaviour
 
-- The workflow runs only when the issue title starts with `[APPROVED LINKEDIN]`.
-- Invalid targets, dates, media URLs or missing secrets fail closed.
+- Only a newly opened issue beginning `[APPROVED LINKEDIN]` can trigger the workflow.
+- The issue author must be the repository owner.
+- Draft mode always uses Buffer's `saveToDraft: true` and cannot schedule.
+- Rejected issues do not match the trigger.
 - Posts over 3,000 characters fail validation.
-- Media must use a publicly accessible HTTPS URL.
-- A failed run leaves the issue open and adds an error comment.
-- A successful run records the Buffer post ID.
+- Schedules must be valid future ISO date/times.
+- Media must use HTTPS.
+- All inputs are preflighted before the first Buffer mutation.
+- Buffer cannot provide an atomic transaction across channels. If a later network/API call fails, every earlier Buffer post ID is recorded and the issue warns against a blind retry.
+- Buffer acceptance proves draft/queue/schedule creation, not LinkedIn publication. Publication needs separate evidence.
 
-## Current activation status
+## Activation status — 9 August 2026
 
-The workflow code and issue template are installed.
-
-Publishing remains blocked until the Buffer account has both LinkedIn channels connected and the three GitHub Actions secrets are added.
+- Personal draft validation passed in issue #5.
+- Main 222 Emails draft validation passed in issue #6.
+- The mobile review desk, initial 18-post queue and three-channel workflow are implemented.
+- The `BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID` secret must be present before secondary and combination draft validation can pass.
+- No scheduled or live post has been approved by this build.

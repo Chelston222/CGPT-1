@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Five client return leaks</title>
+  <desc id="desc">222 Emails checklist preview in navy, cream and orange.</desc>
+  <rect width="1200" height="675" fill="#f6f0e5"/>
+  <rect x="0" y="0" width="34" height="675" fill="#f36d2f"/>
+  <text x="82" y="98" fill="#f36d2f" font-family="Arial,sans-serif" font-size="22" font-weight="700" letter-spacing="4">CLIENT RETURN CHECKLIST</text>
+  <text x="82" y="190" fill="#12223f" font-family="Georgia,serif" font-size="74" font-weight="700">Five places repeat</text>
+  <text x="82" y="272" fill="#12223f" font-family="Georgia,serif" font-size="74" font-weight="700">revenue quietly leaks.</text>
+  <g fill="#12223f" font-family="Arial,sans-serif" font-size="28">
+    <circle cx="101" cy="355" r="13" fill="#f36d2f"/><text x="135" y="365">First visit</text>
+    <circle cx="101" cy="414" r="13" fill="#f36d2f"/><text x="135" y="424">Natural return window</text>
+    <circle cx="101" cy="473" r="13" fill="#f36d2f"/><text x="135" y="483">Open quote</text>
+    <circle cx="610" cy="355" r="13" fill="#f36d2f"/><text x="644" y="365">Lapsed regular</text>
+    <circle cx="610" cy="414" r="13" fill="#f36d2f"/><text x="644" y="424">Staff-to-system hand-off</text>
+  </g>
+  <text x="82" y="600" fill="#687184" font-family="Arial,sans-serif" font-size="25">Find the highest-value leak. Repair that first.</text>
+  <circle cx="1080" cy="580" r="55" fill="#12223f"/>
+  <text x="1080" y="590" fill="#f36d2f" font-family="Georgia,serif" font-size="31" font-weight="700" text-anchor="middle">222</text>
+</svg>

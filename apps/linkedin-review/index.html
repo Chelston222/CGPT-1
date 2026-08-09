@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#12223f">
+    <meta name="description" content="Human approval control centre for 222 Emails LinkedIn content.">
+    <title>222 Emails — LinkedIn Review Desk</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#review-card">Skip to current post</a>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="222 Emails review desk home">
+        <span class="brand-mark">222</span>
+        <span>Review desk</span>
+      </a>
+      <button class="icon-button" id="refresh-button" type="button" aria-label="Refresh audit status">
+        <span aria-hidden="true">↻</span>
+      </button>
+    </header>
+
+    <main class="shell">
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Human approval gate</p>
+          <h1 id="page-title">Decide what earns the feed.</h1>
+          <p class="lede">Swipe or press a decision. Nothing reaches Buffer until you approve the pre-filled GitHub record yourself.</p>
+        </div>
+        <div class="safety-lock" title="Live publishing always requires Chelston's explicit approval">
+          <span aria-hidden="true">●</span> Approval lock on
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Queue summary">
+        <article><strong id="metric-review">—</strong><span>To review</span></article>
+        <article><strong id="metric-approved">—</strong><span>Approved</span></article>
+        <article><strong id="metric-scheduled">—</strong><span>Scheduled</span></article>
+        <article><strong id="metric-rejected">—</strong><span>Rejected</span></article>
+      </section>
+
+      <nav class="filters" aria-label="Filter posts">
+        <button class="filter is-active" data-filter="review" type="button">Review queue</button>
+        <button class="filter" data-filter="all" type="button">All posts</button>
+        <button class="filter" data-filter="decided" type="button">Decided</button>
+      </nav>
+
+      <section class="workspace" aria-live="polite">
+        <div class="queue-heading">
+          <p><span id="position">0 of 0</span> · <span id="sync-state">Loading audit…</span></p>
+          <div class="progress-track" aria-hidden="true"><span id="progress"></span></div>
+        </div>
+
+        <article class="review-card" id="review-card" tabindex="0" aria-label="Current post for review">
+          <div class="empty-state" id="loading-state">
+            <span class="loader" aria-hidden="true"></span>
+            <p>Bringing the queue into focus…</p>
+          </div>
+        </article>
+
+        <div class="decision-controls" id="decision-controls" hidden>
+          <button class="decision no" id="reject-button" type="button">
+            <span class="decision-symbol" aria-hidden="true">×</span>
+            <span><strong>NO</strong><small>Return for revision</small></span>
+          </button>
+          <button class="decision yes" id="approve-button" type="button">
+            <span><strong>YES</strong><small>Approve this version</small></span>
+            <span class="decision-symbol" aria-hidden="true">✓</span>
+          </button>
+        </div>
+        <p class="swipe-hint" id="swipe-hint" hidden>Swipe left for NO · Swipe right for YES</p>
+      </section>
+
+      <section class="up-next" aria-labelledby="up-next-title">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">The next decisions</p>
+            <h2 id="up-next-title">Queue</h2>
+          </div>
+          <select id="category-filter" aria-label="Filter by category">
+            <option value="all">All categories</option>
+          </select>
+        </div>
+        <div class="queue-list" id="queue-list"></div>
+      </section>
+    </main>
+
+    <dialog class="decision-sheet" id="decision-sheet">
+      <form method="dialog" id="decision-form">
+        <button class="sheet-close" value="cancel" aria-label="Close">×</button>
+        <p class="eyebrow" id="sheet-eyebrow">Decision</p>
+        <h2 id="sheet-title">Confirm this decision</h2>
+        <p id="sheet-copy"></p>
+        <label class="feedback-field" id="feedback-field" hidden>
+          What should change?
+          <textarea id="rejection-note" rows="4" maxlength="800" placeholder="Give a short, useful revision note…"></textarea>
+        </label>
+        <div class="safety-note" id="safety-note"></div>
+        <button class="sheet-action" id="sheet-action" type="button">Continue</button>
+        <button class="sheet-cancel" value="cancel">Not yet</button>
+      </form>
+    </dialog>
+
+    <template id="post-template">
+      <div class="card-topline">
+        <span class="category-pill"></span>
+        <span class="state-pill"></span>
+      </div>
+      <div class="schedule-list" aria-label="Target channels and scheduled times"></div>
+      <div class="media-preview" hidden>
+        <img alt="">
+        <span class="media-label"></span>
+      </div>
+      <div class="post-copy-list"></div>
+      <div class="card-footer">
+        <span class="post-id"></span>
+        <span class="copy-count"></span>
+      </div>
+    </template>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

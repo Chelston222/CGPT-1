@@ -1,0 +1,32 @@
+name: LinkedIn Review CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/linkedin-review/**'
+      - 'scripts/linkedin-review-core.cjs'
+      - 'tests/linkedin-review-core.test.cjs'
+      - '.github/workflows/linkedin-buffer-autopost.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/linkedin-review/**'
+      - 'scripts/linkedin-review-core.cjs'
+      - 'tests/linkedin-review-core.test.cjs'
+      - '.github/workflows/linkedin-buffer-autopost.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate queue and approval logic
+        run: |
+          node --test tests/linkedin-review-core.test.cjs
+          node -e "const q=require('./apps/linkedin-review/queue.json'); if(q.posts.length < 18) process.exit(1); for(const p of q.posts){if(!p.id||!p.copy||!p.targets?.length||!p.scheduledAt) process.exit(1)}"

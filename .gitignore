@@ -1,3 +1,7 @@
+.DS_Store
+.playwright-cli/
+.local-*.json
+apps/linkedin-review/.netlify/
 lindahs-flight-finds/.next/
 lindahs-flight-finds/node_modules/
 lindahs-flight-finds/.env.local
