@@ -18,6 +18,21 @@ function arg(name, fallback) {
   return index >= 0 ? process.argv[index + 1] : fallback;
 }
 
+function dedupeHistory(history = []) {
+  const seen = new Set();
+  return history.filter((entry) => {
+    const key = JSON.stringify([
+      entry?.at || '',
+      entry?.state || '',
+      entry?.actor || '',
+      entry?.note || '',
+    ]);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 const archivePath = resolve(arg('--archive', '../work/consolidated-linkedin-library.json'));
 const queuePath = resolve(arg('--queue', 'apps/linkedin-review/queue.json'));
 const bufferAuditPath = resolve(arg('--buffer-audit', '../work/buffer-test-drafts-archive.json'));
@@ -30,6 +45,7 @@ const bufferAudit = await readOptionalJson(bufferAuditPath, { records: [] });
 const existing = await readOptionalJson(outputPath, null);
 const normalise = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const hash = (value) => createHash('sha256').update(value).digest('hex');
+let queueChanged = false;
 
 // 9 August is the planning anchor. Since it is already evening in London, the
 // first complete five-per-channel publishing day starts on 10 August. Reflow
@@ -75,8 +91,15 @@ if (
     bufferRunwayDaysAtConfiguredRate: 2,
     releaseCheckHours: 2,
   };
-  await writeFile(queuePath, `${JSON.stringify(queue, null, 2)}\n`);
+  queueChanged = true;
 }
+
+for (const post of queue.posts || []) {
+  const deduped = dedupeHistory(post.history || []);
+  if (deduped.length !== (post.history || []).length) queueChanged = true;
+  post.history = deduped;
+}
+if (queueChanged) await writeFile(queuePath, `${JSON.stringify(queue, null, 2)}\n`);
 
 const records = new Map();
 for (const record of existing?.records || []) {

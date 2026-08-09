@@ -1,0 +1,8 @@
+{
+  "name": "222emails-content-swiper",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "10.7.10"
+  }
+}
