@@ -51,17 +51,22 @@
       },
       "mediaPreviewUrl": "media/booking-platform-preview.svg",
       "mediaAlt": "Preview card reading: Booking confirmation is not a return journey",
-      "mediaUrl": "",
+      "mediaUrl": "https://222emails-review-desk.netlify.app/media/carousels/028/222-emails-carousel-028.pdf",
+      "documentTitle": "Your booking reminder cannot do the job of a rebooking email",
+      "documentThumbnailUrl": "https://222emails-review-desk.netlify.app/media/carousels/028/thumbnail.jpg",
       "carousel": {
         "libraryId": "028",
         "slideCount": 6,
-        "readiness": "pdf_required",
+        "readiness": "ready",
+        "pdfBytes": 6391783,
+        "pdfSha256": "ab363af03a9d8d47f6cd53413a57f40261920df2f2d2829aeacca246850d28ee",
+        "verifiedAt": "2026-08-09T17:10:00+01:00",
         "sourceFolder": "028 - Your Booking Reminder Cannot Do the Job of a Rebooking Email"
       },
       "sourceUrl": "https://app.notion.com/3b0e72eb858781c79397c947e5e61962",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "live_ready", "at": "2026-08-09T10:04:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }, { "state": "media_matched", "at": "2026-08-09T12:34:10+01:00", "actor": "Codex", "note": "Promoted carousel 028 matched; verified PDF packaging still required." }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:04:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }, { "state": "media_matched", "at": "2026-08-09T12:34:10+01:00", "actor": "Codex", "note": "Promoted carousel 028 matched; verified PDF packaging still required." }, { "state": "media_ready", "at": "2026-08-09T17:10:00+01:00", "actor": "Codex", "note": "Six-page PDF and public JPEG thumbnail packaged, rendered and checksum verified." }]
     },
     {
       "id": "tte-li-003",
@@ -114,17 +119,22 @@
       },
       "mediaPreviewUrl": "media/five-leaks-preview.svg",
       "mediaAlt": "Preview card showing five client return leaks",
-      "mediaUrl": "",
+      "mediaUrl": "https://222emails-review-desk.netlify.app/media/carousels/015/222-emails-carousel-015.pdf",
+      "documentTitle": "Fix retention before you buy more leads",
+      "documentThumbnailUrl": "https://222emails-review-desk.netlify.app/media/carousels/015/thumbnail.jpg",
       "carousel": {
         "libraryId": "015",
         "slideCount": 6,
-        "readiness": "pdf_required",
+        "readiness": "ready",
+        "pdfBytes": 5187344,
+        "pdfSha256": "61af11051a78f9d2ee360b3dca1f28288aea71286bb09679f13427b3ce57745a",
+        "verifiedAt": "2026-08-09T17:10:00+01:00",
         "sourceFolder": "015 - Fix Retention Before You Buy More Leads"
       },
       "sourceUrl": "https://app.notion.com/3ace72eb8587812a9424c2d52531fcdd",
       "sourceType": "notion_archive",
       "status": "review",
-      "history": [{ "state": "live_ready", "at": "2026-08-09T10:16:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }, { "state": "media_matched", "at": "2026-08-09T12:34:10+01:00", "actor": "Codex", "note": "Promoted carousel 015 matched; verified PDF packaging still required." }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:16:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }, { "state": "media_matched", "at": "2026-08-09T12:34:10+01:00", "actor": "Codex", "note": "Promoted carousel 015 matched; verified PDF packaging still required." }, { "state": "media_ready", "at": "2026-08-09T17:10:00+01:00", "actor": "Codex", "note": "Six-page PDF and public JPEG thumbnail packaged, rendered and checksum verified." }]
     },
     {
       "id": "tte-li-006",
@@ -272,17 +282,22 @@
       },
       "mediaPreviewUrl": "media/five-leaks-preview.svg",
       "mediaAlt": "Client return leak checklist preview",
-      "mediaUrl": "",
+      "mediaUrl": "https://222emails-review-desk.netlify.app/media/carousels/017/222-emails-carousel-017.pdf",
+      "documentTitle": "Four places rebooking opportunity hides inside your client list",
+      "documentThumbnailUrl": "https://222emails-review-desk.netlify.app/media/carousels/017/thumbnail.jpg",
       "carousel": {
         "libraryId": "017",
         "slideCount": 6,
-        "readiness": "pdf_required",
+        "readiness": "ready",
+        "pdfBytes": 5152900,
+        "pdfSha256": "5d0dbf3dece867cf4a0f5523a6f2c78fb467e576e459cbf2cda49fcb3823eb95",
+        "verifiedAt": "2026-08-09T17:10:00+01:00",
         "sourceFolder": "017 - 4 Places Rebooking Opportunity Hides Inside Your Client List"
       },
       "sourceUrl": "https://app.notion.com/3ace72eb8587812a9424c2d52531fcdd",
       "sourceType": "notion_archive_rebuilt",
       "status": "review",
-      "history": [{ "state": "live_ready", "at": "2026-08-09T10:48:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }, { "state": "media_matched", "at": "2026-08-09T12:34:10+01:00", "actor": "Codex", "note": "Promoted carousel 017 matched; verified PDF packaging still required." }]
+      "history": [{ "state": "live_ready", "at": "2026-08-09T10:48:00+01:00", "actor": "Codex" }, { "state": "review", "at": "2026-08-09T12:00:00+01:00", "actor": "Codex" }, { "state": "media_matched", "at": "2026-08-09T12:34:10+01:00", "actor": "Codex", "note": "Promoted carousel 017 matched; verified PDF packaging still required." }, { "state": "media_ready", "at": "2026-08-09T17:10:00+01:00", "actor": "Codex", "note": "Six-page PDF and public JPEG thumbnail packaged, rendered and checksum verified." }]
     },
     {
       "id": "tte-li-014",
