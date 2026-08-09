@@ -5,15 +5,19 @@ on:
     paths:
       - 'apps/linkedin-review/**'
       - 'scripts/linkedin-review-core.cjs'
-      - 'tests/linkedin-review-core.test.cjs'
+      - 'scripts/build-linkedin-master-ledger.mjs'
+      - 'tests/linkedin-*.test.cjs'
       - '.github/workflows/linkedin-buffer-autopost.yml'
+      - '.github/workflows/linkedin-review-ci.yml'
   push:
     branches: [main]
     paths:
       - 'apps/linkedin-review/**'
       - 'scripts/linkedin-review-core.cjs'
-      - 'tests/linkedin-review-core.test.cjs'
+      - 'scripts/build-linkedin-master-ledger.mjs'
+      - 'tests/linkedin-*.test.cjs'
       - '.github/workflows/linkedin-buffer-autopost.yml'
+      - '.github/workflows/linkedin-review-ci.yml'
 
 permissions:
   contents: read
@@ -26,7 +30,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validate queue and approval logic
+      - name: Validate queue, approval and cross-device sync logic
         run: |
-          node --test tests/linkedin-review-core.test.cjs
+          node --test tests/linkedin-*.test.cjs
+          node --check apps/linkedin-review/app.js
+          node --check apps/linkedin-review/sync.js
+          node --check apps/linkedin-review/netlify/functions/review-decisions.mjs
+          node --check scripts/build-linkedin-master-ledger.mjs
           node -e "const q=require('./apps/linkedin-review/queue.json'); if(q.posts.length < 18) process.exit(1); for(const p of q.posts){if(!p.id||!p.copy||!p.targets?.length||!p.scheduledAt) process.exit(1)}"
