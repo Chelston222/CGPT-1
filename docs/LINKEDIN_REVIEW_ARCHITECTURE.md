@@ -10,6 +10,7 @@ Notion is not retired. It is deliberately removed from the runtime path because 
 
 1. A fully written, channel-specific post enters `apps/linkedin-review/queue.json` as `live_ready`, then `review`.
 2. Chelston reviews category, destination, time, copy, channel variants and media in the mobile interface.
+   - `Next` is navigation only. It does not create a decision, change the weekly totals, open GitHub or contact Buffer.
 3. **YES** or **NO** is stored locally and the next undecided post appears automatically. NO never contacts Buffer.
 4. The app keeps choices separate by selected week and queue version, and preserves them across refreshes on the same device.
 5. Once the week is fully decided, one weekly hand-off opens a compact GitHub record for Chelston to review and submit while signed in.
@@ -52,3 +53,9 @@ node scripts/consolidate-linkedin-content.mjs <source paths> --output .local-lin
 It inventories Markdown, text, CSV and JSON records, removes exact duplicates and preserves source paths. The generated library is ignored by Git because Mac paths and source copy may be private. Selected material is rewritten, cited and promoted into the public review queue only after editorial review.
 
 Historic Notion approval is metadata, not live publishing consent. Imported content always re-enters as `live_ready` or `review`.
+
+## Carousel media lock
+
+Carousel cards reference a promoted six-slide source set by immutable library ID. A carousel remains undecided and cannot receive YES until a verified PDF URL is present and its readiness is `ready`. The server repeats the same check before any Buffer request, preventing a missing PDF from silently becoming a text-only LinkedIn post.
+
+Buffer and LinkedIn support one PDF document per LinkedIn post, up to 100 MB and 300 pages. The intended runtime asset is a flattened, same-size six-page PDF assembled only from the promoted PNGs. The source render folders remain the editorial masters; the review queue stores only the library ID, publishing URL and audit metadata.

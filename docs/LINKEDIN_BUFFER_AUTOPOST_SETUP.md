@@ -38,13 +38,14 @@ Never paste the API key into a GitHub issue, chat, Notion or repository file.
 
 1. Codex writes, checks and adds a live-ready post to the review queue.
 2. Chelston opens the mobile Content Swiper.
-3. YES or NO saves locally and immediately advances to the next undecided item in the selected week. NO never contacts Buffer.
+3. YES or NO saves locally and immediately advances to the next undecided item in the selected week. NO never contacts Buffer. **Next** moves to another card without saving any decision or changing the weekly hand-off.
 4. The weekly hand-off stays disabled until every review item has a decision and at least one item is YES.
 5. “Send approved week” opens one compact `[APPROVED LINKEDIN WEEK]` record containing locked `post-id@revision` references, not the full post copy.
 6. Chelston checks the weekly summary and submits the issue while signed into GitHub.
 7. GitHub checks the exact queue version, every post revision, destination, secret, time, copy variant and media URL for the complete week before the first Buffer request.
-8. The issue records every returned Buffer post ID and closes only after every requested destination succeeds.
-9. Failure or partial success leaves the issue open with exact recovery information. Never retry a partial batch blindly.
+8. A carousel is not eligible for YES or weekly dispatch until its promoted six-slide source has a verified publishable PDF. Missing media fails closed instead of producing a text-only post.
+9. The issue records every returned Buffer post ID and closes only after every requested destination succeeds.
+10. Failure or partial success leaves the issue open with exact recovery information. Never retry a partial batch blindly.
 
 ## Supported fields
 

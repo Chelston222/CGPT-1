@@ -70,6 +70,22 @@ test('rejects schedules outside the selected Monday-to-Sunday week', () => {
   assert.throws(() => validateWeeklyBatch(body({ week: '2026-08-18' }), queue, ENV), /must be a Monday/);
 });
 
+test('fails closed instead of sending a carousel as a text-only post', () => {
+  const carouselQueue = {
+    ...queue,
+    posts: [{
+      ...queue.posts[0],
+      format: 'carousel',
+      mediaUrl: '',
+      carousel: { libraryId: '028', slideCount: 6, readiness: 'pdf_required' },
+    }],
+  };
+  assert.throws(
+    () => validateWeeklyBatch(body({ items: 'tte-li-001@3' }), carouselQueue, ENV, Date.parse('2026-08-09T00:00:00Z')),
+    /carousel PDF is not verified and publishable/,
+  );
+});
+
 test('accepts a compact 105-item approval list', () => {
   const largeQueue = {
     ...queue,
