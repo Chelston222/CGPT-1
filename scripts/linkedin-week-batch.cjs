@@ -58,7 +58,7 @@ function postBody(post) {
   return lines.join('\n');
 }
 
-function validateWeeklyBatch(body, queue, env = {}, now = Date.now()) {
+function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = {}) {
   const header = parseHeaders(body);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(header.WEEK_START || '')) {
     throw new Error('WEEK_START must be a Monday in YYYY-MM-DD format.');
@@ -68,7 +68,7 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now()) {
   if (String(header.QUEUE_SCHEMA) !== String(queue.schemaVersion)) {
     throw new Error('The queue schema changed after review. Review this week again.');
   }
-  if (header.QUEUE_GENERATED_AT !== queue.generatedAt) {
+  if (header.QUEUE_GENERATED_AT !== queue.generatedAt && !options.allowGeneratedAtDrift) {
     throw new Error('The queue changed after review. Review this week again.');
   }
 

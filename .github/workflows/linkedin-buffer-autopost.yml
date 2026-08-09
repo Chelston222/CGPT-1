@@ -4,7 +4,7 @@ on:
   issues:
     types: [opened]
   schedule:
-    - cron: '17 */4 * * *'
+    - cron: '17 */2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -36,7 +36,7 @@ jobs:
             const fs = require('node:fs');
             const { buildCreatePostMutation, validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
             const { validateWeeklyBatch } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
-            const { acceptedMarker, classifyBufferFailure, parseAcceptedMarkers, planCapacityWindow } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
+            const { acceptedMarker, classifyBufferFailure, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -67,8 +67,12 @@ jobs:
               const data = await buffer(query);
               if (data.posts?.pageInfo?.hasNextPage) throw new Error('Buffer capacity preflight returned more than 100 scheduled posts; refusing an incomplete count.');
               const counts = Object.fromEntries(channelIds.map((id) => [id, 0]));
-              for (const edge of data.posts?.edges || []) counts[edge.node.channelId] = (counts[edge.node.channelId] || 0) + 1;
-              return counts;
+              const scheduled = [];
+              for (const edge of data.posts?.edges || []) {
+                counts[edge.node.channelId] = (counts[edge.node.channelId] || 0) + 1;
+                scheduled.push({ channelId: edge.node.channelId, dueAt: edge.node.dueAt });
+              }
+              return { counts, scheduled };
             }
 
             const issues = context.eventName === 'issues'
@@ -79,18 +83,25 @@ jobs:
             for (const issue of issues) {
               const results = [];
               try {
-                const isWeekly = issue.title.startsWith('[APPROVED LINKEDIN WEEK]');
-                const batch = isWeekly ? validateWeeklyBatch(issue.body || '', queue, process.env, Date.parse(issue.created_at)) : null;
-                const request = isWeekly ? null : validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
-                const jobs = batch?.jobs || [{ post: { id: request.postId, revision: request.revision, category: request.category }, request }];
-
                 // Historic acceptance markers are the idempotency ledger for partial multi-channel runs.
                 const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
                 const accepted = parseAcceptedMarkers(comments);
+                const isWeekly = issue.title.startsWith('[APPROVED LINKEDIN WEEK]');
+                const batch = isWeekly ? validateWeeklyBatch(issue.body || '', queue, process.env, Date.parse(issue.created_at), { allowGeneratedAtDrift: accepted.size > 0 }) : null;
+                const request = isWeekly ? null : validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
+                const jobs = batch?.jobs || [{ post: { id: request.postId, revision: request.revision, category: request.category }, request }];
                 const channelIdByTarget = Object.fromEntries(jobs.flatMap((job) => job.request.channels.map((channel) => [channel.target, channel.id])));
-                const occupancyById = await queueOccupancy(Object.values(channelIdByTarget));
-                const occupancy = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [target, occupancyById[id] || 0]));
+                const capacity = await queueOccupancy(Object.values(channelIdByTarget));
+                const occupancy = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [target, capacity.counts[id] || 0]));
                 const plan = planCapacityWindow(jobs, occupancy, accepted);
+
+                const targetByChannelId = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [id, target]));
+                const occupiedJobs = capacity.scheduled.map((entry, index) => ({
+                  post: { id: `buffer-existing-${index}`, revision: 1 },
+                  request: { channels: [{ target: targetByChannelId[entry.channelId], dueAt: entry.dueAt }] },
+                }));
+                const proposedJobs = plan.dispatch.map(({ job, channel }) => ({ post: job.post, request: { channels: [channel] } }));
+                validateDailyPlacementLimit([...occupiedJobs, ...proposedJobs], 15, 5, queue.timezone || 'Europe/London');
 
                 for (const { job, channel, key } of plan.dispatch) {
                   if (channel.dueAt && new Date(channel.dueAt).getTime() <= Date.now() + 5 * 60_000) {
@@ -106,7 +117,7 @@ jobs:
                 const resultLines = results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` — ${result.dueAt}` : ''}\n  ${acceptedMarker(result.key)}`);
                 const waiting = plan.waiting.length;
                 const waitingMarker = `<!-- BUFFER_CAPACITY_WAIT ${waiting} -->`;
-                const alreadyReportedSameWait = comments.some((comment) => String(comment.body || '').includes(waitingMarker));
+                const alreadyReportedSameWait = comments.some((comment) => comment.user?.login === 'github-actions[bot]' && String(comment.body || '').includes(waitingMarker));
                 if (results.length || !waiting || !alreadyReportedSameWait) await github.rest.issues.createComment({
                   owner, repo, issue_number: issue.number, body: [
                     waiting ? '🕒 Buffer capacity window processed.' : '✅ Buffer accepted every remaining requested destination.',

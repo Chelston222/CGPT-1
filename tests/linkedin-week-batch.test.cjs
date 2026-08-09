@@ -52,6 +52,13 @@ test('fails the whole preflight when the queue or a revision changed', () => {
   assert.throws(() => validateWeeklyBatch(body({ items: 'tte-li-001@2' }), queue, ENV), /changed revision/);
 });
 
+test('capacity retries tolerate queue regeneration only while revisions remain locked', () => {
+  const regenerated = { ...queue, generatedAt: '2026-08-10T08:00:00+01:00' };
+  assert.equal(validateWeeklyBatch(body(), regenerated, ENV, Date.parse('2026-08-09T00:00:00Z'), { allowGeneratedAtDrift: true }).jobs.length, 2);
+  const changed = { ...regenerated, posts: [{ ...queue.posts[0], revision: 4 }, queue.posts[1]] };
+  assert.throws(() => validateWeeklyBatch(body(), changed, ENV, Date.parse('2026-08-09T00:00:00Z'), { allowGeneratedAtDrift: true }), /changed revision/);
+});
+
 test('fails before dispatch data is returned when any destination secret is missing', () => {
   assert.throws(
     () => validateWeeklyBatch(body(), queue, { ...ENV, BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: '' }, Date.parse('2026-08-09T00:00:00Z')),
@@ -86,26 +93,32 @@ test('fails closed instead of sending a carousel as a text-only post', () => {
   );
 });
 
-test('accepts a compact 70-placement week when no day exceeds ten', () => {
+test('accepts a full 105-placement week when each account stays within five per day', () => {
   const largeQueue = {
     ...queue,
-    posts: Array.from({ length: 70 }, (_, index) => ({
-      id: `post-${String(index + 1).padStart(3, '0')}`,
-      revision: 1,
-      category: 'education',
-      mode: 'schedule',
-      targets: ['personal'],
-      scheduledAt: { personal: `2026-08-${String(17 + Math.floor(index / 10)).padStart(2, '0')}T${String(8 + (index % 10)).padStart(2, '0')}:00:00+01:00` },
-      copy: { default: `Useful post ${index + 1}` },
-    })),
+    posts: Array.from({ length: 105 }, (_, index) => {
+      const target = ['personal', 'main', 'secondary'][index % 3];
+      const day = 17 + Math.floor(index / 15);
+      const hour = 8 + Math.floor((index % 15) / 3);
+      const minute = (index % 3) * 15;
+      return {
+        id: `post-${String(index + 1).padStart(3, '0')}`,
+        revision: 1,
+        category: 'education',
+        mode: 'schedule',
+        targets: [target],
+        scheduledAt: { [target]: `2026-08-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00+01:00` },
+        copy: { default: `Useful post ${index + 1}` },
+      };
+    }),
   };
   const items = largeQueue.posts.map((post) => `${post.id}@1`).join(',');
   const result = validateWeeklyBatch(body({ items }), largeQueue, ENV, Date.parse('2026-08-09T00:00:00Z'));
-  assert.equal(result.jobs.length, 70);
+  assert.equal(result.jobs.length, 105);
 });
 
-test('rejects eleven account placements on one day before Buffer is contacted', () => {
-  const posts = Array.from({ length: 11 }, (_, index) => ({
+test('rejects a sixth placement for one account on one day before Buffer is contacted', () => {
+  const posts = Array.from({ length: 6 }, (_, index) => ({
     id: `post-${index}`, revision: 1, category: 'education', mode: 'schedule',
     targets: ['personal'], scheduledAt: { personal: '2026-08-17T08:15:00+01:00' },
     copy: { default: `Useful post ${index}` },
@@ -113,6 +126,6 @@ test('rejects eleven account placements on one day before Buffer is contacted', 
   const overloaded = { ...queue, posts };
   assert.throws(
     () => validateWeeklyBatch(body({ items: posts.map((post) => `${post.id}@1`).join(',') }), overloaded, ENV, Date.parse('2026-08-09T00:00:00Z')),
-    /maximum is 10/,
+    /maximum is 5 per channel/,
   );
 });

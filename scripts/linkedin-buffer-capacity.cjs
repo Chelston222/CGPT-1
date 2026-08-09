@@ -1,28 +1,45 @@
 'use strict';
 
 const FREE_PLAN_MAX_SCHEDULED_PER_CHANNEL = 10;
-const MAX_PLACEMENTS_PER_DAY = 10;
+const MAX_PLACEMENTS_PER_CHANNEL_PER_DAY = 5;
+const MAX_PLACEMENTS_PER_DAY = 15;
 const TARGETS = ['personal', 'main', 'secondary'];
 
 function placementKey(postId, revision, target) {
   return `${postId}@${revision}:${target}`;
 }
 
-function placementDate(job, channel) {
-  return String(channel.dueAt || job.post.scheduledAt?.[channel.target] || '').slice(0, 10);
+function localDate(value, timeZone = 'Europe/London') {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
-function validateDailyPlacementLimit(jobs, limit = MAX_PLACEMENTS_PER_DAY) {
+function placementDate(job, channel, timeZone = 'Europe/London') {
+  const approvedSchedule = job.post.scheduledAt?.[channel.target];
+  return approvedSchedule ? String(approvedSchedule).slice(0, 10) : localDate(channel.dueAt, timeZone);
+}
+
+function validateDailyPlacementLimit(jobs, limit = MAX_PLACEMENTS_PER_DAY, perChannelLimit = MAX_PLACEMENTS_PER_CHANNEL_PER_DAY, timeZone = 'Europe/London') {
   const counts = new Map();
+  const channelCounts = new Map();
   for (const job of jobs) {
     for (const channel of job.request.channels) {
-      const date = placementDate(job, channel);
+      const date = placementDate(job, channel, timeZone);
       if (!date) throw new Error(`${job.post.id} / ${channel.target} has no scheduled date.`);
       counts.set(date, (counts.get(date) || 0) + 1);
+      const channelKey = `${date}:${channel.target}`;
+      channelCounts.set(channelKey, (channelCounts.get(channelKey) || 0) + 1);
     }
   }
   const overflow = [...counts.entries()].find(([, count]) => count > limit);
   if (overflow) throw new Error(`${overflow[0]} has ${overflow[1]} account placements; maximum is ${limit} across all channels.`);
+  const channelOverflow = [...channelCounts.entries()].find(([, count]) => count > perChannelLimit);
+  if (channelOverflow) {
+    const [date, target] = channelOverflow[0].split(':');
+    throw new Error(`${date} has ${channelOverflow[1]} placements for ${target}; maximum is ${perChannelLimit} per channel.`);
+  }
   return Object.fromEntries([...counts.entries()].sort());
 }
 
@@ -51,10 +68,11 @@ function planCapacityWindow(jobs, occupancy = {}, acceptedKeys = new Set(), perC
   return { dispatch, waiting, alreadyAccepted, available };
 }
 
-function parseAcceptedMarkers(comments = []) {
+function parseAcceptedMarkers(comments = [], trustedLogin = 'github-actions[bot]') {
   const keys = new Set();
   const pattern = /<!--\s*BUFFER_ACCEPTED\s+([^\s]+)\s*-->/g;
   for (const comment of comments) {
+    if (typeof comment !== 'string' && comment.user?.login !== trustedLogin) continue;
     const body = typeof comment === 'string' ? comment : String(comment.body || '');
     for (const match of body.matchAll(pattern)) keys.add(match[1]);
   }
@@ -87,9 +105,11 @@ function classifyBufferFailure({ status = 0, messages = [], headers = {} } = {})
 
 module.exports = {
   FREE_PLAN_MAX_SCHEDULED_PER_CHANNEL,
+  MAX_PLACEMENTS_PER_CHANNEL_PER_DAY,
   MAX_PLACEMENTS_PER_DAY,
   acceptedMarker,
   classifyBufferFailure,
+  localDate,
   parseAcceptedMarkers,
   placementKey,
   planCapacityWindow,

@@ -72,12 +72,20 @@ const elements = {
 };
 
 function storageKey() {
+  return `content-swiper:${REPOSITORY}:${state.queue?.masterLedger?.id || 'master'}`;
+}
+
+function legacyStorageKey() {
   return `content-swiper:${REPOSITORY}:${state.queue?.generatedAt || 'unknown'}`;
 }
 
 function loadDecisions() {
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey()) || '{}');
+    const saved = JSON.parse(
+      localStorage.getItem(storageKey()) ||
+      localStorage.getItem(legacyStorageKey()) ||
+      '{}'
+    );
     state.decisions = Object.fromEntries(Object.entries(saved).filter(([id, decision]) => {
       const post = state.posts.find((item) => item.id === id);
       return post && Number(decision.revision) === Number(post.revision);
@@ -161,17 +169,18 @@ function postIsInWeek(post, start) {
   return Object.values(post.scheduledAt).some((value) => scheduleIsInWeek(value, start));
 }
 
-function titleHasPostId(issue, postId) {
+function titleHasPostRevision(issue, post) {
   const body = String(issue.body || '');
   if (issue.title.includes('LINKEDIN WEEK]')) {
-    return batchLineHasPost(body, 'APPROVED_ITEMS', postId);
+    return batchLineHasPost(body, 'APPROVED_ITEMS', `${post.id}@${post.revision}`, true);
   }
-  return issue.title.includes(postId) || body.includes(`POST_ID: ${postId}`);
+  return (issue.title.includes(post.id) || body.includes(`POST_ID: ${post.id}`))
+    && (!/^REVISION:/im.test(body) || new RegExp(`^REVISION:\\s*${post.revision}\\s*$`, 'im').test(body));
 }
 
-function batchLineHasPost(body, field, postId) {
+function batchLineHasPost(body, field, postId, exact = false) {
   const line = String(body || '').match(new RegExp(`^${field}:\\s*(.*)$`, 'im'))?.[1] || '';
-  return line.split(',').some((item) => item.trim().startsWith(`${postId}@`));
+  return line.split(',').some((item) => exact ? item.trim() === postId : item.trim().startsWith(`${postId}@`));
 }
 
 function statusFromIssues(post) {
@@ -181,7 +190,7 @@ function statusFromIssues(post) {
   if (weeklyRejection) return 'rejected';
 
   const matching = state.issues
-    .filter((issue) => titleHasPostId(issue, post.id) && !/^MODE:\s*draft$/im.test(String(issue.body || '')))
+    .filter((issue) => titleHasPostRevision(issue, post) && !/^MODE:\s*draft$/im.test(String(issue.body || '')))
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   if (!matching.length) return post.status || 'review';
 
@@ -271,13 +280,13 @@ function renderCapacityOverview() {
     const last = placements.at(-1)?.date;
     prepared += placements.length;
     accepted += inBuffer;
-    targetElements[target][0].textContent = `${placements.length} / 10 ready`;
+    targetElements[target][0].textContent = `${placements.length} prepared · ${Math.ceil(placements.length / 5)} days`;
     targetElements[target][1].textContent = placements.length
       ? `${inBuffer} accepted by Buffer · ${daySpan(first, last)} calendar days from ${formatDate(`${first}T12:00:00Z`).primary} to ${formatDate(`${last}T12:00:00Z`).primary}`
       : 'No placements prepared';
   }
   const awaiting = prepared - accepted;
-  elements.bufferCapacitySummary.textContent = `${prepared} placements prepared · ${accepted} accepted by Buffer · ${awaiting} still need your approval`;
+  elements.bufferCapacitySummary.textContent = `${prepared} placements prepared · ${accepted} accepted by Buffer · ${awaiting} still need your approval · five per account daily`;
 }
 
 function populateCategories() {
@@ -364,12 +373,12 @@ function renderWeek() {
   elements.weekTotal.textContent = total;
   elements.dailyCapacity.replaceChildren(...Object.entries(placementsByDay).map(([date, count]) => {
     const item = document.createElement('div');
-    item.className = `capacity-day${count === 10 ? ' is-full' : ''}${count > 10 ? ' is-over' : ''}`;
-    item.style.setProperty('--load', `${Math.min(count, 10) * 10}%`);
+    item.className = `capacity-day${count === 15 ? ' is-full' : ''}${count > 15 ? ' is-over' : ''}`;
+    item.style.setProperty('--load', `${(Math.min(count, 15) / 15) * 100}%`);
     const day = document.createElement('span');
     day.textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
     const value = document.createElement('strong');
-    value.textContent = `${count}/10`;
+    value.textContent = `${count}/15`;
     const bar = document.createElement('i');
     bar.setAttribute('aria-hidden', 'true');
     item.append(day, value, bar);

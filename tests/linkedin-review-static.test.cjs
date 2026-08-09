@@ -54,18 +54,43 @@ test('Swiper is a checked projection of the Master LinkedIn Ledger', () => {
   assert.match(html, /id="master-total"/);
 });
 
-test('UI distinguishes the daily safety ceiling from Buffer Free queue capacity', () => {
-  assert.equal(queue.capacityPolicy.maximumAccountPlacementsPerDay, 10);
-  assert.equal(queue.capacityPolicy.maximumAccountPlacementsPerWeek, 70);
+test('UI distinguishes five daily posts per channel from Buffer Free queue capacity', () => {
+  assert.equal(queue.capacityPolicy.maximumPlacementsPerChannelPerDay, 5);
+  assert.equal(queue.capacityPolicy.maximumAccountPlacementsPerDay, 15);
+  assert.equal(queue.capacityPolicy.maximumAccountPlacementsPerWeek, 105);
   assert.equal(queue.capacityPolicy.bufferFreeScheduledPerChannel, 10);
   const byTarget = Object.fromEntries(['personal', 'main', 'secondary'].map((target) => [
     target,
     queue.posts.filter((post) => post.targets.includes(target)).length,
   ]));
   assert.deepEqual(byTarget, { personal: 10, main: 10, secondary: 10 });
-  assert.match(html, /10 is Buffer’s queue capacity per account, not a daily posting target/);
-  assert.match(app, /placements\.length} \/ 10 ready/);
-  assert.match(app, /\$\{count\}\/10/);
+  assert.match(html, /Buffer Free holds 10 scheduled posts per account/);
+  assert.match(app, /placements\.length} prepared/);
+  assert.match(app, /\$\{count\}\/15/);
+});
+
+test('review decisions persist across regenerated master projections', () => {
+  assert.match(app, /state\.queue\?\.masterLedger\?\.id \|\| 'master'/);
+  assert.match(app, /localStorage\.getItem\(legacyStorageKey\(\)\)/);
+  assert.doesNotMatch(app, /function storageKey\(\) \{\s*return `content-swiper:\$\{REPOSITORY\}:\$\{state\.queue\?\.generatedAt/);
+});
+
+test('daily capacity display uses the full 15-placement ceiling', () => {
+  assert.match(app, /count === 15/);
+  assert.match(app, /count > 15/);
+  assert.match(app, /Math\.min\(count, 15\) \/ 15/);
+});
+
+test('the review projection uses only the canonical scheduledAt field', () => {
+  const queue = JSON.parse(fs.readFileSync(path.join(root, 'apps/linkedin-review/queue.json'), 'utf8'));
+  assert.equal(queue.capacityPolicy.planningAnchorDate, '2026-08-09');
+  assert.equal(queue.capacityPolicy.firstPublishDate, '2026-08-10');
+  for (const post of queue.posts) {
+    assert.equal('schedule' in post, false, `${post.id} has a shadow schedule field`);
+    for (const value of Object.values(post.scheduledAt)) {
+      assert.match(value, /^2026-08-(10|11)T/);
+    }
+  }
 });
 
 test('weekly hand-off has explicit send and read-only refresh controls', () => {

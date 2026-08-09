@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "ledgerId": "222-emails-master-linkedin-ledger",
-  "ledgerHash": "edf37b82845fb71b1ea0d95ea8418d7a127136419e2d531a6d8b61129e5e3f70",
-  "generatedAt": "2026-08-09T17:13:13.591Z",
+  "ledgerHash": "8512107bceb4e22e6b0ab235c6eadfa543282705f623586afac7bac3fe895438",
+  "generatedAt": "2026-08-09T19:51:00.876Z",
   "summary": {
     "discoveredChunks": 1177,
     "exactDuplicatesRemoved": 31,
@@ -24,8 +24,11 @@
   "rules": {
     "newContentEntersMasterFirst": true,
     "historicalApprovalIsNotPublishPermission": true,
-    "maximumAccountPlacementsPerDay": 10,
+    "maximumPlacementsPerChannelPerDay": 5,
+    "maximumAccountPlacementsPerDay": 15,
+    "maximumAccountPlacementsPerWeek": 105,
     "bufferFreeScheduledPerChannel": 10,
+    "bufferRunwayDaysAtConfiguredRate": 2,
     "bufferFreeConnectedChannels": 3
   }
 }
