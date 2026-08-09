@@ -8,7 +8,7 @@ Notion is not retired. It is deliberately removed from the runtime path because 
 
 ## Human-first approval path
 
-1. A post enters `apps/linkedin-review/queue.json` as `draft`, then `review`.
+1. A fully written, channel-specific post enters `apps/linkedin-review/queue.json` as `live_ready`, then `review`.
 2. Chelston reviews category, destination, time, copy, channel variants and media in the mobile interface.
 3. **NO** opens a pre-filled `[REJECTED LINKEDIN]` issue. This title never triggers Buffer.
 4. **YES** first opens a plain-language confirmation sheet.
@@ -23,9 +23,9 @@ The interface never contains a GitHub token or Buffer credential. The extra GitH
 
 | State | Evidence |
 | --- | --- |
-| `draft` | Queue history entry; never publishable |
+| `live_ready` | Copy, destination and timing are complete; awaits Chelston's decision |
 | `review` | Queue history entry; awaiting Chelston |
-| `approved` | Owner-created approval issue exists or Buffer draft test completed |
+| `approved` | Owner-created approval issue exists and is awaiting dispatch evidence |
 | `rejected` | Newest decision issue is `[REJECTED LINKEDIN]` |
 | `scheduled` | Buffer accepted a queue or custom-scheduled post and the approval issue closed |
 | `published` | Separate `[PUBLISHED LINKEDIN]` evidence record; Buffer acceptance alone is not publication proof |
@@ -51,4 +51,4 @@ node scripts/consolidate-linkedin-content.mjs <source paths> --output .local-lin
 
 It inventories Markdown, text, CSV and JSON records, removes exact duplicates and preserves source paths. The generated library is ignored by Git because Mac paths and source copy may be private. Selected material is rewritten, cited and promoted into the public review queue only after editorial review.
 
-Historic Notion approval is metadata, not live publishing consent. Imported content always re-enters as `draft` or `review`.
+Historic Notion approval is metadata, not live publishing consent. Imported content always re-enters as `live_ready` or `review`.

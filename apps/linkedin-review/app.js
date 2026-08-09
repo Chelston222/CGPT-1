@@ -6,7 +6,7 @@ const CHANNEL_LABELS = {
   main: '222 Emails · Main',
   secondary: 'TTE · Secondary',
 };
-const STATUS_ORDER = ['draft', 'review', 'approved', 'rejected', 'scheduled', 'published', 'failed'];
+const STATUS_ORDER = ['review', 'approved', 'rejected', 'scheduled', 'published', 'failed'];
 
 const state = {
   posts: [],
@@ -16,6 +16,8 @@ const state = {
   filter: 'review',
   category: 'all',
   decision: null,
+  weeks: [],
+  weekIndex: 0,
 };
 
 const elements = {
@@ -39,6 +41,14 @@ const elements = {
   feedbackField: document.querySelector('#feedback-field'),
   rejectionNote: document.querySelector('#rejection-note'),
   safetyNote: document.querySelector('#safety-note'),
+  previousWeek: document.querySelector('#previous-week'),
+  nextWeek: document.querySelector('#next-week'),
+  weekRange: document.querySelector('#week-range'),
+  weekSummary: document.querySelector('#week-summary'),
+  weekPersonal: document.querySelector('#week-personal'),
+  weekMain: document.querySelector('#week-main'),
+  weekSecondary: document.querySelector('#week-secondary'),
+  weekTotal: document.querySelector('#week-total'),
 };
 
 function escapeForIssue(value) {
@@ -55,6 +65,43 @@ function formatDate(value) {
     primary: new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).format(date),
     secondary: new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }).format(date),
   };
+}
+
+function dateOnly(value) {
+  return String(value).slice(0, 10);
+}
+
+function addDays(value, days) {
+  const date = new Date(`${value}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function weekStart(value) {
+  const date = new Date(`${dateOnly(value)}T12:00:00Z`);
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() - day + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function weekLabel(start) {
+  const end = addDays(start, 6);
+  const startDate = new Date(`${start}T12:00:00Z`);
+  const endDate = new Date(`${end}T12:00:00Z`);
+  const startMonth = new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' }).format(startDate);
+  const endMonth = new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' }).format(endDate);
+  const year = endDate.getUTCFullYear();
+  if (startMonth === endMonth) return `${startDate.getUTCDate()}–${endDate.getUTCDate()} ${endMonth} ${year}`;
+  return `${startDate.getUTCDate()} ${startMonth}–${endDate.getUTCDate()} ${endMonth} ${year}`;
+}
+
+function scheduleIsInWeek(value, start) {
+  const date = dateOnly(value);
+  return date >= start && date <= addDays(start, 6);
+}
+
+function postIsInWeek(post, start) {
+  return Object.values(post.scheduledAt).some((value) => scheduleIsInWeek(value, start));
 }
 
 function titleHasPostId(issue, postId) {
@@ -75,7 +122,6 @@ function statusFromIssues(post) {
   const latest = matching[0];
   if (latest.title.startsWith('[REJECTED LINKEDIN]')) return 'rejected';
   if (latest.title.startsWith('[APPROVED LINKEDIN]')) {
-    if (latest.state === 'closed' && post.mode === 'draft') return 'approved';
     if (latest.state === 'closed') return 'scheduled';
     return 'approved';
   }
@@ -107,6 +153,7 @@ async function load() {
   }
 
   state.posts = state.posts.map((post) => ({ ...post, resolvedStatus: statusFromIssues(post) }));
+  state.weeks = [...new Set(state.posts.flatMap((post) => Object.values(post.scheduledAt).map(weekStart)))].sort();
   populateCategories();
   applyFilters();
   updateMetrics();
@@ -126,30 +173,64 @@ function populateCategories() {
 
 function applyFilters() {
   state.filtered = state.posts.filter((post) => {
+    const selectedWeek = state.weeks[state.weekIndex];
+    const weekMatches = selectedWeek && postIsInWeek(post, selectedWeek);
     const categoryMatches = state.category === 'all' || post.category === state.category;
     const filterMatches = state.filter === 'all'
-      || (state.filter === 'review' && ['draft', 'review'].includes(post.resolvedStatus))
-      || (state.filter === 'decided' && !['draft', 'review'].includes(post.resolvedStatus));
-    return categoryMatches && filterMatches;
+      || (state.filter === 'review' && post.resolvedStatus === 'review')
+      || (state.filter === 'decided' && post.resolvedStatus !== 'review');
+    return weekMatches && categoryMatches && filterMatches;
   });
   state.index = Math.min(state.index, Math.max(0, state.filtered.length - 1));
+  updateMetrics();
   render();
 }
 
 function updateMetrics() {
   const counts = Object.fromEntries(STATUS_ORDER.map((status) => [status, 0]));
-  for (const post of state.posts) counts[post.resolvedStatus] = (counts[post.resolvedStatus] || 0) + 1;
-  document.querySelector('#metric-review').textContent = counts.draft + counts.review;
+  const selectedWeek = state.weeks[state.weekIndex];
+  const weekPosts = state.posts.filter((post) => selectedWeek && postIsInWeek(post, selectedWeek));
+  for (const post of weekPosts) counts[post.resolvedStatus] = (counts[post.resolvedStatus] || 0) + 1;
+  document.querySelector('#metric-review').textContent = counts.review;
   document.querySelector('#metric-approved').textContent = counts.approved;
   document.querySelector('#metric-scheduled').textContent = counts.scheduled + counts.published;
   document.querySelector('#metric-rejected').textContent = counts.rejected + counts.failed;
 }
 
 function render() {
+  renderWeek();
   renderCurrentPost();
   renderQueue();
   elements.position.textContent = state.filtered.length ? `${state.index + 1} of ${state.filtered.length}` : '0 of 0';
   elements.progress.style.width = state.filtered.length ? `${((state.index + 1) / state.filtered.length) * 100}%` : '0';
+}
+
+function renderWeek() {
+  const selectedWeek = state.weeks[state.weekIndex];
+  if (!selectedWeek) {
+    elements.weekRange.textContent = 'No scheduled weeks';
+    elements.weekSummary.textContent = 'Add a live-ready post to start the calendar.';
+    elements.previousWeek.disabled = true;
+    elements.nextWeek.disabled = true;
+    return;
+  }
+
+  const weekPosts = state.posts.filter((post) => postIsInWeek(post, selectedWeek));
+  const counts = { personal: 0, main: 0, secondary: 0 };
+  for (const post of weekPosts) {
+    for (const target of post.targets) {
+      if (scheduleIsInWeek(post.scheduledAt[target] || Object.values(post.scheduledAt)[0], selectedWeek)) counts[target] += 1;
+    }
+  }
+  const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
+  elements.weekRange.textContent = weekLabel(selectedWeek);
+  elements.weekSummary.textContent = `Week ${state.weekIndex + 1} of ${state.weeks.length} · ${weekPosts.length} content ${weekPosts.length === 1 ? 'decision' : 'decisions'} · ${total} account ${total === 1 ? 'placement' : 'placements'}`;
+  elements.weekPersonal.textContent = counts.personal;
+  elements.weekMain.textContent = counts.main;
+  elements.weekSecondary.textContent = counts.secondary;
+  elements.weekTotal.textContent = total;
+  elements.previousWeek.disabled = state.weekIndex === 0;
+  elements.nextWeek.disabled = state.weekIndex === state.weeks.length - 1;
 }
 
 function createPostContent(post) {
@@ -228,7 +309,7 @@ function renderCurrentPost() {
   }
 
   elements.card.append(createPostContent(post));
-  const canDecide = ['draft', 'review', 'rejected', 'failed'].includes(post.resolvedStatus);
+  const canDecide = ['review', 'rejected', 'failed'].includes(post.resolvedStatus);
   elements.controls.hidden = !canDecide;
   elements.swipeHint.hidden = !canDecide;
 }
@@ -325,6 +406,18 @@ elements.category.addEventListener('change', () => {
   state.index = 0;
   applyFilters();
 });
+elements.previousWeek.addEventListener('click', () => {
+  if (state.weekIndex === 0) return;
+  state.weekIndex -= 1;
+  state.index = 0;
+  applyFilters();
+});
+elements.nextWeek.addEventListener('click', () => {
+  if (state.weekIndex >= state.weeks.length - 1) return;
+  state.weekIndex += 1;
+  state.index = 0;
+  applyFilters();
+});
 elements.approve.addEventListener('click', () => openDecision('approve'));
 elements.reject.addEventListener('click', () => openDecision('reject'));
 elements.sheetAction.addEventListener('click', commitDecision);
@@ -363,7 +456,7 @@ function showError(error) {
   wrapper.className = 'empty-state';
   const message = document.createElement('p');
   const heading = document.createElement('strong');
-  heading.textContent = 'We could not load the review desk.';
+  heading.textContent = 'We could not load the Content Swiper.';
   message.append(heading, document.createElement('br'), document.createTextNode(error.message));
   wrapper.append(message);
   elements.card.replaceChildren(wrapper);
