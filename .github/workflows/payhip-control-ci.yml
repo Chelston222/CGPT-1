@@ -1,0 +1,44 @@
+name: Payhip Control CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/payhip-control/**'
+      - '.github/workflows/payhip-control-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/payhip-control/**'
+      - '.github/workflows/payhip-control-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/payhip-control
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/payhip-control/package.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Static checks
+        run: npm run check
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Dependency/runtime import smoke test
+        run: node -e "await import('./netlify/functions/mcp.mjs'); await import('./netlify/functions/control-api.mjs'); await import('./netlify/functions/webhook.mjs'); console.log('runtime imports ok')"

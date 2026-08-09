@@ -1,0 +1,21 @@
+{
+  "name": "222emails-payhip-control",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "netlify dev",
+    "check": "node --check netlify/functions/_shared/core.mjs && node --check netlify/functions/_shared/auth.mjs && node --check netlify/functions/_shared/store.mjs && node --check netlify/functions/_shared/payhip-api.mjs && node --check netlify/functions/webhook.mjs && node --check netlify/functions/health.mjs && node --check netlify/functions/control-api.mjs && node --check netlify/functions/openapi.mjs && node --check netlify/functions/mcp.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "qa": "npm run check && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "@netlify/blobs": "^10.0.8",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^23.0.0"
+  }
+}
