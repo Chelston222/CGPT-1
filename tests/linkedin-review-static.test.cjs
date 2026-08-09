@@ -20,11 +20,19 @@ test('manual Next changes navigation only', () => {
   assert.doesNotMatch(body, /saveDecisions|localStorage|window\.location|openDecision|weeklyIssueUrl|fetch\(/);
 });
 
-test('carousel YES is guarded in both the interface and server path', () => {
-  assert.match(app, /decision === 'approve' && !carouselIsPublishable\(post\)/);
+test('carousel can receive an editorial YES while final dispatch stays guarded', () => {
+  assert.doesNotMatch(app, /decision === 'approve' && !carouselIsPublishable\(post\)/);
+  assert.match(app, /summary\.yes\.some\(\(post\) => !carouselIsPublishable\(post\)\)/);
+  assert.match(app, /awaiting final PDF/);
   const weekly = fs.readFileSync(path.join(root, 'scripts/linkedin-week-batch.cjs'), 'utf8');
   assert.match(weekly, /post\.format === 'carousel'/);
   assert.match(weekly, /carousel PDF is not verified and publishable/);
+});
+
+test('carousel previews use the promoted six-slide render gallery', () => {
+  assert.match(html, /class="carousel-gallery"/);
+  assert.match(app, /media\/carousels\/\$\{post\.carousel\.libraryId\}\/slide-/);
+  assert.match(app, /event\.target\.closest\('\.carousel-gallery'\)/);
 });
 
 test('a slow GitHub audit cannot block the review queue indefinitely', () => {

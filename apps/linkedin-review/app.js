@@ -96,6 +96,14 @@ function carouselIsPublishable(post) {
   return post.format !== 'carousel' || post.carousel?.readiness === 'ready';
 }
 
+function carouselPreviewUrls(post) {
+  if (!post.carousel?.libraryId || !post.carousel?.slideCount) return [];
+  return Array.from(
+    { length: Number(post.carousel.slideCount) },
+    (_, index) => `media/carousels/${post.carousel.libraryId}/slide-${index + 1}.webp`,
+  );
+}
+
 function formatDate(value) {
   const date = new Date(value);
   return {
@@ -310,10 +318,13 @@ function weekDecisionSummary() {
 
 function renderBatchPanel() {
   const summary = weekDecisionSummary();
+  const awaitingMedia = summary.yes.filter((post) => !carouselIsPublishable(post));
   elements.batchPanel.hidden = !state.weeks[state.weekIndex] || !summary.posts.length;
-  elements.batchStatus.textContent = `${summary.yes.length} YES · ${summary.no.length} NO · ${summary.remaining.length} to decide`;
-  elements.sendWeek.disabled = summary.remaining.length > 0 || summary.yes.length === 0;
-  elements.sendWeek.textContent = summary.remaining.length
+  elements.batchStatus.textContent = `${summary.yes.length} YES · ${summary.no.length} NO · ${summary.remaining.length} to decide${awaitingMedia.length ? ` · ${awaitingMedia.length} awaiting final PDF` : ''}`;
+  elements.sendWeek.disabled = summary.remaining.length > 0 || summary.yes.length === 0 || awaitingMedia.length > 0;
+  elements.sendWeek.textContent = awaitingMedia.length
+    ? `Attach ${awaitingMedia.length} final ${awaitingMedia.length === 1 ? 'PDF' : 'PDFs'}`
+    : summary.remaining.length
     ? `Decide ${summary.remaining.length} more`
     : summary.yes.length ? `Send ${summary.yes.length} approved ${summary.yes.length === 1 ? 'post' : 'posts'}` : 'Nothing approved';
   elements.clearWeek.disabled = summary.yes.length + summary.no.length === 0;
@@ -370,7 +381,26 @@ function createPostContent(post) {
     copyList.append(section);
   }
 
-  if (post.mediaPreviewUrl) {
+  if (post.carousel) {
+    const gallery = fragment.querySelector('.carousel-gallery');
+    const track = gallery.querySelector('.carousel-track');
+    const urls = carouselPreviewUrls(post);
+    if (urls.length) {
+      gallery.hidden = false;
+      urls.forEach((url, index) => {
+        const slide = document.createElement('figure');
+        slide.className = 'carousel-slide';
+        const image = document.createElement('img');
+        image.src = url;
+        image.alt = `${post.title} — carousel slide ${index + 1} of ${urls.length}`;
+        image.loading = index > 0 ? 'lazy' : 'eager';
+        const caption = document.createElement('figcaption');
+        caption.textContent = `${index + 1} / ${urls.length}`;
+        slide.append(image, caption);
+        track.append(slide);
+      });
+    }
+  } else if (post.mediaPreviewUrl) {
     const media = fragment.querySelector('.media-preview');
     const image = media.querySelector('img');
     media.hidden = false;
@@ -386,7 +416,7 @@ function createPostContent(post) {
     readiness.dataset.ready = String(carouselIsPublishable(post));
     readiness.textContent = carouselIsPublishable(post)
       ? 'Carousel PDF is attached and included in the approval lock.'
-      : 'Carousel source is matched and promoted. YES unlocks only after its publishable PDF has been verified.';
+      : 'You can select YES for the copy and carousel now. Final weekly scheduling stays safely locked until its publishable PDF is attached and verified.';
   }
   return fragment;
 }
@@ -411,8 +441,8 @@ function renderCurrentPost() {
   elements.card.append(createPostContent(post));
   const canDecide = ['review', 'rejected', 'failed'].includes(post.resolvedStatus);
   elements.controls.hidden = !canDecide;
-  elements.approve.disabled = !carouselIsPublishable(post);
-  elements.approve.title = carouselIsPublishable(post) ? '' : 'This carousel still needs its verified PDF attachment.';
+  elements.approve.disabled = false;
+  elements.approve.title = !carouselIsPublishable(post) ? 'Approve this carousel editorially; final scheduling remains locked until its PDF is verified.' : '';
   elements.manualNext.hidden = false;
   elements.manualNext.disabled = state.filtered.length < 2;
   elements.swipeHint.hidden = !canDecide;
@@ -471,19 +501,18 @@ function weeklyIssueUrl() {
 function openDecision(decision) {
   const post = state.filtered[state.index];
   if (!post) return;
-  if (decision === 'approve' && !carouselIsPublishable(post)) return;
   state.decision = decision;
   const approved = decision === 'approve';
   elements.sheetEyebrow.textContent = approved ? 'YES selection' : 'Revision route';
   elements.sheetTitle.textContent = approved ? 'Add this exact version to YES?' : 'Return this post for revision?';
   elements.sheetCopy.textContent = approved
-    ? `${post.id} will be included in the weekly approval. The next post will appear immediately.`
+    ? `${post.id} will be marked YES and the next post will appear immediately.${!carouselIsPublishable(post) ? ' Its final weekly send will stay locked until the carousel PDF is verified.' : ''}`
     : `${post.id} will be held for revision. The next post will appear immediately.`;
   elements.feedbackField.hidden = approved;
   elements.sheetAction.textContent = approved ? 'Save YES · show next' : 'Save NO · show next';
   elements.sheetAction.classList.toggle('reject', !approved);
   elements.safetyNote.textContent = approved
-    ? 'This saves only on this device. Buffer is contacted only after every item is decided and you submit the single weekly GitHub approval.'
+    ? `This saves only on this device. Buffer is contacted only after every item is decided and you submit the single weekly GitHub approval.${!carouselIsPublishable(post) ? ' This editorial YES cannot send a missing-media carousel.' : ''}`
     : 'NO never contacts Buffer. Your note stays with this device for the revision pass.';
   elements.sheet.showModal();
 }
@@ -513,7 +542,7 @@ function commitDecision() {
 function openWeeklySend() {
   const selectedWeek = state.weeks[state.weekIndex];
   const summary = weekDecisionSummary();
-  if (!selectedWeek || summary.remaining.length || !summary.yes.length) return;
+  if (!selectedWeek || summary.remaining.length || !summary.yes.length || summary.yes.some((post) => !carouselIsPublishable(post))) return;
   state.decision = 'send_week';
   elements.sheetEyebrow.textContent = 'Final weekly approval';
   elements.sheetTitle.textContent = `Send ${summary.yes.length} YES ${summary.yes.length === 1 ? 'post' : 'posts'} to GitHub?`;
@@ -578,6 +607,7 @@ elements.refresh.addEventListener('click', () => load().catch(showError));
 let touchStart = null;
 elements.card.addEventListener('pointerdown', (event) => {
   if (event.pointerType === 'mouse') return;
+  if (event.target.closest('.carousel-gallery')) return;
   touchStart = { x: event.clientX, y: event.clientY };
   elements.card.classList.add('swiping');
 });
