@@ -27,9 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install review-service dependency
+        run: npm install --prefix apps/linkedin-review --ignore-scripts --no-audit --no-fund
       - name: Validate queue, approval and cross-device sync logic
         run: |
           node --test tests/linkedin-*.test.cjs
@@ -37,4 +41,5 @@ jobs:
           node --check apps/linkedin-review/sync.js
           node --check apps/linkedin-review/netlify/functions/review-decisions.mjs
           node --check scripts/build-linkedin-master-ledger.mjs
+          node -e "import('./apps/linkedin-review/netlify/functions/review-decisions.mjs').then(() => console.log('decision sync function imports'))"
           node -e "const q=require('./apps/linkedin-review/queue.json'); if(q.posts.length < 18) process.exit(1); for(const p of q.posts){if(!p.id||!p.copy||!p.targets?.length||!p.scheduledAt) process.exit(1)}"
