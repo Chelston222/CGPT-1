@@ -23,13 +23,14 @@ jobs:
       - name: Check out approval checks
         uses: actions/checkout@v4
 
-      - name: Validate, release within capacity and audit
+      - name: Validate live quality, release within capacity and audit
         uses: actions/github-script@v7
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
           BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
           BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
         with:
           script: |
             const path = require('node:path');
@@ -37,6 +38,7 @@ jobs:
             const { buildCreatePostMutation, validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
             const { validateWeeklyBatch } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
             const { acceptedMarker, classifyBufferFailure, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
+            const { assertLiveNotionQualityGate } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-quality-gate.cjs'));
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -89,6 +91,16 @@ jobs:
                 const batch = isWeekly ? validateWeeklyBatch(issue.body || '', queue, process.env, Date.parse(issue.created_at), { allowGeneratedAtDrift: accepted.size > 0 }) : null;
                 const request = isWeekly ? null : validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
                 const jobs = batch?.jobs || [{ post: { id: request.postId, revision: request.revision, category: request.category }, request }];
+
+                if (!process.env.NOTION_API_KEY) throw new Error('Missing NOTION_API_KEY repository secret. Live quality verification is mandatory and dispatch fails closed.');
+                const qualitySnapshots = [];
+                for (const job of jobs) {
+                  const queuePost = (queue.posts || []).find((post) => post.id === job.post.id && String(post.revision) === String(job.post.revision));
+                  if (!queuePost) throw new Error(`${job.post.id}@${job.post.revision} is not the current queue revision.`);
+                  const quality = await assertLiveNotionQualityGate(queuePost, process.env.NOTION_API_KEY, fetch);
+                  qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, ...quality.snapshot });
+                }
+
                 const channelIdByTarget = Object.fromEntries(jobs.flatMap((job) => job.request.channels.map((channel) => [channel.target, channel.id])));
                 const capacity = await queueOccupancy(Object.values(channelIdByTarget));
                 const occupancy = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [target, capacity.counts[id] || 0]));
@@ -114,6 +126,7 @@ jobs:
                 }
 
                 const resultLines = results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` — ${result.dueAt}` : ''}\n  ${acceptedMarker(result.key)}`);
+                const qualityLines = qualitySnapshots.map((snapshot) => `- ${snapshot.id}@${snapshot.revision}: ${snapshot.decision} · ${snapshot.approval} · Anti-DNA ${snapshot.antiDnaPass ? 'PASS' : 'FAIL'} · ${snapshot.automationStatus}`);
                 const waiting = plan.waiting.length;
                 const waitingMarker = `<!-- BUFFER_CAPACITY_WAIT ${waiting} -->`;
                 const alreadyReportedSameWait = comments.some((comment) => comment.user?.login === 'github-actions[bot]' && String(comment.body || '').includes(waitingMarker));
@@ -121,6 +134,8 @@ jobs:
                   owner, repo, issue_number: issue.number, body: [
                     waiting ? '🕒 Buffer capacity window processed.' : '✅ Buffer accepted every remaining requested destination.',
                     '',
+                    '- Live Notion quality gate: **PASS**',
+                    ...qualityLines,
                     `- Audit status: **${waiting ? 'approved — waiting for Buffer capacity' : 'scheduled'}**`,
                     batch ? `- Approved week: **${batch.weekStart} to ${batch.weekEnd}**` : `- Queue post: **${jobs[0].post.id || 'legacy issue'}**`,
                     `- Already accepted before this run: **${plan.alreadyAccepted.length}**`,
@@ -143,7 +158,7 @@ jobs:
                   body: [
                     '❌ LinkedIn Buffer dispatch failed closed.', '',
                     `- Error: ${error.message}`,
-                    `- Failure class: **${error.failure?.code || 'preflight_failure'}**`,
+                    `- Failure class: **${error.failure?.code || (error.qualityGate ? 'live_quality_gate' : 'preflight_failure')}**`,
                     '- Destinations created before the failure:', partial, '',
                     retryable ? 'The next capacity check will retry and skip every destination recorded above.' : 'This needs correction and a new revision before scheduling can continue.',
                     'Nothing should be assumed published.',
