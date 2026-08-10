@@ -1,6 +1,10 @@
 name: LinkedIn Autopost via Buffer
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/linkedin-buffer-autopost.yml'
   issues:
     types: [opened]
   schedule:
