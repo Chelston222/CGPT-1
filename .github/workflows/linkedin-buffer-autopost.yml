@@ -83,7 +83,6 @@ jobs:
             for (const issue of issues) {
               const results = [];
               try {
-                // Historic acceptance markers are the idempotency ledger for partial multi-channel runs.
                 const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
                 const accepted = parseAcceptedMarkers(comments);
                 const isWeekly = issue.title.startsWith('[APPROVED LINKEDIN WEEK]');
@@ -101,7 +100,7 @@ jobs:
                   request: { channels: [{ target: targetByChannelId[entry.channelId], dueAt: entry.dueAt }] },
                 }));
                 const proposedJobs = plan.dispatch.map(({ job, channel }) => ({ post: job.post, request: { channels: [channel] } }));
-                validateDailyPlacementLimit([...occupiedJobs, ...proposedJobs], 15, 5, queue.timezone || 'Europe/London');
+                validateDailyPlacementLimit([...occupiedJobs, ...proposedJobs], 30, 10, queue.timezone || 'Europe/London');
 
                 for (const { job, channel, key } of plan.dispatch) {
                   if (channel.dueAt && new Date(channel.dueAt).getTime() <= Date.now() + 5 * 60_000) {
