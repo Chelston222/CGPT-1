@@ -1,0 +1,42 @@
+name: LinkedIn Notion Preflight
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/linkedin-notion-preflight.yml'
+      - 'scripts/linkedin-notion-quality-gate.cjs'
+
+permissions:
+  contents: read
+
+jobs:
+  notion-read-only-preflight:
+    runs-on: ubuntu-latest
+    env:
+      NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+      NOTION_PREFLIGHT_PAGE_ID: 3ace72eb85878183a413d264211cab80
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify Notion credential and live quality read path
+        run: |
+          node <<'NODE'
+          const { fetchNotionPage, evaluateNotionQualityGate } = require('./scripts/linkedin-notion-quality-gate.cjs');
+          (async () => {
+            if (!process.env.NOTION_API_KEY) throw new Error('NOTION_API_KEY is missing.');
+            const page = await fetchNotionPage(process.env.NOTION_PREFLIGHT_PAGE_ID, process.env.NOTION_API_KEY, fetch);
+            const result = evaluateNotionQualityGate(page, process.env.NOTION_PREFLIGHT_PAGE_ID);
+            console.log(JSON.stringify({
+              notionRead: 'PASS',
+              pageIdentity: 'PASS',
+              qualityGate: result.pass ? 'PASS' : 'BLOCKED_AS_DESIGNED',
+              snapshot: result.snapshot,
+            }, null, 2));
+          })().catch((error) => {
+            console.error(error.message);
+            process.exit(1);
+          });
+          NODE
