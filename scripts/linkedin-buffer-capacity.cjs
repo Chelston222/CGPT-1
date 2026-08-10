@@ -1,8 +1,8 @@
 'use strict';
 
 const FREE_PLAN_MAX_SCHEDULED_PER_CHANNEL = 10;
-const MAX_PLACEMENTS_PER_CHANNEL_PER_DAY = 5;
-const MAX_PLACEMENTS_PER_DAY = 15;
+const MAX_PLACEMENTS_PER_CHANNEL_PER_DAY = 10;
+const MAX_PLACEMENTS_PER_DAY = 30;
 const TARGETS = ['personal', 'main', 'secondary'];
 
 function placementKey(postId, revision, target) {
