@@ -5,6 +5,8 @@ const TARGET_ALIASES = {
   business: ['main'],
   main: ['main'],
   secondary: ['secondary'],
+  retentionlab: ['secondary'],
+  lab: ['secondary'],
   both: ['personal', 'main'],
   all: ['personal', 'main', 'secondary'],
 };
@@ -12,7 +14,7 @@ const TARGET_ALIASES = {
 const TARGET_LABELS = {
   personal: 'Chelston personal',
   main: 'Main 222 Emails page',
-  secondary: 'Secondary TTE page',
+  secondary: '222 Emails | Retention Lab',
 };
 
 const TARGET_SECRET_NAMES = {
@@ -64,7 +66,7 @@ function normaliseTargets(rawTarget = 'personal') {
 
   const unique = [...new Set(targets)];
   if (!unique.length || unique.some((target) => !TARGET_LABELS[target])) {
-    throw new Error('TARGETS must use personal, main, secondary, or a comma-separated combination.');
+    throw new Error('TARGETS must use personal, main, secondary/retentionlab, or a comma-separated combination.');
   }
   return unique;
 }
