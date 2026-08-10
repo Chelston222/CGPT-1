@@ -1,0 +1,1 @@
+Capacity policy updated 2026-08-10: target up to 10 scheduled posts per LinkedIn channel per day, subject to Buffer queue capacity and approved content.
