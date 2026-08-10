@@ -97,15 +97,20 @@ jobs:
                 const jobs = batch?.jobs || [{ post: { id: request.postId, revision: request.revision, category: request.category }, request }];
 
                 const qualitySnapshots = [];
-                const qualityMode = process.env.NOTION_API_KEY ? 'live-notion' : 'owner-approved-current-queue';
+                let qualityMode = 'repository-owner-approved-legacy';
                 for (const job of jobs) {
                   const queuePost = (queue.posts || []).find((post) => post.id === job.post.id && String(post.revision) === String(job.post.revision));
-                  if (!queuePost) throw new Error(`${job.post.id}@${job.post.revision} is not the current queue revision.`);
-                  if (process.env.NOTION_API_KEY) {
+                  if (queuePost && process.env.NOTION_API_KEY) {
                     const quality = await assertLiveNotionQualityGate(queuePost, process.env.NOTION_API_KEY, fetch);
-                    qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, ...quality.snapshot });
+                    qualityMode = 'live-notion';
+                    qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, ...quality.snapshot, mode: 'live-notion' });
+                  } else if (queuePost) {
+                    qualityMode = 'owner-approved-current-queue';
+                    qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, mode: 'owner-approved-current-queue' });
+                  } else if (isWeekly) {
+                    throw new Error(`${job.post.id}@${job.post.revision} is not the current queue revision.`);
                   } else {
-                    qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, decision: 'current queue revision', approval: 'repository-owner approved', antiDnaPass: null, automationStatus: 'compatibility mode' });
+                    qualitySnapshots.push({ id: job.post.id, revision: job.post.revision, mode: 'repository-owner-approved-legacy' });
                   }
                 }
 
@@ -134,9 +139,9 @@ jobs:
                 }
 
                 const resultLines = results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` — ${result.dueAt}` : ''}\n  ${acceptedMarker(result.key)}`);
-                const qualityLines = qualitySnapshots.map((snapshot) => process.env.NOTION_API_KEY
+                const qualityLines = qualitySnapshots.map((snapshot) => snapshot.mode === 'live-notion'
                   ? `- ${snapshot.id}@${snapshot.revision}: ${snapshot.decision} · ${snapshot.approval} · Anti-DNA ${snapshot.antiDnaPass ? 'PASS' : 'FAIL'} · ${snapshot.automationStatus}`
-                  : `- ${snapshot.id}@${snapshot.revision}: current queue revision · repository-owner approval`);
+                  : `- ${snapshot.id}@${snapshot.revision}: ${snapshot.mode}`);
                 const waiting = plan.waiting.length;
                 const waitingMarker = `<!-- BUFFER_CAPACITY_WAIT ${waiting} -->`;
                 const alreadyReportedSameWait = comments.some((comment) => comment.user?.login === 'github-actions[bot]' && String(comment.body || '').includes(waitingMarker));
