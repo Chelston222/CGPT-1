@@ -41,7 +41,7 @@ jobs:
             const fs = require('node:fs');
             const { buildCreatePostMutation, validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
             const { validateWeeklyBatch } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
-            const { acceptedMarker, classifyBufferFailure, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
+            const { acceptedMarker, classifyBufferFailure, localDate, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
             const { assertLiveNotionQualityGate } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-quality-gate.cjs'));
 
             const owner = context.repo.owner;
@@ -120,11 +120,14 @@ jobs:
                 const plan = planCapacityWindow(jobs, occupancy, accepted);
 
                 const targetByChannelId = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [id, target]));
-                const occupiedJobs = capacity.scheduled.map((entry, index) => ({
-                  post: { id: `buffer-existing-${index}`, revision: 1 },
-                  request: { channels: [{ target: targetByChannelId[entry.channelId], dueAt: entry.dueAt }] },
-                }));
                 const proposedJobs = plan.dispatch.map(({ job, channel }) => ({ post: job.post, request: { channels: [channel] } }));
+                const proposedDates = new Set(plan.dispatch.map(({ channel }) => localDate(channel.dueAt, queue.timezone || 'Europe/London')).filter(Boolean));
+                const occupiedJobs = capacity.scheduled
+                  .filter((entry) => proposedDates.has(localDate(entry.dueAt, queue.timezone || 'Europe/London')))
+                  .map((entry, index) => ({
+                    post: { id: `buffer-existing-${index}`, revision: 1 },
+                    request: { channels: [{ target: targetByChannelId[entry.channelId], dueAt: entry.dueAt }] },
+                  }));
                 validateDailyPlacementLimit([...occupiedJobs, ...proposedJobs], 15, 5, queue.timezone || 'Europe/London');
 
                 for (const { job, channel, key } of plan.dispatch) {
