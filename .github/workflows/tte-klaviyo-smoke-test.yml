@@ -1,0 +1,23 @@
+name: TTE Klaviyo Smoke Test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/tte-klaviyo-smoke-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  klaviyo-smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run safe Klaviyo API test
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: python apps/tte-klaviyo/klaviyo_smoke_test.py
