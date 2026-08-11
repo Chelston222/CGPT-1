@@ -1,0 +1,31 @@
+name: TTE Deploy Master HTML Library
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DEPLOY-222-MASTER-LIBRARY'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ inputs.confirmation == 'DEPLOY-222-MASTER-LIBRARY' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static QA
+        run: python apps/tte-klaviyo/master-library/validate_library.py
+      - name: Validate Klaviyo secret
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: test -n "$KLAVIYO_PRIVATE_API_KEY"
+      - name: Idempotent deploy
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: python apps/tte-klaviyo/master-library/deploy_master_library.py
