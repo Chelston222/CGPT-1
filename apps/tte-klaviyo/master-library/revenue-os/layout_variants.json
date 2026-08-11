@@ -1,0 +1,67 @@
+{
+  "performance-minimal": {
+    "label": "Performance Minimal",
+    "best_for": ["abandonment", "transactional", "founder", "winback"],
+    "body_bg": "#f5f7fa",
+    "card_bg": "#ffffff",
+    "text": "#111827",
+    "muted": "#667085",
+    "accent": "#111827",
+    "cta_text": "#ffffff",
+    "radius": "8px",
+    "headline_family": "Arial,Helvetica,sans-serif",
+    "design_rule": "Low-friction, fast-scanning, one dominant CTA, minimal decorative weight."
+  },
+  "premium-editorial": {
+    "label": "Premium Editorial",
+    "best_for": ["welcome", "newsletter", "launch", "case-study"],
+    "body_bg": "#f4f1eb",
+    "card_bg": "#fffdf9",
+    "text": "#1f2937",
+    "muted": "#6b7280",
+    "accent": "#1f2937",
+    "cta_text": "#ffffff",
+    "radius": "2px",
+    "headline_family": "Georgia,Times New Roman,serif",
+    "design_rule": "Editorial pacing, premium whitespace, strong typography, restrained decoration."
+  },
+  "commerce-product": {
+    "label": "Commerce Product",
+    "best_for": ["product", "cart", "cross-sell", "replenishment", "back-in-stock"],
+    "body_bg": "#eef2f6",
+    "card_bg": "#ffffff",
+    "text": "#101828",
+    "muted": "#667085",
+    "accent": "#0f172a",
+    "cta_text": "#ffffff",
+    "radius": "12px",
+    "headline_family": "Arial,Helvetica,sans-serif",
+    "design_rule": "Product evidence high in the hierarchy, compact benefit copy, strong return-to-shop CTA."
+  },
+  "proof-first": {
+    "label": "Proof First",
+    "best_for": ["case-study", "offer", "welcome-proof", "objection", "promotion"],
+    "body_bg": "#f3f4f6",
+    "card_bg": "#ffffff",
+    "text": "#111827",
+    "muted": "#667085",
+    "accent": "#111827",
+    "cta_text": "#ffffff",
+    "radius": "10px",
+    "headline_family": "Arial,Helvetica,sans-serif",
+    "design_rule": "Lead with credible evidence, mechanism and risk reduction before the CTA."
+  },
+  "founder-human": {
+    "label": "Founder Human",
+    "best_for": ["founder", "welcome", "education", "winback", "vip"],
+    "body_bg": "#ffffff",
+    "card_bg": "#ffffff",
+    "text": "#111827",
+    "muted": "#667085",
+    "accent": "#111827",
+    "cta_text": "#ffffff",
+    "radius": "6px",
+    "headline_family": "Arial,Helvetica,sans-serif",
+    "design_rule": "Human voice, visually light presentation, natural reply behaviour, minimal sales-page feel."
+  }
+}
