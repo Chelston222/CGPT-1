@@ -1,0 +1,24 @@
+name: TTE Klaviyo Deploy Draft Templates
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/tte-klaviyo-deploy-drafts.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-draft-templates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy five draft templates
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          FREE_AUDIT_URL: https://222emails.com
+        run: python apps/tte-klaviyo/deploy_templates.py
