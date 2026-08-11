@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/tte-klaviyo-smoke-test.yml'
       - 'apps/tte-klaviyo/klaviyo_smoke_test.py'
+      - 'apps/tte-klaviyo/fetch_flow_blueprint.py'
 
 permissions:
   contents: read
@@ -22,3 +23,9 @@ jobs:
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
         run: python apps/tte-klaviyo/klaviyo_smoke_test.py
+
+      - name: Fetch existing welcome flow blueprint
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          KLAVIYO_SOURCE_FLOW_ID: XDpEah
+        run: python apps/tte-klaviyo/fetch_flow_blueprint.py
