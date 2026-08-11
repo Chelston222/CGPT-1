@@ -20,5 +20,5 @@ jobs:
       - name: Deploy five draft templates
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
-          FREE_AUDIT_URL: https://222emails.com
+          FREE_AUDIT_URL: https://form.jotform.com/262067771632056
         run: python apps/tte-klaviyo/deploy_templates.py
