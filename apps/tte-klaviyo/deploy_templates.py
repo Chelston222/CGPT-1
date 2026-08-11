@@ -2,8 +2,10 @@
 
 Required environment variable:
   KLAVIYO_PRIVATE_API_KEY
+Optional environment variable:
+  FREE_AUDIT_URL (defaults to https://222emails.com for draft templates)
 
-This script creates templates only. It deliberately does not activate flows.
+This script creates templates only. It deliberately does not activate flows or send messages.
 """
 import json
 import os
@@ -14,27 +16,32 @@ import urllib.request
 API = "https://a.klaviyo.com/api/templates"
 REVISION = "2026-07-15"
 ROOT = pathlib.Path(__file__).parent
+AUDIT_URL = os.environ.get("FREE_AUDIT_URL", "https://222emails.com").rstrip("/")
 
 TEMPLATES = [
     ("TTE-WELCOME-01-FOUNDER-v1", ROOT / "templates" / "w01-founder-welcome.html"),
-    ("TTE-WELCOME-02-REVENUE-LEAKS-v1", ROOT / "templates" / "w02-revenue-leaks.html"),
+    ("TTE-WELCOME-02-REVENUE-LEAKS-v1", ROOT / "templates" / "w02-revenue-leak.html"),
     ("TTE-WELCOME-03-FIX-FIRST-v1", ROOT / "templates" / "w03-fix-first.html"),
     ("TTE-WELCOME-04-PROOF-v1", ROOT / "templates" / "w04-proof.html"),
     ("TTE-WELCOME-05-AUDIT-CONVERSION-v1", ROOT / "templates" / "w05-audit-conversion.html"),
 ]
 
 
+def render(html: str) -> str:
+    return html.replace("__FREE_AUDIT_URL__", AUDIT_URL)
+
+
 def create_template(name: str, html: str) -> dict:
     key = os.environ.get("KLAVIYO_PRIVATE_API_KEY")
     if not key:
-        raise SystemExit("Missing KLAVIYO_PRIVATE_API_KEY. Store it as a secret, never in source control.")
+        raise SystemExit("Missing KLAVIYO_PRIVATE_API_KEY. Store it as a GitHub secret, never in source control.")
     payload = {
         "data": {
             "type": "template",
             "attributes": {
                 "name": name,
                 "editor_type": "CODE",
-                "html": html,
+                "html": render(html),
             },
         }
     }
@@ -64,4 +71,4 @@ if __name__ == "__main__":
         template_id = result["data"]["id"]
         deployed.append({"name": name, "id": template_id})
         print(name, "=>", template_id)
-    print(json.dumps({"templates": deployed}, indent=2))
+    print(json.dumps({"templates": deployed, "audit_url": AUDIT_URL}, indent=2))
