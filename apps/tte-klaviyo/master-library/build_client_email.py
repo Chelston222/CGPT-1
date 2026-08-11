@@ -98,6 +98,18 @@ def build(manifest: dict) -> str:
     tracking = manifest.get("tracking", {})
     if "PRIMARY_CTA_URL" in tokens:
         tokens["PRIMARY_CTA_URL"] = add_tracking(tokens["PRIMARY_CTA_URL"], tracking)
+
+    # Replace builder-only image stand-ins with client assets before hard-gate QA.
+    assets = manifest.get("assets", {})
+    if assets.get("HERO_URL"):
+        html = html.replace("https://placehold.co/1200x680/png?text=Brand+Hero", str(assets["HERO_URL"]))
+    if assets.get("PRODUCT_IMAGE_URL"):
+        html = html.replace("https://placehold.co/220x220/png?text=Item", str(assets["PRODUCT_IMAGE_URL"]))
+    if assets.get("PRODUCT_1_IMAGE_URL"):
+        html = html.replace("https://placehold.co/520x520/png?text=Product+1", str(assets["PRODUCT_1_IMAGE_URL"]))
+    if assets.get("PRODUCT_2_IMAGE_URL"):
+        html = html.replace("https://placehold.co/520x520/png?text=Product+2", str(assets["PRODUCT_2_IMAGE_URL"]))
+
     for key, value in tokens.items():
         html = html.replace(f"__{key}__", esc(value) if not key.endswith("_URL") else str(value))
     return html
@@ -117,6 +129,8 @@ def main() -> None:
     left = unresolved(html)
     if left:
         raise SystemExit("Unresolved tokens: " + ", ".join(left))
+    if "placehold.co" in html:
+        raise SystemExit("Placeholder imagery remains. Supply the required client asset URLs.")
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
