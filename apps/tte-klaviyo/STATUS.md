@@ -5,6 +5,7 @@ Last updated: 11 August 2026
 ## Overall completion
 
 - Build and configuration completion: **100% of what can be safely completed remotely without sending to real subscribers**
+- Automated launch-readiness gate: **PASS**
 - Live production activation: **not yet authorised**
 
 ## Completed
@@ -16,56 +17,61 @@ Last updated: 11 August 2026
 - Existing Klaviyo account resources discovered via API.
 - Main trigger list selected: `Email List` (`SjerhA`).
 - Main Email List consent setting discovered via API: `double_opt_in`.
-- Sender identity taken from the existing Klaviyo account configuration: `Triple Two Emails <hello@222emails.com>`.
-- Live TTE conversion destination recovered from Google Drive: `https://form.jotform.com/262067771632056`.
+- Sender identity: `Triple Two Emails <hello@222emails.com>`.
+- Live TTE conversion destination: `https://form.jotform.com/262067771632056`.
 - Five reusable Klaviyo templates deployed with the live Fit Check destination.
-- Final flagship flow created in Klaviyo: `TWM6Yx`.
-- Final flow name: `TTE Flagship Welcome Series | FINAL DRAFT | 5 Email Proof System`.
-- Final flow status: `draft`.
+- Canonical flagship flow created in Klaviyo: `TWM6Yx`.
+- Canonical flow status: `draft`.
 - Trigger: `Email List` (`SjerhA`).
 - Five send-email actions created.
 - Four delays created at 1 day, 2 days, 2 days and 2 days.
 - All messages use `hello@222emails.com` as sender/reply-to.
-- All five messages remain in draft and cannot currently send.
-- Automated live-API QA passes on the final flow.
-- Superseded duplicate source template removed from the repository.
+- Automated live-API QA passes on the canonical flow.
+- New read-only launch-readiness gate created and run successfully.
+- Manual go-live workflow created with five explicit production gates.
+- Activation command requires exact typed confirmation `GO-LIVE-TWM6Yx` and cannot run automatically on push.
+- The operating model is documented as `The 222 Lifecycle Revenue Engine` with supporting `222 Delivery OS`.
 
-## Final message sequence
+## Canonical message sequence
 
-1. `Welcome to 222 Emails` — founder/text-first — immediate.
-2. `5 places revenue quietly disappears` — diagnostic — +1 day.
-3. `What we’d fix first in your email system` — designed framework — +2 days.
-4. `We built this instead of telling you we could` — proof/system demonstration — +2 days.
-5. `Want us to find the leaks?` — conversion — +2 days.
+1. `Welcome to 222 Emails` — relationship — Day 0.
+2. `5 places revenue quietly disappears` — problem awareness — Day 1.
+3. `What we’d fix first in your email system` — method — Day 3.
+4. `We built this instead of telling you we could` — proof/system demonstration — Day 5.
+5. `Want us to find the leaks?` — conversion — Day 7.
 
-## Automated QA passed
+## Automated gates currently passed
 
-The final API verification confirms:
-
-- Flow `TWM6Yx` exists and remains draft.
+- Canonical flow exists.
+- Flow remains Draft.
 - Trigger is the intended Email List.
-- Five send actions and four delays exist.
+- Email List uses double opt-in.
+- Five email actions exist.
+- Four delays exist.
 - Delay sequence is exactly 1/2/2/2 days.
-- All five approved subject lines are present.
-- Sender, from-label and reply-to settings match TTE.
-- All five message statuses are draft.
-- All five cloned flow-message templates contain their expected approved content.
-- No unresolved `__FREE_AUDIT_URL__` placeholders remain.
-- No `href="#"` placeholder links remain.
-- All five templates contain an unsubscribe mechanism.
-- Emails 02–05 point to the live Follow-Up Fit Check form.
+- Five approved subjects match exactly.
+- All messages remain Draft.
+- Sender and reply-to are `hello@222emails.com`.
+- Template content markers pass.
+- No unresolved audit URL placeholders.
+- No placeholder `href="#"` links.
+- Unsubscribe mechanism present.
+- Fit Check destinations present where intended.
 
-## Remaining go-live gates
+## Human go-live gates still required
 
-These are deliberately not bypassed automatically:
+These are intentionally not claimed as complete because they require real-world checking:
 
-1. Open final Klaviyo flow `TWM6Yx` and visually inspect the five messages in Klaviyo desktop/mobile preview.
-2. Send seed/test emails to a controlled test inbox and verify rendering, links, spam placement and reply behaviour.
-3. Confirm the sending domain/authentication indicators inside Klaviyo are healthy.
-4. Confirm the Fit Check form completes successfully end to end and submissions reach the intended destination.
-5. Approve the final flow for activation.
-6. Only then move the five flow messages from Draft to Live.
+1. Desktop and mobile visual rendering in Klaviyo.
+2. Seed/test inbox placement, links and reply behaviour.
+3. Sending-domain/authentication health inside Klaviyo.
+4. Fit Check submission works end to end and lands in the intended destination.
+5. Explicit final go-live approval.
+
+## Production control
+
+The manual GitHub workflow `TTE Klaviyo Go Live` re-runs automated readiness immediately before activation. It then requires all four human QA inputs to equal `PASS` plus the exact activation phrase `GO-LIVE-TWM6Yx`. Only then can it request Klaviyo to move the canonical flow to Live.
 
 ## Safety / cleanup note
 
-No real subscriber has been emailed and the final flow has not been activated. Earlier draft flows and reusable templates created during safe build iterations may still remain in the Klaviyo account. The canonical flow for review and eventual activation is **TWM6Yx only**.
+No real subscriber has been emailed and the canonical flow has not been activated. Earlier draft flows/templates from safe build iterations may still remain in Klaviyo, but `TWM6Yx` is the only production candidate.
