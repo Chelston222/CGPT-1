@@ -1,0 +1,32 @@
+{
+  "client_id": "example-client",
+  "template_slug": "abandoned-cart-objections",
+  "layout_variant": "proof-first",
+  "brand": {
+    "BRAND_NAME": "Example Brand",
+    "HOME_URL": "https://example.com",
+    "LOGO_URL": "https://example.com/logo.png",
+    "HERO_ALT": "Example Brand product range",
+    "PREHEADER": "A quick answer before you decide",
+    "PRIMARY_CTA_URL": "https://example.com/cart",
+    "SUPPORT_EMAIL": "support@example.com",
+    "POSTAL_ADDRESS": "1 Example Street, London, UK"
+  },
+  "content": {
+    "PRODUCT_NAME": "Example Product",
+    "PRODUCT_BENEFIT": "The clearest customer-facing benefit goes here.",
+    "PRODUCT_PRICE": "£49",
+    "DESIRED_OUTCOME": "the customer result",
+    "CORE_PROBLEM": "the customer problem",
+    "ORDER_REFERENCE": "EXAMPLE-001"
+  },
+  "modules": [
+    {"type":"objection_faq","data":{"OBJECTION_Q1":"Will it work for me?","OBJECTION_A1":"Use a truthful client-specific answer.","OBJECTION_Q2":"What if I change my mind?","OBJECTION_A2":"State the real returns or cancellation policy."}},
+    {"type":"testimonial","data":{"TESTIMONIAL_QUOTE":"Insert a genuine verified customer quote.","TESTIMONIAL_NAME":"Verified customer"}}
+  ],
+  "tracking": {
+    "utm_source": "klaviyo",
+    "utm_medium": "email",
+    "utm_campaign": "abandoned_cart"
+  }
+}
