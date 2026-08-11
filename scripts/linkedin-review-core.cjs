@@ -23,6 +23,14 @@ const TARGET_SECRET_NAMES = {
   secondary: 'BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID',
 };
 
+const TRIPLE_TWO_LINKEDIN_PAGE = {
+  id: '105869150',
+  entity: 'urn:li:organization:105869150',
+  link: 'https://www.linkedin.com/company/105869150',
+  vanityName: '222emails',
+  localizedName: 'Triple Two Emails',
+};
+
 function parseIssueBody(body = '') {
   const lines = String(body).split(/\r?\n/);
   const header = {};
@@ -143,6 +151,18 @@ function validateRequest(body, env = {}, now = Date.now()) {
   };
 }
 
+function tripleTwoPageAnnotations(channel) {
+  if (channel.target === 'main') return [];
+  const needle = TRIPLE_TWO_LINKEDIN_PAGE.localizedName;
+  const start = String(channel.text || '').indexOf(needle);
+  if (start < 0) return [];
+  return [{
+    ...TRIPLE_TWO_LINKEDIN_PAGE,
+    start,
+    length: needle.length,
+  }];
+}
+
 function buildCreatePostMutation(channel, mode, media = null) {
   const fields = [
     `text: ${JSON.stringify(channel.text)}`,
@@ -156,6 +176,20 @@ function buildCreatePostMutation(channel, mode, media = null) {
   } else {
     fields.push('mode: addToQueue');
     if (mode === 'draft') fields.push('saveToDraft: true');
+  }
+
+  const annotations = tripleTwoPageAnnotations(channel);
+  if (annotations.length) {
+    const annotationFields = annotations.map((annotation) => `{
+      id: ${JSON.stringify(annotation.id)},
+      link: ${JSON.stringify(annotation.link)},
+      entity: ${JSON.stringify(annotation.entity)},
+      vanityName: ${JSON.stringify(annotation.vanityName)},
+      localizedName: ${JSON.stringify(annotation.localizedName)},
+      start: ${annotation.start},
+      length: ${annotation.length}
+    }`);
+    fields.push(`metadata: { linkedin: { annotations: [${annotationFields.join(', ')}] } }`);
   }
 
   const normalisedMedia = typeof media === 'string' ? { url: media, kind: 'image' } : media;
@@ -180,11 +214,13 @@ function buildCreatePostMutation(channel, mode, media = null) {
 module.exports = {
   TARGET_LABELS,
   TARGET_SECRET_NAMES,
+  TRIPLE_TWO_LINKEDIN_PAGE,
   buildCreatePostMutation,
   normaliseTargets,
   parseIssueBody,
   resolveCopy,
   resolveSchedule,
+  tripleTwoPageAnnotations,
   validateHttpsUrl,
   validateRequest,
 };
