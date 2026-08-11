@@ -1,0 +1,60 @@
+name: TTE Klaviyo Go Live
+
+on:
+  workflow_dispatch:
+    inputs:
+      visual_qa:
+        description: 'Desktop + mobile visual QA complete'
+        required: true
+        type: choice
+        options: [BLOCK, PASS]
+        default: BLOCK
+      seed_qa:
+        description: 'Seed inbox, links and replies verified'
+        required: true
+        type: choice
+        options: [BLOCK, PASS]
+        default: BLOCK
+      domain_qa:
+        description: 'Sending domain/authentication healthy in Klaviyo'
+        required: true
+        type: choice
+        options: [BLOCK, PASS]
+        default: BLOCK
+      fit_check_qa:
+        description: 'Fit Check submission works end to end'
+        required: true
+        type: choice
+        options: [BLOCK, PASS]
+        default: BLOCK
+      activation_confirmation:
+        description: 'Type exactly GO-LIVE-TWM6Yx'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  activate-canonical-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Re-run automated launch gate immediately before activation
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          TTE_FLAGSHIP_FLOW_ID: TWM6Yx
+        run: python apps/tte-klaviyo/launch_readiness.py
+
+      - name: Activate canonical flow only when every human gate passes
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          VISUAL_QA: ${{ inputs.visual_qa }}
+          SEED_QA: ${{ inputs.seed_qa }}
+          DOMAIN_QA: ${{ inputs.domain_qa }}
+          FIT_CHECK_QA: ${{ inputs.fit_check_qa }}
+          ACTIVATION_CONFIRMATION: ${{ inputs.activation_confirmation }}
+        run: python apps/tte-klaviyo/activate_flagship_flow.py
