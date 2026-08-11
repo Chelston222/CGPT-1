@@ -1,99 +1,25 @@
-name: LinkedIn Cost Control One Shot
+name: LinkedIn Page Identity Check
 
 on:
   issues:
     types: [opened]
 
 permissions:
-  contents: write
-  issues: write
+  contents: read
+  issues: read
 
 jobs:
-  update:
-    if: startsWith(github.event.issue.title, '[LINKEDIN COST CONTROL]') && github.event.issue.user.login == github.repository_owner
+  inspect:
+    if: startsWith(github.event.issue.title, '[LINKEDIN PAGE IDENTITY]') && github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Update queue policy metadata
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          builder = Path('scripts/build-linkedin-master-ledger.mjs')
-          text = builder.read_text()
-          if 'releaseCheckHours: 2,' in text:
-              text = text.replace('releaseCheckHours: 2,', 'releaseCheckHours: 8,')
-          elif 'releaseCheckHours: 8,' not in text:
-              raise SystemExit('Expected releaseCheckHours metadata not found')
-          builder.write_text(text)
-          PY
-      - name: Add permanent brand rules and test
-        run: |
-          cat > docs/LINKEDIN_CONTENT_RULES.md <<'EOF'
-          # Triple Two Emails LinkedIn content rules
-
-          ## Brand naming
-
-          - Public-facing brand name: **Triple Two Emails**.
-          - Do not use founder-origin filler such as “this is why I made 222 Emails”, “this is why I built 222 Emails”, “this is why I started 222 Emails”, or equivalent phrasing.
-          - When referring to the company from Chelston’s personal LinkedIn, prefer a native LinkedIn Page mention of **Triple Two Emails** when the publishing route has verified annotation metadata.
-          - Never fake a native mention by assuming plain `@Triple Two Emails` will become clickable. If native annotation metadata is unavailable, use plain **Triple Two Emails** instead.
-          - On posts published by the Triple Two Emails Page itself, do not awkwardly self-tag the Page unless there is a specific editorial reason.
-
-          ## Voice
-
-          - UK English.
-          - No em dashes.
-          - Outcome first: retention, repeat revenue, client return systems, missed-revenue recovery and lifecycle revenue.
-          - Avoid generic agency-origin stories unless the founder story itself is the subject of the post.
-          - Do not invent metrics, customer results, testimonials or certainty.
-
-          ## Publishing safety
-
-          - Content reservoir or QA-ready status is not publishing permission.
-          - Only the owner-approved GitHub publishing gate may release content to Buffer.
-          - Native LinkedIn mentions must use verified LinkedIn entity metadata when sent through the Buffer API.
-          EOF
-          sed -i 's/^          //' docs/LINKEDIN_CONTENT_RULES.md
-
-          cat > tests/linkedin-content-brand-rules.test.cjs <<'EOF'
-          'use strict';
-
-          const assert = require('node:assert/strict');
-          const fs = require('node:fs');
-          const path = require('node:path');
-          const test = require('node:test');
-
-          const root = path.resolve(__dirname, '..');
-          const reviewDir = path.join(root, 'apps', 'linkedin-review');
-          const jsonFiles = fs.readdirSync(reviewDir).filter((name) => /^(queue|qa-replenishment).*\.json$/.test(name));
-          const forbiddenOrigin = /this is why i (?:made|built|started|created) 222 emails/i;
-
-          test('operational content avoids deprecated 222 Emails founder-origin phrasing', () => {
-            for (const name of jsonFiles) {
-              const text = fs.readFileSync(path.join(reviewDir, name), 'utf8');
-              assert.doesNotMatch(text, forbiddenOrigin, name);
-            }
-          });
-
-          test('content rules lock Triple Two Emails as the public brand name', () => {
-            const rules = fs.readFileSync(path.join(root, 'docs', 'LINKEDIN_CONTENT_RULES.md'), 'utf8');
-            assert.match(rules, /Public-facing brand name: \*\*Triple Two Emails\*\*/);
-            assert.match(rules, /native LinkedIn Page mention/i);
-            assert.match(rules, /Never fake a native mention/i);
-          });
-          EOF
-          sed -i 's/^          //' tests/linkedin-content-brand-rules.test.cjs
-          node --test tests/linkedin-content-brand-rules.test.cjs
       - name: Read safe LinkedIn Page identity from Buffer
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
         run: |
-          node <<'NODE' > /tmp/page.json
-          const query = `query TTEPage { channel(input: { id: ${JSON.stringify(process.env.CHANNEL_ID)} }) { id service serviceId type name displayName externalLink descriptor } }`;
+          node <<'NODE'
+          const query = `query TTEPage { channel(input: { id: ${JSON.stringify(process.env.CHANNEL_ID)} }) { service serviceId type name displayName externalLink descriptor } }`;
           const response = await fetch('https://api.buffer.com', {
             method: 'POST',
             headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.BUFFER_API_KEY}` },
@@ -101,37 +27,5 @@ jobs:
           });
           const payload = await response.json();
           if (!response.ok || payload.errors?.length || !payload.data?.channel) process.exit(1);
-          console.log(JSON.stringify(payload.data.channel));
+          console.log('SAFE_LINKEDIN_PAGE_IDENTITY=' + JSON.stringify(payload.data.channel));
           NODE
-      - name: Commit permanent non-workflow changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add scripts/build-linkedin-master-ledger.mjs docs/LINKEDIN_CONTENT_RULES.md tests/linkedin-content-brand-rules.test.cjs
-          git commit -m "Lock eight-hour LinkedIn policy metadata and brand rules"
-          git push origin main
-      - name: Record safe Page identity and completion
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ISSUE: ${{ github.event.issue.number }}
-        run: |
-          node <<'NODE' > /tmp/comment.md
-          const fs = require('fs');
-          const page = JSON.parse(fs.readFileSync('/tmp/page.json', 'utf8'));
-          const lines = [
-            '✅ LinkedIn cost-control policy update applied.',
-            '',
-            '- Queue policy metadata: **releaseCheckHours = 8**.',
-            '- Triple Two Emails naming/founder-origin guard: **active and tested**.',
-            '- Safe Buffer-linked LinkedIn Page identity:',
-            `  - display name: **${page.displayName || page.name || 'unknown'}**`,
-            `  - LinkedIn service ID: \`${page.serviceId || 'unknown'}\``,
-            `  - external link: ${page.externalLink || 'unavailable'}`,
-            `  - channel type: ${page.type || 'unknown'}`,
-            '',
-            'No API key or credential value is included here.'
-          ];
-          process.stdout.write(lines.join('\n'));
-          NODE
-          gh issue comment "$ISSUE" --body-file /tmp/comment.md
-          gh issue close "$ISSUE" --reason completed
