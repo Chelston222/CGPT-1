@@ -8,6 +8,7 @@ This script creates templates only. It deliberately does not activate flows.
 import json
 import os
 import pathlib
+import urllib.error
 import urllib.request
 
 API = "https://a.klaviyo.com/api/templates"
@@ -16,6 +17,10 @@ ROOT = pathlib.Path(__file__).parent
 
 TEMPLATES = [
     ("TTE-WELCOME-01-FOUNDER-v1", ROOT / "templates" / "w01-founder-welcome.html"),
+    ("TTE-WELCOME-02-REVENUE-LEAKS-v1", ROOT / "templates" / "w02-revenue-leaks.html"),
+    ("TTE-WELCOME-03-FIX-FIRST-v1", ROOT / "templates" / "w03-fix-first.html"),
+    ("TTE-WELCOME-04-PROOF-v1", ROOT / "templates" / "w04-proof.html"),
+    ("TTE-WELCOME-05-AUDIT-CONVERSION-v1", ROOT / "templates" / "w05-audit-conversion.html"),
 ]
 
 
@@ -44,11 +49,19 @@ def create_template(name: str, html: str) -> dict:
             "revision": REVISION,
         },
     )
-    with urllib.request.urlopen(req, timeout=30) as res:
-        return json.loads(res.read())
+    try:
+        with urllib.request.urlopen(req, timeout=30) as res:
+            return json.loads(res.read())
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise SystemExit(f"Klaviyo API error {exc.code} for {name}: {body}") from exc
 
 
 if __name__ == "__main__":
+    deployed = []
     for name, path in TEMPLATES:
         result = create_template(name, path.read_text(encoding="utf-8"))
-        print(name, "=>", result["data"]["id"])
+        template_id = result["data"]["id"]
+        deployed.append({"name": name, "id": template_id})
+        print(name, "=>", template_id)
+    print(json.dumps({"templates": deployed}, indent=2))
