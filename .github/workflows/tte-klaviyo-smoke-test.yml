@@ -25,8 +25,8 @@ jobs:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
         run: python apps/tte-klaviyo/klaviyo_smoke_test.py
 
-      - name: Verify TTE flagship welcome flow is correctly wired and still draft
+      - name: Verify final TTE flagship welcome flow is correctly wired and still draft
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
-          TTE_FLAGSHIP_FLOW_ID: U4ABta
+          TTE_FLAGSHIP_FLOW_ID: TWM6Yx
         run: python apps/tte-klaviyo/verify_flagship_flow.py
