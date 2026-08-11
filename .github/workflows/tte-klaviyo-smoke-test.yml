@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - '.github/workflows/tte-klaviyo-smoke-test.yml'
+      - 'apps/tte-klaviyo/klaviyo_smoke_test.py'
 
 permissions:
   contents: read
