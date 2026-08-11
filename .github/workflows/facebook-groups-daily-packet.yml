@@ -31,41 +31,80 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            const today = new Date();
+            const now = new Date();
             const start = Date.parse('2026-08-12T00:00:00+01:00');
             const end = Date.parse('2026-09-10T23:59:59+01:00');
-            if (today.getTime() < start || today.getTime() > end) {
+            if (now.getTime() < start || now.getTime() > end) {
               core.info('Outside the 30-day launch window. No packet created.');
               return;
             }
 
-            const dayIndex = Math.floor((today.getTime() - start) / 86400000) + 1;
+            const dayIndex = Math.floor((now.getTime() - start) / 86400000) + 1;
             const date = new Intl.DateTimeFormat('en-GB', {
               timeZone: config.timezone,
               year: 'numeric', month: '2-digit', day: '2-digit'
-            }).format(today);
+            }).format(now);
 
             const archetypes = [
-              ['P1', 'Revenue Leak Diagnostic', 'AUDIT'],
-              ['P2', 'Ecommerce Store Diagnostic', 'STORE'],
-              ['P3', 'Local Lancashire Founder', 'LOCAL'],
-              ['P4', 'Public Mini Audit', 'AUDIT'],
-              ['P5', 'Retention Question', 'AUDIT'],
-              ['P6', 'Salon Reactivation', 'SALON'],
-              ['P7', 'Fitness Retention', 'GYM'],
-              ['P8', 'Proof / Before-After System', 'AUDIT']
+              {
+                id: 'P1', name: 'Revenue Leak Diagnostic', cta: 'AUDIT',
+                segments: ['general-uk', 'north-west', 'lancashire'],
+                modes: ['direct-promo', 'authority-first']
+              },
+              {
+                id: 'P2', name: 'Ecommerce Store Diagnostic', cta: 'STORE',
+                segments: ['ecommerce'],
+                modes: ['direct-promo', 'authority-first']
+              },
+              {
+                id: 'P3', name: 'Local Lancashire Founder', cta: 'LOCAL',
+                segments: ['lancashire', 'north-west'],
+                modes: ['direct-promo', 'authority-first']
+              },
+              {
+                id: 'P4', name: 'Public Mini Audit', cta: 'AUDIT',
+                segments: ['general-uk', 'ecommerce', 'salon', 'fitness'],
+                modes: ['authority-first']
+              },
+              {
+                id: 'P5', name: 'Retention and Reactivation', cta: 'AUDIT',
+                segments: ['general-uk', 'ecommerce', 'salon', 'fitness'],
+                modes: ['direct-promo', 'authority-first']
+              }
             ];
             const archetype = archetypes[(dayIndex - 1) % archetypes.length];
 
-            const active = config.groups.filter(g => g.mode !== 'listen-only');
+            const tierWeight = { 'A+': 5, 'A': 4, 'B+': 3, 'B': 2, 'WATCH': 0 };
+            const compatible = config.groups
+              .filter(g => g.mode !== 'listen-only')
+              .filter(g => archetype.segments.includes(g.segment))
+              .filter(g => archetype.modes.includes(g.mode))
+              .sort((a, b) => (tierWeight[b.tier] || 0) - (tierWeight[a.tier] || 0) || a.id.localeCompare(b.id));
+
+            if (!compatible.length) {
+              core.setFailed(`No compatible groups configured for ${archetype.id}: ${archetype.name}`);
+              return;
+            }
+
+            const cycle = Math.floor((dayIndex - 1) / archetypes.length);
+            const offset = (cycle * 3) % compatible.length;
             const selected = [];
-            for (let n = 0; n < active.length && selected.length < 3; n++) {
-              const g = active[((dayIndex - 1) * 3 + n) % active.length];
+            for (let n = 0; n < compatible.length && selected.length < 3; n++) {
+              const g = compatible[(offset + n) % compatible.length];
               if (!selected.some(x => x.id === g.id)) selected.push(g);
             }
 
-            const title = `[FB GROUPS DAY ${String(dayIndex).padStart(2,'0')}] ${date} · ${archetype[1]}`;
-            const existing = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, per_page: 100 });
+            function ctaFor(group) {
+              if (archetype.id === 'P2') return 'STORE';
+              if (archetype.id === 'P3') return 'LOCAL';
+              if (group.segment === 'ecommerce') return 'STORE';
+              if (group.segment === 'salon') return 'SALON';
+              if (group.segment === 'fitness') return 'GYM';
+              return archetype.cta;
+            }
+
+            const title = `[FB GROUPS DAY ${String(dayIndex).padStart(2,'0')}] ${date} · ${archetype.name}`;
+            const existing = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 });
             if (existing.some(i => i.title === title)) {
               core.info('Daily packet already exists.');
               return;
@@ -77,13 +116,29 @@ jobs:
               `- Segment: **${g.segment}**`,
               `- Mode: **${g.mode}**`,
               `- Rule status: ${g.ruleStatus}`,
-              `- CTA keyword: **${g.cta || archetype[2]}**`,
+              `- CTA keyword: **${ctaFor(g)}**`,
+              `- Cooling period: **${g.coolingHours || config.rules.defaultCoolingHoursPerGroup} hours**`,
               `- [ ] Open the group and check today's live rules before posting`,
+              `- [ ] Confirm this group has not been posted to inside its cooling period`,
+              `- [ ] Use the ${archetype.id} copy in \`apps/facebook-groups-acquisition/POSTS.md\` and apply the segment adaptation where stated`,
               `- [ ] Adapt the opening line to the group rather than copying blindly`,
               `- [ ] Post manually in Facebook`,
               `- [ ] Paste the Facebook post URL into a comment on this issue`,
-              `- [ ] Record meaningful replies and any audit request`
+              `- [ ] Record meaningful replies and every audit request`
             ].join('\n')).join('\n\n');
+
+            const reviewDue = dayIndex % 7 === 0 || dayIndex === 30;
+            const reviewBlock = reviewDue ? [
+              '',
+              '## Omega weekly review due today',
+              '- [ ] Count compliant posts from the last 7 days',
+              '- [ ] Count meaningful owner conversations',
+              '- [ ] Count audit requests and qualified audits',
+              '- [ ] Count implementation offers and revenue won',
+              '- [ ] Mark each active group SCALE, WATCH, RETIRE or PAUSE using PLAYBOOK.md',
+              '- [ ] Give next week\'s slots first to groups and archetypes producing qualified audits or revenue',
+              '- [ ] Do not increase posting volume to compensate for weak relevance'
+            ] : [];
 
             const body = [
               '# 222 Emails Facebook Groups Acquisition Packet',
@@ -91,12 +146,13 @@ jobs:
               `**Day ${dayIndex}/30 · ${date} · Europe/London**`,
               '',
               '## Today’s objective',
-              `Run **${archetype[0]}: ${archetype[1]}** across up to three qualified groups, with group-specific wording and a manual rules check before every post.`,
+              `Run **${archetype.id}: ${archetype.name}** across up to three compatible groups. Exact copy is stored in \`apps/facebook-groups-acquisition/POSTS.md\`.`,
               '',
               '## Hard gate',
               '- Do not use browser bots or auto-posting scripts.',
               '- Do not post if the current group rules prohibit promotion or the chosen format.',
               '- Do not publish identical copy back-to-back across groups.',
+              '- Respect the configured cooling period for each group.',
               '- The final Facebook submission must be human.',
               '',
               '## Targets',
@@ -106,7 +162,7 @@ jobs:
               '- [ ] Spend 10-15 minutes responding to genuine comments',
               '- [ ] Give useful public answers before moving anybody to DM',
               '- [ ] DM only people who explicitly engage/request help or where a legitimate prospecting basis exists',
-              '- [ ] Log every requested audit in `apps/facebook-groups-acquisition/lead-tracker.csv` or the current 222 Emails audit tracker',
+              '- [ ] Log every requested audit in the current 222 Emails audit tracker and, if needed, `apps/facebook-groups-acquisition/lead-tracker.csv`',
               '',
               '## Comment reply for CTA responses',
               '> Thanks [Name]. Send me your website/store URL by DM and I’ll take a look. I’ll focus on the highest-impact customer-journey leak I can identify first, then tell you what I would prioritise.',
@@ -125,13 +181,14 @@ jobs:
               '- Revenue won (£):',
               '- Posts removed/rejected:',
               '- Rule changes discovered:',
+              ...reviewBlock,
               '',
               '## Close-out',
-              '- [ ] Update lead tracker',
+              '- [ ] Update lead tracker / existing audit record',
               '- [ ] Comment the scorecard on this issue',
               '- [ ] Close this issue when all follow-up actions are captured',
               '',
-              'Full copy rotation, DM scripts, qualification, KPIs and kill/scale rules: `apps/facebook-groups-acquisition/PLAYBOOK.md`.'
+              'Operating rules, qualification, KPIs and scale/watch/retire logic: `apps/facebook-groups-acquisition/PLAYBOOK.md`.'
             ].join('\n');
 
             await github.rest.issues.create({ owner, repo, title, body });
