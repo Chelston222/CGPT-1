@@ -12,6 +12,12 @@
     "SUPPORT_EMAIL": "support@example.com",
     "POSTAL_ADDRESS": "1 Example Street, London, UK"
   },
+  "assets": {
+    "HERO_URL": "https://example.com/hero.jpg",
+    "PRODUCT_IMAGE_URL": "https://example.com/product.jpg",
+    "PRODUCT_1_IMAGE_URL": "https://example.com/product-1.jpg",
+    "PRODUCT_2_IMAGE_URL": "https://example.com/product-2.jpg"
+  },
   "content": {
     "PRODUCT_NAME": "Example Product",
     "PRODUCT_BENEFIT": "The clearest customer-facing benefit goes here.",
