@@ -1,0 +1,23 @@
+name: TTE Klaviyo Create Flagship Flow Draft
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/tte-klaviyo-create-flow-draft.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  create-draft-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create five-email flow in draft only
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: python apps/tte-klaviyo/create_welcome_flow.py
