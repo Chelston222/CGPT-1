@@ -1,0 +1,30 @@
+name: TTE Klaviyo Template Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate Klaviyo secret exists
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: |
+          test -n "$KLAVIYO_PRIVATE_API_KEY" || (echo "KLAVIYO_PRIVATE_API_KEY is missing" && exit 1)
+
+      - name: Deploy approved templates to Klaviyo
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: python apps/tte-klaviyo/deploy_templates.py
