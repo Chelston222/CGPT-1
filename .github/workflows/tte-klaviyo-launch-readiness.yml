@@ -1,0 +1,25 @@
+name: TTE Klaviyo Launch Readiness
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/tte-klaviyo-launch-readiness.yml'
+      - 'apps/tte-klaviyo/launch_readiness.py'
+
+permissions:
+  contents: read
+
+jobs:
+  launch-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run canonical launch-readiness gate
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          TTE_FLAGSHIP_FLOW_ID: TWM6Yx
+        run: python apps/tte-klaviyo/launch_readiness.py
