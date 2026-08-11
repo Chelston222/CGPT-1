@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "timezone": "Europe/London",
+  "rules": {
+    "finalPostMustBeHuman": true,
+    "checkGroupRulesBeforeEveryPost": true,
+    "noBrowserBotPosting": true,
+    "noIdenticalMassPosting": true,
+    "maxDirectPromoGroupsPerDay": 3,
+    "maxAuthorityGroupsPerDay": 2,
+    "defaultCoolingHoursPerGroup": 72
+  },
+  "groups": [
+    {"id":"uk-small-business-owners","name":"UK Small Business Owners","segment":"general-uk","tier":"A+","mode":"direct-promo","ruleStatus":"public evidence suggests promotion allowed","cta":"AUDIT","coolingHours":72},
+    {"id":"blackburn-darwen-business-advertisement","name":"Blackburn with Darwen Business Advertisement","segment":"lancashire","tier":"A+","mode":"direct-promo","ruleStatus":"advertising-focused","cta":"LOCAL","coolingHours":72},
+    {"id":"northwest-business-networking","name":"Northwest Business Networking","segment":"north-west","tier":"A+","mode":"direct-promo","ruleStatus":"promotion/networking oriented","cta":"LOCAL","coolingHours":72},
+    {"id":"shopify-uk-stores","name":"Shopify UK Stores / E-commerce Support Group","segment":"ecommerce","tier":"A+","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"STORE","coolingHours":96},
+    {"id":"shopify-entrepreneurs-uk","name":"Shopify Entrepreneurs / UK Shopify Store Owners","segment":"ecommerce","tier":"A","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"STORE","coolingHours":96},
+    {"id":"uk-small-business-support","name":"UK Small Business Support","segment":"general-uk","tier":"A","mode":"direct-promo","ruleStatus":"public evidence suggests business promotion allowed","cta":"AUDIT","coolingHours":72},
+    {"id":"lancashire-business-group","name":"Lancashire Business Group","segment":"lancashire","tier":"A","mode":"direct-promo","ruleStatus":"public evidence suggests offers/promotion allowed","cta":"LOCAL","coolingHours":72},
+    {"id":"free-business-advertising-lancashire-cumbria","name":"FREE BUSINESS ADVERTISING LANCASHIRE & CUMBRIA","segment":"lancashire","tier":"A","mode":"direct-promo","ruleStatus":"advertising-focused","cta":"LOCAL","coolingHours":72},
+    {"id":"manchester-business-network","name":"Manchester Business Network","segment":"north-west","tier":"A","mode":"direct-promo","ruleStatus":"public evidence suggests promotion allowed","cta":"LOCAL","coolingHours":72},
+    {"id":"british-small-business-network","name":"British Small Business Network","segment":"general-uk","tier":"A","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"AUDIT","coolingHours":96},
+    {"id":"uk-salon-owners","name":"UK Salon Owners","segment":"salon","tier":"A","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"SALON","coolingHours":96},
+    {"id":"uk-salon-owners-forum","name":"UK Salon Owners Forum","segment":"salon","tier":"A","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"SALON","coolingHours":96},
+    {"id":"fitness-business-success-network","name":"Fitness Business Success Network","segment":"fitness","tier":"A","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"GYM","coolingHours":96},
+    {"id":"small-business-networking-manchester","name":"Small Business Networking Manchester","segment":"north-west","tier":"B+","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"LOCAL","coolingHours":96},
+    {"id":"uk-startups-group","name":"UK Startups Group","segment":"general-uk","tier":"B+","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"AUDIT","coolingHours":96},
+    {"id":"uk-small-business-network","name":"UK Small Business Network","segment":"general-uk","tier":"B+","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"AUDIT","coolingHours":96},
+    {"id":"burnley-business-network","name":"Burnley Business Network","segment":"lancashire","tier":"B","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"LOCAL","coolingHours":96},
+    {"id":"shopify-ecommerce-group","name":"Shopify Ecommerce Group","segment":"ecommerce","tier":"B","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"STORE","coolingHours":96},
+    {"id":"shopify-tips-tricks","name":"Shopify Tips & Tricks for Store Owners","segment":"ecommerce","tier":"B","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"STORE","coolingHours":96},
+    {"id":"entrepreneurs-business-startup-uk","name":"Entrepreneurs, Business & Startup UK","segment":"general-uk","tier":"B","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"AUDIT","coolingHours":96},
+    {"id":"salon-owners-social-media-marketing","name":"The Salon Owners Social Media Marketing Group","segment":"salon","tier":"B","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"SALON","coolingHours":96},
+    {"id":"shopify-six-figure-mastermind","name":"Shopify Startups 6 Figure Mastermind","segment":"ecommerce","tier":"B","mode":"authority-first","ruleStatus":"verify current rules before posting","cta":"STORE","coolingHours":96},
+    {"id":"gym-owners-forum","name":"Gym Owners Forum","segment":"fitness","tier":"WATCH","mode":"listen-only","ruleStatus":"indexed rules indicate promotional restrictions","cta":null,"coolingHours":168}
+  ]
+}
