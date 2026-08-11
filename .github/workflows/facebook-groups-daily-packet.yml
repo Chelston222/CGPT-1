@@ -1,0 +1,137 @@
+name: Facebook Groups Daily Acquisition Packet
+
+on:
+  schedule:
+    - cron: '15 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: facebook-groups-daily-acquisition-packet
+  cancel-in-progress: false
+
+jobs:
+  packet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create today's rule-aware acquisition packet
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+
+            const configPath = path.join(process.env.GITHUB_WORKSPACE, 'apps/facebook-groups-acquisition/targets.json');
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const today = new Date();
+            const start = Date.parse('2026-08-12T00:00:00+01:00');
+            const end = Date.parse('2026-09-10T23:59:59+01:00');
+            if (today.getTime() < start || today.getTime() > end) {
+              core.info('Outside the 30-day launch window. No packet created.');
+              return;
+            }
+
+            const dayIndex = Math.floor((today.getTime() - start) / 86400000) + 1;
+            const date = new Intl.DateTimeFormat('en-GB', {
+              timeZone: config.timezone,
+              year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(today);
+
+            const archetypes = [
+              ['P1', 'Revenue Leak Diagnostic', 'AUDIT'],
+              ['P2', 'Ecommerce Store Diagnostic', 'STORE'],
+              ['P3', 'Local Lancashire Founder', 'LOCAL'],
+              ['P4', 'Public Mini Audit', 'AUDIT'],
+              ['P5', 'Retention Question', 'AUDIT'],
+              ['P6', 'Salon Reactivation', 'SALON'],
+              ['P7', 'Fitness Retention', 'GYM'],
+              ['P8', 'Proof / Before-After System', 'AUDIT']
+            ];
+            const archetype = archetypes[(dayIndex - 1) % archetypes.length];
+
+            const active = config.groups.filter(g => g.mode !== 'listen-only');
+            const selected = [];
+            for (let n = 0; n < active.length && selected.length < 3; n++) {
+              const g = active[((dayIndex - 1) * 3 + n) % active.length];
+              if (!selected.some(x => x.id === g.id)) selected.push(g);
+            }
+
+            const title = `[FB GROUPS DAY ${String(dayIndex).padStart(2,'0')}] ${date} · ${archetype[1]}`;
+            const existing = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, per_page: 100 });
+            if (existing.some(i => i.title === title)) {
+              core.info('Daily packet already exists.');
+              return;
+            }
+
+            const groupLines = selected.map((g, i) => [
+              `### ${i + 1}. ${g.name}`,
+              `- Tier: **${g.tier}**`,
+              `- Segment: **${g.segment}**`,
+              `- Mode: **${g.mode}**`,
+              `- Rule status: ${g.ruleStatus}`,
+              `- CTA keyword: **${g.cta || archetype[2]}**`,
+              `- [ ] Open the group and check today's live rules before posting`,
+              `- [ ] Adapt the opening line to the group rather than copying blindly`,
+              `- [ ] Post manually in Facebook`,
+              `- [ ] Paste the Facebook post URL into a comment on this issue`,
+              `- [ ] Record meaningful replies and any audit request`
+            ].join('\n')).join('\n\n');
+
+            const body = [
+              '# 222 Emails Facebook Groups Acquisition Packet',
+              '',
+              `**Day ${dayIndex}/30 · ${date} · Europe/London**`,
+              '',
+              '## Today’s objective',
+              `Run **${archetype[0]}: ${archetype[1]}** across up to three qualified groups, with group-specific wording and a manual rules check before every post.`,
+              '',
+              '## Hard gate',
+              '- Do not use browser bots or auto-posting scripts.',
+              '- Do not post if the current group rules prohibit promotion or the chosen format.',
+              '- Do not publish identical copy back-to-back across groups.',
+              '- The final Facebook submission must be human.',
+              '',
+              '## Targets',
+              groupLines,
+              '',
+              '## Engagement sprint after posting',
+              '- [ ] Spend 10-15 minutes responding to genuine comments',
+              '- [ ] Give useful public answers before moving anybody to DM',
+              '- [ ] DM only people who explicitly engage/request help or where a legitimate prospecting basis exists',
+              '- [ ] Log every requested audit in `apps/facebook-groups-acquisition/lead-tracker.csv` or the current 222 Emails audit tracker',
+              '',
+              '## Comment reply for CTA responses',
+              '> Thanks [Name]. Send me your website/store URL by DM and I’ll take a look. I’ll focus on the highest-impact customer-journey leak I can identify first, then tell you what I would prioritise.',
+              '',
+              '## First DM after an explicit request',
+              '> Hey [Name], thanks for commenting on the post. Send me the website/store URL you want me to review. If there is a particular issue you already suspect, tell me that too. I’ll start with the highest-impact leak I can identify.',
+              '',
+              '## Daily scorecard',
+              '- Posts successfully published: /3',
+              '- Meaningful owner conversations:',
+              '- CTA comments:',
+              '- DMs started:',
+              '- URLs received:',
+              '- Qualified audits created:',
+              '- Implementation conversations:',
+              '- Revenue won (£):',
+              '- Posts removed/rejected:',
+              '- Rule changes discovered:',
+              '',
+              '## Close-out',
+              '- [ ] Update lead tracker',
+              '- [ ] Comment the scorecard on this issue',
+              '- [ ] Close this issue when all follow-up actions are captured',
+              '',
+              'Full copy rotation, DM scripts, qualification, KPIs and kill/scale rules: `apps/facebook-groups-acquisition/PLAYBOOK.md`.'
+            ].join('\n');
+
+            await github.rest.issues.create({ owner, repo, title, body });
