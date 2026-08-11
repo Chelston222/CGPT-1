@@ -1,0 +1,45 @@
+name: TTE Client Draft Build + Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      intake_path:
+        description: 'Repository path to client intake JSON'
+        required: true
+        default: 'apps/tte-klaviyo/master-library/revenue-os/client_intake.example.json'
+      confirmation:
+        description: 'Type DEPLOY-CLIENT-DRAFT-ONLY'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    if: ${{ inputs.confirmation == 'DEPLOY-CLIENT-DRAFT-ONLY' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate secret exists
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: test -n "$KLAVIYO_PRIVATE_API_KEY"
+      - name: Final regression gate
+        working-directory: apps/tte-klaviyo/master-library
+        run: python run_final_qa.py
+      - name: Build client pack
+        run: python apps/tte-klaviyo/master-library/build_client_pack.py "${{ inputs.intake_path }}" --out build/tte-client-pack --clean
+      - name: Deploy template draft only and verify Klaviyo render
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: python apps/tte-klaviyo/master-library/deploy_client_draft.py build/tte-client-pack --confirmation DEPLOY-CLIENT-DRAFT-ONLY
+      - name: Upload immutable review pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: tte-client-email-pack
+          path: build/tte-client-pack
+          if-no-files-found: error
+          retention-days: 30
