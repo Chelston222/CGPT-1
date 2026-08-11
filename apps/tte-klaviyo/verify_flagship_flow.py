@@ -1,14 +1,10 @@
-"""Verify the created TTE flagship flow is wired correctly and remains safe in draft.
+"""Verify the final TTE flagship flow is wired correctly and remains safe in draft.
 Read-only. Fails closed if any expected property is wrong.
-
-Klaviyo clones a supplied template when it is attached to a flow message, so the
-flow's message template IDs can differ from the source template IDs. We therefore
-verify the resulting message configuration and the cloned template content.
 """
 import json, os, urllib.parse, urllib.request
 
 KEY=os.environ["KLAVIYO_PRIVATE_API_KEY"]
-FLOW_ID=os.environ.get("TTE_FLAGSHIP_FLOW_ID","U4ABta")
+FLOW_ID=os.environ.get("TTE_FLAGSHIP_FLOW_ID","TWM6Yx")
 REVISION="2026-07-15"
 EXPECTED_DELAYS=[1,2,2,2]
 EXPECTED_SUBJECTS=[
@@ -25,6 +21,7 @@ EXPECTED_MARKERS=[
     "PROOF</span> &gt; PROMISES",
     "the next example can be your business",
 ]
+AUDIT_DESTINATION="form.jotform.com/262067771632056"
 
 def get(url):
     req=urllib.request.Request(url,headers={"Authorization":f"Klaviyo-API-Key {KEY}","accept":"application/vnd.api+json","revision":REVISION})
@@ -62,11 +59,12 @@ for index,(template_id, marker) in enumerate(zip(actual_templates, EXPECTED_MARK
     assert 'href="#"' not in html, f"Placeholder link found in {template_id}"
     assert "unsubscribe" in html.lower(), f"Unsubscribe mechanism missing from template {template_id}"
     if index >= 2:
-        assert "222emails.com" in html, f"Expected 222emails.com CTA destination missing from template {template_id}"
+        assert AUDIT_DESTINATION in html, f"Live Fit Check CTA missing from template {template_id}"
 
 print(json.dumps({
     "verification":"PASS",
     "flow_id":FLOW_ID,
+    "flow_name":attrs.get("name"),
     "flow_status":attrs["status"],
     "trigger_list_id":"SjerhA",
     "send_actions":len(sends),
@@ -77,5 +75,5 @@ print(json.dumps({
     "template_content_checks":"5/5 PASS",
     "placeholder_link_checks":"5/5 PASS",
     "unsubscribe_checks":"5/5 PASS",
-    "cta_destination_checks":"4/4 PASS",
+    "fit_check_destination_checks":"4/4 PASS",
 },indent=2))
