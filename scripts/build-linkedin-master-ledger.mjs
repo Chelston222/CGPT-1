@@ -89,7 +89,7 @@ if (
     maximumAccountPlacementsPerWeek: 105,
     bufferFreeScheduledPerChannel: 10,
     bufferRunwayDaysAtConfiguredRate: 2,
-    releaseCheckHours: 2,
+    releaseCheckHours: 8,
   };
   queueChanged = true;
 }
