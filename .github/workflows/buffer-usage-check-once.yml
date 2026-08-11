@@ -1,0 +1,38 @@
+name: Buffer Usage Check Once
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  inspect:
+    if: startsWith(github.event.issue.title, '[BUFFER USAGE CHECK]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read Buffer rate-limit status
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        run: |
+          node <<'NODE'
+          const response = await fetch('https://api.buffer.com', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              authorization: `Bearer ${process.env.BUFFER_API_KEY}`,
+            },
+            body: JSON.stringify({ query: 'query UsageCheck { account { organizations { id } } }' }),
+          });
+          const payload = await response.json();
+          if (!response.ok || payload.errors?.length) {
+            console.error(payload.errors || payload);
+            process.exit(1);
+          }
+          const rateLimit = response.headers.get('ratelimit') || '';
+          const policies = response.headers.get('ratelimit-policy') || '';
+          console.log('BUFFER_RATELIMIT=' + rateLimit);
+          console.log('BUFFER_RATELIMIT_POLICY=' + policies);
+          NODE
