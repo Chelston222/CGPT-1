@@ -17,7 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create five-email flow in draft only
+      - name: Create final five-email flow in draft only
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
         run: python apps/tte-klaviyo/create_welcome_flow.py
