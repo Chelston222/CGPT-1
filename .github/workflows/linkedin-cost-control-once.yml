@@ -17,37 +17,85 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply eight-hour cadence and content guard
+      - name: Apply eight-hour cadence
         run: |
           python - <<'PY'
           from pathlib import Path
-
           workflow = Path('.github/workflows/linkedin-buffer-autopost.yml')
           text = workflow.read_text()
-          old = "- cron: '17 */2 * * *'"
-          new = "- cron: '17 */8 * * *'"
-          if old not in text and new not in text:
+          if "- cron: '17 */2 * * *'" in text:
+              text = text.replace("- cron: '17 */2 * * *'", "- cron: '17 */8 * * *'")
+          elif "- cron: '17 */8 * * *'" not in text:
               raise SystemExit('Expected LinkedIn refill cron not found')
-          workflow.write_text(text.replace(old, new))
+          workflow.write_text(text)
 
           builder = Path('scripts/build-linkedin-master-ledger.mjs')
           text = builder.read_text()
-          old = 'releaseCheckHours: 2,'
-          new = 'releaseCheckHours: 8,'
-          if old not in text and new not in text:
+          if 'releaseCheckHours: 2,' in text:
+              text = text.replace('releaseCheckHours: 2,', 'releaseCheckHours: 8,')
+          elif 'releaseCheckHours: 8,' not in text:
               raise SystemExit('Expected releaseCheckHours metadata not found')
-          builder.write_text(text.replace(old, new))
-
-          rules = Path('docs/LINKEDIN_CONTENT_RULES.md')
-          rules.write_text('''# Triple Two Emails LinkedIn content rules\n\n## Brand naming\n\n- Public-facing brand name: **Triple Two Emails**.\n- Do not use founder-origin filler such as “this is why I made 222 Emails”, “this is why I built 222 Emails”, “this is why I started 222 Emails”, or equivalent phrasing.\n- When referring to the company from Chelston’s personal LinkedIn, prefer a native LinkedIn Page mention of **Triple Two Emails** when the publishing route has verified annotation metadata.\n- Never fake a native mention by assuming plain `@Triple Two Emails` will become clickable. If native annotation metadata is unavailable, use plain **Triple Two Emails** instead.\n- On posts published by the Triple Two Emails Page itself, do not awkwardly self-tag the Page unless there is a specific editorial reason.\n\n## Voice\n\n- UK English.\n- No em dashes.\n- Outcome first: retention, repeat revenue, client return systems, missed-revenue recovery and lifecycle revenue.\n- Avoid generic agency-origin stories unless the founder story itself is the subject of the post.\n- Do not invent metrics, customer results, testimonials or certainty.\n\n## Publishing safety\n\n- Content reservoir or QA-ready status is not publishing permission.\n- Only the owner-approved GitHub publishing gate may release content to Buffer.\n- Native LinkedIn mentions must use verified LinkedIn entity metadata when sent through the Buffer API.\n''')
-
-          test = Path('tests/linkedin-content-brand-rules.test.cjs')
-          test.write_text(r'''\n'use strict';\n\nconst assert = require('node:assert/strict');\nconst fs = require('node:fs');\nconst path = require('node:path');\nconst test = require('node:test');\n\nconst root = path.resolve(__dirname, '..');\nconst reviewDir = path.join(root, 'apps', 'linkedin-review');\nconst jsonFiles = fs.readdirSync(reviewDir).filter((name) => /^(queue|qa-replenishment).*\\.json$/.test(name));\nconst forbiddenOrigin = /this is why i (?:made|built|started|created) 222 emails/i;\n\ntest('LinkedIn operational content avoids deprecated 222 Emails founder-origin phrasing', () => {\n  for (const name of jsonFiles) {\n    const text = fs.readFileSync(path.join(reviewDir, name), 'utf8');\n    assert.doesNotMatch(text, forbiddenOrigin, name);\n  }\n});\n\ntest('LinkedIn content rules lock Triple Two Emails as the public brand name', () => {\n  const rules = fs.readFileSync(path.join(root, 'docs', 'LINKEDIN_CONTENT_RULES.md'), 'utf8');\n  assert.match(rules, /Public-facing brand name: \*\*Triple Two Emails\*\*/);\n  assert.match(rules, /native LinkedIn Page mention/i);\n  assert.match(rules, /Never fake a native mention/i);\n});\n'''.lstrip())
+          builder.write_text(text)
           PY
-      - name: Validate content guard
-        run: node --test tests/linkedin-content-brand-rules.test.cjs
+      - name: Add permanent brand rules and test
+        run: |
+          cat > docs/LINKEDIN_CONTENT_RULES.md <<'EOF'
+          # Triple Two Emails LinkedIn content rules
+
+          ## Brand naming
+
+          - Public-facing brand name: **Triple Two Emails**.
+          - Do not use founder-origin filler such as “this is why I made 222 Emails”, “this is why I built 222 Emails”, “this is why I started 222 Emails”, or equivalent phrasing.
+          - When referring to the company from Chelston’s personal LinkedIn, prefer a native LinkedIn Page mention of **Triple Two Emails** when the publishing route has verified annotation metadata.
+          - Never fake a native mention by assuming plain `@Triple Two Emails` will become clickable. If native annotation metadata is unavailable, use plain **Triple Two Emails** instead.
+          - On posts published by the Triple Two Emails Page itself, do not awkwardly self-tag the Page unless there is a specific editorial reason.
+
+          ## Voice
+
+          - UK English.
+          - No em dashes.
+          - Outcome first: retention, repeat revenue, client return systems, missed-revenue recovery and lifecycle revenue.
+          - Avoid generic agency-origin stories unless the founder story itself is the subject of the post.
+          - Do not invent metrics, customer results, testimonials or certainty.
+
+          ## Publishing safety
+
+          - Content reservoir or QA-ready status is not publishing permission.
+          - Only the owner-approved GitHub publishing gate may release content to Buffer.
+          - Native LinkedIn mentions must use verified LinkedIn entity metadata when sent through the Buffer API.
+          EOF
+          sed -i 's/^          //' docs/LINKEDIN_CONTENT_RULES.md
+
+          cat > tests/linkedin-content-brand-rules.test.cjs <<'EOF'
+          'use strict';
+
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const test = require('node:test');
+
+          const root = path.resolve(__dirname, '..');
+          const reviewDir = path.join(root, 'apps', 'linkedin-review');
+          const jsonFiles = fs.readdirSync(reviewDir).filter((name) => /^(queue|qa-replenishment).*\.json$/.test(name));
+          const forbiddenOrigin = /this is why i (?:made|built|started|created) 222 emails/i;
+
+          test('operational content avoids deprecated 222 Emails founder-origin phrasing', () => {
+            for (const name of jsonFiles) {
+              const text = fs.readFileSync(path.join(reviewDir, name), 'utf8');
+              assert.doesNotMatch(text, forbiddenOrigin, name);
+            }
+          });
+
+          test('content rules lock Triple Two Emails as the public brand name', () => {
+            const rules = fs.readFileSync(path.join(root, 'docs', 'LINKEDIN_CONTENT_RULES.md'), 'utf8');
+            assert.match(rules, /Public-facing brand name: \*\*Triple Two Emails\*\*/);
+            assert.match(rules, /native LinkedIn Page mention/i);
+            assert.match(rules, /Never fake a native mention/i);
+          });
+          EOF
+          sed -i 's/^          //' tests/linkedin-content-brand-rules.test.cjs
+          node --test tests/linkedin-content-brand-rules.test.cjs
       - name: Read safe LinkedIn Page identity from Buffer
-        id: page
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
