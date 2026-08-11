@@ -95,6 +95,7 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
   const approved = parseItems(header.APPROVED_ITEMS);
   if (!approved.length) throw new Error('APPROVED_ITEMS must contain at least one locked post.');
   const effectiveQueue = withQaReplenishment(queue);
+  queue.posts = effectiveQueue.posts;
   const queueById = new Map(effectiveQueue.posts.map((post) => [post.id, post]));
   const weekEnd = addDays(header.WEEK_START, 6);
 
