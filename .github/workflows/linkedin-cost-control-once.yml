@@ -17,18 +17,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply eight-hour cadence
+      - name: Update queue policy metadata
         run: |
           python - <<'PY'
           from pathlib import Path
-          workflow = Path('.github/workflows/linkedin-buffer-autopost.yml')
-          text = workflow.read_text()
-          if "- cron: '17 */2 * * *'" in text:
-              text = text.replace("- cron: '17 */2 * * *'", "- cron: '17 */8 * * *'")
-          elif "- cron: '17 */8 * * *'" not in text:
-              raise SystemExit('Expected LinkedIn refill cron not found')
-          workflow.write_text(text)
-
           builder = Path('scripts/build-linkedin-master-ledger.mjs')
           text = builder.read_text()
           if 'releaseCheckHours: 2,' in text:
@@ -108,18 +100,15 @@ jobs:
             body: JSON.stringify({ query }),
           });
           const payload = await response.json();
-          if (!response.ok || payload.errors?.length || !payload.data?.channel) {
-            console.error(payload.errors || payload);
-            process.exit(1);
-          }
+          if (!response.ok || payload.errors?.length || !payload.data?.channel) process.exit(1);
           console.log(JSON.stringify(payload.data.channel));
           NODE
-      - name: Commit permanent changes
+      - name: Commit permanent non-workflow changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/workflows/linkedin-buffer-autopost.yml scripts/build-linkedin-master-ledger.mjs docs/LINKEDIN_CONTENT_RULES.md tests/linkedin-content-brand-rules.test.cjs
-          git commit -m "Reduce LinkedIn refill checks to eight hours and lock brand rules"
+          git add scripts/build-linkedin-master-ledger.mjs docs/LINKEDIN_CONTENT_RULES.md tests/linkedin-content-brand-rules.test.cjs
+          git commit -m "Lock eight-hour LinkedIn policy metadata and brand rules"
           git push origin main
       - name: Record safe Page identity and completion
         env:
@@ -130,9 +119,8 @@ jobs:
           const fs = require('fs');
           const page = JSON.parse(fs.readFileSync('/tmp/page.json', 'utf8'));
           const lines = [
-            '✅ LinkedIn cost-control update applied.',
+            '✅ LinkedIn cost-control policy update applied.',
             '',
-            '- Permanent Buffer refill cadence: **every 8 hours**.',
             '- Queue policy metadata: **releaseCheckHours = 8**.',
             '- Triple Two Emails naming/founder-origin guard: **active and tested**.',
             '- Safe Buffer-linked LinkedIn Page identity:',
