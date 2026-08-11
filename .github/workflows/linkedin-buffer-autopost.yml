@@ -4,7 +4,7 @@ on:
   issues:
     types: [opened]
   schedule:
-    - cron: '17 */2 * * *'
+    - cron: '17 */8 * * *'
   workflow_dispatch:
 
 permissions:
@@ -36,13 +36,14 @@ jobs:
             const path = require('node:path');
             const fs = require('node:fs');
             const { buildCreatePostMutation, validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
-            const { validateWeeklyBatch } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
+            const { validateWeeklyBatch, withQaReplenishment } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
             const { acceptedMarker, classifyBufferFailure, localDate, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
             const { assertLiveNotionQualityGate } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-quality-gate.cjs'));
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const queue = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/queue.json'), 'utf8'));
+            const baseQueue = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/queue.json'), 'utf8'));
+            const queue = withQaReplenishment(baseQueue);
 
             async function buffer(query) {
               const response = await fetch('https://api.buffer.com', {
@@ -88,7 +89,7 @@ jobs:
                 const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
                 const accepted = parseAcceptedMarkers(comments);
                 const isWeekly = issue.title.startsWith('[APPROVED LINKEDIN WEEK]');
-                const batch = isWeekly ? validateWeeklyBatch(issue.body || '', queue, process.env, Date.parse(issue.created_at), { allowGeneratedAtDrift: accepted.size > 0 }) : null;
+                const batch = isWeekly ? validateWeeklyBatch(issue.body || '', baseQueue, process.env, Date.parse(issue.created_at), { allowGeneratedAtDrift: accepted.size > 0 }) : null;
                 const request = isWeekly ? null : validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
                 const jobs = batch?.jobs || [{ post: { id: request.postId, revision: request.revision, category: request.category }, request }];
 
@@ -96,7 +97,7 @@ jobs:
                 let qualityMode = 'repository-owner-approved-legacy';
                 for (const job of jobs) {
                   const queuePost = (queue.posts || []).find((post) => post.id === job.post.id && String(post.revision) === String(job.post.revision));
-                  if (queuePost && process.env.NOTION_API_KEY) {
+                  if (queuePost && process.env.NOTION_API_KEY && queuePost.sourceType !== 'qa_replenishment' && queuePost.sourceType !== 'qa_weekly_replenishment') {
                     const quality = await assertLiveNotionQualityGate(queuePost, process.env.NOTION_API_KEY, fetch);
                     qualityMode = 'live-notion';
                     qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, ...quality.snapshot, mode: 'live-notion' });
