@@ -1,0 +1,16 @@
+{
+  "proof_strip": {"job":"Reduce perceived risk quickly","requires":["PROOF_1","PROOF_2","PROOF_3"],"use_when":"Three short, verified proof points are available."},
+  "testimonial": {"job":"Add believable customer evidence","requires":["TESTIMONIAL_QUOTE","TESTIMONIAL_NAME"],"use_when":"A genuine attributed testimonial directly supports the message."},
+  "benefit_stack": {"job":"Translate features into outcomes","requires":["BENEFIT_1","BENEFIT_2","BENEFIT_3"],"use_when":"The reader needs fast clarity on why the product matters."},
+  "objection_faq": {"job":"Resolve purchase friction","requires":["OBJECTION_Q1","OBJECTION_A1","OBJECTION_Q2","OBJECTION_A2"],"use_when":"Known objections are blocking conversion."},
+  "guarantee": {"job":"Lower risk","requires":["GUARANTEE_TITLE","GUARANTEE_BODY"],"use_when":"The client has a real, enforceable guarantee or return promise."},
+  "offer_box": {"job":"Clarify an incentive","requires":["OFFER_TITLE","OFFER_BODY"],"use_when":"A genuine promotion or value add is central to the decision."},
+  "social_proof_quote": {"job":"Build confidence","requires":["SOCIAL_PROOF_TEXT","SOCIAL_PROOF_SOURCE"],"use_when":"Short credible third-party proof is available."},
+  "urgency_truth": {"job":"Create action from a real deadline","requires":["URGENCY_TITLE","URGENCY_BODY"],"use_when":"Stock, access or a deadline is objectively time-limited."},
+  "founder_note": {"job":"Humanise the brand","requires":["FOUNDER_NAME","FOUNDER_NOTE"],"use_when":"Founder perspective genuinely adds trust or context."},
+  "next_steps": {"job":"Reduce post-action uncertainty","requires":["NEXT_STEP_1","NEXT_STEP_2","NEXT_STEP_3"],"use_when":"The customer needs to know what happens after purchase or signup."},
+  "delivery_reassurance": {"job":"Reduce fulfilment anxiety","requires":["DELIVERY_TITLE","DELIVERY_BODY"],"use_when":"Delivery timing, returns or fulfilment are known objections."},
+  "comparison": {"job":"Help the customer choose","requires":["OPTION_A","OPTION_A_BENEFIT","OPTION_B","OPTION_B_BENEFIT"],"use_when":"Two options serve meaningfully different customer needs."},
+  "vip_access": {"job":"Reward loyalty","requires":["VIP_TITLE","VIP_BODY"],"use_when":"The customer has earned real access, treatment or value."},
+  "mechanism": {"job":"Explain why the solution works","requires":["MECHANISM_TITLE","MECHANISM_BODY"],"use_when":"Understanding the mechanism materially improves purchase confidence."}
+}

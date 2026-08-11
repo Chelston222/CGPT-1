@@ -1,0 +1,29 @@
+name: TTE Revenue Template OS QA
+
+on:
+  pull_request:
+    paths:
+      - 'apps/tte-klaviyo/master-library/**'
+      - '.github/workflows/tte-revenue-template-os-qa.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/tte-klaviyo/master-library/**'
+      - '.github/workflows/tte-revenue-template-os-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  revenue-os-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate technical master library
+        run: python apps/tte-klaviyo/master-library/validate_library.py
+      - name: Validate Revenue Template OS
+        run: python apps/tte-klaviyo/master-library/validate_revenue_os.py
