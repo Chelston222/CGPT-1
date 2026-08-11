@@ -1,7 +1,29 @@
 'use strict';
 
+const fs = require('node:fs');
+const path = require('node:path');
 const { validateRequest } = require('./linkedin-review-core.cjs');
 const { validateDailyPlacementLimit } = require('./linkedin-buffer-capacity.cjs');
+
+const QA_REPLENISHMENT_PATH = path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-11.json');
+
+function withQaReplenishment(queue) {
+  let supplemental = { posts: [] };
+  try {
+    supplemental = JSON.parse(fs.readFileSync(QA_REPLENISHMENT_PATH, 'utf8'));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  const existingIds = new Set((queue.posts || []).map((post) => post.id));
+  const additions = (supplemental.posts || []).filter((post) =>
+    !existingIds.has(post.id)
+    && post.status === 'review'
+    && post.qa?.status === 'ready_for_human_review'
+    && post.qa?.approvalEligible === true
+    && post.qa?.publishPermission === false
+  );
+  return { ...queue, posts: [...(queue.posts || []), ...additions] };
+}
 
 function parseHeaders(body = '') {
   const header = {};
@@ -74,13 +96,13 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
 
   const approved = parseItems(header.APPROVED_ITEMS);
   if (!approved.length) throw new Error('APPROVED_ITEMS must contain at least one locked post.');
-  const queueById = new Map(queue.posts.map((post) => [post.id, post]));
+  const effectiveQueue = withQaReplenishment(queue);
+  const queueById = new Map(effectiveQueue.posts.map((post) => [post.id, post]));
   const weekEnd = addDays(header.WEEK_START, 6);
 
-  // Build and validate every request before any caller is allowed to contact Buffer.
   const jobs = approved.map((locked) => {
     const post = queueById.get(locked.id);
-    if (!post) throw new Error(`${locked.id} is not present in the locked queue.`);
+    if (!post) throw new Error(`${locked.id} is not present in the locked queue or QA replenishment.`);
     if (Number(post.revision) !== locked.revision) {
       throw new Error(`${locked.id} changed revision after review. Review it again.`);
     }
@@ -111,4 +133,4 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
   };
 }
 
-module.exports = { parseHeaders, parseItems, postBody, validateWeeklyBatch };
+module.exports = { parseHeaders, parseItems, postBody, validateWeeklyBatch, withQaReplenishment };
