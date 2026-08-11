@@ -52,11 +52,17 @@ assert subjects==EXPECTED_SUBJECTS, subjects
 assert set(statuses)=={"draft"}, statuses
 assert all(a["data"]["message"]["from_email"]=="hello@222emails.com" for a in sends)
 assert all(a["data"]["message"]["from_label"]=="Triple Two Emails" for a in sends)
+assert all(a["data"]["message"]["reply_to_email"]=="hello@222emails.com" for a in sends)
 
-for template_id, marker in zip(actual_templates, EXPECTED_MARKERS):
+for index,(template_id, marker) in enumerate(zip(actual_templates, EXPECTED_MARKERS), start=1):
     template=get(f"https://a.klaviyo.com/api/templates/{template_id}/")["data"]
     html=template.get("attributes",{}).get("html","")
     assert marker in html, f"Expected marker missing from cloned template {template_id}: {marker}"
+    assert "__FREE_AUDIT_URL__" not in html, f"Unresolved audit URL placeholder in {template_id}"
+    assert 'href="#"' not in html, f"Placeholder link found in {template_id}"
+    assert "unsubscribe" in html.lower(), f"Unsubscribe mechanism missing from template {template_id}"
+    if index >= 2:
+        assert "222emails.com" in html, f"Expected 222emails.com CTA destination missing from template {template_id}"
 
 print(json.dumps({
     "verification":"PASS",
@@ -69,4 +75,7 @@ print(json.dumps({
     "subjects":subjects,
     "message_statuses":statuses,
     "template_content_checks":"5/5 PASS",
+    "placeholder_link_checks":"5/5 PASS",
+    "unsubscribe_checks":"5/5 PASS",
+    "cta_destination_checks":"4/4 PASS",
 },indent=2))
