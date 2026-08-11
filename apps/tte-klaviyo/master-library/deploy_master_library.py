@@ -19,9 +19,11 @@ def request(method,path,payload=None):
         body=exc.read().decode('utf-8',errors='replace'); raise RuntimeError(f'Klaviyo {exc.code}: {body}') from exc
 
 def existing(name):
-    filt=urllib.parse.quote(f'equal(name,"{name}")',safe='(),"')
+    # Current Klaviyo filtering operator is `equals`, not `equal`.
+    filt=urllib.parse.quote(f'equals(name,"{name}")',safe='(),"')
     items=request('GET',f'/templates?filter={filt}&fields[template]=name').get('data',[])
-    return items[0]['id'] if items else None
+    exact=[x for x in items if x.get('attributes',{}).get('name')==name]
+    return exact[0]['id'] if exact else None
 
 def create_payload(name,html):
     return {'data':{'type':'template','attributes':{'name':name,'editor_type':'CODE','html':html}}}

@@ -1,17 +1,22 @@
-# 222 Emails Master HTML Library
+# 222 Emails Revenue Template OS
 
-Production-oriented HTML email masters for client lifecycle work.
+Production-oriented lifecycle email system for repeatable client delivery.
 
 ## What this contains
-- 30 outcome-led master templates
+- 30 outcome-led lifecycle/revenue email jobs
+- 5 layout systems, creating 150 core job/layout compositions
+- 14 reusable persuasion, proof and reassurance modules
 - Klaviyo CODE-template compatible HTML
 - responsive table-based layouts
 - Outlook/MSO fallbacks
 - dark-mode metadata and guarded styles
 - accessibility essentials
-- reusable brand/content tokens
-- automated static QA
-- source and licence ledger
+- client intake, journey recommendation and brand/materialisation pipeline
+- subject-line and preheader candidates
+- evidence-aware safety controls
+- automated static, exhaustive and negative-path QA
+- idempotent Klaviyo draft deployment and platform-side render verification
+- source/licence ledger and operator runbook
 
 ## Commercial taxonomy
 Every master has one primary commercial job:
@@ -23,34 +28,36 @@ Every master has one primary commercial job:
 
 The email is not the product. The commercial outcome and lifecycle system are the product.
 
-## Client workflow
-1. Choose the template whose job matches the customer journey problem.
-2. Duplicate it into a client workstream.
-3. Replace all `__TOKEN__` values.
-4. Replace generic modules with client-specific copy, proof, products and imagery.
-5. Keep only truthful urgency and verified claims.
-6. Build and run static QA.
-7. Preview in Klaviyo desktop/mobile.
-8. Send controlled seed tests.
-9. Run inbox/render QA across the client mix.
-10. Only then attach the template to a campaign/flow.
+## Canonical client workflow
+Do not manually duplicate masters and replace tokens as the normal production path.
 
-## Required brand tokens
-- `__BRAND_NAME__`
-- `__HOME_URL__`
-- `__LOGO_URL__`
-- `__HERO_ALT__`
-- `__PREHEADER__`
-- `__PRIMARY_CTA_URL__`
-- `__SUPPORT_EMAIL__`
-- `__POSTAL_ADDRESS__`
+1. Create structured client intake from `revenue-os/client_intake.example.json`.
+2. Run `build_client_pack.py INTAKE --out PACK --clean`.
+3. The system validates the intake, chooses a journey/layout, carries through only supplied evidence, produces subject/preheader options, materialises the HTML and runs client-pack QA.
+4. Review `creative.json`, `email.html` and `qa.json`.
+5. For Klaviyo, use the manual `TTE Client Draft Build + Deploy` GitHub workflow with confirmation `DEPLOY-CLIENT-DRAFT-ONLY`.
+6. The workflow reruns final QA, creates/updates the client CODE template and asks Klaviyo to render it server-side.
+7. Review the uploaded audit pack and Klaviyo draft.
+8. Complete real inbox/render, deliverability, data, audience and approval gates before any live activation.
 
-Journey-specific masters can also contain tokens such as `__PRODUCT_NAME__`, `__PRODUCT_BENEFIT__`, `__PRODUCT_PRICE__`, `__ORDER_REFERENCE__`, `__CORE_PROBLEM__`, and `__DESIRED_OUTCOME__`.
+Full operating instructions: `revenue-os/OPERATOR_RUNBOOK.md`.
+Completion status: `revenue-os/COMPLETION_MATRIX.md`.
 
-## Safety
-These are master assets, not permission to send. A master can pass code QA and still fail commercially or render differently in a specific client. Never claim universal pixel-perfect rendering without a current render test.
+## Safety boundaries
+- no automatic flow activation
+- no automatic subscriber send
+- no invented testimonials, proof, guarantees or urgency
+- sensitive evidence enters the recommended manifest only when explicitly verified
+- placeholder imagery and unresolved build tokens fail QA
+- deployment is template-draft only and requires exact manual confirmation
+
+## Verification
+- `validate_library.py`: 30 technical masters
+- `validate_revenue_os.py`: 30 jobs x 5 layouts plus module matrix
+- `run_final_qa.py`: full regression, deterministic recommendation, negative tests and end-to-end example client pack
+- GitHub Actions repeats the final regression independently before merge and on relevant `main` changes
 
 ## Klaviyo
-The Templates API supports CODE templates with HTML. The master deployer is idempotent by exact master name so repeat runs update existing masters rather than endlessly creating duplicates.
+The integration targets API revision `2026-07-15`. It uses current Templates API create/update/filtering contracts and the Template Render endpoint for platform-side verification. Template deployment is idempotent by exact generated name.
 
-API revision used: `2026-07-15`.
+These assets are production infrastructure, not permission to send. Real-world rendering, authentication, dynamic-data, audience/consent and final approval remain campaign/client-specific gates.

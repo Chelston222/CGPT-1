@@ -1,0 +1,36 @@
+{
+  "client_id": "example-brand",
+  "business_model": "ecommerce",
+  "primary_goal": "recover_cart",
+  "brand": {
+    "BRAND_NAME": "Example Brand",
+    "HOME_URL": "https://example.com",
+    "LOGO_URL": "https://example.com/logo.png",
+    "SUPPORT_EMAIL": "support@example.com",
+    "POSTAL_ADDRESS": "1 Example Street, London, UK"
+  },
+  "assets": {
+    "HERO_URL": "https://example.com/hero.jpg",
+    "HERO_ALT": "Example Brand products",
+    "PRODUCT_IMAGE_URL": "https://example.com/product.jpg"
+  },
+  "offer": {
+    "desired_outcome": "get the right product without second guessing",
+    "core_problem": "uncertainty before purchase",
+    "primary_cta_url": "https://example.com/cart",
+    "product_name": "Example Product",
+    "product_benefit": "A clear verified benefit",
+    "product_price": "£49"
+  },
+  "evidence": {
+    "testimonial": null,
+    "proof_points": [],
+    "guarantee": null,
+    "urgency": null
+  },
+  "tracking": {
+    "utm_source": "klaviyo",
+    "utm_medium": "email",
+    "utm_campaign": "abandoned_cart"
+  }
+}
