@@ -2,7 +2,8 @@
 
 Never creates, edits, subscribes, sends or changes flow status. It reports whether
 the current private key can read resources needed for brand assets, forms,
-profiles and metrics so missing scopes are explicit rather than guessed.
+profiles, metrics and sending-domain health so missing scopes are explicit rather
+than guessed.
 """
 import json
 import os
@@ -18,6 +19,7 @@ ENDPOINTS={
     "forms_read":"/forms?page[size]=5",
     "profiles_read":"/profiles?page[size]=1",
     "metrics_read":"/metrics",
+    "sending_domains_read":"/sending-domains",
 }
 
 def probe(path):
@@ -29,7 +31,14 @@ def probe(path):
     try:
         with urllib.request.urlopen(req,timeout=30) as res:
             body=json.loads(res.read())
-            return {"ok":True,"http":res.status,"count_returned":len(body.get("data",[]))}
+            data=body.get("data",[])
+            if isinstance(data,list):
+                sample=[{"id":x.get("id"),"attributes":x.get("attributes",{})} for x in data[:5]]
+                count=len(data)
+            else:
+                sample=data
+                count=1 if data else 0
+            return {"ok":True,"http":res.status,"count_returned":count,"sample":sample}
     except urllib.error.HTTPError as exc:
         raw=exc.read().decode("utf-8",errors="replace")
         try:
