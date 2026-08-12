@@ -1,10 +1,10 @@
-name: TTE Klaviyo Go Live
+name: TTE Klaviyo APEX V2 Go Live
 
 on:
   workflow_dispatch:
     inputs:
       visual_qa:
-        description: 'Desktop + mobile visual QA complete'
+        description: 'Desktop + mobile + dark-mode visual QA complete'
         required: true
         type: choice
         options: [BLOCK, PASS]
@@ -34,13 +34,13 @@ on:
         options: [BLOCK, PASS]
         default: BLOCK
       exit_qa:
-        description: 'Audit/client exit or suppression logic is verified'
+        description: 'Fit Check/client exit or suppression logic is verified'
         required: true
         type: choice
         options: [BLOCK, PASS]
         default: BLOCK
       activation_confirmation:
-        description: 'Type exactly GO-LIVE-TWM6Yx'
+        description: 'Type exactly GO-LIVE-VbBAhU'
         required: true
         type: string
 
@@ -48,26 +48,26 @@ permissions:
   contents: read
 
 jobs:
-  activate-canonical-flow:
+  activate-apex-v2:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run full canonical flow content verification
+      - name: Run full APEX V2 live-account verification
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
-          TTE_FLAGSHIP_FLOW_ID: TWM6Yx
-        run: python apps/tte-klaviyo/verify_flagship_flow.py
+          TTE_APEX_V2_FLOW_ID: VbBAhU
+        run: python apps/tte-klaviyo/verify_apex_v2_flow.py
 
-      - name: Re-run automated launch-readiness gate immediately before activation
+      - name: Re-run launch-readiness gate immediately before activation
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
-          TTE_FLAGSHIP_FLOW_ID: TWM6Yx
+          TTE_FLAGSHIP_FLOW_ID: VbBAhU
         run: python apps/tte-klaviyo/launch_readiness.py
 
-      - name: Activate canonical flow only when every human gate passes
+      - name: Activate APEX V2 only when every human/external gate passes
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
           VISUAL_QA: ${{ inputs.visual_qa }}
