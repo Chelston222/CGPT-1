@@ -18,6 +18,8 @@ required = {
     "SEED_QA": "PASS",
     "DOMAIN_QA": "PASS",
     "FIT_CHECK_QA": "PASS",
+    "CAPTURE_QA": "PASS",
+    "EXIT_QA": "PASS",
     "ACTIVATION_CONFIRMATION": f"GO-LIVE-{FLOW_ID}",
 }
 failed = [name for name, expected in required.items() if os.environ.get(name) != expected]
