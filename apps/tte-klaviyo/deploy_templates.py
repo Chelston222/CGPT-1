@@ -2,8 +2,9 @@
 
 Required environment variable:
   KLAVIYO_PRIVATE_API_KEY
-Optional environment variable:
+Optional environment variables:
   FREE_AUDIT_URL (defaults to https://222emails.com for draft templates)
+  TTE_LOGO_URL (required whenever a source template contains __TTE_LOGO_URL__)
 
 The deployer updates an exact-name template when it already exists and creates it
 only when missing. This prevents template sprawl. It never activates flows or
@@ -23,6 +24,7 @@ BASE = "https://a.klaviyo.com/api"
 REVISION = "2026-07-15"
 ROOT = pathlib.Path(__file__).parent
 AUDIT_URL = os.environ.get("FREE_AUDIT_URL", "https://222emails.com").rstrip("/")
+LOGO_URL = os.environ.get("TTE_LOGO_URL", "").strip()
 KEY = os.environ.get("KLAVIYO_PRIVATE_API_KEY")
 if not KEY:
     raise SystemExit("Missing KLAVIYO_PRIVATE_API_KEY. Store it as a GitHub secret, never in source control.")
@@ -63,7 +65,15 @@ def api_json(method, path, payload=None):
 
 
 def render(source: str) -> str:
-    return source.replace("__FREE_AUDIT_URL__", AUDIT_URL)
+    rendered = source.replace("__FREE_AUDIT_URL__", AUDIT_URL)
+    if "__TTE_LOGO_URL__" in rendered:
+        if not LOGO_URL:
+            raise SystemExit("TTE_LOGO_URL is required for V3-branded templates. Refusing to deploy a fake or missing logo.")
+        rendered = rendered.replace("__TTE_LOGO_URL__", LOGO_URL)
+    unresolved = re.findall(r"__[A-Z0-9_]+__", rendered)
+    if unresolved:
+        raise SystemExit(f"Unresolved deployment placeholders: {sorted(set(unresolved))}")
+    return rendered
 
 
 class PlainTextParser(HTMLParser):
@@ -80,8 +90,7 @@ class PlainTextParser(HTMLParser):
         if tag == "li":
             self.parts.append("• ")
         if tag == "a":
-            href = dict(attrs).get("href", "")
-            self.link_stack.append(href)
+            self.link_stack.append(dict(attrs).get("href", ""))
 
     def handle_endtag(self, tag):
         if tag == "a" and self.link_stack:
@@ -117,17 +126,12 @@ def find_exact(name: str):
 
 def upsert_template(name: str, source: str) -> dict:
     html = render(source)
-    attrs = {
-        "name": name,
-        "editor_type": "CODE",
-        "html": html,
-        "text": to_plaintext(html),
-    }
+    attrs = {"name": name, "editor_type": "CODE", "html": html, "text": to_plaintext(html)}
     existing = find_exact(name)
     if existing:
         template_id = existing["id"]
         payload = {"data": {"type": "template", "id": template_id, "attributes": attrs}}
-        result = api_json("PATCH", f"/templates/{template_id}", payload)
+        api_json("PATCH", f"/templates/{template_id}", payload)
         action = "UPDATED"
     else:
         payload = {"data": {"type": "template", "attributes": attrs}}
@@ -143,4 +147,9 @@ if __name__ == "__main__":
         item = upsert_template(name, path.read_text(encoding="utf-8"))
         deployed.append(item)
         print(item["action"], name, "=>", item["id"])
-    print(json.dumps({"templates": deployed, "audit_url": AUDIT_URL, "mode": "IDEMPOTENT_UPSERT"}, indent=2))
+    print(json.dumps({
+        "templates": deployed,
+        "audit_url": AUDIT_URL,
+        "logo_url": LOGO_URL or None,
+        "mode": "IDEMPOTENT_UPSERT",
+    }, indent=2))
