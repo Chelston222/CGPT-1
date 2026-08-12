@@ -2,8 +2,7 @@
 
 Never creates, edits, subscribes, sends or changes flow status. It reports whether
 the current private key can read resources needed for brand assets, forms,
-profiles, metrics and sending-domain health so missing scopes are explicit rather
-than guessed.
+profiles, metrics, account/site identity and sending-domain health.
 """
 import json
 import os
@@ -15,6 +14,7 @@ REVISION="2026-07-15"
 KEY=os.environ["KLAVIYO_PRIVATE_API_KEY"]
 
 ENDPOINTS={
+    "accounts_read":"/accounts",
     "images_read":"/images?page[size]=5",
     "forms_read":"/forms?page[size]=5",
     "profiles_read":"/profiles?page[size]=1",
