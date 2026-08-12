@@ -1,4 +1,4 @@
-name: TTE Klaviyo Create Flagship Flow Draft
+name: TTE Klaviyo Create APEX V2 Pre-Live Flow
 
 on:
   workflow_dispatch:
@@ -17,7 +17,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create final five-email flow in draft only
+      - name: Run source APEX QA
+        run: python apps/tte-klaviyo/source_audit.py
+
+      - name: Create APEX V2 pre-live five-email flow in draft only
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          TTE_FLOW_NAME: TTE Flagship Welcome Series | APEX V2 | PRE-LIVE
         run: python apps/tte-klaviyo/create_welcome_flow.py
