@@ -1,4 +1,4 @@
-"""Guarded status controller for the canonical 222 Emails Klaviyo flow.
+"""Guarded status controller for the canonical 222 Emails APEX V2 flow.
 
 Supported targets:
 - manual: canary mode. Eligible profiles can enter and queue for review, but the
@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 
 REVISION = "2026-07-15"
-FLOW_ID = "TWM6Yx"
+FLOW_ID = "VbBAhU"
 KEY = os.environ["KLAVIYO_PRIVATE_API_KEY"]
 TARGET = os.environ.get("TARGET_STATUS", "").strip().lower()
 CONFIRMATION = os.environ.get("STATUS_CONFIRMATION", "")
