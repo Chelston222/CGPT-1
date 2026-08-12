@@ -1,0 +1,23 @@
+name: TTE Klaviyo Integration Source QA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/tte-klaviyo/capture/**'
+      - 'apps/tte-klaviyo/bridge/**'
+      - 'apps/tte-klaviyo/integration_source_audit.py'
+      - '.github/workflows/tte-klaviyo-integration-source-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  integration-source-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run capture and bridge source QA
+        run: python apps/tte-klaviyo/integration_source_audit.py
