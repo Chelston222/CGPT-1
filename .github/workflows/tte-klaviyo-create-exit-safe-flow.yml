@@ -1,0 +1,34 @@
+name: TTE Klaviyo Create Exit-Safe APEX Flow
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type exactly CREATE-APEX-V3-EXIT-SAFE'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  create-exit-safe-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require explicit creation confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: test "$CONFIRMATION" = "CREATE-APEX-V3-EXIT-SAFE" || (echo "BLOCKED: confirmation mismatch" && exit 1)
+
+      - name: Run APEX source QA
+        run: python apps/tte-klaviyo/source_audit.py
+
+      - name: Create exit-safe Draft candidate only when required metrics exist
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          TTE_FLOW_NAME: TTE Flagship Welcome Series | APEX V3 | EXIT-SAFE PRE-LIVE
+        run: python apps/tte-klaviyo/create_filtered_flow.py
