@@ -17,7 +17,7 @@ ENDPOINTS={
     "images_read":"/images?page[size]=5",
     "forms_read":"/forms?page[size]=5",
     "profiles_read":"/profiles?page[size]=1",
-    "metrics_read":"/metrics?page[size]=5",
+    "metrics_read":"/metrics",
 }
 
 def probe(path):
