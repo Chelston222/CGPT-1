@@ -1,4 +1,4 @@
-name: TTE Klaviyo Launch Readiness
+name: TTE Klaviyo APEX V2 Launch Readiness
 
 on:
   workflow_dispatch:
@@ -18,8 +18,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run canonical launch-readiness gate
+      - name: Run APEX V2 launch-readiness gate
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
-          TTE_FLAGSHIP_FLOW_ID: TWM6Yx
+          TTE_FLAGSHIP_FLOW_ID: VbBAhU
         run: python apps/tte-klaviyo/launch_readiness.py
