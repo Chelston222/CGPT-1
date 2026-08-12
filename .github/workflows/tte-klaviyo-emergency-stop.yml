@@ -1,10 +1,10 @@
-name: TTE Klaviyo Emergency Stop
+name: TTE Klaviyo APEX V2 Emergency Stop
 
 on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: 'Type exactly SET-TWM6Yx-DRAFT'
+        description: 'Type exactly SET-VbBAhU-DRAFT'
         required: true
         type: string
 
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Return canonical flow to draft
+      - name: Return APEX V2 flow to draft
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
           TARGET_STATUS: draft
