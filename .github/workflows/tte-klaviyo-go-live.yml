@@ -27,6 +27,18 @@ on:
         type: choice
         options: [BLOCK, PASS]
         default: BLOCK
+      capture_qa:
+        description: 'Public opt-in/capture path is verified to feed Email List SjerhA'
+        required: true
+        type: choice
+        options: [BLOCK, PASS]
+        default: BLOCK
+      exit_qa:
+        description: 'Audit/client exit or suppression logic is verified'
+        required: true
+        type: choice
+        options: [BLOCK, PASS]
+        default: BLOCK
       activation_confirmation:
         description: 'Type exactly GO-LIVE-TWM6Yx'
         required: true
@@ -43,7 +55,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Re-run automated launch gate immediately before activation
+      - name: Run full canonical flow content verification
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          TTE_FLAGSHIP_FLOW_ID: TWM6Yx
+        run: python apps/tte-klaviyo/verify_flagship_flow.py
+
+      - name: Re-run automated launch-readiness gate immediately before activation
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
           TTE_FLAGSHIP_FLOW_ID: TWM6Yx
@@ -56,5 +74,7 @@ jobs:
           SEED_QA: ${{ inputs.seed_qa }}
           DOMAIN_QA: ${{ inputs.domain_qa }}
           FIT_CHECK_QA: ${{ inputs.fit_check_qa }}
+          CAPTURE_QA: ${{ inputs.capture_qa }}
+          EXIT_QA: ${{ inputs.exit_qa }}
           ACTIVATION_CONFIRMATION: ${{ inputs.activation_confirmation }}
         run: python apps/tte-klaviyo/activate_flagship_flow.py
