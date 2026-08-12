@@ -1,0 +1,27 @@
+name: TTE Klaviyo Emergency Stop
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type exactly SET-TWM6Yx-DRAFT'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  emergency-stop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Return canonical flow to draft
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          TARGET_STATUS: draft
+          STATUS_CONFIRMATION: ${{ inputs.confirmation }}
+        run: python apps/tte-klaviyo/set_flagship_status.py
