@@ -1,0 +1,24 @@
+name: TTE Klaviyo APEX V2 Verify
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/tte-klaviyo/verify_apex_v2_flow.py'
+      - '.github/workflows/tte-klaviyo-apex-v2-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-apex-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify APEX V2 candidate against live Klaviyo API
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          TTE_APEX_V2_FLOW_ID: VbBAhU
+        run: python apps/tte-klaviyo/verify_apex_v2_flow.py
