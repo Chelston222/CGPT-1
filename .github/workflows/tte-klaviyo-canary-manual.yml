@@ -1,0 +1,59 @@
+name: TTE Klaviyo Canary Manual Mode
+
+on:
+  workflow_dispatch:
+    inputs:
+      visual_qa:
+        description: 'Desktop + mobile visual QA complete'
+        required: true
+        type: choice
+        options: [BLOCK, PASS]
+        default: BLOCK
+      domain_qa:
+        description: 'Sending domain/authentication healthy in Klaviyo'
+        required: true
+        type: choice
+        options: [BLOCK, PASS]
+        default: BLOCK
+      confirmation:
+        description: 'Type exactly SET-TWM6Yx-MANUAL'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  canary-manual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Full canonical content verification before canary
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          TTE_FLAGSHIP_FLOW_ID: TWM6Yx
+        run: python apps/tte-klaviyo/verify_flagship_flow.py
+
+      - name: Structural launch-readiness gate
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          TTE_FLAGSHIP_FLOW_ID: TWM6Yx
+        run: python apps/tte-klaviyo/launch_readiness.py
+
+      - name: Require minimum human QA before manual canary
+        env:
+          VISUAL_QA: ${{ inputs.visual_qa }}
+          DOMAIN_QA: ${{ inputs.domain_qa }}
+        run: |
+          test "$VISUAL_QA" = "PASS" || (echo "BLOCKED: visual QA not passed" && exit 1)
+          test "$DOMAIN_QA" = "PASS" || (echo "BLOCKED: domain QA not passed" && exit 1)
+
+      - name: Set canonical flow to manual review mode
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+          TARGET_STATUS: manual
+          STATUS_CONFIRMATION: ${{ inputs.confirmation }}
+        run: python apps/tte-klaviyo/set_flagship_status.py
