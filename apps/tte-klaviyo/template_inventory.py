@@ -30,13 +30,14 @@ def get(path):
 
 report={}
 for name in NAMES:
-    q=urllib.parse.urlencode({"filter":f'equals(name,"{name}")',"page[size]":100})
+    # Get Templates supports a maximum page size of 10.
+    q=urllib.parse.urlencode({"filter":f'equals(name,"{name}")',"page[size]":10})
     items=get(f"/templates?{q}").get("data",[])
     exact=[x for x in items if x.get("attributes",{}).get("name")==name]
     report[name]=[
         {
             "id":x.get("id"),
-            "updated_at":x.get("attributes",{}).get("updated_at"),
+            "updated":x.get("attributes",{}).get("updated"),
             "editor_type":x.get("attributes",{}).get("editor_type"),
         }
         for x in exact
