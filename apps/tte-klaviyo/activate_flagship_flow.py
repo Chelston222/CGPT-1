@@ -1,8 +1,8 @@
-"""Explicitly activate the canonical 222 Emails Klaviyo flow.
+"""Explicitly activate the canonical 222 Emails APEX V2 Klaviyo flow.
 
 This script is intentionally difficult to trigger accidentally. It requires all
-human QA gates to be passed as environment variables plus an exact activation
-phrase. It must only be called from the manual go-live workflow.
+human/external QA gates to pass plus an exact activation phrase. It must only be
+called from the manual go-live workflow after automated gates pass.
 """
 import json
 import os
@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 
 REVISION = "2026-07-15"
-FLOW_ID = "TWM6Yx"
+FLOW_ID = "VbBAhU"
 KEY = os.environ["KLAVIYO_PRIVATE_API_KEY"]
 
 required = {
@@ -26,13 +26,7 @@ failed = [name for name, expected in required.items() if os.environ.get(name) !=
 if failed:
     raise SystemExit("ACTIVATION BLOCKED. Missing/incorrect gates: " + ", ".join(failed))
 
-payload = {
-    "data": {
-        "type": "flow",
-        "id": FLOW_ID,
-        "attributes": {"status": "live"},
-    }
-}
+payload = {"data": {"type": "flow", "id": FLOW_ID, "attributes": {"status": "live"}}}
 req = urllib.request.Request(
     f"https://a.klaviyo.com/api/flows/{FLOW_ID}",
     data=json.dumps(payload).encode("utf-8"),
