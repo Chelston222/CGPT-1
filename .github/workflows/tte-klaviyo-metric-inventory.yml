@@ -1,0 +1,23 @@
+name: TTE Klaviyo Metric Inventory
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/tte-klaviyo/metric_inventory.py'
+      - '.github/workflows/tte-klaviyo-metric-inventory.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  metric-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Inspect required control metrics
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: python apps/tte-klaviyo/metric_inventory.py
