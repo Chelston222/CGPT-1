@@ -1,0 +1,159 @@
+<!-- 222 Emails APEX V2 permissioned email capture.
+     Uses Klaviyo's public client subscription endpoint only.
+     Public Site ID: Ra4Qrb | Target list: SjerhA | Double opt-in list.
+     No private API key belongs in this file or any browser code. -->
+<section class="tte-capture" aria-labelledby="tte-capture-title">
+  <div class="tte-capture__inner">
+    <p class="tte-capture__eyebrow">222 EMAILS</p>
+    <h2 id="tte-capture-title">Find the revenue leaks your follow-up should be fixing.</h2>
+    <p class="tte-capture__sub">Join the 222 Emails list for practical lifecycle breakdowns, proof pieces and systems thinking built around retention, reactivation and missed-revenue recovery.</p>
+
+    <form id="tte-email-capture" novalidate>
+      <div class="tte-capture__grid">
+        <div>
+          <label for="tte-first-name">First name <span aria-hidden="true">(optional)</span></label>
+          <input id="tte-first-name" name="first_name" type="text" autocomplete="given-name" maxlength="60">
+        </div>
+        <div>
+          <label for="tte-email">Business email</label>
+          <input id="tte-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="100" required aria-describedby="tte-consent-copy tte-form-status">
+        </div>
+      </div>
+
+      <div class="tte-capture__honeypot" aria-hidden="true">
+        <label for="tte-company-url">Leave this field empty</label>
+        <input id="tte-company-url" name="company_url" type="text" tabindex="-1" autocomplete="off">
+      </div>
+
+      <label class="tte-capture__consent">
+        <input id="tte-consent" name="consent" type="checkbox" required>
+        <span id="tte-consent-copy">Yes, send me 222 Emails marketing emails and lifecycle insights. I can unsubscribe at any time.</span>
+      </label>
+
+      <button id="tte-submit" type="submit">JOIN THE LIST</button>
+      <p class="tte-capture__privacy">No bought lists. No hidden subscription. Your email is used for the marketing you request here.</p>
+      <p id="tte-form-status" class="tte-capture__status" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<style>
+  .tte-capture{background:#F7F3EC;color:#222222;padding:42px 18px;font-family:Arial,Helvetica,sans-serif}
+  .tte-capture__inner{max-width:760px;margin:0 auto;border:1px solid #ded8cf;background:#fff;padding:34px}
+  .tte-capture__eyebrow{margin:0 0 10px;color:#FF6600;font-weight:800;letter-spacing:.08em;font-size:12px}
+  .tte-capture h2{margin:0;color:#06173D;font-size:clamp(30px,5vw,46px);line-height:1.02;max-width:700px}
+  .tte-capture__sub{font-size:17px;line-height:1.6;max-width:660px;margin:18px 0 28px}
+  .tte-capture__grid{display:grid;grid-template-columns:1fr 1.4fr;gap:16px}
+  .tte-capture label:not(.tte-capture__consent){display:block;color:#06173D;font-weight:700;font-size:13px;margin:0 0 7px}
+  .tte-capture input[type=text],.tte-capture input[type=email]{box-sizing:border-box;width:100%;min-height:48px;border:1px solid #999;background:#fff;color:#222;padding:12px;font-size:16px;border-radius:0}
+  .tte-capture input:focus,.tte-capture button:focus{outline:3px solid rgba(255,102,0,.35);outline-offset:2px}
+  .tte-capture__consent{display:flex;align-items:flex-start;gap:10px;margin:18px 0 16px;font-size:14px;line-height:1.5}
+  .tte-capture__consent input{width:19px;height:19px;margin-top:2px;flex:0 0 auto}
+  .tte-capture button{border:0;background:#FF6600;color:#06173D;font-weight:800;font-size:14px;padding:15px 24px;cursor:pointer;min-height:48px}
+  .tte-capture button[disabled]{opacity:.55;cursor:not-allowed}
+  .tte-capture__privacy{font-size:12px;color:#666;line-height:1.5;margin:13px 0 0}
+  .tte-capture__status{font-size:14px;font-weight:700;line-height:1.5;min-height:22px;margin:12px 0 0;color:#06173D}
+  .tte-capture__honeypot{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(1px,1px,1px,1px)!important;white-space:nowrap!important}
+  @media(max-width:620px){.tte-capture__inner{padding:26px 20px}.tte-capture__grid{grid-template-columns:1fr}.tte-capture h2{font-size:34px}}
+</style>
+
+<script>
+(() => {
+  'use strict';
+  const SITE_ID = 'Ra4Qrb';
+  const LIST_ID = 'SjerhA';
+  const REVISION = '2026-07-15';
+  const endpoint = `https://a.klaviyo.com/client/subscriptions?company_id=${encodeURIComponent(SITE_ID)}`;
+  const form = document.getElementById('tte-email-capture');
+  if (!form) return;
+
+  const emailInput = document.getElementById('tte-email');
+  const firstNameInput = document.getElementById('tte-first-name');
+  const consentInput = document.getElementById('tte-consent');
+  const honeypot = document.getElementById('tte-company-url');
+  const button = document.getElementById('tte-submit');
+  const status = document.getElementById('tte-form-status');
+
+  const setStatus = (message, error = false) => {
+    status.textContent = message;
+    status.style.color = error ? '#8A1F11' : '#06173D';
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    setStatus('');
+
+    if (honeypot.value) return;
+    if (!emailInput.validity.valid) {
+      setStatus('Please enter a valid business email address.', true);
+      emailInput.focus();
+      return;
+    }
+    if (!consentInput.checked) {
+      setStatus('Please confirm that you want to receive 222 Emails marketing emails.', true);
+      consentInput.focus();
+      return;
+    }
+
+    const email = emailInput.value.trim().toLowerCase();
+    const firstName = firstNameInput.value.trim();
+    const profileAttributes = {
+      email,
+      locale: 'en-GB',
+      properties: {
+        tte_capture_source: '222emails.com lifecycle revenue engine signup',
+      },
+      subscriptions: {
+        email: {
+          marketing: { consent: 'SUBSCRIBED' }
+        }
+      }
+    };
+    if (firstName) profileAttributes.first_name = firstName;
+
+    const payload = {
+      data: {
+        type: 'subscription',
+        attributes: {
+          custom_source: '222emails.com Lifecycle Revenue Engine signup',
+          profile: {
+            data: {
+              type: 'profile',
+              attributes: profileAttributes
+            }
+          }
+        },
+        relationships: {
+          list: {
+            data: { type: 'list', id: LIST_ID }
+          }
+        }
+      }
+    };
+
+    button.disabled = true;
+    button.textContent = 'JOINING...';
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          accept: 'application/vnd.api+json',
+          'content-type': 'application/vnd.api+json',
+          revision: REVISION
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(`subscription_${response.status}`);
+
+      form.reset();
+      setStatus('Check your inbox to confirm your subscription. Once confirmed, your 222 Emails welcome journey can begin.');
+    } catch (error) {
+      console.error('222 Emails subscription error', error);
+      setStatus('We could not save your subscription just now. Please try again in a moment.', true);
+    } finally {
+      button.disabled = false;
+      button.textContent = 'JOIN THE LIST';
+    }
+  });
+})();
+</script>
