@@ -1,0 +1,24 @@
+name: TTE Klaviyo Upload V3 Logo
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/tte-klaviyo/upload_brand_logo.py'
+      - 'apps/tte-klaviyo/assets/02_primary_logo_light_email.b64'
+      - '.github/workflows/tte-klaviyo-upload-v3-logo.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  upload-or-reuse-logo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Upload or reuse canonical V3 logo in Klaviyo Images
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: python apps/tte-klaviyo/upload_brand_logo.py
