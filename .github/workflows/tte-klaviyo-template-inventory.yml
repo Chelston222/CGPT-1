@@ -1,0 +1,23 @@
+name: TTE Klaviyo Template Inventory
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/tte-klaviyo/template_inventory.py'
+      - '.github/workflows/tte-klaviyo-template-inventory.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Inventory canonical template names
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: python apps/tte-klaviyo/template_inventory.py
