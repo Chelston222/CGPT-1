@@ -1,0 +1,33 @@
+{
+  "lists": [
+    {"name":"CC - Master Email Subscribers","purpose":"Marketable email profiles only"},
+    {"name":"CC - Migration Holding","purpose":"Temporary staging/quarantine only; never a send audience by default"}
+  ],
+  "segments": [
+    {"name":"CC - New Subscriber No Booking","purpose":"Convert new interest"},
+    {"name":"CC - Enquired Not Booked","purpose":"Recover legitimate unfinished enquiries"},
+    {"name":"CC - First Visit No Rebooking","purpose":"First-repeat retention"},
+    {"name":"CC - Due Next 14 Days","purpose":"Maintenance timing"},
+    {"name":"CC - 1-14 Days Overdue","purpose":"Early rebooking"},
+    {"name":"CC - 30-60 Days Overdue","purpose":"Early reactivation"},
+    {"name":"CC - 60-120 Days Overdue","purpose":"Lapsed recovery"},
+    {"name":"CC - Active Repeat Clients","purpose":"Retention"},
+    {"name":"CC - VIP Clients","purpose":"Recognition / priority access"},
+    {"name":"CC - Pop-up Interest","purpose":"Event conversion"},
+    {"name":"CC - Review Candidates","purpose":"Social proof"},
+    {"name":"CC - Cancellation Fill Eligible","purpose":"Relevant last-minute availability"},
+    {"name":"CC - Engaged 30D","purpose":"High-confidence campaign audience"},
+    {"name":"CC - Engaged 60D","purpose":"Campaign audience"},
+    {"name":"CC - Engaged 90D","purpose":"Broader engaged audience"},
+    {"name":"CC - 90D+ Unengaged","purpose":"Deliverability protection / sunset"},
+    {"name":"CC - Consent Amber Quarantine","purpose":"Never market until evidence is resolved"},
+    {"name":"CC - Human Handover","purpose":"Suppress automation while manual handling is active"}
+  ],
+  "global_exclusions": [
+    "email_consent_state == red",
+    "email_consent_state == amber for marketing sends",
+    "human_handover == true",
+    "profile is suppressed",
+    "marketing_exclusion_reason is present unless explicitly cleared"
+  ]
+}
