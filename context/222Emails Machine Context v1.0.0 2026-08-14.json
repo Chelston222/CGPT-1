@@ -1,0 +1,110 @@
+{
+  "document": {
+    "title": "222Emails Master Operating Context",
+    "version": "v1.0.0",
+    "effective_date": "2026-08-14",
+    "status": "CURRENT CANONICAL",
+    "canonical_filename": "222Emails Master Operating Context v1.0.0 2026-08-14.md",
+    "naming_rule": "No underscores in new canonical 222Emails context filenames."
+  },
+  "brand": {
+    "canonical": "222Emails",
+    "shorthand": "TTE",
+    "expanded": "Triple Two Emails",
+    "domain": "222emails.com",
+    "email": "hello@222emails.com",
+    "logo": "Official V3 logo from connected Google Drive",
+    "no_em_dashes": true,
+    "language": "UK English"
+  },
+  "positioning": {
+    "category": "Client Return Systems",
+    "primary_market": "Appointment-led UK SMEs",
+    "proving_ground": "Lancashire salons and barbers",
+    "master_line": "222Emails installs practical client-return systems that help appointment-led businesses bring past clients back, refill quieter weeks and reduce manual chasing through the right combination of email, SMS and, where appropriate, WhatsApp.",
+    "not_primary": [
+      "generic email marketing freelancer",
+      "newsletter agency",
+      "ecommerce-first agency",
+      "AI-services company",
+      "general digital marketing agency"
+    ],
+    "ecommerce_status": "Retained capability and historical/adjacent proof, not current lead positioning."
+  },
+  "offers": [
+    {"name": "Client Return Fit Check", "price_gbp": 0, "role": "qualification and prescription"},
+    {"name": "Client Return Growth Check", "price_gbp": 197, "role": "paid diagnostic bridge"},
+    {"name": "7-Day Client Return System Sprint", "price_gbp": 997, "role": "flagship implementation"},
+    {"name": "Client Return Accelerator", "price_gbp": 1297, "role": "premium mixed-channel implementation"},
+    {"name": "Optimisation", "price_gbp_month": 595, "role": "ongoing optimisation"},
+    {"name": "Growth Partner", "price_gbp_month": 1495, "role": "higher-touch ongoing partnership"}
+  ],
+  "proof": {
+    "appointment_led_case_library": "not yet deep/proven in reviewed sources",
+    "adjacent_evidence": {"sends": 5640, "open_rate_pct": 37.7, "click_rate_pct": 8.0},
+    "certification": "Klaviyo Deliverability",
+    "rules": [
+      "Never fabricate results, clients, testimonials, urgency, scarcity or guarantees.",
+      "Never present adjacent ecommerce/campaign evidence as appointment-led revenue proof.",
+      "Label demo, pilot and illustrative work clearly."
+    ]
+  },
+  "outreach": {
+    "rolling_7_day_target": 100,
+    "daily_campaign_floor": 12,
+    "historic_send_window_uk": "08:00-09:30",
+    "calls": "Selective for high-value/high-intent; asynchronous routes remain important.",
+    "voicemail_preference": "No voicemail",
+    "do_not_contact": ["Chris", "Lynn"],
+    "public_email_gate": true
+  },
+  "linkedin": {
+    "status": "Major authority and acquisition channel",
+    "primary_surface": "Chelston personal profile",
+    "canonical_system": "TTE LinkedIn Command Centre v2.8",
+    "cta_balance": {"insight_close_pct": 70, "soft_next_step_pct": 20, "direct_cta_pct": 10},
+    "apex_ready_floor": 975,
+    "targets": {"next_month_views": 100000, "december_2026_monthly_views": 1000000},
+    "references": ["Jimmy Kim", "Chase Dimond", "Email Marketing Tips", "Alex Hormozi", "Dan Priestley", "Dan Martell", "Gary Vaynerchuk"]
+  },
+  "systems": {
+    "notion": "knowledge and tracking layer",
+    "google_drive": "asset and authoritative file layer",
+    "buffer": "content scheduling layer",
+    "github_repo": "Chelston222/CGPT-1",
+    "codex": "implementation, QA and automation support",
+    "human_approval_required_for": ["sends", "publishing", "pricing", "public claims", "legal/contact-route judgement", "scope changes", "spend", "DNS changes", "pivots", "client promises"]
+  },
+  "github": {
+    "issue_105": {
+      "post_id": "tte-proof-003",
+      "revision": 3,
+      "state": "open",
+      "known_failure": "approved schedule time too close or passed",
+      "result": "failed closed; no destination created; nothing should be assumed published",
+      "required_next": "new revision/time plus owner approval before scheduling"
+    }
+  },
+  "clients_and_relationships": {
+    "Chelsi": "Klaviyo build / booking-link discovery / client-owned billing / implementation and handover context",
+    "Rejuva Med": "priority sales/call context",
+    "Smith Media": "agency/white-label context, not normal end-client ICP",
+    "Boost": "distribution, credibility and referral partnership opportunity"
+  },
+  "goals": {
+    "revenue_by_2027_01_03_gbp": 50000,
+    "august_2026_near_term_additional_income_gbp": [5000, 10000]
+  },
+  "prohibited_or_superseded": [
+    "Writing the brand as '222 Emails' in new canonical material",
+    "Generic email-marketing-first positioning",
+    "Ecommerce-first lead positioning",
+    "Guaranteeing 30% open rate",
+    "Guaranteeing 3-5% CTR",
+    "Treating configured automation as verified working automation",
+    "Treating adjacent proof as appointment-led revenue proof"
+  ],
+  "live_state_requires_query": [
+    "paid client count", "cash collected", "sender safety", "7-day outreach count", "Buffer capacity", "proof post 003 new revision", "LinkedIn scheduled inventory", "LinkedIn analytics", "Rejuva Med status", "Chelsi implementation status", "Boost status", "website live pricing/funnel", "HTML template library", "Facebook Groups experiment", "Central Command metric integrity"
+  ]
+}
