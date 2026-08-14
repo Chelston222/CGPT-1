@@ -1,0 +1,14 @@
+{
+  "events": [
+    {"name":"CC Enquiry Received","required":["event_id","occurred_at"],"recommended":["service_interest","lead_source"]},
+    {"name":"CC Appointment Booked","required":["event_id","appointment_id","appointment_at"],"recommended":["service","booking_value","source"]},
+    {"name":"CC Appointment Rescheduled","required":["event_id","appointment_id","old_appointment_at","new_appointment_at"]},
+    {"name":"CC Appointment Cancelled","required":["event_id","appointment_id","cancelled_at"]},
+    {"name":"CC Appointment Completed","required":["event_id","appointment_id","completed_at"],"recommended":["service","booking_value"]},
+    {"name":"CC Slot Available","required":["event_id","slot_at"],"recommended":["service","duration","location"]},
+    {"name":"CC Review Completed","required":["event_id","completed_at"]},
+    {"name":"CC Pop-up Interest","required":["event_id","popup_event_id","occurred_at"]}
+  ],
+  "idempotency_rule":"Every upstream event must carry a stable event_id; repeated delivery of the same business event must not create duplicate customer communications.",
+  "integration_rule":"Until a real booking platform exists, event ingestion is not fabricated. The system can accept manual CSV/admin inputs or a future booking tool webhook/API through an adapter without changing downstream Klaviyo flow logic."
+}
