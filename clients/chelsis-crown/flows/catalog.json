@@ -1,0 +1,117 @@
+{
+  "flows": [
+    {
+      "id":"F01",
+      "name":"CC - New Interest Welcome",
+      "priority":"P0",
+      "trigger":"joins_master_email_subscribers",
+      "messages":[
+        {"step":1,"delay":"0h","purpose":"Confirm signup and point to the clearest next action"},
+        {"step":2,"delay":"24h","purpose":"Help choose the right service / answer friction"},
+        {"step":3,"delay":"72h","purpose":"Invite a booking or enquiry without pressure"}
+      ],
+      "exit_conditions":["booking_status == booked","email_consent_state != green","human_handover == true"]
+    },
+    {
+      "id":"F02",
+      "name":"CC - Enquiry Recovery",
+      "priority":"P0",
+      "trigger":"enquiry_received",
+      "messages":[
+        {"step":1,"delay":"2h","purpose":"Acknowledge and make the next step obvious"},
+        {"step":2,"delay":"24h","purpose":"Resolve common uncertainty / service-fit questions"},
+        {"step":3,"delay":"72h","purpose":"Final low-pressure booking prompt"}
+      ],
+      "exit_conditions":["booking_status == booked","human_handover == true","email_consent_state == red"]
+    },
+    {
+      "id":"F03",
+      "name":"CC - Appointment Preparation",
+      "priority":"P0",
+      "trigger":"appointment_booked",
+      "messages":[
+        {"step":1,"delay":"relative:-3d","purpose":"Preparation instructions and expectations"},
+        {"step":2,"delay":"relative:-1d","purpose":"Final practical reminder"}
+      ],
+      "exit_conditions":["booking_status == cancelled","human_handover == true"]
+    },
+    {
+      "id":"F04",
+      "name":"CC - Aftercare",
+      "priority":"P0",
+      "trigger":"appointment_completed",
+      "messages":[
+        {"step":1,"delay":"2h","purpose":"Relevant aftercare guidance"},
+        {"step":2,"delay":"48h","purpose":"Helpful check-in and escalation route if needed"}
+      ],
+      "exit_conditions":["human_handover == true"]
+    },
+    {
+      "id":"F05",
+      "name":"CC - Review and Referral",
+      "priority":"P0",
+      "trigger":"appointment_completed",
+      "messages":[
+        {"step":1,"delay":"72h","purpose":"Review request after sufficient time to assess the experience"},
+        {"step":2,"delay":"7d","purpose":"Optional referral invitation for satisfied clients"}
+      ],
+      "exit_conditions":["review_completed == true","human_handover == true"]
+    },
+    {
+      "id":"F06",
+      "name":"CC - Maintenance and Rebooking",
+      "priority":"P0",
+      "trigger":"expected_return_at",
+      "messages":[
+        {"step":1,"delay":"relative:-14d","purpose":"Early planning prompt"},
+        {"step":2,"delay":"relative:0d","purpose":"Due-now reminder"},
+        {"step":3,"delay":"relative:+14d","purpose":"Overdue follow-up"}
+      ],
+      "exit_conditions":["booking_status == booked","human_handover == true","email_consent_state != green"]
+    },
+    {
+      "id":"F07",
+      "name":"CC - Lapsed Client Recovery",
+      "priority":"P0",
+      "trigger":"lapsed_segment_entry",
+      "messages":[
+        {"step":1,"delay":"0h","purpose":"Relevant reason to return"},
+        {"step":2,"delay":"5d","purpose":"Service / maintenance reminder"},
+        {"step":3,"delay":"12d","purpose":"Close the loop without endless chasing"}
+      ],
+      "exit_conditions":["booking_status == booked","human_handover == true","email_consent_state != green"]
+    },
+    {
+      "id":"F08",
+      "name":"CC - Cancellation Fill",
+      "priority":"P1",
+      "trigger":"manual_or_event_slot_available",
+      "messages":[{"step":1,"delay":"0h","purpose":"Relevant genuine availability notice"}],
+      "exit_conditions":["slot_filled == true","email_consent_state != green"]
+    },
+    {
+      "id":"F09",
+      "name":"CC - Pop-up Journey",
+      "priority":"P1",
+      "trigger":"popup_interest == true",
+      "messages":[
+        {"step":1,"delay":"0h","purpose":"Confirm interest"},
+        {"step":2,"delay":"event-relative:-3d","purpose":"Availability / preparation"},
+        {"step":3,"delay":"event-relative:+1d","purpose":"Convert suitable attendees to studio journey"}
+      ],
+      "exit_conditions":["human_handover == true"]
+    },
+    {
+      "id":"F10",
+      "name":"CC - Sunset",
+      "priority":"P1",
+      "trigger":"90d_unengaged_segment_entry",
+      "messages":[
+        {"step":1,"delay":"0h","purpose":"Preference / still-want-to-hear-from-us check"},
+        {"step":2,"delay":"7d","purpose":"Final confirmation before suppression"}
+      ],
+      "exit_conditions":["engaged_again == true"]
+    }
+  ],
+  "status_rule":"All API-created flows remain draft until a separate production approval."
+}
