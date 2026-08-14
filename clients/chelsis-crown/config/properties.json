@@ -1,0 +1,29 @@
+{
+  "properties": [
+    {"key":"client_status","type":"string","allowed":["prospect","new","active","lapsed","vip"]},
+    {"key":"primary_service","type":"string"},
+    {"key":"service_interest","type":"string"},
+    {"key":"lead_source","type":"string","allowed":["instagram","linktree","popup","referral","existing_client","other"]},
+    {"key":"booking_status","type":"string","allowed":["enquired","booked","completed","cancelled","no_show","unknown"]},
+    {"key":"last_appointment_at","type":"datetime"},
+    {"key":"expected_return_at","type":"datetime"},
+    {"key":"appointment_count","type":"number"},
+    {"key":"last_service","type":"string"},
+    {"key":"popup_interest","type":"boolean"},
+    {"key":"popup_event_id","type":"string"},
+    {"key":"email_consent_state","type":"string","allowed":["green","amber","red"]},
+    {"key":"consent_basis","type":"string","allowed":["explicit_consent","soft_opt_in","unknown","withdrawn","not_applicable"]},
+    {"key":"consent_source","type":"string"},
+    {"key":"consent_recorded_at","type":"datetime"},
+    {"key":"human_handover","type":"boolean"},
+    {"key":"marketing_exclusion_reason","type":"string"},
+    {"key":"review_requested_at","type":"datetime"},
+    {"key":"review_completed","type":"boolean"}
+  ],
+  "rules": {
+    "unknown_consent_defaults_to": "amber",
+    "red_never_marketed": true,
+    "booking_record_does_not_imply_marketing_consent": true,
+    "human_handover_excludes_automation": true
+  }
+}
