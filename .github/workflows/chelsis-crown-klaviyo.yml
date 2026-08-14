@@ -1,0 +1,51 @@
+name: Chelsi's Crown Klaviyo
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Deployment mode
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - draft
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.mode == 'draft' && 'chelsis-crown-klaviyo-draft' || 'chelsis-crown-klaviyo-dry-run' }}
+    defaults:
+      run:
+        working-directory: clients/chelsis-crown/deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate package
+        run: node validate.mjs
+
+      - name: Dry run
+        if: ${{ inputs.mode == 'dry-run' }}
+        env:
+          KLAVIYO_REVISION: '2026-07-15'
+        run: node deploy.mjs --mode=dry-run
+
+      - name: Draft deploy
+        if: ${{ inputs.mode == 'draft' }}
+        env:
+          KLAVIYO_REVISION: '2026-07-15'
+          KLAVIYO_CHELSIS_CROWN_PRIVATE_KEY: ${{ secrets.KLAVIYO_CHELSIS_CROWN_PRIVATE_KEY }}
+        run: node deploy.mjs --mode=draft
+
+      - name: Guardrail
+        run: echo 'This workflow has no LIVE deployment mode. Activation must remain a separate explicit approval process.'
