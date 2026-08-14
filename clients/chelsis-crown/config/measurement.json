@@ -1,0 +1,30 @@
+{
+  "north_star": [
+    "completed_appointments",
+    "rebooked_appointments",
+    "recovered_bookings",
+    "attributed_booking_value_when_reliable"
+  ],
+  "secondary": [
+    "booking_route_clicks",
+    "flow_conversions",
+    "reactivation_rate",
+    "repeat_client_rate"
+  ],
+  "health": [
+    "click_rate",
+    "unsubscribe_rate",
+    "spam_complaint_rate",
+    "bounce_rate",
+    "delivery_rate"
+  ],
+  "diagnostic_only": ["open_rate"],
+  "reporting_windows_days": [7,14,30,60,90],
+  "rules": {
+    "never_invent_revenue": true,
+    "separate_direct_from_assisted_attribution": true,
+    "report_sample_size": true,
+    "do_not_call_clicks_bookings": true,
+    "record_baseline_before_optimisation": true
+  }
+}
