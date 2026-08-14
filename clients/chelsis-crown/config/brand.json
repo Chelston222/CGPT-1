@@ -1,0 +1,20 @@
+{
+  "client": "Chelsi's Crown",
+  "delivery_partner": "222Emails",
+  "tone": ["premium", "warm", "clear", "calm", "client-care-led"],
+  "avoid": ["false scarcity", "constant discounts", "generic salon slang", "overly salesy copy", "222Emails-forward client creative"],
+  "visual_system": {
+    "primary": "forest-green",
+    "secondary": "cream",
+    "accent": "restrained-gold",
+    "neutral": "white",
+    "direction": "premium editorial beauty brand; generous whitespace; serif display headings; clean sans-serif body"
+  },
+  "creative_rules": {
+    "client_brand_first": true,
+    "delivery_partner_subtle": true,
+    "mobile_first": true,
+    "single_primary_cta": true,
+    "plain_text_variant_allowed": true
+  }
+}
