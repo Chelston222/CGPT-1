@@ -1,0 +1,11 @@
+{
+  "name": "chelsis-crown-klaviyo-deployer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node validate.mjs",
+    "dry-run": "node deploy.mjs --mode=dry-run",
+    "draft": "node deploy.mjs --mode=draft"
+  },
+  "engines": {"node": ">=20"}
+}
