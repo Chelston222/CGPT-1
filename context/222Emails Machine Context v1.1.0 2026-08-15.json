@@ -1,0 +1,97 @@
+{
+  "document": {
+    "title": "222Emails Master Operating Context",
+    "version": "v1.1.0",
+    "effective_date": "2026-08-15",
+    "status": "CURRENT CANONICAL",
+    "supersedes_strategy_of": "v1.0.0 2026-08-14",
+    "naming_rule": "Use 222Emails with no space. No underscores in new canonical context filenames."
+  },
+  "brand": {
+    "canonical": "222Emails",
+    "shorthand": "TTE",
+    "expanded": "Triple Two Emails",
+    "language": "UK English",
+    "no_em_dashes": true
+  },
+  "positioning": {
+    "category": "Revenue Recovery Systems",
+    "primary_market_now": "United Kingdom",
+    "primary_operating_wedge": "Appointment-led Revenue Recovery / Client Return Systems",
+    "primary_proving_ground": "Lancashire salons and barbers, then suitable UK appointment-led SMEs",
+    "secondary_market": "United States",
+    "secondary_validation_wedge": "Home Services Revenue Recovery",
+    "first_us_vertical": "HVAC",
+    "possible_later_us_verticals": ["plumbing", "electrical", "roofing", "adjacent high-value home services"],
+    "existing_adjacent_capability": "Ecommerce Revenue Recovery / lifecycle revenue recovery",
+    "master_line": "222Emails finds where businesses are losing revenue from leads, customers and follow-up, then builds the systems to recover it.",
+    "sales_architecture": ["Leak", "Mechanism", "Value", "Recovery system", "Offer"],
+    "canonical_sales_line": "We found where revenue is leaking. Here is what it is worth. Here is the system to recover it. Here is what we charge."
+  },
+  "market_strategy": {
+    "starting_allocation": {"UK_pct": 80, "US_pct": 20},
+    "UK_role": "primary cash and proof engine",
+    "US_role": "secondary scale-validation engine",
+    "increase_us_toward_40_pct_when": [
+      "10+ qualified US conversations",
+      "2+ strong proposal-stage opportunities",
+      "1+ paid US pilot",
+      "materially higher willingness to pay than current UK ladder",
+      "repeatable prospect sourcing",
+      "manageable fulfilment and timezone requirements",
+      "clear Revenue Recovery message resonance"
+    ],
+    "consider_50_50_when": [
+      "3+ paid US customers",
+      "1+ credible recovered-revenue result",
+      "repeatable acquisition",
+      "materially higher ACV",
+      "SOP-able delivery",
+      "acceptable gross margin and founder load"
+    ],
+    "consider_us_primary_when": [
+      "5-10 paying US customers",
+      "ACV consistently several times the UK wedge",
+      "credible case studies",
+      "repeatable pipeline",
+      "acceptable CAC and sales effort",
+      "reliable fulfilment",
+      "expected profit per founder acquisition hour materially exceeds UK alternative"
+    ],
+    "pivot_rule": "Do not switch because the US is larger. Switch only when economics and execution evidence are clearly superior.",
+    "principle": "Use the business already built as the launchpad, not the ceiling."
+  },
+  "uk_offers": [
+    {"name": "Client Return Fit Check", "price_gbp": 0},
+    {"name": "Client Return Growth Check", "price_gbp": 197},
+    {"name": "7-Day Client Return System Sprint", "price_gbp": 997},
+    {"name": "Client Return Accelerator", "price_gbp": 1297},
+    {"name": "Optimisation", "price_gbp_month": 595},
+    {"name": "Growth Partner", "price_gbp_month": 1495}
+  ],
+  "us_pricing": {
+    "status": "experimental",
+    "rule": "Do not port UK prices automatically and do not treat US pricing as canonical until paid validation exists."
+  },
+  "proof_safety": {
+    "never_fabricate": ["revenue recovered", "clients", "testimonials", "results", "urgency", "scarcity", "guarantees"],
+    "legacy_open_ctr_guarantees": "SUPERSEDED AND PROHIBITED",
+    "adjacent_campaign_evidence_is_not_appointment_led_revenue_proof": true
+  },
+  "scale_direction": [
+    "high-value diagnostics",
+    "productised implementation",
+    "recurring optimisation",
+    "performance-linked economics where appropriate",
+    "white-label delivery",
+    "reusable IP and templates",
+    "automation-assisted fulfilment",
+    "software-enabled delivery after service evidence"
+  ],
+  "goals": {
+    "near_term_revenue_target_gbp_by_2027_01_03": 50000,
+    "twelve_month_direction": "Push toward multi-million-pound business economics without treating that ambition as a guaranteed forecast.",
+    "north_star_question": "How much recoverable revenue can 222Emails identify, recover and prove?"
+  },
+  "human_approval_required_for": ["sends", "publishing", "pricing changes", "public claims", "legal/contact-route judgement", "scope changes", "spend", "DNS changes", "pivots", "client promises"]
+}
