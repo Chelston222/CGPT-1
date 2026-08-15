@@ -1,0 +1,14 @@
+{
+  "name": "tte-mail-bridge",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^9.1.0",
+    "@netlify/functions": "^4.2.5",
+    "nodemailer": "^7.0.5"
+  }
+}
