@@ -1,0 +1,10 @@
+[build]
+  base = "apps/tte-mail-bridge"
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[build.environment]
+  NODE_VERSION = "20"
