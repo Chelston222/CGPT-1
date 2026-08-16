@@ -11,7 +11,7 @@ on:
     - cron: '*/5 7-9 * * *'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: tte-direct-smtp-queue
@@ -23,11 +23,17 @@ jobs:
     env:
       TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
       TTE_SMTP_USER: hello@222emails.com
+      TTE_SMTP_HOST: mail.privateemail.com
+      TTE_SMTP_PORT: '465'
       TTE_IMAP_HOST: mail.privateemail.com
       TTE_IMAP_PORT: '993'
+      TTE_DIRECT_RAMP_CAP: '5'
+      TTE_DIRECT_DAILY_CAP: '20'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Verify queue credential
         shell: bash
@@ -37,11 +43,16 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install queue dependencies
         working-directory: apps/tte-mail-bridge
         run: npm install --no-audit --no-fund
+
+      - name: Configure ledger commits
+        run: |
+          git config user.name "TTE Direct SMTP Runner"
+          git config user.email "actions@users.noreply.github.com"
 
       - name: Process direct SMTP queue
         working-directory: apps/tte-mail-bridge
