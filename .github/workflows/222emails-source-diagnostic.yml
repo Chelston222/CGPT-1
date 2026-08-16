@@ -29,3 +29,4 @@ jobs:
           printf '\n' >> /tmp/brand-with-final-nl.ts
           echo "brand_no_final_nl=$(git hash-object /tmp/brand-no-final-nl.ts) bytes=$(wc -c < /tmp/brand-no-final-nl.ts)"
           echo "brand_with_final_nl=$(git hash-object /tmp/brand-with-final-nl.ts) bytes=$(wc -c < /tmp/brand-with-final-nl.ts)"
+          test "$(git hash-object /tmp/brand-with-final-nl.ts)" = "2c4492916260be22ebf248f49f7a080cdd4303b6"
