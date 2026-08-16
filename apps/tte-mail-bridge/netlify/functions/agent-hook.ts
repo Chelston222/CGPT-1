@@ -1,13 +1,13 @@
 import type { Config, Context } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
 import nodemailer from "nodemailer";
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 const REQUIRED_OPT_OUT = "If you'd rather I didn't follow up, just let me know.";
 const HOOK_TOKEN_SHA256 = "2e8ce87c7d1e57606e0c634e8e0ba17c88252d3afe4570bfd7894accf5b0fa62";
 const DEFAULT_DIRECT_RAMP_CAP = 5;
 const RECEIPT_TO = "tripletwochelston@gmail.com";
-const HANDLER_VERSION = "2026-08-16-v2";
+const HANDLER_VERSION = "2026-08-16-v3";
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -21,6 +21,16 @@ function tokenMatches(value: string | null) {
   const actual = Buffer.from(createHash("sha256").update(value).digest("hex"));
   const expected = Buffer.from(HOOK_TOKEN_SHA256);
   return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+function signatureMatches(rawBody: string, signature: string | null) {
+  const secret = Netlify.env.get("TTE_MAILOPOLY_WEBHOOK_SECRET");
+  if (!secret || !signature?.startsWith("sha256=")) return false;
+  const expectedHex = createHmac("sha256", secret).update(rawBody).digest("hex");
+  const actualHex = signature.slice("sha256=".length);
+  const expected = Buffer.from(expectedHex);
+  const actual = Buffer.from(actualHex);
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
 function londonDateKey() {
@@ -66,9 +76,7 @@ function parseAgentPayload(webhookPayload: any) {
   if (!raw) return null;
   if (typeof raw === "object") return raw;
   if (typeof raw !== "string") return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
+  try { return JSON.parse(raw); } catch {
     const start = raw.indexOf("{");
     const end = raw.lastIndexOf("}");
     if (start >= 0 && end > start) {
@@ -99,8 +107,10 @@ function makeTransporter() {
 export default async (req: Request, _context: Context) => {
   if (req.method !== "POST") return json(405, { error: "method_not_allowed", version: HANDLER_VERSION });
 
+  const rawBody = await req.text();
   const url = new URL(req.url);
-  if (!tokenMatches(url.searchParams.get("k"))) return json(401, { error: "unauthorised", version: HANDLER_VERSION });
+  const authorised = tokenMatches(url.searchParams.get("k")) || signatureMatches(rawBody, req.headers.get("x-mailopoly-signature"));
+  if (!authorised) return json(401, { error: "unauthorised", version: HANDLER_VERSION });
 
   const transport = makeTransporter();
   if (!transport) return json(503, { error: "smtp_secret_missing", version: HANDLER_VERSION });
@@ -108,11 +118,8 @@ export default async (req: Request, _context: Context) => {
   const directRampCap = Number(Netlify.env.get("TTE_GITHUB_DIRECT_RAMP_CAP") || DEFAULT_DIRECT_RAMP_CAP);
 
   let webhookPayload: any;
-  try {
-    webhookPayload = await req.json();
-  } catch {
-    return json(400, { error: "invalid_webhook_json", version: HANDLER_VERSION });
-  }
+  try { webhookPayload = JSON.parse(rawBody); }
+  catch { return json(400, { error: "invalid_webhook_json", version: HANDLER_VERSION }); }
 
   const payload = parseAgentPayload(webhookPayload);
   if (!payload || typeof payload !== "object") {
