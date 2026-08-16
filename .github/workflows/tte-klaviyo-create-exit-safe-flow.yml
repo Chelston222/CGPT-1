@@ -22,7 +22,8 @@ jobs:
       - name: Require explicit creation confirmation
         env:
           CONFIRMATION: ${{ inputs.confirmation }}
-        run: test "$CONFIRMATION" = "CREATE-APEX-V3-EXIT-SAFE" || (echo "BLOCKED: confirmation mismatch" && exit 1)
+        run: |
+          test "$CONFIRMATION" = "CREATE-APEX-V3-EXIT-SAFE" || (echo "BLOCKED: confirmation mismatch" && exit 1)
 
       - name: Run APEX source QA
         run: python apps/tte-klaviyo/source_audit.py
@@ -30,5 +31,5 @@ jobs:
       - name: Create exit-safe Draft candidate only when required metrics exist
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
-          TTE_FLOW_NAME: TTE Flagship Welcome Series | APEX V3 | EXIT-SAFE PRE-LIVE
+          TTE_FLOW_NAME: 'TTE Flagship Welcome Series | APEX V3 | EXIT-SAFE PRE-LIVE'
         run: python apps/tte-klaviyo/create_filtered_flow.py
