@@ -13,18 +13,16 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Validate corrected brand reconstruction
+      - name: Validate raw brand reconstruction
         working-directory: apps/222emails-omega-max
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/tte-release
-          cat release-corrections/brand.01.b64.01 release-corrections/brand.01.b64.02 | base64 -d > /tmp/tte-release/brand.01.part
-          echo "brand01_decoded=$(git hash-object /tmp/tte-release/brand.01.part) bytes=$(wc -c < /tmp/tte-release/brand.01.part)"
+          echo "brand01=$(git hash-object release-parts/brand.01.part) bytes=$(wc -c < release-parts/brand.01.part)"
           for i in 02 03 04 05 06 07; do
             echo "brand${i}=$(git hash-object release-parts/brand.${i}.part) bytes=$(wc -c < release-parts/brand.${i}.part)"
           done
-          cat /tmp/tte-release/brand.01.part release-parts/brand.02.part release-parts/brand.03.part release-parts/brand.04.part release-parts/brand.05.part release-parts/brand.06.part release-parts/brand.07.part > /tmp/brand.ts
+          cat release-parts/brand.01.part release-parts/brand.02.part release-parts/brand.03.part release-parts/brand.04.part release-parts/brand.05.part release-parts/brand.06.part release-parts/brand.07.part > /tmp/brand.ts
           printf '\n' >> /tmp/brand.ts
           echo "brand=$(git hash-object /tmp/brand.ts) bytes=$(wc -c < /tmp/brand.ts)"
           test "$(git hash-object /tmp/brand.ts)" = "2c4492916260be22ebf248f49f7a080cdd4303b6"
