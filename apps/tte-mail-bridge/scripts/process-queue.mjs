@@ -10,6 +10,7 @@ const INTERNAL_RECEIPT = 'tripletwochelston@gmail.com';
 const PREFIXES = ['TTE DIRECT JOB', 'TTE DIRECT BATCH'];
 const ENDPOINT = 'https://222emails-mail-bridge.netlify.app/api/tte/agent-hook';
 const MAX_JOBS_PER_CONTROL = 5;
+const LOOKBACK_MS = 36 * 60 * 60 * 1000;
 
 if (!PASS) throw new Error('TTE_SMTP_PASS is missing');
 
@@ -95,36 +96,37 @@ let confirmed = 0;
 let duplicates = 0;
 let blocked = 0;
 let held = 0;
+let candidates = 0;
 
 try {
   await client.connect();
   const lock = await client.getMailboxLock('INBOX');
   try {
-    const unseen = await client.search({ seen: false }, { uid: true });
-    const uids = unseen.slice(-40);
+    const since = new Date(Date.now() - LOOKBACK_MS);
+    const recent = await client.search({ since }, { uid: true });
+    const uids = recent.slice(-80);
     if (!uids.length) {
-      console.log('TTE queue: no unseen messages');
+      console.log('TTE queue: no recent inbox messages');
     } else {
       const messages = await client.fetchAll(uids, { uid: true, envelope: true, source: true }, { uid: true });
       for (const message of messages) {
         const from = message.envelope?.from?.[0]?.address?.toLowerCase() || '';
         const subject = message.envelope?.subject || '';
         if (!CONTROL_SENDERS.has(from) || !PREFIXES.some((prefix) => subject.startsWith(prefix))) continue;
+        candidates += 1;
 
         const parsed = await simpleParser(message.source, { skipTextToHtml: true, maxHtmlLengthToParse: 150000 });
         const control = parseControl(parsed.text || '');
         const jobs = expandJobs(control);
         if (!jobs.length || (Array.isArray(control?.jobs) && control.jobs.length > MAX_JOBS_PER_CONTROL)) {
           console.error(`TTE queue: malformed or oversized control uid=${message.uid}`);
-          await client.messageFlagsAdd(message.uid, ['\\Seen'], { uid: true });
           blocked += 1;
           continue;
         }
 
-        let allTerminal = true;
         let stopBatch = false;
         for (const job of jobs) {
-          if (stopBatch) { allTerminal = false; break; }
+          if (stopBatch) break;
           const result = await executeJob(job, message.uid);
           switch (result.status) {
             case 'SENT_CONFIRMED': confirmed += 1; break;
@@ -132,17 +134,13 @@ try {
             case 'BLOCKED_PREFLIGHT':
             case 'BLOCKED_DUPLICATE_NONFINAL':
             case 'SEND_FAILED': blocked += 1; stopBatch = true; break;
-            case 'DELIVERY_PENDING': held += 1; allTerminal = false; stopBatch = true; break;
+            case 'DELIVERY_PENDING': held += 1; stopBatch = true; break;
             case 'HELD_CAP':
             case 'HELD_WINDOW':
             case 'HELD_TRANSPORT':
-            case 'HELD_UNKNOWN': held += 1; allTerminal = false; stopBatch = true; break;
-            default: held += 1; allTerminal = false; stopBatch = true;
+            case 'HELD_UNKNOWN': held += 1; stopBatch = true; break;
+            default: held += 1; stopBatch = true;
           }
-        }
-
-        if (allTerminal) {
-          await client.messageFlagsAdd(message.uid, ['\\Seen'], { uid: true });
         }
         if (stopBatch) break;
       }
@@ -154,4 +152,4 @@ try {
   try { await client.logout(); } catch {}
 }
 
-console.log(`TTE queue summary confirmed=${confirmed} duplicates=${duplicates} blocked=${blocked} held=${held}`);
+console.log(`TTE queue summary candidates=${candidates} confirmed=${confirmed} duplicates=${duplicates} blocked=${blocked} held=${held}`);
