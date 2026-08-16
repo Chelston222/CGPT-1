@@ -1,0 +1,67 @@
+e="mini-title">Attention decay <small>example</small></div><div className="line-chart" aria-label="Illustrative attention decay"><svg viewBox="0 0 260 96" role="img"><polyline points={m.curve.map((d,i)=>`${8+i*82},${88-d.value*.72}`).join(' ')} fill="none" stroke="#FF6600" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>{m.curve.map((d,i)=><circle key={d.label} cx={8+i*82} cy={88-d.value*.72} r="3.5" fill="#FF6600"/>)}</svg><div className="chart-labels">{m.curve.map(d=><span key={d.label}>{d.label}</span>)}</div></div></div>
+        <div className="mini-panel"><div className="mini-title">Readiness gates</div><div className="gate-list">{m.gates.map(g=><div key={g.label}><span>{g.label}</span><b className={g.tone}>{g.value}</b></div>)}</div></div>
+      </div>
+    </div>
+  </div>
+}
+
+function EvidenceStrip(){
+  return <section className="evidence-strip"><div className="shell evidence-grid">
+    <div><strong>5,640</strong><span>Sends in adjacent email performance evidence</span></div>
+    <div><strong>37.7%</strong><span>Recorded open rate</span></div>
+    <div><strong>8.0%</strong><span>Recorded click rate</span></div>
+    <div><strong>Certified</strong><span>Klaviyo Deliverability certification</span></div>
+  </div><p className="evidence-boundary">These show campaign and message capability. They are not appointment-led revenue results.</p></section>
+}
+
+function HomePage({mode,setMode}:{mode:ModeKey;setMode:(m:ModeKey)=>void}){
+  return <PageShell route="home">
+    <section className="home-hero"><div className="shell hero-grid">
+      <div className="hero-copy"><p className="eyebrow">Revenue Recovery Systems</p><h1>Recover more from the demand you already have.</h1><p className="hero-lead">We find where revenue is leaking from leads, customers and follow-up, value the opportunity honestly, then build the system that gives you the best chance of getting it back.</p><div className="hero-actions"><LinkTo route="fit" className="button orange">Start your free Fit Check</LinkTo><LinkTo route="how" className="button ghost">See how it works</LinkTo></div><div className="hero-trust"><span><Icon name="shield"/>No lock-in</span><span><Icon name="calendar"/>Focused implementation</span><span><Icon name="person"/>Founder-led</span></div></div>
+      <div><RecoveryDashboard mode={mode} setMode={setMode}/></div>
+    </div></section>
+    <EvidenceStrip/>
+    <section className="dark-process"><div className="shell"><p className="eyebrow orange-text center">The revenue recovery process</p><h2>Make more of the clients and enquiries you already have.</h2><div className="process-three">
+      <div><span className="icon-disc"><Icon name="find"/></span><h3>Find</h3><p>Identify where useful demand is being lost across leads, customers and follow-up.</p></div>
+      <div><span className="icon-disc"><Icon name="value"/></span><h3>Value</h3><p>Estimate what is realistically worth fixing before deciding what to build.</p></div>
+      <div><span className="icon-disc"><Icon name="recover"/></span><h3>Recover</h3><p>Build the smallest useful journey, with permission, handoff and measurement built in.</p></div>
+    </div><LinkTo route="how" className="button dark-outline">Explore the process</LinkTo></div></section>
+    <section className="home-focus"><div className="shell"><div className="section-heading"><p className="eyebrow">Start with the leak</p><h2>Choose the problem, not the channel.</h2><p>Email, SMS, WhatsApp and automation are tools. The commercial problem comes first.</p></div><ModePills mode={mode} setMode={setMode}/><div className="focus-card"><div><span className="focus-kicker">{MODES[mode].eyebrow}</span><h3>{MODES[mode].headline}</h3><p>{MODES[mode].body}</p></div><div><b>Best next move</b><p>{MODES[mode].next}</p><LinkTo route="fit" className="text-cta">Check this leak <Icon name="arrow"/></LinkTo></div></div></div></section>
+    <section className="truth-section"><div className="shell truth-inner"><div><p className="eyebrow">Evidence, not theatre</p><h2>We will show what is proven, and label what is still being built.</h2></div><div><p>Appointment-led revenue proof is still being earned. Existing adjacent evidence is useful, but it is not relabelled as booking revenue proof.</p><LinkTo route="proof" className="button ghost">See the evidence boundary</LinkTo></div></div></section>
+    <section className="home-fit"><div className="shell home-fit-card"><div><p className="eyebrow orange-text">Smallest sensible next step</p><h2>Start with a free Fit Check.</h2><p>Three minutes. No platform login. No forced call.</p></div><LinkTo route="fit" className="button orange">Start the Fit Check</LinkTo></div></section>
+  </PageShell>
+}
+
+function HowPage({mode,setMode}:{mode:ModeKey;setMode:(m:ModeKey)=>void}){
+  const m=MODES[mode];
+  return <PageShell route="how">
+    <section className="page-hero light"><div className="shell narrow-center"><p className="eyebrow orange-text">How it works</p><h1>A simple system for finding, valuing and recovering missed demand.</h1><p>Diagnosis first. Build second. Measure what happens. The channel follows the problem.</p></div></section>
+    <section className="how-core"><div className="shell how-grid"><div className="how-steps">
+      {[["find","1","Find the leak","Identify the exact point where useful demand is being lost."],["value","2","Value it honestly","Estimate the realistic opportunity before adding complexity."],["recover","3","Build the recovery route","Create the message, timing, channel, handoff and measurement."]].map(([icon,n,title,copy])=><div className="how-step" key={n}><span><Icon name={icon}/></span><div><small>{n}</small><h3>{title}</h3><p>{copy}</p></div></div>)}
+    </div><div><ModePills mode={mode} setMode={setMode}/><div className="journey-card"><div className="journey-head"><div><small>Example journey</small><h3>{m.label}</h3></div><span>{m.priority} priority</span></div><div className="journey-flow-vertical">{m.path.map((p,i)=><div key={p}><i>{i+1}</i><span>{p}</span></div>)}</div><div className="journey-foot"><small>Recommended next action</small><strong>{m.next}</strong></div></div></div></div></section>
+    <section className="how-workspace"><div className="shell"><div className="section-heading center"><p className="eyebrow">Make the diagnosis visible</p><h2>One workspace, different problems.</h2><p>The same operating system changes with the commercial leak.</p></div><RecoveryDashboard mode={mode} setMode={setMode}/></div></section>
+    <section className="qa-band"><div className="shell qa-grid"><div><Icon name="shield"/><h3>Permission before pressure</h3><p>Do not add channels or sends if consent, sender identity, suppression or opt-out readiness is unclear.</p></div><div><Icon name="person"/><h3>Human handoff stays explicit</h3><p>Automation should keep momentum, not pretend a human conversation has happened.</p></div><div><Icon name="chart"/><h3>Measure commercial actions</h3><p>Track replies, bookings, rebooks and qualified actions rather than treating vanity metrics as the goal.</p></div></div></section>
+    <section className="page-cta"><div className="shell page-cta-inner"><div><h2>Want to see which leak is worth fixing first?</h2><p>Start with the Fit Check. You will get one clear route, including a no-invest recommendation if that is the sensible answer.</p></div><LinkTo route="fit" className="button orange">Start free Fit Check</LinkTo></div></section>
+  </PageShell>
+}
+
+function ServicesPage({mode,setMode}:{mode:ModeKey;setMode:(m:ModeKey)=>void}){
+  const recommended=MODES[mode].recommendation;
+  return <PageShell route="services">
+    <section className="page-hero light"><div className="shell narrow-center"><p className="eyebrow orange-text">Ways to work together</p><h1>Choose the smallest sensible next step.</h1><p>Start where the evidence supports. Scale only when the business, data and delivery route are ready.</p></div></section>
+    <section className="services-main"><div className="shell"><div className="service-recommender"><div><small>Example leak</small><h3>What are you trying to recover?</h3></div><ModePills mode={mode} setMode={setMode}/><p>Based on this example, the most likely next step is <strong>{OFFERS[recommended].name}</strong>. Final routing depends on the actual Fit Check.</p></div>
+      <div className="pricing-grid">{(Object.keys(OFFERS) as OfferKey[]).map(k=>{const o=OFFERS[k];return <article key={k} className={`price-card ${recommended===k?'recommended':''}`}><div className="price-top">{recommended===k&&<span>Likely fit for selected leak</span>}<h2>{o.name}</h2><strong>{o.price}</strong><p>{o.description}</p></div><ul>{o.bullets.map(b=><li key={b}>{b}</li>)}</ul><LinkTo route="fit" className={recommended===k?'button orange full':'button navy full'}>{o.cta}</LinkTo></article>})}</div>
+      <div className="higher-touch"><div><h3>Need more than the front-stage offers?</h3><p>Accelerator, Optimisation and Growth Partner routes exist for suitable clients. They are prescribed after diagnosis rather than pushed at first contact.</p></div><LinkTo route="fit" className="button ghost">Start with diagnosis</LinkTo></div>
+    </div></section>
+    <section className="scope-section"><div className="shell scope-grid"><div><p className="eyebrow">What scoped delivery can include</p><h2>Enough structure to ship, without turning the project into a bureaucracy.</h2></div><div className="scope-list">{['Diagnosis and journey logic','Finished messaging','Audience and timing rules','Channel and exclusion guidance','Implementation or handoff','QA and test plan','Measurement and handover'].map(x=><span key={x}>✓ {x}</span>)}</div></div></section>
+    <section className="page-cta"><div className="shell page-cta-inner"><div><h2>Not sure which route fits?</h2><p>That is what the free Fit Check is for.</p></div><LinkTo route="fit" className="button orange">Start free Fit Check</LinkTo></div></section>
+  </PageShell>
+}
+
+function ProofPage(){
+  const [tab,setTab]=useState<'evidence'|'delivery'|'building'>('evidence');
+  return <PageShell route="proof">
+    <section className="page-hero light"><div className="shell narrow-center"><p className="eyebrow orange-text">Proof and evidence</p><h1>Evidence, not theatre.</h1><p>Use the strongest proof available, label its boundary, and never turn adjacent evidence into a result it did not measure.</p></div></section>
+    <section className="proof-page"><div className="shell"><div className="proof-tabs" role="tablist"><button className={tab==='evidence'?'active':''} onClick={()=>setTab('evidence')}>What we can prove</button><button className={tab==='delivery'?'active':''} onClick={()=>setTab('delivery')}>Delivery evidence</button><button className={tab==='building'?'active':''} onClick={()=>setTab('building')}>What we are building</button></div>
+      {tab==='evidence'&&<div className="proof-panel"><div className="metric-grid"><div><strong>5,640</strong><span>Sends</span><small>Adjacent email performance evidence</small></div><div><strong>37.7%</strong><span>Open rate</span><small>Recorded</small></div><div><strong>8.0%</strong><span>Click rate</span><small>Recorded</small></div><div><strong>Certified</strong><span>Klaviyo Deliverability</span><small>Capability evidence</small></div></div><div className="boundary-box"><b>Evidence boundary</b><p>These demonstrate campaign, message and deliverability capability. They do not demonstrate appointment-led revenue recovered, bookings generated or a guaranteed future result.</p></div></div>}
+      {tab==='delivery'&&<div className="proof-panel artifact-grid"><article><Icon name="find"/><h3>Opportunity maps</h3><p>Outside-in or client-data-supported diagnosis that separates observed evidence from assumptions.</p></article><article><Icon name="mail"/><h3>Journey and messaging logic</h3><p>Structured sequences with purpose, timing, exclusions, handoff and next action defined.</p></article><article><Icon name="shield"/><h3>QA and approval
