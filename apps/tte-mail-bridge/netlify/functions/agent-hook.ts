@@ -5,9 +5,10 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 const REQUIRED_OPT_OUT = "If you'd rather I didn't follow up, just let me know.";
 const HOOK_TOKEN_SHA256 = "2e8ce87c7d1e57606e0c634e8e0ba17c88252d3afe4570bfd7894accf5b0fa62";
+const DISPATCH_TOKEN_SHA256 = "4a985ff35e497b384825768cdf87f06080a98642048caa8467220f0d0f37bbe1";
 const DEFAULT_DIRECT_RAMP_CAP = 5;
 const RECEIPT_TO = "tripletwochelston@gmail.com";
-const HANDLER_VERSION = "2026-08-16-v3";
+const HANDLER_VERSION = "2026-08-16-v4";
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -16,11 +17,19 @@ function json(status: number, body: unknown) {
   });
 }
 
-function tokenMatches(value: string | null) {
+function hashMatches(value: string | null | undefined, expectedHex: string) {
   if (!value) return false;
   const actual = Buffer.from(createHash("sha256").update(value).digest("hex"));
-  const expected = Buffer.from(HOOK_TOKEN_SHA256);
+  const expected = Buffer.from(expectedHex);
   return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+function tokenMatches(value: string | null) {
+  return hashMatches(value, HOOK_TOKEN_SHA256);
+}
+
+function dispatchTokenMatches(value: string | null | undefined) {
+  return hashMatches(value, DISPATCH_TOKEN_SHA256);
 }
 
 function signatureMatches(rawBody: string, signature: string | null) {
@@ -108,8 +117,17 @@ export default async (req: Request, _context: Context) => {
   if (req.method !== "POST") return json(405, { error: "method_not_allowed", version: HANDLER_VERSION });
 
   const rawBody = await req.text();
+  let webhookPayload: any;
+  try { webhookPayload = JSON.parse(rawBody); }
+  catch { return json(400, { error: "invalid_webhook_json", version: HANDLER_VERSION }); }
+
+  const payload = parseAgentPayload(webhookPayload);
   const url = new URL(req.url);
-  const authorised = tokenMatches(url.searchParams.get("k")) || signatureMatches(rawBody, req.headers.get("x-mailopoly-signature"));
+  const authorised =
+    tokenMatches(url.searchParams.get("k")) ||
+    signatureMatches(rawBody, req.headers.get("x-mailopoly-signature")) ||
+    dispatchTokenMatches(payload?.dispatchAuth);
+
   if (!authorised) return json(401, { error: "unauthorised", version: HANDLER_VERSION });
 
   const transport = makeTransporter();
@@ -117,20 +135,7 @@ export default async (req: Request, _context: Context) => {
   const { smtpUser, transporter } = transport;
   const directRampCap = Number(Netlify.env.get("TTE_GITHUB_DIRECT_RAMP_CAP") || DEFAULT_DIRECT_RAMP_CAP);
 
-  let webhookPayload: any;
-  try { webhookPayload = JSON.parse(rawBody); }
-  catch { return json(400, { error: "invalid_webhook_json", version: HANDLER_VERSION }); }
-
-  const payload = parseAgentPayload(webhookPayload);
   if (!payload || typeof payload !== "object") {
-    try {
-      await transporter.sendMail({
-        from: `TTE Direct SMTP Diagnostic <${smtpUser}>`,
-        to: [RECEIPT_TO],
-        subject: `TTE DIRECT HOOK DIAGNOSTIC ${HANDLER_VERSION}`,
-        text: `Webhook reached Netlify but no valid agent message payload was extracted. Top-level keys: ${Object.keys(webhookPayload || {}).join(", ")}`,
-      });
-    } catch {}
     return json(400, { error: "missing_agent_message", version: HANDLER_VERSION, topLevelKeys: Object.keys(webhookPayload || {}) });
   }
 
