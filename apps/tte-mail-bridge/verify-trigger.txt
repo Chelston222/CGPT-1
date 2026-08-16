@@ -1,0 +1,2 @@
+Trigger direct SMTP verification after TTE_SMTP_PASS provisioning.
+Timestamp: 2026-08-16T16:05:00Z
