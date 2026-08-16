@@ -1,0 +1,47 @@
+name: TTE Mail Bridge Production Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/tte-mail-bridge/**'
+      - '.github/workflows/tte-mail-bridge-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tte-mail-bridge-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: e531326d-60b8-4def-85b9-727a7f708547
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Netlify credential
+        shell: bash
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN" || { echo 'NETLIFY_AUTH_TOKEN is missing'; exit 2; }
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Deploy mail bridge to production
+        shell: bash
+        run: |
+          npx --yes netlify-cli@latest deploy \
+            --build \
+            --prod \
+            --site "$NETLIFY_SITE_ID" \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --dir apps/tte-mail-bridge/public \
+            --functions apps/tte-mail-bridge/netlify/functions
