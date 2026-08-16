@@ -1,0 +1,51 @@
+name: Repair Omega Max brand source
+
+on:
+  push:
+    paths:
+      - '.github/workflows/222emails-repair-brand-source.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Repair and verify exact approved bytes
+        working-directory: apps/222emails-omega-max
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('release-parts/brand.01.part')
+          d=p.read_bytes()
+          assert len(d)==12013, len(d)
+          assert d[5076:5086] == b'wFx1gCYxC4', d[5076:5086]
+          assert d[-3:] == b'Q==', d[-3:]
+          d=d[:5076]+d[5086:]
+          d=d[:-3]
+          assert len(d)==12000
+          h=hashlib.sha1()
+          h.update(f'blob {len(d)}\0'.encode())
+          h.update(d)
+          assert h.hexdigest()=='e67b4a8cccc6fb3eaaadfd161dda76eb3ec1737b', h.hexdigest()
+          p.write_bytes(d)
+          print('brand.01.part repaired to exact approved blob')
+          PY
+          git hash-object release-parts/brand.01.part | grep -qx 'e67b4a8cccc6fb3eaaadfd161dda76eb3ec1737b'
+      - name: Commit exact source repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name '222Emails Release Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add apps/222emails-omega-max/release-parts/brand.01.part
+          git diff --cached --quiet && exit 0
+          git commit -m 'Repair exact Omega Max brand source bytes'
+          git push origin HEAD:main
