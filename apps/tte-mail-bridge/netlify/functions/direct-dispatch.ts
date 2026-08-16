@@ -8,7 +8,7 @@ const DISPATCH_TOKEN_SHA256 = "4a985ff35e497b384825768cdf87f06080a98642048caa846
 const DEFAULT_DIRECT_RAMP_CAP = 5;
 const DEFAULT_HARD_CAP = 20;
 const RECEIPT_TO = "tripletwochelston@gmail.com";
-const VERSION = "2026-08-16-native-v1";
+const VERSION = "2026-08-16-native-v2";
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -71,10 +71,12 @@ export default async (req: Request, _context: Context) => {
 
   const recipient = recipients[0].trim().toLowerCase();
   const isInternalTest = recipient === RECEIPT_TO && String(leadId).startsWith("INTERNAL-");
-  const store = getStore({ name: "tte-mail-bridge", consistency: "strong" });
+  const store = getStore("tte-mail-bridge", { consistency: "strong" });
   const idempotencyBlob = `direct-idempotency/${idempotencyKey}`;
-  const prior = await store.get(idempotencyBlob, { type: "json" });
-  if (prior) return json(409, { error: "duplicate_blocked", prior, version: VERSION });
+  const prior = await store.get(idempotencyBlob, { type: "json" }) as any;
+  if (prior?.state === "SENT_CONFIRMED" || prior?.state === "IN_FLIGHT") {
+    return json(409, { error: "duplicate_blocked", prior, version: VERSION });
+  }
 
   const dateKey = londonDateKey();
   const counterKey = `direct-daily/${dateKey}`;
