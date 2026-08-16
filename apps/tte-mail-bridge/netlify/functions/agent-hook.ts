@@ -7,6 +7,7 @@ const REQUIRED_OPT_OUT = "If you'd rather I didn't follow up, just let me know."
 const HOOK_TOKEN_SHA256 = "2e8ce87c7d1e57606e0c634e8e0ba17c88252d3afe4570bfd7894accf5b0fa62";
 const DEFAULT_DIRECT_RAMP_CAP = 5;
 const RECEIPT_TO = "tripletwochelston@gmail.com";
+const HANDLER_VERSION = "2026-08-16-v2";
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -33,93 +34,121 @@ function londonDateKey() {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
-function extractMessage(payload: any) {
-  return payload?.message ?? payload?.body ?? payload?.event?.message ?? payload?.data?.message ?? null;
+function findMessage(value: any, depth = 0): any {
+  if (depth > 6 || value == null) return null;
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findMessage(item, depth + 1);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (typeof value === "object") {
+    for (const key of ["message", "body", "payload", "data", "event"]) {
+      if (key in value) {
+        const candidate = value[key];
+        if (key === "message" && (typeof candidate === "string" || typeof candidate === "object")) return candidate;
+        const found = findMessage(candidate, depth + 1);
+        if (found) return found;
+      }
+    }
+    for (const candidate of Object.values(value)) {
+      const found = findMessage(candidate, depth + 1);
+      if (found) return found;
+    }
+  }
+  return null;
 }
 
-export default async (req: Request, _context: Context) => {
-  if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
-
-  const url = new URL(req.url);
-  if (!tokenMatches(url.searchParams.get("k"))) {
-    return json(401, { error: "unauthorised" });
+function parseAgentPayload(webhookPayload: any) {
+  const raw = findMessage(webhookPayload);
+  if (!raw) return null;
+  if (typeof raw === "object") return raw;
+  if (typeof raw !== "string") return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try { return JSON.parse(raw.slice(start, end + 1)); } catch { return null; }
+    }
+    return null;
   }
+}
 
+function makeTransporter() {
   const smtpPass = Netlify.env.get("TTE_SMTP_PASS");
   const smtpUser = Netlify.env.get("TTE_SMTP_USER") || "hello@222emails.com";
   const smtpHost = Netlify.env.get("TTE_SMTP_HOST") || "mail.privateemail.com";
   const smtpPort = Number(Netlify.env.get("TTE_SMTP_PORT") || "465");
+  if (!smtpPass) return null;
+  return {
+    smtpUser,
+    transporter: nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUser, pass: smtpPass },
+      requireTLS: smtpPort !== 465,
+    }),
+  };
+}
+
+export default async (req: Request, _context: Context) => {
+  if (req.method !== "POST") return json(405, { error: "method_not_allowed", version: HANDLER_VERSION });
+
+  const url = new URL(req.url);
+  if (!tokenMatches(url.searchParams.get("k"))) return json(401, { error: "unauthorised", version: HANDLER_VERSION });
+
+  const transport = makeTransporter();
+  if (!transport) return json(503, { error: "smtp_secret_missing", version: HANDLER_VERSION });
+  const { smtpUser, transporter } = transport;
   const directRampCap = Number(Netlify.env.get("TTE_GITHUB_DIRECT_RAMP_CAP") || DEFAULT_DIRECT_RAMP_CAP);
-  if (!smtpPass) return json(503, { error: "smtp_secret_missing" });
 
   let webhookPayload: any;
   try {
     webhookPayload = await req.json();
   } catch {
-    return json(400, { error: "invalid_webhook_json" });
+    return json(400, { error: "invalid_webhook_json", version: HANDLER_VERSION });
   }
 
-  const rawMessage = extractMessage(webhookPayload);
-  let payload: any;
-  try {
-    payload = typeof rawMessage === "string" ? JSON.parse(rawMessage) : rawMessage;
-  } catch {
-    return json(400, { error: "invalid_agent_message_json" });
-  }
-
+  const payload = parseAgentPayload(webhookPayload);
   if (!payload || typeof payload !== "object") {
-    return json(400, { error: "missing_agent_message" });
+    try {
+      await transporter.sendMail({
+        from: `TTE Direct SMTP Diagnostic <${smtpUser}>`,
+        to: [RECEIPT_TO],
+        subject: `TTE DIRECT HOOK DIAGNOSTIC ${HANDLER_VERSION}`,
+        text: `Webhook reached Netlify but no valid agent message payload was extracted. Top-level keys: ${Object.keys(webhookPayload || {}).join(", ")}`,
+      });
+    } catch {}
+    return json(400, { error: "missing_agent_message", version: HANDLER_VERSION, topLevelKeys: Object.keys(webhookPayload || {}) });
   }
 
   const { to, subject, text, idempotencyKey, leadId, touchNo } = payload;
   const recipients = Array.isArray(to) ? to : [to];
-  if (recipients.length !== 1 || typeof recipients[0] !== "string" || !recipients[0].includes("@")) {
-    return json(400, { error: "exactly_one_recipient_required" });
-  }
-  if (!subject || typeof subject !== "string" || subject.length > 180) {
-    return json(400, { error: "invalid_subject" });
-  }
-  if (!text || typeof text !== "string" || text.length > 12000) {
-    return json(400, { error: "invalid_body" });
-  }
-  if (!text.includes(REQUIRED_OPT_OUT)) {
-    return json(400, { error: "mandatory_opt_out_missing" });
-  }
-  if (!idempotencyKey || typeof idempotencyKey !== "string" || !leadId || !touchNo) {
-    return json(400, { error: "idempotency_metadata_required" });
-  }
-  if (idempotencyKey !== `${leadId}|${touchNo}`) {
-    return json(400, { error: "idempotency_key_mismatch" });
-  }
+  if (recipients.length !== 1 || typeof recipients[0] !== "string" || !recipients[0].includes("@")) return json(400, { error: "exactly_one_recipient_required", version: HANDLER_VERSION });
+  if (!subject || typeof subject !== "string" || subject.length > 180) return json(400, { error: "invalid_subject", version: HANDLER_VERSION });
+  if (!text || typeof text !== "string" || text.length > 12000) return json(400, { error: "invalid_body", version: HANDLER_VERSION });
+  if (!text.includes(REQUIRED_OPT_OUT)) return json(400, { error: "mandatory_opt_out_missing", version: HANDLER_VERSION });
+  if (!idempotencyKey || typeof idempotencyKey !== "string" || !leadId || !touchNo) return json(400, { error: "idempotency_metadata_required", version: HANDLER_VERSION });
+  if (idempotencyKey !== `${leadId}|${touchNo}`) return json(400, { error: "idempotency_key_mismatch", version: HANDLER_VERSION });
 
   const store = getStore({ name: "tte-mail-bridge", consistency: "strong" });
   const idempotencyBlob = `agent-idempotency/${idempotencyKey}`;
   const prior = await store.get(idempotencyBlob, { type: "json" });
-  if (prior) return json(409, { error: "duplicate_blocked", prior });
+  if (prior) return json(409, { error: "duplicate_blocked", prior, version: HANDLER_VERSION });
 
   const dateKey = londonDateKey();
   const counterKey = `agent-daily/${dateKey}`;
   const counter = (await store.get(counterKey, { type: "json" })) as { sent?: number } | null;
   const sentToday = Number(counter?.sent || 0);
-  if (sentToday >= directRampCap) {
-    return json(429, { error: "direct_sender_ramp_reached", sentToday, directRampCap });
-  }
+  if (sentToday >= directRampCap) return json(429, { error: "direct_sender_ramp_reached", sentToday, directRampCap, version: HANDLER_VERSION });
 
   await store.setJSON(idempotencyBlob, {
-    state: "IN_FLIGHT",
-    idempotencyKey,
-    leadId,
-    touchNo,
-    recipient: recipients[0],
-    reservedAt: new Date().toISOString(),
-  });
-
-  const transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465,
-    auth: { user: smtpUser, pass: smtpPass },
-    requireTLS: smtpPort !== 465,
+    state: "IN_FLIGHT", idempotencyKey, leadId, touchNo, recipient: recipients[0], reservedAt: new Date().toISOString(), version: HANDLER_VERSION,
   });
 
   try {
@@ -138,17 +167,9 @@ export default async (req: Request, _context: Context) => {
     });
 
     const result = {
-      state: "SENT_CONFIRMED",
-      route: "MAILOPOLY_AGENT_NETLIFY_PRIVATEEMAIL",
-      idempotencyKey,
-      leadId,
-      touchNo,
-      sender: smtpUser,
-      recipient: recipients[0],
-      messageId: info.messageId,
-      accepted: info.accepted,
-      rejected: info.rejected,
-      sentAt: new Date().toISOString(),
+      state: "SENT_CONFIRMED", route: "MAILOPOLY_AGENT_NETLIFY_PRIVATEEMAIL", idempotencyKey, leadId, touchNo,
+      sender: smtpUser, recipient: recipients[0], messageId: info.messageId, accepted: info.accepted, rejected: info.rejected,
+      sentAt: new Date().toISOString(), version: HANDLER_VERSION,
     };
 
     await store.setJSON(idempotencyBlob, result);
@@ -161,35 +182,20 @@ export default async (req: Request, _context: Context) => {
         to: [RECEIPT_TO],
         subject: `TTE DIRECT RECEIPT ${idempotencyKey}`,
         text: [
-          "Internal TTE direct SMTP execution receipt.",
-          `State: ${result.state}`,
-          `Route: ${result.route}`,
-          `Lead: ${leadId}`,
-          `Touch: ${touchNo}`,
-          `Recipient: ${recipients[0]}`,
-          `Provider message ID: ${info.messageId}`,
-          `Sent at: ${result.sentAt}`,
-          `Direct sender ramp: ${sentToday + 1}/${directRampCap}`,
+          "Internal TTE direct SMTP execution receipt.", `State: ${result.state}`, `Route: ${result.route}`, `Lead: ${leadId}`,
+          `Touch: ${touchNo}`, `Recipient: ${recipients[0]}`, `Provider message ID: ${info.messageId}`, `Sent at: ${result.sentAt}`,
+          `Direct sender ramp: ${sentToday + 1}/${directRampCap}`, `Handler: ${HANDLER_VERSION}`,
         ].join("\n"),
       });
       receiptSent = true;
-    } catch {
-      receiptSent = false;
-    }
+    } catch {}
 
     return json(200, { ...result, receiptSent, directRampCap });
   } catch (error: any) {
     const failed = {
-      state: "SEND_FAILED",
-      route: "MAILOPOLY_AGENT_NETLIFY_PRIVATEEMAIL",
-      idempotencyKey,
-      leadId,
-      touchNo,
-      recipient: recipients[0],
-      failedAt: new Date().toISOString(),
-      code: error?.code || null,
-      responseCode: error?.responseCode || null,
-      message: error?.message || "SMTP send failed",
+      state: "SEND_FAILED", route: "MAILOPOLY_AGENT_NETLIFY_PRIVATEEMAIL", idempotencyKey, leadId, touchNo, recipient: recipients[0],
+      failedAt: new Date().toISOString(), code: error?.code || null, responseCode: error?.responseCode || null,
+      message: error?.message || "SMTP send failed", version: HANDLER_VERSION,
     };
     await store.setJSON(idempotencyBlob, failed);
     return json(502, failed);
