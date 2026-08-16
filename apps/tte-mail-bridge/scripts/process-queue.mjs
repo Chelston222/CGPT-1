@@ -8,7 +8,7 @@ const IMAP_PORT = Number(process.env.TTE_IMAP_PORT || '993');
 const CONTROL_SENDERS = new Set(['tripletwochelston@gmail.com', 'tripletwoemails@mly.life']);
 const INTERNAL_RECEIPT = 'tripletwochelston@gmail.com';
 const PREFIXES = ['TTE DIRECT JOB', 'TTE DIRECT BATCH'];
-const ENDPOINT = 'https://222emails-mail-bridge.netlify.app/api/tte/agent-hook';
+const ENDPOINT = 'https://222emails-mail-bridge.netlify.app/.netlify/functions/direct-dispatch';
 const MAX_JOBS_PER_CONTROL = 5;
 const LOOKBACK_MS = 36 * 60 * 60 * 1000;
 
