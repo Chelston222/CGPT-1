@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-16T17:27:39.373Z",
+  "idempotency": {
+    "INTERNAL-BATCH-VERIFY-20260816|1": {
+      "state": "IN_FLIGHT",
+      "idempotencyKey": "INTERNAL-BATCH-VERIFY-20260816|1",
+      "leadId": "INTERNAL-BATCH-VERIFY-20260816",
+      "touchNo": 1,
+      "recipient": "tripletwochelston@gmail.com",
+      "reservedAt": "2026-08-16T17:27:39.373Z",
+      "route": "MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL",
+      "version": "2026-08-16-github-direct-v1"
+    }
+  },
+  "daily": {}
+}
