@@ -1,0 +1,60 @@
+name: TTE Direct SMTP Verify
+
+on:
+  push:
+    paths:
+      - 'apps/tte-mail-bridge/verify-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install bridge dependencies
+        working-directory: apps/tte-mail-bridge
+        run: npm install --omit=dev --no-audit --no-fund --no-package-lock
+      - name: Verify Private Email SMTP and send internal test
+        working-directory: apps/tte-mail-bridge
+        env:
+          TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
+          TTE_VERIFY_SHA: ${{ github.sha }}
+        run: |
+          node --input-type=module <<'NODE'
+          import nodemailer from 'nodemailer';
+
+          if (!process.env.TTE_SMTP_PASS) {
+            throw new Error('TTE_SMTP_PASS secret missing');
+          }
+
+          const transporter = nodemailer.createTransport({
+            host: 'mail.privateemail.com',
+            port: 465,
+            secure: true,
+            auth: {
+              user: 'hello@222emails.com',
+              pass: process.env.TTE_SMTP_PASS,
+            },
+          });
+
+          await transporter.verify();
+          const stamp = new Date().toISOString();
+          const info = await transporter.sendMail({
+            from: 'Chelston Phillip <hello@222emails.com>',
+            to: 'tripletwochelston@gmail.com',
+            replyTo: 'hello@222emails.com',
+            subject: `TTE direct SMTP verification ${process.env.TTE_VERIFY_SHA?.slice(0, 8) || 'manual'}`,
+            text: `Internal TTE direct SMTP verification only.\n\nProvider authentication and one-recipient delivery were initiated successfully at ${stamp}.\n\nNo prospect was contacted.`,
+            headers: {
+              'X-TTE-Verification': 'direct-smtp-internal',
+            },
+          });
+
+          console.log(`SMTP_VERIFY_OK messageId=${info.messageId}`);
+          NODE
