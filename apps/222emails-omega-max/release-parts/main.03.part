@@ -1,0 +1,82 @@
+ records</h3><p>Testing, permissions, suppression, links, copy and final approval before a production launch.</p></article><article><Icon name="chart"/><h3>Measurement plans</h3><p>Commercial signals chosen before launch so learning is not invented after the fact.</p></article></div>}
+      {tab==='building'&&<div className="proof-panel building-panel"><div><span>01</span><h3>Paid appointment-led engagements</h3><p>Real delivery first. Public proof only after permission and context are clear.</p></div><div><span>02</span><h3>Permission-cleared proof assets</h3><p>Screenshots, before-and-after process evidence and client quotes only where the client approves public use.</p></div><div><span>03</span><h3>Event-backed measurement</h3><p>Bookings, rebooks, replies and other commercial events attached to a defined journey.</p></div></div>}
+      <div className="proof-principle"><div><h2>Truth before persuasion.</h2><p>We would rather show a smaller truthful proof set than fill the page with invented certainty.</p></div><LinkTo route="fit" className="button orange">Start with your own diagnosis</LinkTo></div>
+    </div></section>
+  </PageShell>
+}
+
+function AboutPage(){
+  return <PageShell route="about">
+    <section className="page-hero light"><div className="shell narrow-center"><p className="eyebrow orange-text">About 222Emails</p><h1>Small enough to stay accountable. Structured enough to deliver properly.</h1><p>222Emails is a founder-led Revenue Recovery Systems business built around practical diagnosis, focused implementation and honest measurement.</p></div></section>
+    <section className="about-main"><div className="shell about-grid"><div className="founder-visual"><img src={MONOGRAM} alt="222Emails T2 monogram"/><span>Founder-led</span><strong>One accountable operator.</strong><p>No fake team page. No invented headcount. The person selling the work stays close to diagnosis, build, QA and handover.</p></div><div className="about-copy"><p className="eyebrow">Why it exists</p><h2>Too much useful demand disappears in the gap after first interest or first purchase.</h2><p>The business is built around a simple commercial question: what has already been paid for, earned or captured that is not being followed through properly?</p><p>That can mean a past client who should have rebooked, a warm enquiry that never received the right next touch, or a dormant customer base with no sensible reactivation route.</p><div className="about-values"><div><Icon name="find"/><b>Diagnose before prescribing</b><span>Start with the commercial leak, not a favourite platform.</span></div><div><Icon name="shield"/><b>Truth before persuasion</b><span>Do not invent proof, guarantees or certainty that the evidence does not support.</span></div><div><Icon name="recover"/><b>Ship useful systems</b><span>Prefer the smallest build that can be implemented, tested and measured.</span></div><div><Icon name="person"/><b>Keep the human handoff</b><span>Automation supports the relationship. It does not pretend to replace it.</span></div></div></div></div></section>
+    <section className="founder-note"><div className="shell"><p>I want a client to understand where the leak is, what we are building, what still needs proving, and what the next decision is.</p><span>Chelston Phillip, Founder</span></div></section>
+    <section className="page-cta"><div className="shell page-cta-inner"><div><h2>See whether your business has a recoverable follow-up gap.</h2><p>The Fit Check is asynchronous by default and takes about three minutes to start.</p></div><LinkTo route="fit" className="button orange">Start free Fit Check</LinkTo></div></section>
+  </PageShell>
+}
+
+const RESOURCE_ITEMS=[
+  {tag:'Guide',title:'The revenue leak you already paid for',summary:'A practical way to distinguish an acquisition problem from a follow-up problem.',body:['Start by listing where demand already enters the business: enquiries, appointments, past clients, purchasers and subscribers.','Then identify where the next expected action is unclear, delayed or entirely manual.','The goal is not to assume every gap is valuable. It is to find the gaps that have real permission, operational readiness and a measurable next action.']},
+  {tag:'Playbook',title:'Warm enquiry rescue without being pushy',summary:'How to maintain momentum after first interest without turning follow-up into chasing.',body:['Acknowledge quickly and set an expectation for what happens next.','Use the second touch to clarify fit, answer the most likely uncertainty or show relevant proof.','Stop or hand over when the prospect replies, books, opts out or is no longer a fit.']},
+  {tag:'Checklist',title:'Client return system readiness',summary:'The minimum inputs to check before building rebooking or reactivation automation.',body:['Confirm the natural return or repeat window.','Confirm permission, suppression and opt-out handling.','Make the booking or reply route obvious and test it end to end.','Choose the commercial signal you will measure before launch.']},
+  {tag:'Framework',title:'Find. Value. Recover.',summary:'The core operating logic behind every 222Emails recommendation.',body:['Find the exact commercial leak.','Value it honestly enough to decide whether it deserves work.','Recover it with the smallest useful system, then measure what actually happens.']}
+];
+
+function ResourcesPage(){
+  const [open,setOpen]=useState<number|null>(null);
+  return <PageShell route="resources">
+    <section className="page-hero light"><div className="shell narrow-center"><p className="eyebrow orange-text">Resources</p><h1>Practical thinking for recovering more from existing demand.</h1><p>No generic content calendar. These are the working principles behind the diagnosis and delivery system.</p></div></section>
+    <section className="resources-main"><div className="shell resource-list">{RESOURCE_ITEMS.map((r,i)=><article key={r.title} className={open===i?'open':''}><button onClick={()=>setOpen(open===i?null:i)} aria-expanded={open===i}><span><small>{r.tag}</small><h2>{r.title}</h2><p>{r.summary}</p></span><i>{open===i?'−':'+'}</i></button>{open===i&&<div className="resource-body">{r.body.map(p=><p key={p}>{p}</p>)}<LinkTo route="fit" className="text-cta">Apply this to your business <Icon name="arrow"/></LinkTo></div>}</article>)}</div></section>
+    <section className="resource-cta"><div className="shell resource-cta-inner"><div><p className="eyebrow">Want the diagnosis instead of another guide?</p><h2>Use the Fit Check.</h2></div><LinkTo route="fit" className="button orange">Start free Fit Check</LinkTo></div></section>
+  </PageShell>
+}
+
+function FitCheckForm({initialMode,setMode}:{initialMode:ModeKey;setMode:(m:ModeKey)=>void}){
+  const [step,setStep]=useState<1|2|3>(1);
+  const [mode,setLocalMode]=useState<ModeKey>(initialMode);
+  const [sending,setSending]=useState(false);
+  const [error,setError]=useState('');
+  useEffect(()=>setLocalMode(initialMode),[initialMode]);
+  const select=(m:ModeKey)=>{setLocalMode(m);setMode(m)};
+  async function submit(e:FormEvent<HTMLFormElement>){
+    e.preventDefault();setError('');setSending(true);
+    const form=e.currentTarget; const data=new FormData(form); data.set('leak',MODES[mode].label);
+    try{
+      if(standaloneMode()){await new Promise(r=>setTimeout(r,350));setStep(3);return;}
+      const body=new URLSearchParams(); data.forEach((v,k)=>body.append(k,String(v)));
+      const res=await fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
+      if(!res.ok) throw new Error('Submission failed');
+      setStep(3);
+    }catch(err){setError('The form could not be sent. Please email hello@222emails.com instead.');}finally{setSending(false)}
+  }
+  return <div className="fit-card">
+    {step===1&&<div><small>Step 1 of 2</small><h2>Where is the biggest follow-up gap?</h2><div className="fit-choices">{(Object.keys(MODES) as ModeKey[]).map(k=><button key={k} className={mode===k?'selected':''} onClick={()=>select(k)}><span><Icon name={k==='enquiries'?'mail':k==='return'?'calendar':'recover'}/></span><div><b>{MODES[k].label}</b><small>{MODES[k].signal}</small></div></button>)}</div><button className="button orange full" onClick={()=>setStep(2)}>Next</button></div>}
+    {step===2&&<form name="client-return-fit-check" method="POST" data-netlify="true" netlify-honeypot="bot-field" onSubmit={submit}><input type="hidden" name="form-name" value="client-return-fit-check"/><input type="hidden" name="leak" value={MODES[mode].label}/><p className="hidden-field"><label>Do not fill this out <input name="bot-field"/></label></p><div className="fit-head"><button type="button" onClick={()=>setStep(1)}>Back</button><small>Step 2 of 2</small></div><h2>Enough detail to make the first recommendation useful.</h2><div className="form-grid"><label>Your name<input required name="name" autoComplete="name"/></label><label>Business name<input required name="business" autoComplete="organization"/></label><label>Email<input required type="email" name="email" autoComplete="email"/></label><label>Website or Instagram <span>optional</span><input name="website" inputMode="url"/></label><label className="full-field">What is happening right now? <span>optional</span><textarea name="context" rows={4} placeholder="For example, past clients are not rebooking and we have no reminder system."/></label></div>{error&&<p className="form-error" role="alert">{error}</p>}<button className="button orange full" disabled={sending}>{sending?'Sending…':'Send Fit Check'}</button><p className="form-note">No platform credentials required. A call is optional, not a gate.</p></form>}
+    {step===3&&<div className="fit-success"><span>✓</span><h2>Fit Check received.</h2><p>We will review the context and route you to the smallest sensible next step. If the opportunity does not justify paid work, that should be the recommendation.</p><a className="button navy" href="mailto:hello@222emails.com">Email hello@222emails.com</a></div>}
+  </div>
+}
+
+function FitPage({mode,setMode}:{mode:ModeKey;setMode:(m:ModeKey)=>void}){
+  return <PageShell route="fit">
+    <section className="fit-page"><div className="shell fit-layout"><div className="fit-intro"><p className="eyebrow orange-text">Free Client Return Fit Check</p><h1>Tell us where follow-up is leaking.</h1><p>Start with the minimum information needed to decide whether there is a real opportunity worth diagnosing further.</p><ul><li>About three minutes</li><li>No exact revenue required</li><li>No platform login required</li><li>No compulsory discovery call</li></ul><div className="fit-side-note"><b>What happens next?</b><p>You get one clear route. That may be no-invest guidance, the £197 Growth Check, the £997 Sprint, or another sensible next step.</p></div></div><FitCheckForm initialMode={mode} setMode={setMode}/></div></section>
+  </PageShell>
+}
+
+function App(){
+  const [route,setRoute]=useState<RouteKey>(()=>routeFromLocation());
+  const [mode,setMode]=useState<ModeKey>('return');
+  useEffect(()=>{
+    const sync=()=>setRoute(routeFromLocation());
+    window.addEventListener('hashchange',sync);window.addEventListener('popstate',sync);
+    return()=>{window.removeEventListener('hashchange',sync);window.removeEventListener('popstate',sync)};
+  },[]);
+  useEffect(()=>{document.title=ROUTES[route].title},[route]);
+  if(route==='how') return <HowPage mode={mode} setMode={setMode}/>;
+  if(route==='services') return <ServicesPage mode={mode} setMode={setMode}/>;
+  if(route==='proof') return <ProofPage/>;
+  if(route==='about') return <AboutPage/>;
+  if(route==='resources') return <ResourcesPage/>;
+  if(route==='fit') return <FitPage mode={mode} setMode={setMode}/>;
+  return <HomePage mode={mode} setMode={setMode}/>;
+}
+
+createRoot(document.getElementById('root')!).render(<App/>);
