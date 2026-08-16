@@ -13,48 +13,30 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Locate inserted bytes from approved blob hash
+      - name: Fingerprint approved anchors in current segment
         working-directory: apps/222emails-omega-max
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          import hashlib
-
-          p=Path('release-parts/brand.01.part')
-          data=p.read_bytes()
-          target='e67b4a8cccc6fb3eaaadfd161dda76eb3ec1737b'
-          expected_len=12000
-          extra=len(data)-expected_len
-          print(f'current_bytes={len(data)} extra={extra}')
-          assert extra == 13
-
-          def git_blob_sha(b: bytes) -> str:
-              h=hashlib.sha1()
-              h.update(f'blob {len(b)}\0'.encode())
-              h.update(b)
-              return h.hexdigest()
-
-          found=None
-          for pos in range(len(data)-extra+1):
-              candidate=data[:pos]+data[pos+extra:]
-              if git_blob_sha(candidate)==target:
-                  found=(pos, data[pos:pos+extra], candidate)
-                  break
-          if not found:
-              raise SystemExit('No single contiguous 13-byte insertion produces the approved blob hash')
-          pos, removed, candidate=found
-          print(f'FOUND_POSITION={pos}')
-          print(f'REMOVED_HEX={removed.hex()}')
-          print(f'CORRECTED_HASH={git_blob_sha(candidate)}')
-          Path('/tmp/brand01.corrected').write_bytes(candidate)
-
-          parts=[Path('/tmp/brand01.corrected').read_bytes()]
-          for i in range(2,8):
-              parts.append(Path(f'release-parts/brand.{i:02d}.part').read_bytes())
-          full=b''.join(parts)+b'\n'
-          full_target='2c4492916260be22ebf248f49f7a080cdd4303b6'
-          print(f'FULL_BRAND_HASH={git_blob_sha(full)} bytes={len(full)}')
-          assert git_blob_sha(full)==full_target
+          data=Path('release-parts/brand.01.part').read_bytes()
+          anchors={
+          0:b"export const MONOGRAM = 'data:image/webp;base64,",
+          1000:b'JcEL4SU2moCYxC4wFx1gCYxC4wFx1gCYxC4wFx1gCYxCnDM4',
+          2000:b'AGwXuQRzUZ5OCogc7tuf7A/MrzD914fhvAExiFxgLjrfftSR',
+          3000:b'/6sBY5rXAZ/k2OS0uEGiypjpiadtCKyLyP++M4CXhItikKaQ',
+          4000:b'AuSx6TIXGAuOsATGIXGAuOsAThELQhT4CvFUANmiaVpUPGcS',
+          5000:b'codCGROQVh4ItuB+r7qagJjELjAYefHpPpC4wFx1gCYxC4wF',
+          6000:b'k9Vl6IWiqy9ELRVZeiFoqsvRC0VWXohaKrL0QCK6gJjELjAX',
+          7000:b'oY0vYzxyjAAAAAA4KRZFKuQ7wb3qakUfJ0aKrXLI+r7NC/SD',
+          8000:b'ThOnaJ5WGj8mkvnBhbayIgTqGtoEzCDuYlO6XdXN0hd/KdIG',
+          9000:b'HH29VFQxH7qRl5mS/yl3fJpDuX7n3kL18qShZo3L4J7eXkt0',
+          10000:b'8/hg6mpvPPkAmkQQ1p1r0JgY+VekeMyGNPkKjrP0PhlW7WIZ',
+          11000:b'wutIeCBsXnaUff6uNMibjm3/Cz6DkgmOcV2tqF+gw/89vVag',
+          }
+          print('bytes',len(data))
+          for expected,a in anchors.items():
+              pos=data.find(a)
+              print(f'anchor expected={expected} found={pos} delta={pos-expected if pos>=0 else "NA"}')
           PY
