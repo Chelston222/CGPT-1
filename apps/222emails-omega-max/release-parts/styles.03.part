@@ -1,0 +1,14 @@
+ing:15px 8px}.evidence-grid>div:nth-child(2){border-right:0}.evidence-grid>div:nth-child(-n+2){border-bottom:1px solid #E2E6EC}.evidence-grid strong{font-size:22px}.dark-process{padding:70px 0}.dark-process h2{font-size:38px}.process-three{grid-template-columns:1fr;gap:26px}.process-three>div{grid-template-columns:52px 1fr}.icon-disc{width:52px;height:52px}.section-heading h2{font-size:39px}.home-focus,.truth-section{padding:75px 0}.mode-pills{width:100%;margin-top:25px}.mode-pills button{padding:9px 12px}.focus-card{padding:22px;gap:22px}.truth-inner{gap:24px}.truth-inner h2{font-size:36px}.home-fit{padding:50px 0 70px}.home-fit-card,.page-cta-inner,.resource-cta-inner,.higher-touch,.proof-principle{flex-direction:column;align-items:flex-start;padding:25px}.page-hero{padding:65px 0 45px}.page-hero h1{font-size:45px}.how-core,.services-main,.proof-page,.about-main,.resources-main{padding-bottom:75px}.journey-card{padding:18px}.how-workspace{padding:75px 0}.qa-grid{grid-template-columns:1fr;gap:25px}.page-cta{padding-bottom:65px}.service-recommender{padding:16px}.price-card,.price-card.recommended{padding:22px}.scope-section{padding:70px 0}.scope-section h2{font-size:36px}.scope-list{grid-template-columns:1fr}.proof-tabs{grid-template-columns:1fr}.proof-tabs button{text-align:left}.metric-grid{grid-template-columns:1fr}.metric-grid>div{border-right:0!important;border-bottom:1px solid #E2E6EC}.metric-grid>div:last-child{border-bottom:0}.artifact-grid{grid-template-columns:1fr}.proof-principle h2{font-size:28px}.about-copy h2{font-size:38px}.about-values{grid-template-columns:1fr}.founder-visual{padding:32px}.founder-note{padding:60px 0}.founder-note p{font-size:25px}.resource-list article>button{padding:18px}.resource-list h2{font-size:22px}.resource-body{padding:18px}.fit-page{padding:65px 0 80px}.fit-layout{gap:32px}.fit-intro h1{font-size:47px}.fit-card{padding:20px;min-height:0}.form-grid{grid-template-columns:1fr}.full-field{grid-column:auto}.footer-grid{grid-template-columns:1fr;gap:25px}.footer-brand img{width:230px}.footer-bottom{flex-direction:column;gap:7px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}.button:hover{transform:none!important}}
+/* Final small-screen hardening */
+.hero-grid>*,.how-grid>*,.truth-inner>*,.scope-grid>*,.about-grid>*,.fit-layout>*{min-width:0}
+.how-step>div,.journey-card,.journey-head>div{min-width:0}
+@media(max-width:360px){
+  .how-step{grid-template-columns:44px minmax(0,1fr);gap:12px}
+  .how-step>span{width:40px;height:40px}
+  .mode-pills{width:100%;max-width:100%;overflow-x:auto}
+  .journey-card{width:100%;padding:15px}
+  .journey-head{gap:8px}
+  .journey-head h3{font-size:24px}
+  .journey-flow-vertical>div{grid-template-columns:34px minmax(0,1fr)}
+}
