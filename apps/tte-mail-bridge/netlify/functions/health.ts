@@ -1,20 +1,16 @@
-import type { Config } from "@netlify/functions";
+import type { Config } from '@netlify/functions';
+import { configStatus } from './_shared/auth.mjs';
+import { VERSION } from './_shared/constants.mjs';
+import { jsonResponse } from './_shared/util.mjs';
 
 export default async () => {
-  const configured = Boolean(Netlify.env.get("TTE_SMTP_PASS"));
-  return new Response(JSON.stringify({
-    service: "tte-mail-bridge",
-    sender: Netlify.env.get("TTE_SMTP_USER") || "hello@222emails.com",
-    smtpHost: Netlify.env.get("TTE_SMTP_HOST") || "mail.privateemail.com",
-    dailyCap: Number(Netlify.env.get("TTE_DIRECT_DAILY_CAP") || "20"),
-    smtpConfigured: configured,
-  }), {
-    status: 200,
-    headers: { "content-type": "application/json; charset=utf-8" },
+  const configured = configStatus();
+  return jsonResponse(200, {
+    service:'tte-mail-bridge',
+    version:VERSION,
+    status:Object.values(configured).every(Boolean) ? 'READY' : 'CONFIG_REQUIRED',
+    oauthConfigured:configured.googleOAuthClientId && configured.googleOAuthClientSecret,
+    encryptionConfigured:configured.encryptionKey,
   });
 };
-
-export const config: Config = {
-  path: "/api/tte/health",
-  method: ["GET"],
-};
+export const config: Config = { path:'/api/tte/health', method:['GET'] };

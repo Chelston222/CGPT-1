@@ -1,0 +1,7 @@
+import type { Config } from '@netlify/functions';
+import { requireAuth } from './_shared/auth.mjs';
+import { addSuppression, audit, listSuppressions, removeSuppression } from './_shared/store.mjs';
+import { jsonResponse, shortHash } from './_shared/util.mjs';
+import { validateEmail } from './_shared/validation.mjs';
+export default async(req:Request)=>{const denied=requireAuth(req);if(denied)return denied;if(req.method==='GET')return jsonResponse(200,{suppressions:await listSuppressions()});let body:any={};try{body=await req.json();}catch{return jsonResponse(400,{error:'invalid_json'});}const email=validateEmail(body.email);if(!email)return jsonResponse(400,{error:'invalid_email'});if(req.method==='POST'){const item=await addSuppression(email,String(body.reason||'operator'),'operator');await audit('SUPPRESSION_ADDED',{emailHash:item.emailHash,reason:item.reason});return jsonResponse(201,{ok:true,item});}if(req.method==='DELETE'){if(body.confirm!=='RESTORE_CONTACT'||!String(body.actor||'').trim()||String(body.reason||'').trim().length<5)return jsonResponse(400,{error:'suppression_restore_confirmation_required',required:{confirm:'RESTORE_CONTACT',actor:'required',reason:'required'}});await removeSuppression(email);await audit('SUPPRESSION_REMOVED',{emailHash:shortHash(email,48),actor:String(body.actor),reason:String(body.reason).slice(0,200)});return jsonResponse(200,{ok:true});}return jsonResponse(405,{error:'method_not_allowed'});};
+export const config:Config={path:'/api/tte/suppressions',method:['GET','POST','DELETE']};

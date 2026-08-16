@@ -10,17 +10,18 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
+          package-manager-cache: false
       - name: Install bridge dependencies
         working-directory: apps/tte-mail-bridge
         run: npm install --omit=dev --no-audit --no-fund --no-package-lock
-      - name: Verify Private Email SMTP and send internal test
+      - name: Verify Private Email SMTP and send fixed internal test only
         working-directory: apps/tte-mail-bridge
         env:
           TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
@@ -29,18 +30,13 @@ jobs:
           node --input-type=module <<'NODE'
           import nodemailer from 'nodemailer';
 
-          if (!process.env.TTE_SMTP_PASS) {
-            throw new Error('TTE_SMTP_PASS secret missing');
-          }
+          if (!process.env.TTE_SMTP_PASS) throw new Error('TTE_SMTP_PASS secret missing');
 
           const transporter = nodemailer.createTransport({
             host: 'mail.privateemail.com',
             port: 465,
             secure: true,
-            auth: {
-              user: 'hello@222emails.com',
-              pass: process.env.TTE_SMTP_PASS,
-            },
+            auth: { user: 'hello@222emails.com', pass: process.env.TTE_SMTP_PASS },
           });
 
           await transporter.verify();
@@ -51,10 +47,7 @@ jobs:
             replyTo: 'hello@222emails.com',
             subject: `TTE direct SMTP verification ${process.env.TTE_VERIFY_SHA?.slice(0, 8) || 'manual'}`,
             text: `Internal TTE direct SMTP verification only.\n\nProvider authentication and one-recipient delivery were initiated successfully at ${stamp}.\n\nNo prospect was contacted.`,
-            headers: {
-              'X-TTE-Verification': 'direct-smtp-internal',
-            },
+            headers: { 'X-TTE-Verification': 'direct-smtp-internal' },
           });
-
           console.log(`SMTP_VERIFY_OK messageId=${info.messageId}`);
           NODE

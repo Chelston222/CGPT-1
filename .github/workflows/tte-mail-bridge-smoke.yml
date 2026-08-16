@@ -1,0 +1,21 @@
+name: TTE Mail Bridge Production Smoke
+
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Public fail-safe health check
+        shell: bash
+        run: |
+          set -euo pipefail
+          BODY=$(curl --fail --silent --show-error --retry 3 --retry-delay 2 https://222emails-mail-bridge.netlify.app/api/tte/health)
+          echo "$BODY" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const h=JSON.parse(s);if(h.service!=='tte-mail-bridge')process.exit(2);if(!['READY','CONFIG_REQUIRED'].includes(h.status))process.exit(3);console.log(h.status,h.version)})"
