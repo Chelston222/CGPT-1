@@ -1,15 +1,21 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-16T17:27:39.373Z",
+  "updatedAt": "2026-08-16T17:27:41.440Z",
   "idempotency": {
     "INTERNAL-BATCH-VERIFY-20260816|1": {
-      "state": "IN_FLIGHT",
+      "state": "SENT_CONFIRMED",
+      "route": "MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL",
       "idempotencyKey": "INTERNAL-BATCH-VERIFY-20260816|1",
       "leadId": "INTERNAL-BATCH-VERIFY-20260816",
       "touchNo": 1,
+      "sender": "hello@222emails.com",
       "recipient": "tripletwochelston@gmail.com",
-      "reservedAt": "2026-08-16T17:27:39.373Z",
-      "route": "MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL",
+      "messageId": "<1def3c0d-0bcc-f4ee-1e3a-3d161999031b@222emails.com>",
+      "accepted": [
+        "tripletwochelston@gmail.com"
+      ],
+      "rejected": [],
+      "sentAt": "2026-08-16T17:27:41.440Z",
       "version": "2026-08-16-github-direct-v1"
     }
   },
