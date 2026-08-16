@@ -13,30 +13,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Narrow divergence windows
+      - name: Print corrupted windows only
         working-directory: apps/222emails-omega-max
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          data=Path('release-parts/brand.01.part').read_bytes()
-          anchors={
-          5000:b'codCGROQVh4ItuB+r7qagJjELjAYefHp',5100:b'dYAmMQuMBcdYAmMQuMBcdYAmMQt+AXjf',
-          5200:b'BcdYAmMQAO2kZjELjAXHWAJjELjAXHV+',5300:b'YxC4wFx1gCYxC4wFx1gCYxC4wFx1gCYx',
-          5400:b'1eYK+12KCWOsATGIXGAuOsATGIXGArwR',5500:b'C4wFx1gCYweh/sbFZmrAEvKPKJmiGemo',
-          5600:b'jELjAXHWAJjELjAXHWAJjELjAXHSc8ag',5700:b'l3Q5uXB9tSKKwBMYhcYC46wBMYhcYC46',
-          5800:b'jELdNRZZB5NW15cxiFxgLjpHqVUxKvyR',5900:b'p9bAEa2ElwUu5BHOTYdf02HQRJ6rL0Qt',
-          6000:b'k9Vl6IWiqy9ELRVZeiFoqsvRC0VWXoha',
-          11000:b'wutIeCBsXnaUff6uNMibjm3/Cz6DkgmO',11100:b'9lzi13HUds1E2mRfp8/BIej/YMX+vRAA',
-          11200:b'q8i8WfqBNdMBQAgSJytAVuA7AI1N9WLn',11300:b'363n2Wz6oSIsnWAj6WmhFmbca9VoKCBD',
-          11400:b'AyiAEZSw3zIQW7VCLHiWD3tk9FY0pOy+',11500:b'e4UqLmKcG6RFXZJJd0/Z84K54uJb8+0T',
-          11600:b'TmSyMIWUMcP+A4A3tawRDVfJNvrBETvr',11700:b'iMIkwE6ij7eennozTdnUAmtOIN85r2Ds',
-          11800:b'whODQvYKF2cQxLi6AYPvOOBPphobl5Jj',11900:b'RloI2xzFopwNbhe0tGpJ79pUUXaOWh1W',
-          }
-          for expected,a in anchors.items():
-              pos=data.find(a)
-              print(f'{expected}:{pos}:{pos-expected if pos>=0 else "NA"}')
-          print('tail_hex',data[-80:].hex())
-          print('tail_ascii',repr(data[-120:]))
+          d=Path('release-parts/brand.01.part').read_bytes()
+          print('WINDOW_A',repr(d[4970:5140]))
+          print('WINDOW_B',repr(d[11840:]))
           PY
