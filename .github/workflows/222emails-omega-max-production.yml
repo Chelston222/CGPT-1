@@ -1,0 +1,148 @@
+name: 222Emails Omega Max Production
+
+on:
+  push:
+    paths:
+      - '.github/workflows/222emails-omega-max-production.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-preview-production:
+    runs-on: ubuntu-24.04
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: fc7ccb38-7e6d-4a15-83bc-88bd84ea5687
+      SITE_DIR: apps/222emails-omega-max
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Verify deployment credential
+        shell: bash
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN" || { echo 'NETLIFY_AUTH_TOKEN is missing'; exit 2; }
+
+      - name: Reconstruct exact approved source
+        working-directory: apps/222emails-omega-max
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p src
+          cat release-parts/main.*.part > src/main.tsx
+          cat release-parts/styles.*.part > src/styles.css
+          cat release-parts/brand.*.part > src/brand.ts
+          echo 'f2b390b7a4a2718bb39d0717f7bdf945ddf104a3d429c069b622f2877e11d2fd  src/main.tsx' | sha256sum -c -
+          echo '665ce74364fc926db24d7d33d123986018426732197bb32b75418d773e062733  src/styles.css' | sha256sum -c -
+          echo 'b976fd703a3009038e7e9e8ee3b9b7dfb2334213025dcbeb8798edfb8d00618e  src/brand.ts' | sha256sum -c -
+          grep -q 'Recover more from the demand you already have' src/main.tsx
+          grep -q 'Helvetica Neue' src/styles.css
+          grep -q 'export const MONOGRAM' src/brand.ts
+          grep -q 'export const LOGO_DARK' src/brand.ts
+
+      - name: Install and build
+        working-directory: apps/222emails-omega-max
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npm run build
+          test -f dist/index.html
+          test -f dist/privacy/index.html
+          test -f dist/terms/index.html
+          test -f dist/cookies/index.html
+          test -f dist/accessibility/index.html
+          test -f dist/_headers
+          test -f dist/_redirects
+          grep -q 'client-return-fit-check' dist/index.html
+          grep -R -q 'Recover more from the demand you already have' dist/assets
+
+      - name: Install Netlify CLI
+        shell: bash
+        run: npm install -g netlify-cli@latest
+
+      - name: Create isolated draft deploy
+        working-directory: apps/222emails-omega-max
+        shell: bash
+        run: |
+          set -euo pipefail
+          netlify deploy --dir=dist --no-build --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="222Emails Omega Max release candidate 2026-08-16" --json > /tmp/draft.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const j=JSON.parse(fs.readFileSync('/tmp/draft.json','utf8'));
+          const url=j.deploy_url || j.deployUrl || j.url;
+          if(!url){console.error('No draft URL in Netlify response'); console.error(JSON.stringify(j)); process.exit(1)}
+          fs.appendFileSync(process.env.GITHUB_ENV,`DRAFT_URL=${url}\n`);
+          console.log(`Draft deploy: ${url}`);
+          NODE
+
+      - name: Smoke test isolated draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in / /how-it-works /services /proof /about /resources /fit-check /privacy/ /terms/ /cookies/ /accessibility/; do
+            code=$(curl -L --retry 4 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${DRAFT_URL}${path}")
+            test "$code" = "200" || { echo "Draft ${path} returned ${code}"; exit 1; }
+          done
+          curl -fsSL --retry 4 "$DRAFT_URL/" | grep -q 'client-return-fit-check'
+          curl -fsSL --retry 4 "$DRAFT_URL/privacy/" | grep -q 'How 222Emails collects and uses personal data'
+
+      - name: Publish approved build to production
+        working-directory: apps/222emails-omega-max
+        shell: bash
+        run: |
+          set -euo pipefail
+          netlify deploy --dir=dist --no-build --prod --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="222Emails Omega Max production release 2026-08-16" --json > /tmp/prod.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const j=JSON.parse(fs.readFileSync('/tmp/prod.json','utf8'));
+          const url=j.url || j.deploy_url || j.deployUrl || 'https://222emails-homeproof-upgrade.netlify.app';
+          const deployId=j.deploy_id || j.deployId || j.id || '';
+          fs.appendFileSync(process.env.GITHUB_ENV,`PROD_URL=${url}\nPROD_DEPLOY_ID=${deployId}\n`);
+          console.log(`Production URL: ${url}`);
+          if(deployId) console.log(`Production deploy ID: ${deployId}`);
+          NODE
+
+      - name: Production smoke tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://222emails-homeproof-upgrade.netlify.app"
+          for path in / /how-it-works /services /proof /about /resources /fit-check /privacy/ /terms/ /cookies/ /accessibility/; do
+            code=$(curl -L --retry 6 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${base}${path}")
+            test "$code" = "200" || { echo "Production ${path} returned ${code}"; exit 1; }
+          done
+          curl -fsSL --retry 6 "$base/" | grep -q 'client-return-fit-check'
+          curl -fsSL --retry 6 "$base/terms/" | grep -q 'Website Terms'
+          curl -fsSL --retry 6 "$base/cookies/" | grep -q 'intentionally built without analytics'
+          curl -fsSL --retry 6 "$base/accessibility/" | grep -q 'do not currently claim independent certification'
+
+      - name: Verify real Netlify Fit Check POST
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://222emails-homeproof-upgrade.netlify.app"
+          code=$(curl -L --retry 4 --retry-delay 2 -sS -o /tmp/form-response -w '%{http_code}' \
+            -X POST "$base/" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'form-name=client-return-fit-check' \
+            --data-urlencode 'leak=Deployment QA' \
+            --data-urlencode 'name=222Emails Release QA' \
+            --data-urlencode 'business=222Emails QA' \
+            --data-urlencode 'email=hello@222emails.com' \
+            --data-urlencode 'website=' \
+            --data-urlencode 'context=Automated production form verification. Safe to delete.')
+          case "$code" in 200|201|204|301|302|303) echo "Fit Check POST accepted: $code" ;; *) echo "Fit Check POST failed: $code"; cat /tmp/form-response; exit 1 ;; esac
+
+      - name: Release summary
+        shell: bash
+        run: |
+          echo "Omega Max production release passed all CI gates."
+          echo "Draft: ${DRAFT_URL}"
+          echo "Production: https://222emails-homeproof-upgrade.netlify.app"
+          echo "Deploy ID: ${PROD_DEPLOY_ID:-reported-by-Netlify}"
