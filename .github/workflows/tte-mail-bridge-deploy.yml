@@ -1,7 +1,12 @@
-name: TTE Mail Bridge Manual Fallback Deploy
+name: TTE Mail Bridge Apex Deploy
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/tte-mail-bridge/**'
+      - '.github/workflows/tte-mail-bridge-deploy.yml'
 
 permissions:
   contents: read
@@ -12,30 +17,94 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       NETLIFY_SITE_ID: e531326d-60b8-4def-85b9-727a7f708547
+      TTE_BRIDGE_TOKEN: ${{ secrets.TTE_BRIDGE_TOKEN }}
+      TTE_TOKEN_ENCRYPTION_KEY: ${{ secrets.TTE_TOKEN_ENCRYPTION_KEY }}
+      TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS: ${{ secrets.TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS }}
+      GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+      TTE_SMTP_USER: ${{ secrets.TTE_SMTP_USER }}
+      TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
+      TTE_SMTP_HOST: ${{ secrets.TTE_SMTP_HOST }}
+      TTE_SMTP_PORT: ${{ secrets.TTE_SMTP_PORT }}
+    defaults:
+      run:
+        working-directory: apps/tte-mail-bridge
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Verify Netlify credential
-        shell: bash
-        run: |
-          test -n "$NETLIFY_AUTH_TOKEN" || { echo 'NETLIFY_AUTH_TOKEN is missing'; exit 2; }
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
-
-      - name: Deploy legacy mail bridge fallback
+          package-manager-cache: false
+      - name: Verify required deployment secrets
+        id: preflight
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in NETLIFY_AUTH_TOKEN TTE_BRIDGE_TOKEN TTE_TOKEN_ENCRYPTION_KEY GOOGLE_OAUTH_CLIENT_ID GOOGLE_OAUTH_CLIENT_SECRET; do
+            [ -n "${!name:-}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Required secrets are not configured: ${missing[*]}"
+            if [ "$EVENT_NAME" = "workflow_dispatch" ]; then exit 2; fi
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Automatic deploy skipped until secrets are configured."
+            exit 0
+          fi
+          test ${#TTE_BRIDGE_TOKEN} -ge 24 || { echo 'TTE_BRIDGE_TOKEN must be at least 24 characters'; exit 2; }
+          test ${#TTE_TOKEN_ENCRYPTION_KEY} -ge 24 || { echo 'TTE_TOKEN_ENCRYPTION_KEY must be at least 24 characters'; exit 2; }
+          [ "$TTE_BRIDGE_TOKEN" != "$TTE_TOKEN_ENCRYPTION_KEY" ] || { echo 'Bridge token and encryption key must be different'; exit 2; }
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - name: Install project dependencies
+        if: steps.preflight.outputs.ready == 'true'
+        run: npm install --no-audit --no-fund
+      - name: Re-run APEX verification before deployment
+        if: steps.preflight.outputs.ready == 'true'
+        run: npm run verify
+      - name: Sync runtime configuration to Netlify
+        if: steps.preflight.outputs.ready == 'true'
         shell: bash
         run: |
-          npx --yes netlify-cli@latest deploy \
-            --prod \
-            --site "$NETLIFY_SITE_ID" \
-            --auth "$NETLIFY_AUTH_TOKEN" \
-            --dir apps/tte-mail-bridge/public \
-            --functions apps/tte-mail-bridge/netlify/functions
+          set -euo pipefail
+          npx netlify env:set TTE_BRIDGE_TOKEN "$TTE_BRIDGE_TOKEN" --secret --context production
+          npx netlify env:set TTE_TOKEN_ENCRYPTION_KEY "$TTE_TOKEN_ENCRYPTION_KEY" --secret --context production
+          npx netlify env:set GOOGLE_OAUTH_CLIENT_ID "$GOOGLE_OAUTH_CLIENT_ID" --secret --context production
+          npx netlify env:set GOOGLE_OAUTH_CLIENT_SECRET "$GOOGLE_OAUTH_CLIENT_SECRET" --secret --context production
+          if [ -n "${TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS:-}" ]; then npx netlify env:set TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS "$TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS" --secret --context production; else npx netlify env:unset TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS --context production >/dev/null 2>&1 || true; fi
+          npx netlify env:set AWS_LAMBDA_JS_RUNTIME "nodejs24.x" --context production
+          npx netlify env:set TTE_GLOBAL_DAILY_CAP "100" --context production
+          npx netlify env:set TTE_DOMAIN_DAILY_CAP "4" --context production
+          npx netlify env:set TTE_DISPATCH_BATCH_SIZE "1" --context production
+          npx netlify env:set TTE_SCHEDULED_DISPATCH "true" --context production
+          npx netlify env:set TTE_ALLOW_MANUAL_DISPATCH "false" --context production
+          npx netlify env:set TTE_QUEUE_MAX_SIZE "500" --context production
+          npx netlify env:set TTE_QUEUE_TERMINAL_RETENTION_DAYS "90" --context production
+          npx netlify env:set TTE_SENT_COUNTER_RETENTION_DAYS "35" --context production
+          npx netlify env:set TTE_AUDIT_RETENTION_DAYS "90" --context production
+          npx netlify env:set TTE_STALE_IN_FLIGHT_MINUTES "20" --context production
+          npx netlify env:set TTE_SEND_WINDOW_ENABLED "true" --context production
+          npx netlify env:set TTE_SEND_START_HOUR "8" --context production
+          npx netlify env:set TTE_SEND_END_HOUR "18" --context production
+          if [ -n "${TTE_SMTP_PASS:-}" ]; then
+            npx netlify env:set TTE_SMTP_PASS "$TTE_SMTP_PASS" --secret --context production
+            npx netlify env:set TTE_SMTP_USER "${TTE_SMTP_USER:-hello@222emails.com}" --context production
+            npx netlify env:set TTE_SMTP_HOST "${TTE_SMTP_HOST:-mail.privateemail.com}" --context production
+            npx netlify env:set TTE_SMTP_PORT "${TTE_SMTP_PORT:-465}" --context production
+          fi
+      - name: Deploy existing mail bridge project
+        if: steps.preflight.outputs.ready == 'true'
+        run: npx netlify deploy --prod --dir=public --functions=netlify/functions --site "$NETLIFY_SITE_ID"
+      - name: Verify production health surface
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 https://222emails-mail-bridge.netlify.app/api/tte/health | tee /tmp/tte-health.json
+          node -e "const h=require('/tmp/tte-health.json'); if(!h.service || h.service!=='tte-mail-bridge') process.exit(1); if(h.status!=='READY') process.exit(2); console.log('health:',h.status,'version:',h.version)"
