@@ -37,9 +37,9 @@ jobs:
           cat release-parts/main.*.part > src/main.tsx
           cat release-parts/styles.*.part > src/styles.css
           cat release-parts/brand.*.part > src/brand.ts
-          echo 'f2b390b7a4a2718bb39d0717f7bdf945ddf104a3d429c069b622f2877e11d2fd  src/main.tsx' | sha256sum -c -
-          echo '665ce74364fc926db24d7d33d123986018426732197bb32b75418d773e062733  src/styles.css' | sha256sum -c -
-          echo 'b976fd703a3009038e7e9e8ee3b9b7dfb2334213025dcbeb8798edfb8d00618e  src/brand.ts' | sha256sum -c -
+          echo '6cd0c0558bd619b1a7dc8d01b70f3a67adb0c2fd7feff1b1ba21f05332d94c74  src/main.tsx' | sha256sum -c -
+          echo 'efe2f85631abc2ebef70893b327af36403ab86b3513f56fabc6075ad4c47e17c  src/styles.css' | sha256sum -c -
+          echo '3b5077168fbd9c247c89a69557f0e5c329b0936396e5b5e056666dc63e748295  src/brand.ts' | sha256sum -c -
           grep -q 'Recover more from the demand you already have' src/main.tsx
           grep -q 'Helvetica Neue' src/styles.css
           grep -q 'export const MONOGRAM' src/brand.ts
