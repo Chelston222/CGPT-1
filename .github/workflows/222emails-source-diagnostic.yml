@@ -1,0 +1,39 @@
+name: Diagnose Omega Max exact source
+
+on:
+  push:
+    paths:
+      - '.github/workflows/222emails-source-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct and print safe hashes
+        working-directory: apps/222emails-omega-max
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p src /tmp/tte-release
+          cat release-corrections/brand.01.b64.01 release-corrections/brand.01.b64.02 | base64 -d > /tmp/tte-release/brand.01.part
+          cat release-corrections/main.02.b64.01 release-corrections/main.02.b64.02 release-corrections/main.02.b64.03 | base64 -d > /tmp/tte-release/main.02.part
+          cat /tmp/tte-release/brand.01.part release-parts/brand.02.part release-parts/brand.03.part release-parts/brand.04.part release-parts/brand.05.part release-parts/brand.06.part release-parts/brand.07.part > src/brand.ts
+          printf '\n' >> src/brand.ts
+          cat release-parts/main.01.part /tmp/tte-release/main.02.part release-parts/main.03.part > src/main.tsx
+          cat release-parts/styles.01.part release-parts/styles.02.part release-parts/styles.03.part > src/styles.css
+          echo "brand=$(git hash-object src/brand.ts) bytes=$(wc -c < src/brand.ts)"
+          echo "main=$(git hash-object src/main.tsx) bytes=$(wc -c < src/main.tsx)"
+          echo "styles=$(git hash-object src/styles.css) bytes=$(wc -c < src/styles.css)"
+          echo "index=$(git hash-object index.html)"
+          echo "privacy=$(git hash-object public/privacy/index.html)"
+          echo "terms=$(git hash-object public/terms/index.html)"
+          echo "cookies=$(git hash-object public/cookies/index.html)"
+          echo "accessibility=$(git hash-object public/accessibility/index.html)"
+          echo "headers=$(git hash-object public/_headers)"
+          echo "redirects=$(git hash-object public/_redirects)"
+          if grep -q '222 Emails' src/main.tsx; then echo 'legacy_brand=true'; else echo 'legacy_brand=false'; fi
+          if grep -q '—' src/main.tsx; then echo 'em_dash=true'; else echo 'em_dash=false'; fi
