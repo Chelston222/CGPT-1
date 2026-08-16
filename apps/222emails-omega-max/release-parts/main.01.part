@@ -1,0 +1,194 @@
+import React, {FormEvent, useEffect, useMemo, useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import './styles.css';
+import {MONOGRAM, LOGO_DARK} from './brand';
+
+type ModeKey = 'return' | 'enquiries' | 'dormant';
+type RouteKey = 'home' | 'how' | 'services' | 'proof' | 'about' | 'resources' | 'fit';
+type OfferKey = 'fit' | 'growth' | 'sprint';
+
+type Mode = {
+  key: ModeKey;
+  label: string;
+  short: string;
+  eyebrow: string;
+  signal: string;
+  age: string;
+  priority: 'High' | 'Medium';
+  headline: string;
+  body: string;
+  next: string;
+  path: string[];
+  gates: {label:string; value:string; tone:'good'|'warn'|'alert'|'neutral'}[];
+  curve: {label:string; value:number}[];
+  recommendation: OfferKey;
+};
+
+const MODES: Record<ModeKey, Mode> = {
+  return: {
+    key:'return', label:'Past clients', short:'Past clients', eyebrow:'Client return',
+    signal:'Return window passed', age:'71 days since last visit', priority:'High',
+    headline:'Bring good clients back before they drift.',
+    body:'Past clients already know the business. The opportunity is to make the next visit easier to remember, easier to book and easier to measure.',
+    next:'Map the natural return window, permission, rebook route and human handoff.',
+    path:['Last visit','Return window','Useful reminder','Simple rebook route','Human handoff'],
+    gates:[
+      {label:'Return timing',value:'Needs mapping',tone:'warn'},
+      {label:'Booking route',value:'Available',tone:'good'},
+      {label:'Permission',value:'Check first',tone:'alert'},
+      {label:'Measure',value:'Rebooks + replies',tone:'neutral'}
+    ],
+    curve:[{label:'Week 4',value:100},{label:'Week 6',value:78},{label:'Week 8',value:55},{label:'Week 10',value:34}],
+    recommendation:'sprint'
+  },
+  enquiries: {
+    key:'enquiries', label:'Warm enquiries', short:'Warm enquiries', eyebrow:'Lead recovery',
+    signal:'No follow-up logged', age:'2 days since enquiry', priority:'High',
+    headline:'Keep warm interest warm.',
+    body:'A good enquiry can go quiet without meaning the prospect was a bad fit. Often the gap is simply the next useful touch, a clearer route or a better handoff.',
+    next:'Acknowledge, clarify, show relevant proof and create one obvious next step.',
+    path:['Enquiry arrives','Acknowledgement','Fit clarified','Proof + reminder','Human handoff'],
+    gates:[
+      {label:'Reply route',value:'Missing',tone:'alert'},
+      {label:'Human owner',value:'Unclear',tone:'warn'},
+      {label:'Suppression',value:'Required',tone:'neutral'},
+      {label:'Measure',value:'Replies + bookings',tone:'good'}
+    ],
+    curve:[{label:'Day 0',value:100},{label:'Day 1',value:83},{label:'Day 3',value:60},{label:'Day 7',value:37}],
+    recommendation:'growth'
+  },
+  dormant: {
+    key:'dormant', label:'Dormant customers', short:'Dormant', eyebrow:'Reactivation',
+    signal:'No useful reactivation', age:'6+ months inactive', priority:'Medium',
+    headline:'Give dormant demand a reason to move again.',
+    body:'A database is not automatically valuable. The work is identifying the eligible audience, choosing a relevant reason to return and measuring response without over-contacting people.',
+    next:'Segment first, validate permission, then test one clear reactivation route.',
+    path:['Eligible audience','Reason to return','Targeted message','Response route','Learn + refine'],
+    gates:[
+      {label:'Audience quality',value:'Needs review',tone:'warn'},
+      {label:'Permission',value:'Gate first',tone:'alert'},
+      {label:'Offer logic',value:'Unknown',tone:'neutral'},
+      {label:'Measure',value:'Replies + actions',tone:'good'}
+    ],
+    curve:[{label:'Pool',value:100},{label:'Eligible',value:72},{label:'Reached',value:56},{label:'Engaged',value:28}],
+    recommendation:'growth'
+  }
+};
+
+const OFFERS: Record<OfferKey,{name:string;price:string;description:string;bullets:string[];cta:string}> = {
+  fit:{
+    name:'Client Return Fit Check',price:'Free',description:'A short first look at whether there is a real follow-up problem worth solving.',
+    bullets:['About three minutes to start','No platform access required','One clear recommended next step'],cta:'Start the Fit Check'
+  },
+  growth:{
+    name:'Client Return Growth Check',price:'£197',description:'A deeper diagnosis when the opportunity needs evidence, priorities and a practical route forward.',
+    bullets:['Three priority opportunities','Finished messaging direction','Channel, timing and exclusion guidance'],cta:'Choose the Growth Check'
+  },
+  sprint:{
+    name:'7-Day Client Return System Sprint',price:'£997',description:'Focused implementation when the leak is clear and the business is ready to build.',
+    bullets:['Two focused recovery assets','Messaging, logic and implementation','QA, measurement and handover'],cta:'Choose the Sprint'
+  }
+};
+
+const ROUTES: Record<RouteKey,{path:string;label:string;title:string}> = {
+  home:{path:'/',label:'Home',title:'222Emails | Revenue Recovery Systems'},
+  how:{path:'/how-it-works',label:'How It Works',title:'How It Works | 222Emails'},
+  services:{path:'/services',label:'Services',title:'Services | 222Emails'},
+  proof:{path:'/proof',label:'Proof',title:'Proof | 222Emails'},
+  about:{path:'/about',label:'About',title:'About | 222Emails'},
+  resources:{path:'/resources',label:'Resources',title:'Resources | 222Emails'},
+  fit:{path:'/fit-check',label:'Fit Check',title:'Free Client Return Fit Check | 222Emails'}
+};
+
+function standaloneMode(){ return (window as any).__TTE_STANDALONE__ === true || window.location.protocol === 'file:'; }
+
+function routeFromLocation(): RouteKey {
+  const hashRoute = window.location.hash.replace(/^#/, '');
+  const raw = hashRoute || (standaloneMode() ? '/' : window.location.pathname);
+  const entry = (Object.entries(ROUTES) as [RouteKey,typeof ROUTES[RouteKey]][]).find(([,v])=>v.path===raw);
+  return entry?.[0] || 'home';
+}
+
+function navigate(route: RouteKey){
+  const path = ROUTES[route].path;
+  if(standaloneMode()) window.location.hash = path;
+  else { window.history.pushState({},'',path); window.dispatchEvent(new PopStateEvent('popstate')); }
+  window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+}
+
+function Icon({name}:{name:string}){
+  const common={width:20,height:20,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round' as const,strokeLinejoin:'round' as const,'aria-hidden':true};
+  if(name==='find') return <svg {...common}><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>;
+  if(name==='value') return <svg {...common}><circle cx="12" cy="12" r="8"/><path d="M9 9.5c.8-1.4 5-1.3 5.6.3.7 2-1.3 2.3-2.6 2.6-1.4.3-3.3.7-2.6 2.6.6 1.7 4.9 1.8 5.7.2M12 6.5v11"/></svg>;
+  if(name==='recover') return <svg {...common}><path d="M7 7h7a5 5 0 1 1-4.7 6.7"/><path d="m7 3-4 4 4 4"/></svg>;
+  if(name==='mail') return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>;
+  if(name==='calendar') return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>;
+  if(name==='shield') return <svg {...common}><path d="M12 3 5 6v5c0 4.5 2.6 8 7 10 4.4-2 7-5.5 7-10V6l-7-3Z"/><path d="m9.5 12 1.7 1.7 3.5-4"/></svg>;
+  if(name==='person') return <svg {...common}><circle cx="12" cy="8" r="3"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>;
+  if(name==='chart') return <svg {...common}><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>;
+  if(name==='arrow') return <svg {...common}><path d="M5 12h14M14 7l5 5-5 5"/></svg>;
+  return <svg {...common}><circle cx="12" cy="12" r="8"/></svg>;
+}
+
+function LinkTo({route,children,className='',onClick}:{route:RouteKey;children:React.ReactNode;className?:string;onClick?:()=>void}){
+  return <a className={className} href={standaloneMode()?`#${ROUTES[route].path}`:ROUTES[route].path} onClick={(e)=>{e.preventDefault();navigate(route);onClick?.();}}>{children}</a>
+}
+
+function Header({route}:{route:RouteKey}){
+  const [open,setOpen]=useState(false);
+  const nav:RouteKey[]=['how','proof','services','about','resources'];
+  useEffect(()=>setOpen(false),[route]);
+  return <header className="site-header">
+    <a className="skip-link" href="#main">Skip to content</a>
+    <div className="nav-shell">
+      <LinkTo route="home" className="brand-mark"><img src={MONOGRAM} alt="222Emails"/></LinkTo>
+      <nav className="desktop-nav" aria-label="Primary navigation">
+        {nav.map(k=><LinkTo key={k} route={k} className={route===k?'active':''}>{ROUTES[k].label}</LinkTo>)}
+      </nav>
+      <LinkTo route="fit" className="nav-cta">Free Fit Check</LinkTo>
+      <button className="menu-button" type="button" aria-expanded={open} aria-controls="mobile-nav" onClick={()=>setOpen(v=>!v)}>{open?'Close':'Menu'}</button>
+    </div>
+    <nav id="mobile-nav" className={`mobile-nav ${open?'open':''}`} aria-label="Mobile navigation">
+      {nav.map(k=><LinkTo key={k} route={k} onClick={()=>setOpen(false)}>{ROUTES[k].label}</LinkTo>)}
+      <LinkTo route="fit" className="mobile-cta" onClick={()=>setOpen(false)}>Free Fit Check</LinkTo>
+    </nav>
+  </header>
+}
+
+function Footer(){
+  return <footer className="site-footer"><div className="shell footer-grid">
+    <div className="footer-brand"><img src={LOGO_DARK} alt="Triple Two Emails"/><p>Revenue Recovery Systems for appointment-led businesses. Find the leak. Value the opportunity. Build the recovery route.</p><a href="mailto:hello@222emails.com">hello@222emails.com</a></div>
+    <div><b>Explore</b><LinkTo route="how">How It Works</LinkTo><LinkTo route="services">Services</LinkTo><LinkTo route="proof">Proof</LinkTo><LinkTo route="resources">Resources</LinkTo></div>
+    <div><b>Company</b><LinkTo route="about">About</LinkTo><LinkTo route="fit">Fit Check</LinkTo><a href="https://calendly.com/tripletwochelston/10min" target="_blank" rel="noopener">Optional 10-min call</a></div>
+    <div><b>Legal</b><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/cookies/">Cookies</a><a href="/accessibility/">Accessibility</a></div>
+  </div><div className="shell footer-bottom"><span>222Emails</span><span>Founder-led in Lancashire, UK.</span></div></footer>
+}
+
+function PageShell({route,children}:{route:RouteKey;children:React.ReactNode}){
+  return <><Header route={route}/><main id="main">{children}</main><Footer/></>
+}
+
+function ModePills({mode,setMode}:{mode:ModeKey;setMode:(m:ModeKey)=>void}){
+  return <div className="mode-pills" role="tablist" aria-label="Revenue leak example">
+    {(Object.keys(MODES) as ModeKey[]).map(k=><button key={k} role="tab" aria-selected={mode===k} className={mode===k?'active':''} onClick={()=>setMode(k)}>{MODES[k].label}</button>)}
+  </div>
+}
+
+function RecoveryDashboard({mode,setMode,compact=false}:{mode:ModeKey;setMode:(m:ModeKey)=>void;compact?:boolean}){
+  const m=MODES[mode];
+  return <div className={`recovery-app ${compact?'compact':''}`}>
+    <aside className="app-sidebar">
+      <img src={MONOGRAM} alt=""/>
+      <span className="side-item active"><i>□</i> Overview</span>
+      <span className="side-item"><i>⌕</i> Leak map</span>
+      <span className="side-item"><i>↻</i> Journeys</span>
+      <span className="side-item"><i>◇</i> Audience</span>
+      <span className="side-item"><i>✓</i> QA</span>
+    </aside>
+    <div className="app-main">
+      <div className="app-top"><div><small>Revenue Recovery Map</small><strong>{m.eyebrow}</strong></div><span className="example-badge">Illustrative workspace</span></div>
+      <div className="opportunity-list">
+        {(Object.keys(MODES) as ModeKey[]).map(k=>{const item=MODES[k];return <button key={k} className={mode===k?'selected':''} onClick={()=>setMode(k)}><span className={`status-dot ${k}`}/><span><b>{item.label}</b><small>{item.signal}</small></span><em>{item.priority}</em></button>})}
+      </div>
+      <div className="app-bottom-grid">
+        <div className="mini-panel"><div classNam
