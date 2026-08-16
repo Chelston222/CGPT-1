@@ -13,16 +13,48 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Validate raw brand reconstruction
+      - name: Locate inserted bytes from approved blob hash
         working-directory: apps/222emails-omega-max
         shell: bash
         run: |
           set -euo pipefail
-          echo "brand01=$(git hash-object release-parts/brand.01.part) bytes=$(wc -c < release-parts/brand.01.part)"
-          for i in 02 03 04 05 06 07; do
-            echo "brand${i}=$(git hash-object release-parts/brand.${i}.part) bytes=$(wc -c < release-parts/brand.${i}.part)"
-          done
-          cat release-parts/brand.01.part release-parts/brand.02.part release-parts/brand.03.part release-parts/brand.04.part release-parts/brand.05.part release-parts/brand.06.part release-parts/brand.07.part > /tmp/brand.ts
-          printf '\n' >> /tmp/brand.ts
-          echo "brand=$(git hash-object /tmp/brand.ts) bytes=$(wc -c < /tmp/brand.ts)"
-          test "$(git hash-object /tmp/brand.ts)" = "2c4492916260be22ebf248f49f7a080cdd4303b6"
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+
+          p=Path('release-parts/brand.01.part')
+          data=p.read_bytes()
+          target='e67b4a8cccc6fb3eaaadfd161dda76eb3ec1737b'
+          expected_len=12000
+          extra=len(data)-expected_len
+          print(f'current_bytes={len(data)} extra={extra}')
+          assert extra == 13
+
+          def git_blob_sha(b: bytes) -> str:
+              h=hashlib.sha1()
+              h.update(f'blob {len(b)}\0'.encode())
+              h.update(b)
+              return h.hexdigest()
+
+          found=None
+          for pos in range(len(data)-extra+1):
+              candidate=data[:pos]+data[pos+extra:]
+              if git_blob_sha(candidate)==target:
+                  found=(pos, data[pos:pos+extra], candidate)
+                  break
+          if not found:
+              raise SystemExit('No single contiguous 13-byte insertion produces the approved blob hash')
+          pos, removed, candidate=found
+          print(f'FOUND_POSITION={pos}')
+          print(f'REMOVED_HEX={removed.hex()}')
+          print(f'CORRECTED_HASH={git_blob_sha(candidate)}')
+          Path('/tmp/brand01.corrected').write_bytes(candidate)
+
+          parts=[Path('/tmp/brand01.corrected').read_bytes()]
+          for i in range(2,8):
+              parts.append(Path(f'release-parts/brand.{i:02d}.part').read_bytes())
+          full=b''.join(parts)+b'\n'
+          full_target='2c4492916260be22ebf248f49f7a080cdd4303b6'
+          print(f'FULL_BRAND_HASH={git_blob_sha(full)} bytes={len(full)}')
+          assert git_blob_sha(full)==full_target
+          PY
