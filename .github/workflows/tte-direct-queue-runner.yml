@@ -1,0 +1,54 @@
+name: TTE Direct SMTP Queue Runner
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/tte-mail-bridge/scripts/process-queue.mjs'
+      - '.github/workflows/tte-direct-queue-runner.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 7-9 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tte-direct-smtp-queue
+  cancel-in-progress: false
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    env:
+      TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
+      TTE_SMTP_USER: hello@222emails.com
+      TTE_SMTP_HOST: mail.privateemail.com
+      TTE_SMTP_PORT: '465'
+      TTE_IMAP_HOST: mail.privateemail.com
+      TTE_IMAP_PORT: '993'
+      TTE_DIRECT_RAMP_CAP: '5'
+      TTE_DIRECT_DAILY_CAP: '20'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify queue credential
+        shell: bash
+        run: |
+          test -n "$TTE_SMTP_PASS" || { echo 'TTE_SMTP_PASS is missing'; exit 2; }
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install queue dependencies
+        working-directory: apps/tte-mail-bridge
+        run: npm install --no-audit --no-fund
+      - name: Configure ledger commits
+        run: |
+          git config user.name "TTE Direct SMTP Runner"
+          git config user.email "actions@users.noreply.github.com"
+      - name: Process direct SMTP queue
+        working-directory: apps/tte-mail-bridge
+        run: node scripts/process-queue.mjs
