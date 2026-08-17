@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-16T17:27:41.440Z",
+  "updatedAt": "2026-08-17T09:14:12.000Z",
   "idempotency": {
     "INTERNAL-BATCH-VERIFY-20260816|1": {
       "state": "SENT_CONFIRMED",
@@ -15,6 +15,46 @@
       "rejected": [],
       "sentAt": "2026-08-16T17:27:41.440Z",
       "version": "2026-08-16-github-direct-v1"
+    },
+    "LF-0333|1": {
+      "state": "QUARANTINED_TOMBSTONE",
+      "idempotencyKey": "LF-0333|1",
+      "leadId": "LF-0333",
+      "touchNo": 1,
+      "quarantinedAt": "2026-08-17T09:14:12.000Z",
+      "reason": "Dormant pre-repair control batch. Permanently held from automatic execution after control-plane restoration."
+    },
+    "LF-0334|1": {
+      "state": "QUARANTINED_TOMBSTONE",
+      "idempotencyKey": "LF-0334|1",
+      "leadId": "LF-0334",
+      "touchNo": 1,
+      "quarantinedAt": "2026-08-17T09:14:12.000Z",
+      "reason": "Dormant pre-repair control batch. Permanently held from automatic execution after control-plane restoration."
+    },
+    "LF-0335|1": {
+      "state": "QUARANTINED_TOMBSTONE",
+      "idempotencyKey": "LF-0335|1",
+      "leadId": "LF-0335",
+      "touchNo": 1,
+      "quarantinedAt": "2026-08-17T09:14:12.000Z",
+      "reason": "Dormant pre-repair control batch. Permanently held from automatic execution after control-plane restoration."
+    },
+    "LF-0336|1": {
+      "state": "QUARANTINED_TOMBSTONE",
+      "idempotencyKey": "LF-0336|1",
+      "leadId": "LF-0336",
+      "touchNo": 1,
+      "quarantinedAt": "2026-08-17T09:14:12.000Z",
+      "reason": "Dormant pre-repair control batch. Permanently held from automatic execution after control-plane restoration."
+    },
+    "LF-0337|1": {
+      "state": "QUARANTINED_TOMBSTONE",
+      "idempotencyKey": "LF-0337|1",
+      "leadId": "LF-0337",
+      "touchNo": 1,
+      "quarantinedAt": "2026-08-17T09:14:12.000Z",
+      "reason": "Dormant pre-repair control batch. Permanently held from automatic execution after control-plane restoration."
     }
   },
   "daily": {}
