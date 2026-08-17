@@ -1,11 +1,9 @@
 {
   "name": "tte-mail-bridge",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
-  "engines": {
-    "node": ">=24"
-  },
+  "engines": { "node": ">=24" },
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
@@ -14,6 +12,8 @@
   "dependencies": {
     "@netlify/blobs": "^10.7.10",
     "@netlify/functions": "^5.3.0",
+    "imapflow": "^1.0.194",
+    "mailparser": "^3.7.4",
     "nodemailer": "^9.0.3"
   },
   "devDependencies": {
