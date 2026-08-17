@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'apps/tte-mail-bridge/scripts/process-queue.mjs'
+      - 'apps/tte-mail-bridge/package.json'
+      - 'apps/tte-mail-bridge/state/direct-ledger.json'
       - '.github/workflows/tte-direct-queue-runner.yml'
   workflow_dispatch:
   schedule:
