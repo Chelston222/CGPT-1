@@ -1,0 +1,8 @@
+{
+  "name": "222emails-whatsapp-outreach",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "10.7.10"
+  }
+}
