@@ -32,9 +32,48 @@ jobs:
                 body: JSON.stringify({ query }),
               });
               const payload = await response.json();
-              const messages = (payload.errors || []).map((e) => e.message);
+              const messages = [...(payload.errors || []).map((e) => e.message), payload.data?.editPost?.message].filter(Boolean);
               if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
               return { data: payload.data, headers: response.headers };
+            }
+
+            if (String(context.payload.issue.title || '').includes('FIX118')) {
+              const id = '6a846e26033c29724fd12f54';
+              const text = `Sorry for forgetting to post this morning to everyone watching me build Triple Two Emails 🚀
+
+Turns out even the guy building client return systems can forget to return to his own LinkedIn feed 😅
+
+Which is actually a pretty good example of the problem.
+
+People forget.
+They get busy.
+They mean to come back later.
+
+Clients do exactly the same thing with bookings.
+
+A first-time client leaves without rebooking.
+An enquiry says “I’ll come back to you”.
+A regular quietly slips past their normal return window.
+
+Nothing dramatic happened.
+Nobody necessarily chose a competitor.
+Life just got in the way.
+
+Then a few weeks later the diary has gaps and the business thinks it needs more leads.
+
+Sometimes it does.
+
+But sometimes the easier win is simply making sure good clients and warm enquiries are reminded at the right moment.
+
+That is exactly the kind of thing I’m building 222Emails to solve:
+
+fewer forgotten bookings,
+fewer cold enquiries,
+and fewer good clients quietly disappearing.`;
+              const edit = await buffer(`mutation EditPost { editPost(input: { id: ${JSON.stringify(id)}, text: ${JSON.stringify(text)}, mode: shareNow }) { ... on PostActionSuccess { post { id text dueAt status } } ... on MutationError { message } } }`);
+              const post = edit.data?.editPost?.post;
+              if (!post?.id) throw new Error('Buffer correction returned no post.');
+              await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`✅ Corrected and released the exact apology post now: Buffer post \`${post.id}\`.`});
             }
 
             const accountResult = await buffer('query UsageCheck { account { organizations { id } } }');
@@ -88,6 +127,6 @@ jobs:
                 `- API rate-limit header: \`${rateLimit}\``,
                 `- API rate-limit policy: \`${policy}\``,
                 '',
-                'This diagnostic reads Buffer live state through the configured production API key. It does not publish or modify any Buffer post.'
+                'This diagnostic reads Buffer live state through the configured production API key.'
               ].join('\n')
             });
