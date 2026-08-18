@@ -1,0 +1,43 @@
+name: Record 222Emails release status
+
+on:
+  workflow_run:
+    workflows: ['222Emails Omega Max Production Release']
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Record release result
+        shell: bash
+        env:
+          RELEASE_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RELEASE_RUN_ID: ${{ github.event.workflow_run.id }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RELEASE_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          set -euo pipefail
+          mkdir -p apps/222emails-omega-max
+          cat > apps/222emails-omega-max/release-status.md <<EOF
+          # 222Emails Omega Max Release Status
+
+          - Conclusion: ${RELEASE_CONCLUSION}
+          - Workflow run: ${RELEASE_RUN_ID}
+          - Head SHA: ${RELEASE_SHA}
+          - Run URL: ${RELEASE_URL}
+          - Recorded UTC: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          EOF
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/222emails-omega-max/release-status.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Record Omega Max release ${RELEASE_CONCLUSION}"
+          git push
