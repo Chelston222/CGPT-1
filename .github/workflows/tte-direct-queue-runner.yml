@@ -1,5 +1,6 @@
 name: TTE Direct SMTP Queue Runner
 
+# Production route: Mailopoly control -> PrivateEmail IMAP -> GitHub Actions -> PrivateEmail SMTP
 on:
   push:
     branches: [main]
