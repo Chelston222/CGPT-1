@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-08-18T18:00:25.795Z",
+  "state": "HEALTHY",
+  "incidentCount": 0,
+  "criticalCount": 0,
+  "incidents": [],
+  "invariants": {
+    "workerPresent": true,
+    "ledgerPresent": true,
+    "workflowPresent": true,
+    "mandatoryOptOutEnforced": true,
+    "tombstonesSkipSafely": true,
+    "ambiguousStatesFailClosed": true
+  }
+}
