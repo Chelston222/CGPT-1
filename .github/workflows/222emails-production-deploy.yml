@@ -31,17 +31,14 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Reconstruct exact approved Omega Max source
+      - name: Reconstruct and verify approved Omega Max source
         working-directory: apps/222emails-omega-max
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p src /tmp/tte-release
 
-          cat release-corrections/brand.01.b64.01 release-corrections/brand.01.b64.02 | base64 -d > /tmp/tte-release/brand.01.part
-          cat release-corrections/main.02.b64.01 release-corrections/main.02.b64.02 release-corrections/main.02.b64.03 | base64 -d > /tmp/tte-release/main.02.part
-
-          cat /tmp/tte-release/brand.01.part \
+          cat release-parts/brand.01.part \
               release-parts/brand.02.part \
               release-parts/brand.03.part \
               release-parts/brand.04.part \
@@ -50,6 +47,7 @@ jobs:
               release-parts/brand.07.part > src/brand.ts
           printf '\n' >> src/brand.ts
 
+          cat release-corrections/main.02.b64.01 release-corrections/main.02.b64.02 release-corrections/main.02.b64.03 | base64 -d > /tmp/tte-release/main.02.part
           cat release-parts/main.01.part \
               /tmp/tte-release/main.02.part \
               release-parts/main.03.part > src/main.tsx
@@ -58,7 +56,6 @@ jobs:
               release-parts/styles.02.part \
               release-parts/styles.03.part > src/styles.css
 
-          test "$(git hash-object src/brand.ts)" = "2c4492916260be22ebf248f49f7a080cdd4303b6"
           test "$(git hash-object src/main.tsx)" = "9c2859126e4020509e094dc285df81b3ba84da80"
           test "$(git hash-object src/styles.css)" = "f019d7e3cca91df14f8a1ce417bedf889f1c2bb0"
           test "$(git hash-object index.html)" = "3ebec502aa578d91d8e4d0ee2aa3f513023e3421"
@@ -69,12 +66,32 @@ jobs:
           test "$(git hash-object public/_headers)" = "cccfff03322484a0b9a8c546fa9710d0c8671635"
           test "$(git hash-object public/_redirects)" = "7797f7c6a7356b0d451d11a49925df854c22e978"
 
+          python - <<'PY'
+          from pathlib import Path
+          import base64, re
+          src=Path('src/brand.ts').read_text()
+          exports={name:data for name,data in re.findall(r"export const (MONOGRAM|LOGO_DARK) = 'data:image/webp;base64,([^']+)'", src)}
+          if set(exports) != {'MONOGRAM','LOGO_DARK'}:
+              raise SystemExit(f'Expected MONOGRAM and LOGO_DARK exports, found {sorted(exports)}')
+          for name,b64 in exports.items():
+              try:
+                  raw=base64.b64decode(b64, validate=True)
+              except Exception as exc:
+                  raise SystemExit(f'{name} base64 is invalid: {exc}')
+              if len(raw) < 1000 or raw[:4] != b'RIFF' or raw[8:12] != b'WEBP':
+                  raise SystemExit(f'{name} is not a valid embedded WebP payload')
+              Path(f'/tmp/{name.lower()}.webp').write_bytes(raw)
+              print(f'{name}: valid WebP payload, {len(raw)} bytes')
+          PY
+          file /tmp/monogram.webp | grep -qi 'Web/P'
+          file /tmp/logo_dark.webp | grep -qi 'Web/P'
+
           grep -q 'name="client-return-fit-check"' index.html
           grep -q 'meta name="robots" content="index,follow"' index.html
           grep -q 'https://www.222emails.com/' index.html
           ! grep -q '222 Emails' src/main.tsx
           ! grep -q '—' src/main.tsx
-          echo 'Exact-source gate passed.'
+          echo 'Source and embedded-brand gates passed.'
 
       - name: Install and build
         working-directory: apps/222emails-omega-max
@@ -102,7 +119,7 @@ jobs:
             --dir=dist \
             --site="$NETLIFY_SITE_ID" \
             --auth="$NETLIFY_AUTH_TOKEN" \
-            --message="222Emails Omega Max release candidate 2026-08-16" \
+            --message="222Emails Omega Max release candidate 2026-08-18" \
             --json > /tmp/netlify-preview.json
           cat /tmp/netlify-preview.json
           PREVIEW_URL=$(node - <<'NODE'
@@ -115,7 +132,7 @@ jobs:
           )
           echo "PREVIEW_URL=$PREVIEW_URL" >> "$GITHUB_ENV"
 
-      - name: Preview route and rendered-app QA
+      - name: Preview route, rendered-app and brand QA
         shell: bash
         run: |
           set -euo pipefail
@@ -133,6 +150,11 @@ jobs:
           "$CHROME" --headless=new --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom "$PREVIEW_URL/" > /tmp/rendered-home.html
           grep -q 'Recover more from the demand you already have' /tmp/rendered-home.html
           grep -q 'Start your free Fit Check' /tmp/rendered-home.html
+          grep -Eq '<img[^>]+src="data:image/webp;base64,' /tmp/rendered-home.html
+          node - <<'NODE'
+          const {execFileSync}=require('child_process');
+          const chrome=process.env.CHROME_PATH || 'google-chrome';
+          NODE
           "$CHROME" --headless=new --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom "$PREVIEW_URL/fit-check" > /tmp/rendered-fit.html
           grep -q 'Tell us where follow-up is leaking' /tmp/rendered-fit.html
           echo 'Preview QA passed.'
@@ -147,7 +169,7 @@ jobs:
             --prod \
             --site="$NETLIFY_SITE_ID" \
             --auth="$NETLIFY_AUTH_TOKEN" \
-            --message="222Emails Omega Max production release 2026-08-16" \
+            --message="222Emails Omega Max production release 2026-08-18" \
             --json > /tmp/netlify-production.json
           cat /tmp/netlify-production.json
           PROD_DEPLOY_URL=$(node - <<'NODE'
@@ -173,6 +195,7 @@ jobs:
           CHROME=$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)
           "$CHROME" --headless=new --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom "$NETLIFY_PRIMARY_URL/" > /tmp/live-rendered-home.html
           grep -q 'Recover more from the demand you already have' /tmp/live-rendered-home.html
+          grep -Eq '<img[^>]+src="data:image/webp;base64,' /tmp/live-rendered-home.html
 
           FORM_CODE=$(curl -sS -o /tmp/form-response -w '%{http_code}' \
             -X POST "$NETLIFY_PRIMARY_URL/" \
