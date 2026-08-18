@@ -8,21 +8,50 @@ on:
 
 permissions:
   actions: write
-  contents: read
+  contents: write
 
 jobs:
   trigger:
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@v4
       - name: Dispatch production release workflow
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          BEFORE=$(date -u +%s)
           curl -fsS -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/222emails-production-deploy.yml/dispatches \
             -d '{"ref":"main"}'
-          echo 'Production release workflow dispatched.'
+          sleep 5
+          curl -fsS \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/222emails-production-deploy.yml/runs?event=workflow_dispatch&per_page=5" \
+            > /tmp/runs.json
+          node - <<'NODE' > /tmp/release-pointer.md
+          const fs=require('fs');
+          const j=JSON.parse(fs.readFileSync('/tmp/runs.json','utf8'));
+          const run=(j.workflow_runs||[])[0];
+          if(!run) process.exit(2);
+          console.log('# 222Emails Omega Max Dispatched Release');
+          console.log('');
+          console.log(`- Run ID: ${run.id}`);
+          console.log(`- Status: ${run.status}`);
+          console.log(`- Conclusion: ${run.conclusion || 'pending'}`);
+          console.log(`- Head SHA: ${run.head_sha}`);
+          console.log(`- URL: ${run.html_url}`);
+          console.log(`- Created: ${run.created_at}`);
+          NODE
+          mkdir -p apps/222emails-omega-max
+          cp /tmp/release-pointer.md apps/222emails-omega-max/release-pointer.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/222emails-omega-max/release-pointer.md
+          git commit -m 'Record dispatched Omega Max release run' || true
+          git push
