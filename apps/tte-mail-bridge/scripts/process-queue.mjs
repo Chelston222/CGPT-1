@@ -21,7 +21,7 @@ const MAX_JOBS_PER_CONTROL = 5;
 const LOOKBACK_MS = 36 * 60 * 60 * 1000;
 const DEFAULT_RAMP_CAP = 5;
 const DEFAULT_HARD_CAP = 20;
-const VERSION = '2026-08-18-github-direct-v2';
+const VERSION = '2026-08-18-github-direct-v3';
 const REPO_ROOT = resolve(process.cwd(), '../..');
 const LEDGER_RELATIVE = 'apps/tte-mail-bridge/state/direct-ledger.json';
 const LEDGER_PATH = resolve(REPO_ROOT, LEDGER_RELATIVE);
@@ -101,14 +101,15 @@ async function executeJob(job, location) {
   if (validationError) { console.error(`TTE queue ${location} blocked=${validationError}`); return { status: 'BLOCKED_PREFLIGHT' }; }
   const recipient = (Array.isArray(job.to) ? job.to[0] : job.to).trim().toLowerCase();
   const isInternal = recipient === INTERNAL_RECEIPT && String(job.leadId).startsWith('INTERNAL-');
-  if (!isInternal && !inColdWindow()) return { status: 'HELD_WINDOW' };
+
+  // Resolve durable transaction state before clock/ramp gates. Terminal-safe records
+  // must never starve newer controls, and ambiguous states must always fail closed.
   const prior = ledger.idempotency[job.idempotencyKey];
   if (prior?.state === 'SENT_CONFIRMED') return { status: 'DUPLICATE_CONFIRMED', body: prior };
-  // A quarantine tombstone is a terminal safe decision, not an ambiguous send state.
-  // Skip it and continue scanning so an old contained control can never starve newer valid controls.
   if (prior?.state === 'QUARANTINED_TOMBSTONE') return { status: 'SKIPPED_TOMBSTONE', body: prior };
-  // Ambiguous/reserved states remain fail-closed and stop later work.
   if (prior?.state) { console.warn(`TTE queue ${location} held idempotency=${job.idempotencyKey} prior=${prior.state}`); return { status: 'HELD_IDEMPOTENCY', body: prior }; }
+
+  if (!isInternal && !inColdWindow()) return { status: 'HELD_WINDOW' };
   const dateKey = londonDateKey();
   const configuredRamp = Number(process.env.TTE_DIRECT_RAMP_CAP || DEFAULT_RAMP_CAP);
   const hardCap = Number(process.env.TTE_DIRECT_DAILY_CAP || DEFAULT_HARD_CAP);
