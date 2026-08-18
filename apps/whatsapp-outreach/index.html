@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>222Emails WhatsApp Outreach</title>
+  <style>
+    :root{font-family:Inter,system-ui,sans-serif;color:#071d42;background:#fffaf4}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:28px}h1{margin:0 0 6px;font-size:34px}.sub{color:#576173;margin-bottom:24px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:#fff;border:1px solid #e8dfd4;border-radius:18px;padding:18px;box-shadow:0 8px 28px #0b1f3a0b}label{display:block;font-size:12px;font-weight:800;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em}input,textarea,select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #cfc6bc;border-radius:10px;background:#fff}textarea{min-height:110px}.btn{border:0;border-radius:11px;padding:12px 16px;font-weight:800;cursor:pointer}.orange{background:#ff6500;color:white}.navy{background:#071d42;color:white}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.pill{padding:5px 9px;border-radius:999px;background:#fff1e5;color:#c64e00;font-size:12px;font-weight:800}.item{padding:14px 0;border-bottom:1px solid #eee}.muted{color:#737b88;font-size:13px}@media(max-width:800px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body><main class="wrap">
+  <h1>WhatsApp Outreach Engine</h1>
+  <div class="sub">Social-first hand-off → WhatsApp eligibility → message/PDF → delivery + reply tracking.</div>
+  <div class="grid">
+    <section class="card">
+      <h2>Queue contact</h2>
+      <label>Business</label><input id="business" />
+      <label>Contact</label><input id="contactName" />
+      <label>Phone</label><input id="phone" placeholder="447..." />
+      <label>LinkedIn URL</label><input id="linkedinUrl" />
+      <label>WhatsApp eligibility</label><select id="eligibility"><option value="unknown">Unknown / hold</option><option value="opted_in">Opted in</option><option value="customer_initiated">Customer initiated</option></select>
+      <label>Message</label><textarea id="message"></textarea>
+      <label>PDF public URL</label><input id="pdfUrl" />
+      <div class="row"><button class="btn navy" id="save">Save to queue</button><button class="btn orange" id="sendText">Send text</button><button class="btn orange" id="sendPdf">Send PDF</button></div>
+      <p class="muted" id="status"></p>
+    </section>
+    <section class="card"><h2>Live queue</h2><div id="queue"></div></section>
+  </div>
+  <section class="card" style="margin-top:16px"><span class="pill">Hard gate</span> Automated sends only run for opted-in or customer-initiated contacts. Unknown contacts stay in HOLD until WhatsApp eligibility is established.</section>
+</main><script type="module" src="./app.js"></script></body></html>
