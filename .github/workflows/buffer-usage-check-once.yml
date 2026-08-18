@@ -6,33 +6,88 @@ on:
 
 permissions:
   contents: read
-  issues: read
+  issues: write
 
 jobs:
   inspect:
     if: startsWith(github.event.issue.title, '[BUFFER USAGE CHECK]') && github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
     steps:
-      - name: Read Buffer rate-limit status
+      - name: Inspect Buffer queue and channel health
+        uses: actions/github-script@v7
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-        run: |
-          node <<'NODE'
-          const response = await fetch('https://api.buffer.com', {
-            method: 'POST',
-            headers: {
-              'content-type': 'application/json',
-              authorization: `Bearer ${process.env.BUFFER_API_KEY}`,
-            },
-            body: JSON.stringify({ query: 'query UsageCheck { account { organizations { id } } }' }),
-          });
-          const payload = await response.json();
-          if (!response.ok || payload.errors?.length) {
-            console.error(payload.errors || payload);
-            process.exit(1);
-          }
-          const rateLimit = response.headers.get('ratelimit') || '';
-          const policies = response.headers.get('ratelimit-policy') || '';
-          console.log('BUFFER_RATELIMIT=' + rateLimit);
-          console.log('BUFFER_RATELIMIT_POLICY=' + policies);
-          NODE
+          BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
+          BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
+          BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
+        with:
+          script: |
+            async function buffer(query) {
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: {
+                  'content-type': 'application/json',
+                  authorization: `Bearer ${process.env.BUFFER_API_KEY}`,
+                },
+                body: JSON.stringify({ query }),
+              });
+              const payload = await response.json();
+              const messages = (payload.errors || []).map((e) => e.message);
+              if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
+              return { data: payload.data, headers: response.headers };
+            }
+
+            const accountResult = await buffer('query UsageCheck { account { organizations { id } } }');
+            const organizationId = accountResult.data.account?.organizations?.[0]?.id;
+            if (!organizationId) throw new Error('Buffer returned no organisation ID.');
+
+            const ids = [
+              process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID,
+              process.env.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID,
+              process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID,
+            ].filter(Boolean);
+            if (!ids.length) throw new Error('No Buffer LinkedIn channel IDs are configured.');
+
+            const query = `query ScheduledCapacity { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(ids)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`;
+            const scheduledResult = await buffer(query);
+            const posts = (scheduledResult.data.posts?.edges || []).map((e) => e.node);
+            const now = Date.now();
+            const names = {
+              [process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID]: 'Chelston personal',
+              [process.env.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID]: 'Main 222Emails page',
+              [process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID]: '222Emails | Retention Lab',
+            };
+            const rows = ids.map((id) => {
+              const channelPosts = posts.filter((p) => p.channelId === id);
+              const pastDue = channelPosts.filter((p) => p.dueAt && new Date(p.dueAt).getTime() < now);
+              const next = channelPosts.filter((p) => p.dueAt && new Date(p.dueAt).getTime() >= now).sort((a,b) => new Date(a.dueAt)-new Date(b.dueAt))[0];
+              return { id, name: names[id] || id, scheduled: channelPosts.length, pastDue: pastDue.length, nextDue: next?.dueAt || null, oldestPastDue: pastDue.sort((a,b)=>new Date(a.dueAt)-new Date(b.dueAt))[0]?.dueAt || null };
+            });
+
+            const rateLimit = accountResult.headers.get('ratelimit') || '(not returned)';
+            const policy = accountResult.headers.get('ratelimit-policy') || '(not returned)';
+            const lines = rows.map((r) => `- **${r.name}**: scheduled **${r.scheduled}**, past-due **${r.pastDue}**, next due **${r.nextDue || 'none'}**${r.oldestPastDue ? `, oldest past-due **${r.oldestPastDue}**` : ''}`);
+            const suspicious = rows.filter((r) => r.pastDue > 0);
+            const diagnosis = suspicious.length
+              ? `⚠️ ${suspicious.map((r)=>r.name).join(', ')} has scheduled posts whose due time has already passed. Buffer accepted them but they have not left scheduled state, which points to a Buffer→LinkedIn publication/channel problem rather than a GitHub queue-supply problem.`
+              : '✅ No past-due scheduled posts were found. The Buffer queues are draining normally at this instant.';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                '## Buffer live queue diagnostic',
+                '',
+                diagnosis,
+                '',
+                ...lines,
+                '',
+                `- Total scheduled across configured LinkedIn channels: **${posts.length}**`,
+                `- Buffer result pagination incomplete: **${scheduledResult.data.posts?.pageInfo?.hasNextPage ? 'YES' : 'NO'}**`,
+                `- API rate-limit header: \`${rateLimit}\``,
+                `- API rate-limit policy: \`${policy}\``,
+                '',
+                'This diagnostic reads Buffer live state through the configured production API key. It does not publish or modify any Buffer post.'
+              ].join('\n')
+            });
