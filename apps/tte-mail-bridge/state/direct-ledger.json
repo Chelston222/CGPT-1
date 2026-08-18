@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-18T18:06:40.534Z",
+  "updatedAt": "2026-08-18T18:06:42.893Z",
   "idempotency": {
     "INTERNAL-BATCH-VERIFY-20260816|1": {
       "state": "SENT_CONFIRMED",
@@ -59,13 +59,19 @@
       "reason": "Dormant pre-repair control batch. Permanently held from automatic execution after control-plane restoration."
     },
     "INTERNAL-SUPERVISOR-20260818|1": {
-      "state": "IN_FLIGHT",
+      "state": "SENT_CONFIRMED",
+      "route": "MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL",
       "idempotencyKey": "INTERNAL-SUPERVISOR-20260818|1",
       "leadId": "INTERNAL-SUPERVISOR-20260818",
       "touchNo": 1,
+      "sender": "hello@222emails.com",
       "recipient": "tripletwochelston@gmail.com",
-      "reservedAt": "2026-08-18T18:06:40.533Z",
-      "route": "MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL",
+      "messageId": "<9d7c7b72-230e-df70-54d1-7e389c0e15b2@222emails.com>",
+      "accepted": [
+        "tripletwochelston@gmail.com"
+      ],
+      "rejected": [],
+      "sentAt": "2026-08-18T18:06:42.893Z",
       "version": "2026-08-18-github-direct-v3"
     }
   },
