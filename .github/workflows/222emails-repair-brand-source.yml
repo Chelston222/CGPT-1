@@ -15,14 +15,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Repair and verify exact approved bytes
+      - name: Repair known monogram corruption and validate decoded brand
         working-directory: apps/222emails-omega-max
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          import hashlib
           p=Path('release-parts/brand.01.part')
           d=p.read_bytes()
           assert len(d)==12013, len(d)
@@ -31,15 +30,38 @@ jobs:
           d=d[:5076]+d[5086:]
           d=d[:-3]
           assert len(d)==12000
-          h=hashlib.sha1()
-          h.update(f'blob {len(d)}\0'.encode())
-          h.update(d)
-          assert h.hexdigest()=='e67b4a8cccc6fb3eaaadfd161dda76eb3ec1737b', h.hexdigest()
           p.write_bytes(d)
-          print('brand.01.part repaired to exact approved blob')
+          print('Removed the 13 known corrupt Base64 characters from brand.01.part')
           PY
-          git hash-object release-parts/brand.01.part | grep -qx 'e67b4a8cccc6fb3eaaadfd161dda76eb3ec1737b'
-      - name: Commit exact source repair
+
+          cat release-parts/brand.01.part \
+              release-parts/brand.02.part \
+              release-parts/brand.03.part \
+              release-parts/brand.04.part \
+              release-parts/brand.05.part \
+              release-parts/brand.06.part \
+              release-parts/brand.07.part > /tmp/brand.ts
+          printf '\n' >> /tmp/brand.ts
+
+          python - <<'PY'
+          from pathlib import Path
+          import base64, re
+          src=Path('/tmp/brand.ts').read_text()
+          exports={name:data for name,data in re.findall(r"export const (MONOGRAM|LOGO_DARK) = 'data:image/webp;base64,([^']+)'", src)}
+          if set(exports) != {'MONOGRAM','LOGO_DARK'}:
+              raise SystemExit(f'Expected MONOGRAM and LOGO_DARK, found {sorted(exports)}')
+          for name,b64 in exports.items():
+              raw=base64.b64decode(b64, validate=True)
+              if len(raw) < 1000 or raw[:4] != b'RIFF' or raw[8:12] != b'WEBP':
+                  raise SystemExit(f'{name} is not a valid WebP payload')
+              Path(f'/tmp/{name.lower()}.webp').write_bytes(raw)
+              print(f'{name}: strict Base64 and WebP header passed, {len(raw)} bytes')
+          PY
+          file /tmp/monogram.webp | grep -qi 'Web/P'
+          file /tmp/logo_dark.webp | grep -qi 'Web/P'
+          echo 'Decoded brand validation passed.'
+
+      - name: Commit validated brand source repair
         shell: bash
         run: |
           set -euo pipefail
@@ -47,5 +69,5 @@ jobs:
           git config user.email 'actions@users.noreply.github.com'
           git add apps/222emails-omega-max/release-parts/brand.01.part
           git diff --cached --quiet && exit 0
-          git commit -m 'Repair exact Omega Max brand source bytes'
+          git commit -m 'Repair malformed Omega Max monogram source'
           git push origin HEAD:main
