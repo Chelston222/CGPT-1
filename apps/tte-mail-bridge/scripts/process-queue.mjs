@@ -21,7 +21,7 @@ const MAX_JOBS_PER_CONTROL = 5;
 const LOOKBACK_MS = 36 * 60 * 60 * 1000;
 const DEFAULT_RAMP_CAP = 5;
 const DEFAULT_HARD_CAP = 20;
-const VERSION = '2026-08-16-github-direct-v1';
+const VERSION = '2026-08-18-github-direct-v2';
 const REPO_ROOT = resolve(process.cwd(), '../..');
 const LEDGER_RELATIVE = 'apps/tte-mail-bridge/state/direct-ledger.json';
 const LEDGER_PATH = resolve(REPO_ROOT, LEDGER_RELATIVE);
@@ -104,6 +104,10 @@ async function executeJob(job, location) {
   if (!isInternal && !inColdWindow()) return { status: 'HELD_WINDOW' };
   const prior = ledger.idempotency[job.idempotencyKey];
   if (prior?.state === 'SENT_CONFIRMED') return { status: 'DUPLICATE_CONFIRMED', body: prior };
+  // A quarantine tombstone is a terminal safe decision, not an ambiguous send state.
+  // Skip it and continue scanning so an old contained control can never starve newer valid controls.
+  if (prior?.state === 'QUARANTINED_TOMBSTONE') return { status: 'SKIPPED_TOMBSTONE', body: prior };
+  // Ambiguous/reserved states remain fail-closed and stop later work.
   if (prior?.state) { console.warn(`TTE queue ${location} held idempotency=${job.idempotencyKey} prior=${prior.state}`); return { status: 'HELD_IDEMPOTENCY', body: prior }; }
   const dateKey = londonDateKey();
   const configuredRamp = Number(process.env.TTE_DIRECT_RAMP_CAP || DEFAULT_RAMP_CAP);
@@ -140,7 +144,7 @@ async function executeJob(job, location) {
   return { status: 'SENT_CONFIRMED', body: result };
 }
 const client = new ImapFlow({ host: IMAP_HOST, port: IMAP_PORT, secure: true, auth: { user: USER, pass: PASS }, logger: false });
-let confirmed = 0; let duplicates = 0; let blocked = 0; let held = 0; let candidates = 0; let scannedFolders = 0; let stopAll = false;
+let confirmed = 0; let duplicates = 0; let tombstones = 0; let blocked = 0; let held = 0; let candidates = 0; let scannedFolders = 0; let stopAll = false;
 try {
   await transporter.verify();
   console.log(`TTE queue SMTP verified sender=${USER} version=${VERSION}`);
@@ -168,6 +172,7 @@ try {
         switch (result.status) {
           case 'SENT_CONFIRMED': confirmed += 1; break;
           case 'DUPLICATE_CONFIRMED': duplicates += 1; break;
+          case 'SKIPPED_TOMBSTONE': tombstones += 1; break;
           case 'BLOCKED_PREFLIGHT': blocked += 1; break;
           case 'DELIVERY_PENDING': case 'HELD_CAP': case 'HELD_WINDOW': case 'HELD_IDEMPOTENCY': case 'HELD_LEDGER': held += 1; stopAll = true; break;
           default: held += 1; stopAll = true;
@@ -178,4 +183,4 @@ try {
     }
   }
 } finally { try { await client.logout(); } catch {} try { transporter.close(); } catch {} }
-console.log(`TTE queue summary folders=${scannedFolders} candidates=${candidates} confirmed=${confirmed} duplicates=${duplicates} blocked=${blocked} held=${held}`);
+console.log(`TTE queue summary folders=${scannedFolders} candidates=${candidates} confirmed=${confirmed} duplicates=${duplicates} tombstones=${tombstones} blocked=${blocked} held=${held}`);
