@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-18T18:06:42.893Z",
+  "updatedAt": "2026-08-19T19:34:13.778Z",
   "idempotency": {
     "INTERNAL-BATCH-VERIFY-20260816|1": {
       "state": "SENT_CONFIRMED",
@@ -72,6 +72,16 @@
       ],
       "rejected": [],
       "sentAt": "2026-08-18T18:06:42.893Z",
+      "version": "2026-08-18-github-direct-v3"
+    },
+    "INTERNAL-RECOVERY-20260819-2032|1": {
+      "state": "IN_FLIGHT",
+      "idempotencyKey": "INTERNAL-RECOVERY-20260819-2032|1",
+      "leadId": "INTERNAL-RECOVERY-20260819-2032",
+      "touchNo": 1,
+      "recipient": "tripletwochelston@gmail.com",
+      "reservedAt": "2026-08-19T19:34:13.778Z",
+      "route": "MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL",
       "version": "2026-08-18-github-direct-v3"
     }
   },
