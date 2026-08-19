@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-19T19:34:13.778Z",
+  "updatedAt": "2026-08-19T19:34:33.084Z",
   "idempotency": {
     "INTERNAL-BATCH-VERIFY-20260816|1": {
       "state": "SENT_CONFIRMED",
@@ -75,14 +75,22 @@
       "version": "2026-08-18-github-direct-v3"
     },
     "INTERNAL-RECOVERY-20260819-2032|1": {
-      "state": "IN_FLIGHT",
+      "state": "SENT_CONFIRMED",
+      "route": "MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL",
       "idempotencyKey": "INTERNAL-RECOVERY-20260819-2032|1",
       "leadId": "INTERNAL-RECOVERY-20260819-2032",
       "touchNo": 1,
+      "sender": "hello@222emails.com",
       "recipient": "tripletwochelston@gmail.com",
-      "reservedAt": "2026-08-19T19:34:13.778Z",
-      "route": "MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL",
-      "version": "2026-08-18-github-direct-v3"
+      "messageId": "<366e5a24-3cba-a08a-152f-5925d4451d9b@222emails.com>",
+      "accepted": [
+        "tripletwochelston@gmail.com"
+      ],
+      "rejected": [],
+      "sentAt": "2026-08-19T19:34:15.000Z",
+      "version": "2026-08-18-github-direct-v3",
+      "reconciledFromProvider": true,
+      "reconciliationEvidence": "Independent Gmail receipt plus raw MIME headers confirmed exact X-TTE lead/touch/idempotency route and provider Message-ID after confirmation writeback race."
     }
   },
   "daily": {}
