@@ -1,17 +1,10 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-08-19T19:34:27.563Z",
-  "state": "BLOCKED",
-  "incidentCount": 1,
-  "criticalCount": 1,
-  "incidents": [
-    {
-      "code": "DIRECT_IN_FLIGHT",
-      "severity": "critical",
-      "detail": "INTERNAL-RECOVERY-20260819-2032|1 remains IN_FLIGHT; never auto-reroute or retry.",
-      "repairClass": "HOLD_AND_RECONCILE"
-    }
-  ],
+  "checkedAt": "2026-08-19T19:35:57.669Z",
+  "state": "HEALTHY",
+  "incidentCount": 0,
+  "criticalCount": 0,
+  "incidents": [],
   "invariants": {
     "workerPresent": true,
     "ledgerPresent": true,
