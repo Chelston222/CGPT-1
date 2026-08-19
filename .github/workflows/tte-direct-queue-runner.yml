@@ -71,3 +71,5 @@ jobs:
               body: '✅ Direct queue healthcheck completed. Reconcile the durable direct ledger and independent Gmail receipt before changing Sender Controls.'
             });
             await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed' });
+
+# Recovery invocation no-op: 2026-08-19T19:34Z
