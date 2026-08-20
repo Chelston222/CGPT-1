@@ -1,0 +1,58 @@
+name: Akela Klaviyo Template Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [akela-html-test]
+    paths:
+      - "experiments/akela-html/push-klaviyo.flag"
+
+permissions:
+  contents: read
+
+jobs:
+  create-template:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create Akela Weekend Plans template in Klaviyo
+        env:
+          KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, sys, urllib.request, urllib.error
+          key = os.getenv('KLAVIYO_PRIVATE_API_KEY', '').strip()
+          if not key:
+              print('KLAVIYO_PRIVATE_API_KEY is not configured. Skipping Klaviyo write safely.')
+              sys.exit(0)
+          with open('experiments/akela-html/01-weekend-plans.html', 'r', encoding='utf-8') as f:
+              html = f.read()
+          payload = {
+              'data': {
+                  'type': 'template',
+                  'attributes': {
+                      'name': 'AKELA TEST - Weekend Plans - 222Emails',
+                      'editor_type': 'CODE',
+                      'html': html
+                  }
+              }
+          }
+          req = urllib.request.Request(
+              'https://a.klaviyo.com/api/templates',
+              data=json.dumps(payload).encode('utf-8'),
+              method='POST',
+              headers={
+                  'Authorization': f'Klaviyo-API-Key {key}',
+                  'accept': 'application/vnd.api+json',
+                  'content-type': 'application/vnd.api+json',
+                  'revision': '2026-07-15'
+              }
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  body = json.loads(resp.read().decode('utf-8'))
+                  print('Created Klaviyo template:', body.get('data', {}).get('id'))
+          except urllib.error.HTTPError as e:
+              print('Klaviyo API error:', e.code, e.read().decode('utf-8'))
+              raise
+          PY
