@@ -1,0 +1,59 @@
+name: TTE LinkedIn Media Publish
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/tte-mail-bridge/public/linkedin-media/**'
+      - '.github/workflows/tte-linkedin-media-publish.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tte-linkedin-media-publish
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: e531326d-60b8-4def-85b9-727a7f708547
+    defaults:
+      run:
+        working-directory: apps/tte-mail-bridge
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Verify Netlify auth is available
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${NETLIFY_AUTH_TOKEN:-}" || { echo 'NETLIFY_AUTH_TOKEN is not configured'; exit 2; }
+
+      - name: Install app dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Publish current mail bridge plus LinkedIn media
+        run: npx netlify deploy --prod --dir=public --functions=netlify/functions --site "$NETLIFY_SITE_ID"
+
+      - name: Verify LinkedIn media is public
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in 2026-08-20-calling.jpg 2026-08-20-stay-focused.jpg 2026-08-20-ego-bottleneck.jpg; do
+            url="https://222emails-mail-bridge.netlify.app/linkedin-media/$file"
+            curl --fail --silent --show-error --location --retry 5 --retry-delay 2 --output "/tmp/$file" "$url"
+            test -s "/tmp/$file"
+            file --brief --mime-type "/tmp/$file" | grep -Eq '^image/(jpeg|png)$'
+          done
