@@ -1,0 +1,84 @@
+name: Stage LinkedIn media to GitHub
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: stage-linkedin-media
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    if: startsWith(github.event.issue.title, '[STAGE LINKEDIN MEDIA]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decode staged media
+        id: decode
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(media-staging/*.b64)
+          if (( ${#files[@]} == 0 )); then
+            echo 'No staged .b64 media files found.' >&2
+            exit 1
+          fi
+          mkdir -p assets/linkedin-generated
+          : > /tmp/staged-media.txt
+          for src in "${files[@]}"; do
+            filename="$(basename "$src" .b64)"
+            case "$filename" in
+              *.jpg|*.jpeg|*.png) ;;
+              *) echo "Unsupported staged filename: $filename" >&2; exit 1 ;;
+            esac
+            dest="assets/linkedin-generated/$filename"
+            base64 --decode "$src" > "$dest"
+            test -s "$dest"
+            mime="$(file --brief --mime-type "$dest")"
+            case "$mime" in
+              image/jpeg|image/png) ;;
+              *) echo "Decoded file is not a supported image: $filename ($mime)" >&2; exit 1 ;;
+            esac
+            bytes="$(wc -c < "$dest")"
+            if (( bytes > 10485760 )); then
+              echo "Image exceeds 10 MB: $filename" >&2
+              exit 1
+            fi
+            printf '%s\n' "$filename" >> /tmp/staged-media.txt
+          done
+
+      - name: Commit public media assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/linkedin-generated
+          git rm -f media-staging/*.b64
+          git commit -m 'Stage approved LinkedIn media assets'
+          git push origin HEAD:main
+
+      - name: Report staged URLs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const names = fs.readFileSync('/tmp/staged-media.txt', 'utf8').trim().split(/\n+/).filter(Boolean);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const lines = names.map(name => `- https://raw.githubusercontent.com/${owner}/${repo}/main/assets/linkedin-generated/${encodeURIComponent(name)}`);
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: context.issue.number,
+              body: ['✅ LinkedIn media staged to stable public GitHub raw URLs.', '', ...lines].join('\n')
+            });
+            await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed' });
