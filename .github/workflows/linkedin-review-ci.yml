@@ -62,3 +62,25 @@ jobs:
           node --check scripts/linkedin-notion-quality-gate.cjs
           node -e "import('./apps/linkedin-review/netlify/functions/review-decisions.mjs').then(() => console.log('decision sync function imports'))"
           node -e "const q=require('./apps/linkedin-review/queue.json'); if(q.posts.length < 18) process.exit(1); for(const p of q.posts){if(!p.id||!p.copy||!p.targets?.length||!p.scheduledAt) process.exit(1)}"
+      - name: Regression-test a real ready carousel through the remote media gate
+        run: |
+          node <<'NODE'
+          const queue = require('./apps/linkedin-review/queue.json');
+          const { preflightMedia } = require('./scripts/linkedin-media-preflight.cjs');
+          const post = queue.posts.find((item) => item.format === 'carousel' && item.carousel?.readiness === 'ready');
+          if (!post) throw new Error('No ready carousel is available for remote regression testing.');
+          preflightMedia({
+            mediaUrl: post.mediaUrl,
+            mediaKind: 'document',
+            documentThumbnailUrl: post.documentThumbnailUrl,
+            documentPageCount: post.carousel.slideCount,
+            mediaBytes: post.carousel.pdfBytes,
+            mediaSha256: post.carousel.pdfSha256,
+          }).then((proof) => {
+            if (!proof?.media?.sha256 || proof.media.sha256 !== post.carousel.pdfSha256) throw new Error('Ready carousel integrity proof did not match queue metadata.');
+            console.log(`verified ${post.id}: ${proof.media.bytes} bytes / ${proof.media.sha256}`);
+          }).catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
