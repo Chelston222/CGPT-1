@@ -91,6 +91,26 @@ function validateHttpsUrl(rawUrl, fieldName = 'MEDIA_URL') {
   return parsed.toString();
 }
 
+function validateStableMediaUrl(rawUrl, fieldName = 'MEDIA_URL') {
+  const validated = validateHttpsUrl(rawUrl, fieldName);
+  if (!validated) return null;
+
+  const parsed = new URL(validated);
+  const host = parsed.hostname.toLowerCase();
+  const queryKeys = [...parsed.searchParams.keys()].map((key) => key.toLowerCase());
+  const previewOrAuthenticatedHost = host === 'media.canva.com' || host === 'drive.google.com' || host === 'docs.google.com';
+  const explicitThumbnail = String(parsed.searchParams.get('x-canva-quality') || '').toLowerCase() === 'thumbnail';
+  const expiringSignature = queryKeys.includes('x-amz-signature') || queryKeys.includes('x-goog-signature');
+
+  if (previewOrAuthenticatedHost || explicitThumbnail) {
+    throw new Error(`${fieldName} must be a stable direct full-resolution file URL, not a Canva preview or Google Drive/Docs share URL.`);
+  }
+  if (expiringSignature) {
+    throw new Error(`${fieldName} appears to be an expiring signed URL. Use a stable direct file URL that remains reachable until publication.`);
+  }
+  return validated;
+}
+
 function resolveSchedule(header, target, mode, now = Date.now()) {
   if (mode !== 'schedule') return null;
   const field = `SCHEDULE_AT_${target.toUpperCase()}`;
@@ -118,12 +138,12 @@ function validateRequest(body, env = {}, now = Date.now()) {
   }
   if (!env.BUFFER_API_KEY) throw new Error('Missing BUFFER_API_KEY repository secret.');
 
-  const mediaUrl = validateHttpsUrl(header.MEDIA_URL);
+  const mediaUrl = validateStableMediaUrl(header.MEDIA_URL);
   const mediaKind = (header.MEDIA_KIND || (mediaUrl && /\.pdf(?:$|\?)/i.test(mediaUrl) ? 'document' : 'image')).toLowerCase();
   if (!['image', 'document'].includes(mediaKind)) throw new Error('MEDIA_KIND must be image or document.');
   const documentTitle = String(header.DOCUMENT_TITLE || '').trim();
   if (mediaUrl && mediaKind === 'document' && !documentTitle) throw new Error('DOCUMENT_TITLE is required for a LinkedIn PDF carousel.');
-  const documentThumbnailUrl = mediaKind === 'document' ? validateHttpsUrl(header.DOCUMENT_THUMBNAIL_URL, 'DOCUMENT_THUMBNAIL_URL') : null;
+  const documentThumbnailUrl = mediaKind === 'document' ? validateStableMediaUrl(header.DOCUMENT_THUMBNAIL_URL, 'DOCUMENT_THUMBNAIL_URL') : null;
   if (mediaUrl && mediaKind === 'document' && !documentThumbnailUrl) throw new Error('DOCUMENT_THUMBNAIL_URL is required for a LinkedIn PDF carousel.');
   const channels = targets.map((target) => {
     const secretName = TARGET_SECRET_NAMES[target];
@@ -222,5 +242,6 @@ module.exports = {
   resolveSchedule,
   tripleTwoPageAnnotations,
   validateHttpsUrl,
+  validateStableMediaUrl,
   validateRequest,
 };
