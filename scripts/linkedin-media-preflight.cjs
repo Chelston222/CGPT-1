@@ -2,8 +2,11 @@
 
 const { createHash } = require('node:crypto');
 
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const MAX_DOCUMENT_BYTES = 100 * 1024 * 1024;
+// Buffer/LinkedIn publish limits are expressed in decimal megabytes.
+// Use the stricter decimal byte values so an edge-case asset cannot pass here
+// and then be rejected by Buffer for being slightly over 10/100 MB.
+const MAX_IMAGE_BYTES = 10_000_000;
+const MAX_DOCUMENT_BYTES = 100_000_000;
 const MAX_DOCUMENT_PAGES = 300;
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
