@@ -72,16 +72,68 @@ jobs:
               const verified = markerSet(comments, 'LINKEDIN_PUBLICATION_VERIFIED');
               const failed = markerSet(comments, 'LINKEDIN_PUBLICATION_FAILED');
               const pending = markerSet(comments, 'LINKEDIN_PUBLICATION_PENDING');
+              const draftVerified = markerSet(comments, 'LINKEDIN_DRAFT_CANARY_VERIFIED');
+              const isDraft = /^MODE:\s*draft\s*$/mi.test(String(issue.body || ''));
               const rows = acceptedRows(comments);
 
               for (const row of rows) {
-                if (verified.has(row.bufferId) || failed.has(row.bufferId)) continue;
+                if (verified.has(row.bufferId) || failed.has(row.bufferId) || draftVerified.has(row.bufferId)) continue;
                 const due = row.dueAt ? Date.parse(row.dueAt) : NaN;
-                if (Number.isFinite(due) && due > now - 5 * 60 * 1000) continue;
+                if (!isDraft && Number.isFinite(due) && due > now - 5 * 60 * 1000) continue;
 
                 const data = await buffer(`query VerifyPost { post(input: { id: ${JSON.stringify(row.bufferId)} }) { id status dueAt sentAt externalLink channelId error { message supportUrl } } }`);
                 const post = data?.post;
                 if (!post) continue;
+
+                if (isDraft) {
+                  if (post.status === 'draft') {
+                    await github.rest.issues.createComment({
+                      owner, repo, issue_number: issue.number,
+                      body: [
+                        '✅ Non-public Buffer draft canary independently verified.',
+                        '',
+                        `- ${row.label}`,
+                        `- Buffer post ID: \`${row.bufferId}\``,
+                        '- Buffer state: **draft**',
+                        '- No LinkedIn publication is expected or required for this canary.',
+                        '',
+                        `<!-- LINKEDIN_DRAFT_CANARY_VERIFIED bufferId=${row.bufferId} -->`,
+                      ].join('\n'),
+                    });
+                    continue;
+                  }
+                  if (post.status === 'error') {
+                    await github.rest.issues.createComment({
+                      owner, repo, issue_number: issue.number,
+                      body: [
+                        '❌ Non-public Buffer draft canary failed.',
+                        '',
+                        `- ${row.label}`,
+                        `- Buffer post ID: \`${row.bufferId}\``,
+                        `- Error: ${post.error?.message || 'Buffer returned no error message.'}`,
+                        '',
+                        `<!-- LINKEDIN_PUBLICATION_FAILED bufferId=${row.bufferId} -->`,
+                      ].join('\n'),
+                    });
+                    continue;
+                  }
+                  // A draft canary must never silently become scheduled or sent.
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: issue.number,
+                    body: [
+                      '⚠️ Buffer draft canary entered an unexpected state.',
+                      '',
+                      `- ${row.label}`,
+                      `- Buffer post ID: \`${row.bufferId}\``,
+                      `- Unexpected Buffer state: **${post.status}**`,
+                      '- Treat this canary as failed-safe and investigate before using the image path.',
+                      '',
+                      `<!-- LINKEDIN_PUBLICATION_FAILED bufferId=${row.bufferId} -->`,
+                    ].join('\n'),
+                  });
+                  if (issue.state === 'closed') await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'open' });
+                  continue;
+                }
 
                 if (post.status === 'sent' && post.sentAt) {
                   await github.rest.issues.createComment({
@@ -91,7 +143,7 @@ jobs:
                       '',
                       `- ${row.label}`,
                       `- Buffer post ID: \`${row.bufferId}\``,
-                      `- Buffer state: **sent**`,
+                      '- Buffer state: **sent**',
                       `- Published at: **${post.sentAt}**`,
                       `- LinkedIn destination: ${post.externalLink || '**Buffer did not return an external link**'}`,
                       '',
@@ -109,7 +161,7 @@ jobs:
                       '',
                       `- ${row.label}`,
                       `- Buffer post ID: \`${row.bufferId}\``,
-                      `- Buffer state: **error**`,
+                      '- Buffer state: **error**',
                       `- Error: ${post.error?.message || 'Buffer returned no error message.'}`,
                       post.error?.supportUrl ? `- Support: ${post.error.supportUrl}` : '',
                       '- This destination must not be counted as published.',
@@ -172,19 +224,12 @@ jobs:
             const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
 
             for (const issue of candidates) {
+              if (/^MODE:\s*draft\s*$/mi.test(String(issue.body || ''))) continue;
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
               const body = comments.map((comment) => String(comment.body || '')).join('\n');
               const verified = [...body.matchAll(/<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=([^\s>]+)/g)].map((m) => m[1]);
               const captured = new Set([...body.matchAll(/<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
               const nativeRequired = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_REQUIRED bufferId=([^\s>]+)/g)].map((m) => m[1]));
-              const documentIds = new Set();
-              for (const comment of comments) {
-                const lines = String(comment.body || '').split(/\r?\n/);
-                for (const line of lines) {
-                  const match = line.match(/Buffer post ID `([^`]+)`.*media \d+ bytes/);
-                  if (match && /carousel|document|pdf/i.test(body)) documentIds.add(match[1]);
-                }
-              }
 
               for (const bufferId of verified) {
                 if (captured.has(bufferId)) continue;
