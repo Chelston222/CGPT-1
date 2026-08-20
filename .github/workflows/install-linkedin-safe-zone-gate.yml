@@ -2,7 +2,7 @@ name: Install LinkedIn safe-zone and content QA gate
 
 on:
   issues:
-    types: [opened]
+    types: [opened, edited]
 
 permissions:
   contents: write
