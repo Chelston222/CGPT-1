@@ -70,9 +70,11 @@ test('rejects past schedules, unsafe media and empty copy', () => {
 
 test('non-publishing test mutation cannot accidentally schedule or publish', () => {
   const mutation = buildCreatePostMutation({ id: 'id', text: 'copy', dueAt: null }, 'draft');
-  assert.match(mutation, /saveToDraft: true/);
-  assert.doesNotMatch(mutation, /customScheduled/);
-  assert.doesNotMatch(mutation, /dueAt/);
+  const input = mutation.match(/createPost\(input:\s*\{([\s\S]*?)\}\)\s*\{/)[1];
+  assert.match(input, /saveToDraft: true/);
+  assert.match(input, /mode: addToQueue/);
+  assert.doesNotMatch(input, /customScheduled/);
+  assert.doesNotMatch(input, /dueAt\s*:/);
 });
 
 test('LinkedIn image media requires alt text and preserves it in Buffer metadata', () => {
