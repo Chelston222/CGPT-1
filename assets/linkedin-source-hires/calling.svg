@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff58bf"/>
+      <stop offset="0.48" stop-color="#8d59f6"/>
+      <stop offset="1" stop-color="#3991ff"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="0.18" cy="0.18" r="0.8">
+      <stop offset="0" stop-color="#ff9bd8" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#ff9bd8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0.86" cy="0.78" r="0.72">
+      <stop offset="0" stop-color="#70d0ff" stop-opacity="0.52"/>
+      <stop offset="1" stop-color="#70d0ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1080" height="1350" fill="url(#bg)"/>
+  <rect width="1080" height="1350" fill="url(#glow1)"/>
+  <rect width="1080" height="1350" fill="url(#glow2)"/>
+  <g fill="#111111" font-family="Arial, Helvetica, sans-serif" text-anchor="middle" font-weight="700">
+    <text x="540" y="205" font-size="58">Some people don’t just build a business.</text>
+    <text x="540" y="278" font-size="64">They answer a calling.</text>
+
+    <text x="540" y="420" font-size="54">A job ends when the</text>
+    <text x="540" y="486" font-size="54">clock stops.</text>
+    <text x="540" y="568" font-size="54">A calling follows you home,</text>
+    <text x="540" y="634" font-size="54">wakes you up at 3am,</text>
+    <text x="540" y="700" font-size="54">and refuses to let you settle.</text>
+
+    <text x="540" y="850" font-size="54">That’s why ambitious</text>
+    <text x="540" y="916" font-size="54">people look obsessed.</text>
+    <text x="540" y="998" font-size="54">They’re not chasing status.</text>
+    <text x="540" y="1064" font-size="54">They’re building what they</text>
+    <text x="540" y="1130" font-size="54">were put here to build.</text>
+  </g>
+  <text x="540" y="1284" fill="#111111" font-family="Arial, Helvetica, sans-serif" text-anchor="middle" font-size="26" font-weight="700" letter-spacing="2">222Emails</text>
+</svg>

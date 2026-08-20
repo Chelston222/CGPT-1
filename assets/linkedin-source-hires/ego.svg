@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#061424"/>
+      <stop offset="0.55" stop-color="#0b2440"/>
+      <stop offset="1" stop-color="#030811"/>
+    </linearGradient>
+    <linearGradient id="phone" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#152b42"/>
+      <stop offset="1" stop-color="#07121e"/>
+    </linearGradient>
+    <linearGradient id="hand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9e694f"/>
+      <stop offset="1" stop-color="#5c382d"/>
+    </linearGradient>
+    <filter id="blueGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <rect width="1080" height="1350" fill="url(#bg)"/>
+  <circle cx="690" cy="530" r="310" fill="#087dff" opacity="0.12" filter="url(#blueGlow)"/>
+  <circle cx="260" cy="1110" r="300" fill="#0b5ba9" opacity="0.11" filter="url(#blueGlow)"/>
+
+  <!-- stylised hand -->
+  <path d="M0 1195 C110 1110 208 1046 305 1028 C365 1017 413 1041 438 1084 C462 1125 451 1172 407 1205 L337 1257 L310 1350 L0 1350 Z" fill="url(#hand)"/>
+  <path d="M261 1048 C307 982 355 936 403 916 C443 899 479 917 488 952 C498 989 474 1028 430 1052 L357 1092 Z" fill="#98634d"/>
+  <path d="M349 1000 C390 934 430 886 472 868 C511 851 545 870 551 904 C558 941 532 977 491 1001 L419 1044 Z" fill="#8b5946"/>
+
+  <!-- phone -->
+  <g transform="rotate(-8 620 690)" filter="url(#softShadow)">
+    <rect x="365" y="170" width="470" height="980" rx="86" fill="url(#phone)" stroke="#244968" stroke-width="7"/>
+    <rect x="410" y="245" width="380" height="472" rx="26" fill="#064c88" stroke="#3aa8ff" stroke-width="5" filter="url(#blueGlow)"/>
+    <rect x="425" y="260" width="350" height="440" rx="18" fill="#0876c9" opacity="0.94"/>
+
+    <!-- generic interface -->
+    <g fill="#bdeaff" opacity="0.9">
+      <rect x="450" y="286" width="8" height="20" rx="2"/>
+      <rect x="463" y="279" width="8" height="27" rx="2"/>
+      <rect x="476" y="272" width="8" height="34" rx="2"/>
+      <rect x="489" y="265" width="8" height="41" rx="2"/>
+      <circle cx="739" cy="285" r="8"/>
+    </g>
+    <text x="600" y="330" fill="#d9f3ff" font-family="Courier New, monospace" text-anchor="middle" font-size="27" font-weight="700">MINDSET CHECK</text>
+    <line x1="462" y1="352" x2="738" y2="352" stroke="#a8e2ff" stroke-opacity="0.55" stroke-width="2"/>
+
+    <g fill="#ffffff" font-family="Courier New, monospace" text-anchor="middle" font-weight="700" font-size="38">
+      <text x="600" y="425">If you’re talented</text>
+      <text x="600" y="474">but still stuck,</text>
+      <text x="600" y="540">your ego</text>
+      <text x="600" y="589">might be</text>
+      <text x="600" y="638">the bottleneck.</text>
+    </g>
+
+    <text x="463" y="680" fill="#bdeaff" font-family="Courier New, monospace" font-size="22">Options</text>
+    <text x="690" y="680" fill="#bdeaff" font-family="Courier New, monospace" font-size="22">Back</text>
+
+    <!-- navigation -->
+    <rect x="443" y="752" width="314" height="92" rx="38" fill="#10273c" stroke="#2e638b" stroke-width="4"/>
+    <circle cx="600" cy="798" r="38" fill="#153d5d" stroke="#4bb3ff" stroke-width="4"/>
+    <circle cx="600" cy="798" r="12" fill="#58c1ff" filter="url(#blueGlow)"/>
+
+    <!-- keypad -->
+    <g font-family="Arial, Helvetica, sans-serif" font-size="29" text-anchor="middle" font-weight="700">
+      <g fill="#10273c" stroke="#2c5f86" stroke-width="3">
+        <rect x="435" y="870" width="96" height="66" rx="19"/><rect x="552" y="870" width="96" height="66" rx="19"/><rect x="669" y="870" width="96" height="66" rx="19"/>
+        <rect x="435" y="952" width="96" height="66" rx="19"/><rect x="552" y="952" width="96" height="66" rx="19"/><rect x="669" y="952" width="96" height="66" rx="19"/>
+        <rect x="435" y="1034" width="96" height="66" rx="19"/><rect x="552" y="1034" width="96" height="66" rx="19"/><rect x="669" y="1034" width="96" height="66" rx="19"/>
+      </g>
+      <g fill="#7ed1ff" filter="url(#blueGlow)">
+        <text x="483" y="914">1</text><text x="600" y="914">2</text><text x="717" y="914">3</text>
+        <text x="483" y="996">4</text><text x="600" y="996">5</text><text x="717" y="996">6</text>
+        <text x="483" y="1078">7</text><text x="600" y="1078">8</text><text x="717" y="1078">9</text>
+      </g>
+    </g>
+  </g>
+
+  <text x="540" y="1290" fill="#d8efff" font-family="Arial, Helvetica, sans-serif" text-anchor="middle" font-size="26" font-weight="700" letter-spacing="2">222Emails</text>
+</svg>
