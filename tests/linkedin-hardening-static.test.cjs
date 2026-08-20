@@ -39,7 +39,10 @@ test('publication verification cannot label Buffer acceptance as publication', (
 test('non-public draft canaries terminate as verified drafts and stay out of analytics', () => {
   assert.match(verifier, /LINKEDIN_DRAFT_CANARY_VERIFIED/);
   assert.match(verifier, /post\.status === 'draft'/);
-  assert.match(verifier, /if \(\/\^MODE:\\\s\*draft\\\s\*\$\/mi\.test\(String\(issue\.body \|\| ''\)\)\) continue;/);
+  assert.ok(
+    verifier.includes("if (/^MODE:\\s*draft\\s*$/mi.test(String(issue.body || ''))) continue;"),
+    'analytics job must skip MODE: draft issues',
+  );
   assert.match(verifier, /A draft canary must never silently become scheduled or sent/);
 });
 
