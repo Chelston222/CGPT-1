@@ -1,0 +1,224 @@
+name: LinkedIn Publication Verifier
+
+on:
+  schedule:
+    - cron: '47 * * * *'
+    - cron: '42 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-publication-verifier
+  cancel-in-progress: false
+
+jobs:
+  publication:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule != '42 7 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify due Buffer posts reached LinkedIn
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured');
+
+            async function buffer(query) {
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.BUFFER_API_KEY}` },
+                body: JSON.stringify({ query }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              const messages = (payload.errors || []).map((error) => error.message).filter(Boolean);
+              if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
+              return payload.data;
+            }
+
+            function acceptedRows(comments) {
+              const rows = [];
+              for (const comment of comments) {
+                const body = String(comment.body || '');
+                const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
+                let match;
+                while ((match = regex.exec(body))) rows.push({ label: match[1].trim(), bufferId: match[2], dueAt: match[3] || null });
+              }
+              return rows;
+            }
+
+            function markerSet(comments, kind) {
+              const out = new Set();
+              const regex = new RegExp(`<!-- ${kind} bufferId=([^\\s>]+)`, 'g');
+              for (const comment of comments) {
+                let match;
+                while ((match = regex.exec(String(comment.body || '')))) out.add(match[1]);
+              }
+              return out;
+            }
+
+            const since = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString();
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
+            const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+            const now = Date.now();
+
+            for (const issue of candidates) {
+              const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+              const verified = markerSet(comments, 'LINKEDIN_PUBLICATION_VERIFIED');
+              const failed = markerSet(comments, 'LINKEDIN_PUBLICATION_FAILED');
+              const pending = markerSet(comments, 'LINKEDIN_PUBLICATION_PENDING');
+              const rows = acceptedRows(comments);
+
+              for (const row of rows) {
+                if (verified.has(row.bufferId) || failed.has(row.bufferId)) continue;
+                const due = row.dueAt ? Date.parse(row.dueAt) : NaN;
+                if (Number.isFinite(due) && due > now - 5 * 60 * 1000) continue;
+
+                const data = await buffer(`query VerifyPost { post(input: { id: ${JSON.stringify(row.bufferId)} }) { id status dueAt sentAt externalLink channelId error { message supportUrl } } }`);
+                const post = data?.post;
+                if (!post) continue;
+
+                if (post.status === 'sent' && post.sentAt) {
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: issue.number,
+                    body: [
+                      '✅ LinkedIn publication independently verified.',
+                      '',
+                      `- ${row.label}`,
+                      `- Buffer post ID: \`${row.bufferId}\``,
+                      `- Buffer state: **sent**`,
+                      `- Published at: **${post.sentAt}**`,
+                      `- LinkedIn destination: ${post.externalLink || '**Buffer did not return an external link**'}`,
+                      '',
+                      `<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=${row.bufferId} sentAt=${post.sentAt} -->`,
+                    ].join('\n'),
+                  });
+                  continue;
+                }
+
+                if (post.status === 'error') {
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: issue.number,
+                    body: [
+                      '❌ LinkedIn publication failed after Buffer acceptance.',
+                      '',
+                      `- ${row.label}`,
+                      `- Buffer post ID: \`${row.bufferId}\``,
+                      `- Buffer state: **error**`,
+                      `- Error: ${post.error?.message || 'Buffer returned no error message.'}`,
+                      post.error?.supportUrl ? `- Support: ${post.error.supportUrl}` : '',
+                      '- This destination must not be counted as published.',
+                      '',
+                      `<!-- LINKEDIN_PUBLICATION_FAILED bufferId=${row.bufferId} -->`,
+                    ].filter(Boolean).join('\n'),
+                  });
+                  if (issue.state === 'closed') await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'open' });
+                  continue;
+                }
+
+                const effectiveDue = Number.isFinite(due) ? due : Date.parse(post.dueAt || '');
+                if (Number.isFinite(effectiveDue) && now - effectiveDue >= 30 * 60 * 1000 && !pending.has(row.bufferId)) {
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: issue.number,
+                    body: [
+                      '⚠️ LinkedIn publication is not yet verified.',
+                      '',
+                      `- ${row.label}`,
+                      `- Buffer post ID: \`${row.bufferId}\``,
+                      `- Current Buffer state: **${post.status}**`,
+                      '- The due time is more than 30 minutes old. Treat this as UNKNOWN until Buffer reports sent or error.',
+                      '',
+                      `<!-- LINKEDIN_PUBLICATION_PENDING bufferId=${row.bufferId} -->`,
+                    ].join('\n'),
+                  });
+                  if (issue.state === 'closed') await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'open' });
+                }
+              }
+            }
+
+  analytics:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '42 7 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Capture available sent-post metrics and surface native gaps
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured');
+
+            async function buffer(query) {
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.BUFFER_API_KEY}` },
+                body: JSON.stringify({ query }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              const messages = (payload.errors || []).map((error) => error.message).filter(Boolean);
+              if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
+              return payload.data;
+            }
+
+            const since = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString();
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
+            const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+
+            for (const issue of candidates) {
+              const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+              const body = comments.map((comment) => String(comment.body || '')).join('\n');
+              const verified = [...body.matchAll(/<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=([^\s>]+)/g)].map((m) => m[1]);
+              const captured = new Set([...body.matchAll(/<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
+              const nativeRequired = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_REQUIRED bufferId=([^\s>]+)/g)].map((m) => m[1]));
+              const documentIds = new Set();
+              for (const comment of comments) {
+                const lines = String(comment.body || '').split(/\r?\n/);
+                for (const line of lines) {
+                  const match = line.match(/Buffer post ID `([^`]+)`.*media \d+ bytes/);
+                  if (match && /carousel|document|pdf/i.test(body)) documentIds.add(match[1]);
+                }
+              }
+
+              for (const bufferId of verified) {
+                if (captured.has(bufferId)) continue;
+                const data = await buffer(`query Metrics { post(input: { id: ${JSON.stringify(bufferId)} }) { id status sentAt externalLink metricsUpdatedAt metrics { type name value unit } assets { mimeType source } } }`);
+                const post = data?.post;
+                if (!post || post.status !== 'sent') continue;
+                const isPdf = (post.assets || []).some((asset) => String(asset.mimeType || '').toLowerCase() === 'application/pdf');
+                const metrics = post.metrics || [];
+                if (metrics.length && post.metricsUpdatedAt) {
+                  const lines = metrics.map((metric) => `- ${metric.name || metric.type}: **${metric.value}**${metric.unit === 'percentage' ? '%' : ''}`);
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: issue.number,
+                    body: [
+                      '📊 Buffer post-level analytics captured.', '',
+                      `- Buffer post ID: \`${bufferId}\``,
+                      `- Metrics refreshed: **${post.metricsUpdatedAt}**`,
+                      ...lines,
+                      isPdf ? '- PDF/document post: retain the native LinkedIn check because Buffer PDF-carousel analytics may be incomplete.' : '',
+                      '',
+                      `<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=${bufferId} metricsUpdatedAt=${post.metricsUpdatedAt} -->`,
+                    ].filter(Boolean).join('\n'),
+                  });
+                } else if (isPdf && !nativeRequired.has(bufferId)) {
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: issue.number,
+                    body: [
+                      '📎 Native LinkedIn analytics required for this PDF/document post.', '',
+                      `- Buffer post ID: \`${bufferId}\``,
+                      `- LinkedIn destination: ${post.externalLink || 'available from the LinkedIn account'}`,
+                      '- Record native impressions, saves where available, comments, profile/Page visits and commercial responses before changing the format mix.',
+                      '',
+                      `<!-- LINKEDIN_NATIVE_ANALYTICS_REQUIRED bufferId=${bufferId} -->`,
+                    ].join('\n'),
+                  });
+                }
+              }
+            }
