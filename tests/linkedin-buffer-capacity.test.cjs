@@ -10,10 +10,10 @@ const {
   validateDailyPlacementLimit,
 } = require('../scripts/linkedin-buffer-capacity.cjs');
 
-function job(id, channels) {
+function job(id, channels, mode = 'schedule') {
   return {
     post: { id, revision: 1 },
-    request: { channels: channels.map(([target, dueAt]) => ({ target, dueAt })) },
+    request: { mode, channels: channels.map(([target, dueAt]) => ({ target, dueAt })) },
   };
 }
 
@@ -46,6 +46,14 @@ test('plans only free Buffer slots and preserves chronological order', () => {
   const plan = planCapacityWindow(jobs, { personal: 9, main: 10, secondary: 0 });
   assert.deepEqual(plan.dispatch.map((item) => item.key), ['first@1:personal']);
   assert.deepEqual(plan.waiting.map((item) => item.key), ['first@1:main', 'later@1:personal']);
+});
+
+test('non-public drafts bypass scheduled queue capacity and daily placement limits', () => {
+  const draft = job('draft-canary', [['personal', null]], 'draft');
+  const plan = planCapacityWindow([draft], { personal: 10, main: 10, secondary: 10 });
+  assert.deepEqual(plan.dispatch.map((item) => item.key), ['draft-canary@1:personal']);
+  assert.equal(plan.waiting.length, 0);
+  assert.deepEqual(validateDailyPlacementLimit([draft]), {});
 });
 
 test('accepted audit markers make retries idempotent', () => {
