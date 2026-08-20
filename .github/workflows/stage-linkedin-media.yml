@@ -23,26 +23,54 @@ jobs:
           fetch-depth: 0
 
       - name: Decode staged media
-        id: decode
         shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
-          files=(media-staging/*.b64)
-          if (( ${#files[@]} == 0 )); then
-            echo 'No staged .b64 media files found.' >&2
+          parts=(media-staging/*.b64.part*)
+          singles=(media-staging/*.b64)
+          if (( ${#parts[@]} == 0 && ${#singles[@]} == 0 )); then
+            echo 'No staged base64 media files found.' >&2
             exit 1
           fi
+
           mkdir -p assets/linkedin-generated
           : > /tmp/staged-media.txt
-          for src in "${files[@]}"; do
-            filename="$(basename "$src" .b64)"
+
+          prefixes=()
+          for src in "${parts[@]}"; do
+            prefix="${src%.part*}"
+            seen=false
+            for existing in "${prefixes[@]:-}"; do
+              [[ "$existing" == "$prefix" ]] && seen=true && break
+            done
+            $seen || prefixes+=("$prefix")
+          done
+          for src in "${singles[@]}"; do
+            prefixes+=("$src")
+          done
+
+          for prefix in "${prefixes[@]}"; do
+            filename="$(basename "$prefix" .b64)"
             case "$filename" in
               *.jpg|*.jpeg|*.png) ;;
               *) echo "Unsupported staged filename: $filename" >&2; exit 1 ;;
             esac
+
+            tmp="/tmp/${filename}.b64"
+            if [[ -f "$prefix" ]]; then
+              cp "$prefix" "$tmp"
+            else
+              chunk_files=("${prefix}".part*)
+              if (( ${#chunk_files[@]} == 0 )); then
+                echo "No chunks found for $filename" >&2
+                exit 1
+              fi
+              printf '%s\n' "${chunk_files[@]}" | sort -V | xargs cat > "$tmp"
+            fi
+
             dest="assets/linkedin-generated/$filename"
-            base64 --decode "$src" > "$dest"
+            base64 --decode "$tmp" > "$dest"
             test -s "$dest"
             mime="$(file --brief --mime-type "$dest")"
             case "$mime" in
@@ -64,7 +92,8 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add assets/linkedin-generated
-          git rm -f media-staging/*.b64
+          git rm -f media-staging/*.b64 media-staging/*.b64.part* 2>/dev/null || true
+          git add -A media-staging
           git commit -m 'Stage approved LinkedIn media assets'
           git push origin HEAD:main
 
