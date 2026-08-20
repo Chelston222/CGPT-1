@@ -1,0 +1,81 @@
+name: Governed Buffer post cleanup
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: governed-buffer-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    if: startsWith(github.event.issue.title, '[RUN BUFFER CLEANUP]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete only explicitly listed Buffer posts
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        with:
+          script: |
+            const body = String(context.payload.issue.body || '');
+            const match = body.match(/^DELETE_POST_IDS:\s*([^\n]+)/m);
+            if (!match) throw new Error('Missing DELETE_POST_IDS header.');
+            if (!process.env.BUFFER_API_KEY) throw new Error('Missing BUFFER_API_KEY repository secret.');
+
+            const ids = [...new Set(match[1].split(',').map(v => v.trim()).filter(Boolean))];
+            if (!ids.length) throw new Error('No Buffer post IDs supplied.');
+            if (ids.length > 20) throw new Error('Refusing cleanup batch larger than 20 posts.');
+            for (const id of ids) {
+              if (!/^[a-zA-Z0-9_-]{10,64}$/.test(id)) throw new Error(`Invalid Buffer post ID: ${id}`);
+            }
+
+            const results = [];
+            for (const id of ids) {
+              const query = `mutation DeletePost { deletePost(input: { id: ${JSON.stringify(id)} }) { __typename ... on MutationError { message } } }`;
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${process.env.BUFFER_API_KEY}`,
+                },
+                body: JSON.stringify({ query }),
+              });
+              const payload = await response.json();
+              if (!response.ok || payload.errors?.length) {
+                throw new Error(`Buffer delete failed for ${id}: ${JSON.stringify(payload.errors || payload)}`);
+              }
+              const result = payload?.data?.deletePost;
+              if (!result || result.__typename === 'MutationError') {
+                throw new Error(`Buffer delete rejected for ${id}: ${result?.message || JSON.stringify(payload)}`);
+              }
+              if (!String(result.__typename).toLowerCase().includes('success')) {
+                throw new Error(`Unexpected Buffer delete response for ${id}: ${JSON.stringify(result)}`);
+              }
+              results.push({ id, type: result.__typename });
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                '✅ Buffer cleanup completed.',
+                '',
+                ...results.map(r => `- Deleted Buffer post \`${r.id}\` (${r.type})`),
+                '',
+                'Only the explicitly listed post IDs were touched.',
+              ].join('\n'),
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed',
+              state_reason: 'completed',
+            });
