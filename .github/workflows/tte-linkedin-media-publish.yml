@@ -7,9 +7,12 @@ on:
     paths:
       - 'apps/tte-mail-bridge/public/linkedin-media/**'
       - '.github/workflows/tte-linkedin-media-publish.yml'
+  issues:
+    types: [opened]
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: tte-linkedin-media-publish
@@ -17,6 +20,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[DEPLOY LINKEDIN MEDIA]') && github.event.issue.user.login == github.repository_owner)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -57,3 +61,21 @@ jobs:
             test -s "/tmp/$file"
             file --brief --mime-type "/tmp/$file" | grep -Eq '^image/(jpeg|png)$'
           done
+
+      - name: Report issue-triggered deploy
+        if: always() && github.event_name == 'issues'
+        uses: actions/github-script@v7
+        env:
+          JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const ok = process.env.JOB_STATUS === 'success';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: ok
+                ? '✅ LinkedIn media is publicly deployed and image-read verification passed for all three files.'
+                : `❌ LinkedIn media deploy failed. Job status: **${process.env.JOB_STATUS}**. Check the workflow run before resubmitting Buffer posts.`
+            });
+            if (ok) await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed' });
