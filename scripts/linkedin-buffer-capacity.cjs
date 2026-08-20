@@ -25,6 +25,8 @@ function validateDailyPlacementLimit(jobs, limit = MAX_PLACEMENTS_PER_DAY, perCh
   const counts = new Map();
   const channelCounts = new Map();
   for (const job of jobs) {
+    // Buffer drafts are not live queue placements and have no approved due date.
+    if (job.request.mode === 'draft') continue;
     for (const channel of job.request.channels) {
       const date = placementDate(job, channel, timeZone);
       if (!date) throw new Error(`${job.post.id} / ${channel.target} has no scheduled date.`);
@@ -58,6 +60,9 @@ function planCapacityWindow(jobs, occupancy = {}, acceptedKeys = new Set(), perC
   for (const placement of placements) {
     if (acceptedKeys.has(placement.key)) {
       alreadyAccepted.push(placement);
+    } else if (placement.job.request.mode === 'draft') {
+      // Drafts are non-public and do not consume the scheduled-post queue.
+      dispatch.push(placement);
     } else if (available[placement.channel.target] > 0) {
       dispatch.push(placement);
       available[placement.channel.target] -= 1;
