@@ -74,12 +74,27 @@ function postBody(post) {
   const schedules = Object.entries(post.scheduledAt || {});
   if (schedules.length === 1) lines.push(`SCHEDULE_AT: ${schedules[0][1]}`);
   else schedules.forEach(([target, value]) => lines.push(`SCHEDULE_AT_${target.toUpperCase()}: ${value}`));
-  lines.push(`MEDIA_URL: ${post.mediaUrl || ''}`, '---', post.copy?.default || '');
+
   if (post.mediaUrl) {
-    lines.splice(lines.length - 2, 0, `MEDIA_KIND: ${post.format === 'carousel' ? 'document' : 'image'}`);
-    if (post.format === 'carousel') lines.splice(lines.length - 2, 0, `DOCUMENT_TITLE: ${post.documentTitle || post.title || post.id}`);
-    if (post.format === 'carousel') lines.splice(lines.length - 2, 0, `DOCUMENT_THUMBNAIL_URL: ${post.documentThumbnailUrl || ''}`);
+    const isDocument = post.format === 'carousel';
+    lines.push(`MEDIA_URL: ${post.mediaUrl}`);
+    lines.push(`MEDIA_KIND: ${isDocument ? 'document' : 'image'}`);
+    if (isDocument) {
+      lines.push(`DOCUMENT_TITLE: ${post.documentTitle || post.title || post.id}`);
+      lines.push(`DOCUMENT_THUMBNAIL_URL: ${post.documentThumbnailUrl || ''}`);
+      lines.push(`DOCUMENT_PAGE_COUNT: ${post.carousel?.slideCount || ''}`);
+      if (post.carousel?.pdfBytes) lines.push(`MEDIA_BYTES: ${post.carousel.pdfBytes}`);
+      if (post.carousel?.pdfSha256) lines.push(`MEDIA_SHA256: ${post.carousel.pdfSha256}`);
+    } else {
+      lines.push(`ALT_TEXT: ${post.mediaAlt || post.title || '222Emails LinkedIn visual'}`);
+      if (post.mediaBytes) lines.push(`MEDIA_BYTES: ${post.mediaBytes}`);
+      if (post.mediaSha256) lines.push(`MEDIA_SHA256: ${post.mediaSha256}`);
+    }
+  } else {
+    lines.push('MEDIA_URL:');
   }
+
+  lines.push('---', post.copy?.default || '');
   for (const target of post.targets) if (post.copy?.[target]) lines.push(`---${target.toUpperCase()}---`, post.copy[target]);
   return lines.join('\n');
 }
@@ -104,7 +119,12 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
     if (!post) throw new Error(`${locked.id} is not present in the locked queue or QA replenishment.`);
     if (Number(post.revision) !== locked.revision) throw new Error(`${locked.id} changed revision after review. Review it again.`);
     if (!['schedule', 'queue'].includes(post.mode)) throw new Error(`${locked.id} is not configured for live scheduling.`);
-    if (post.format === 'carousel' && (post.carousel?.readiness !== 'ready' || !post.mediaUrl || !post.documentThumbnailUrl)) throw new Error(`${locked.id} carousel PDF and public thumbnail are not verified and publishable.`);
+    if (post.format === 'carousel') {
+      if (post.carousel?.readiness !== 'ready' || !post.mediaUrl || !post.documentThumbnailUrl) throw new Error(`${locked.id} carousel PDF and public thumbnail are not verified and publishable.`);
+      if (!Number.isInteger(post.carousel?.slideCount) || post.carousel.slideCount < 1 || post.carousel.slideCount > 300) throw new Error(`${locked.id} carousel page count is missing or outside the LinkedIn limit.`);
+      if (!Number.isInteger(post.carousel?.pdfBytes) || post.carousel.pdfBytes < 1) throw new Error(`${locked.id} carousel byte count is missing.`);
+      if (!/^[a-f0-9]{64}$/i.test(post.carousel?.pdfSha256 || '')) throw new Error(`${locked.id} carousel SHA-256 is missing or invalid.`);
+    }
     for (const target of post.targets) {
       const scheduled = post.scheduledAt?.[target];
       const scheduledDate = dateOnly(scheduled);
