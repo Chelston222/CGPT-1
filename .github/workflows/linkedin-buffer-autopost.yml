@@ -36,6 +36,7 @@ jobs:
             const path = require('node:path');
             const fs = require('node:fs');
             const { buildCreatePostMutation, validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
+            const { preflightMedia } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-media-preflight.cjs'));
             const { validateWeeklyBatch, withQaReplenishment } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
             const { acceptedMarker, classifyBufferFailure, localDate, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
             const { assertLiveNotionQualityGate } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-quality-gate.cjs'));
@@ -127,18 +128,34 @@ jobs:
                   }));
                 validateDailyPlacementLimit([...occupiedJobs, ...proposedJobs], 15, 5, queue.timezone || 'Europe/London');
 
+                // Every media asset is downloaded and verified before the first Buffer mutation.
+                // This protects against broken URLs, HTML error pages, MIME swaps, oversize media and changed approved PDFs.
+                const mediaProofs = new Map();
+                for (const { job } of plan.dispatch) {
+                  const proofKey = `${job.post.id}@${job.post.revision}`;
+                  if (!job.request.mediaUrl || mediaProofs.has(proofKey)) continue;
+                  mediaProofs.set(proofKey, await preflightMedia(job.request, fetch));
+                }
+
                 for (const { job, channel, key } of plan.dispatch) {
                   if (channel.dueAt && new Date(channel.dueAt).getTime() <= Date.now() + 5 * 60_000) {
                     throw new Error(`${job.post.id} / ${channel.name}: approved time is too close or has passed; revise the schedule and approve the new revision.`);
                   }
-                  const media = job.request.mediaUrl ? { url: job.request.mediaUrl, kind: job.request.mediaKind, title: job.request.documentTitle, thumbnailUrl: job.request.documentThumbnailUrl } : null;
+                  const media = job.request.mediaUrl ? {
+                    url: job.request.mediaUrl,
+                    kind: job.request.mediaKind,
+                    title: job.request.documentTitle,
+                    thumbnailUrl: job.request.documentThumbnailUrl,
+                    altText: job.request.mediaAltText,
+                  } : null;
                   const data = await buffer(buildCreatePostMutation(channel, job.request.mode, media));
                   const result = data.createPost;
                   if (!result?.post?.id) throw new Error(`${job.post.id} / ${channel.name}: Buffer did not return a post ID.`);
-                  results.push({ key, queueId: job.post.id, revision: job.post.revision, name: channel.name, postId: result.post.id, dueAt: channel.dueAt });
+                  const proof = mediaProofs.get(`${job.post.id}@${job.post.revision}`)?.media || null;
+                  results.push({ key, queueId: job.post.id, revision: job.post.revision, name: channel.name, postId: result.post.id, dueAt: channel.dueAt, mediaProof: proof });
                 }
 
-                const resultLines = results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` — ${result.dueAt}` : ''}\n  ${acceptedMarker(result.key)}`);
+                const resultLines = results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` — ${result.dueAt}` : ''}${result.mediaProof ? ` — media ${result.mediaProof.bytes} bytes / SHA-256 ${result.mediaProof.sha256}` : ''}\n  ${acceptedMarker(result.key)}`);
                 const qualityLines = qualitySnapshots.map((snapshot) => snapshot.mode === 'live-notion'
                   ? `- ${snapshot.id}@${snapshot.revision}: ${snapshot.decision} · ${snapshot.approval} · Anti-DNA ${snapshot.antiDnaPass ? 'PASS' : 'FAIL'} · ${snapshot.automationStatus}`
                   : `- ${snapshot.id}@${snapshot.revision}: ${snapshot.mode}`);
@@ -158,7 +175,7 @@ jobs:
                     `- Waiting for a free queue slot: **${waiting}**`,
                     ...(resultLines.length ? resultLines : ['- No new Buffer placements were created in this capacity check.']),
                     '',
-                    waiting ? 'The exact owner approval remains locked. The next automatic capacity check will resume without recreating accepted destinations.' : 'This records Buffer acceptance, not proof of LinkedIn publication. Publication must be recorded separately.',
+                    waiting ? 'The exact owner approval remains locked. The next automatic capacity check will resume without recreating accepted destinations.' : 'This records Buffer acceptance, not proof of LinkedIn publication. Publication verification is handled separately after the due time.',
                     waiting ? waitingMarker : '',
                   ].join('\n'),
                 });

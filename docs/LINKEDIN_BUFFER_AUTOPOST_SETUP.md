@@ -1,27 +1,34 @@
-# LinkedIn review, GitHub approval and Buffer scheduling
+# 222Emails LinkedIn review, approval and Buffer scheduling
 
 ## What this system does
 
-The mobile Content Swiper presents one scheduled week at a time across all three LinkedIn accounts. Chelston presses YES or NO after reviewing the category, destination, time, copy and media. Each choice is saved on that device and the next post appears automatically. When the week is complete, one GitHub record carries only the YES selections; only Chelston's final submission can start the Buffer workflow.
+The mobile Content Swiper presents LinkedIn content for human review across the configured destinations. A saved YES/NO decision is review state only. It is never permission to publish. Only a repository-owner GitHub issue beginning `[APPROVED LINKEDIN WEEK]` or `[APPROVED LINKEDIN]` can start the Buffer dispatch path.
 
-Buffer can add an approved item to a queue or schedule it for:
+The system supports:
 
-- Chelston's personal LinkedIn profile
-- Main 222 Emails LinkedIn page
-- Secondary TTE LinkedIn page
+- Chelston personal LinkedIn profile
+- Main 222Emails LinkedIn Page
+- 222Emails | Retention Lab
 - Explicit combinations of those destinations
+- Text-only posts
+- Single-image posts
+- LinkedIn PDF/document posts
 
-The interface and repository never contain Buffer credentials.
+The repository and review UI do not contain Buffer credentials.
 
 ## Live components
 
 - Content Swiper: `apps/linkedin-review/`
 - Scheduled queue: `apps/linkedin-review/queue.json`
-- Workflow: `.github/workflows/linkedin-buffer-autopost.yml`
+- Approval/dispatch workflow: `.github/workflows/linkedin-buffer-autopost.yml`
+- Publication/analytics verifier: `.github/workflows/linkedin-publication-verifier.yml`
+- Read-only Buffer queue diagnostic: `.github/workflows/buffer-usage-check-once.yml`
+- Media integrity preflight: `scripts/linkedin-media-preflight.cjs`
+- Core request/mutation builder: `scripts/linkedin-review-core.cjs`
+- Weekly lock/validation: `scripts/linkedin-week-batch.cjs`
+- Visual safe-zone standard: `docs/linkedin-visual-safe-zone-standard.md`
 - Approval template: `.github/ISSUE_TEMPLATE/approved-linkedin-post.md`
 - Rejection template: `.github/ISSUE_TEMPLATE/rejected-linkedin-post.md`
-- Weekly trigger title prefix: `[APPROVED LINKEDIN WEEK]`
-- Single-post fallback prefix: `[APPROVED LINKEDIN]`
 
 ## Repository secrets
 
@@ -31,23 +38,29 @@ Store these only in `Settings → Secrets and variables → Actions`:
 - `BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID`
 - `BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID`
 - `BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID`
+- `NOTION_API_KEY` where the live Notion quality gate is used
 
-Never paste the API key into a GitHub issue, chat, Notion or repository file.
+Never paste API keys into an issue, chat, Notion page or repository file.
 
 ## Human approval flow
 
-1. Codex writes, checks and adds a live-ready post to the review queue.
-2. Chelston opens the mobile Content Swiper.
-3. YES or NO saves locally and immediately advances to the next undecided item in the selected week. NO never contacts Buffer. **Next** moves to another card without saving any decision or changing the weekly hand-off.
-4. The weekly hand-off stays disabled until every review item has a decision and at least one item is YES.
-5. “Send approved week” opens one compact `[APPROVED LINKEDIN WEEK]` record containing locked `post-id@revision` references, not the full post copy.
-6. Chelston checks the weekly summary and submits the issue while signed into GitHub.
-7. GitHub checks the exact queue version, every post revision, destination, secret, time, copy variant and media URL for the complete week before the first Buffer request.
-8. A carousel is not eligible for YES or weekly dispatch until its promoted six-slide source has a verified publishable PDF. Missing media fails closed instead of producing a text-only post.
-9. The issue records every returned Buffer post ID and closes only after every requested destination succeeds.
-10. Failure or partial success leaves the issue open with exact recovery information. Never retry a partial batch blindly.
+1. A candidate post enters the current review queue with a stable ID and revision.
+2. Chelston reviews destination, time, copy and media in the Content Swiper.
+3. YES/NO saves review state only. NO never contacts Buffer.
+4. The weekly hand-off remains disabled until every item in scope has a decision and at least one item is YES.
+5. The hand-off creates one owner-controlled approval record containing locked `post-id@revision` references.
+6. Every approved request must explicitly carry `CONTENT_QA: PASS`; image posts must also carry `SAFE_ZONE_QA: PASS` after the final native-resolution creative is inspected against `docs/linkedin-visual-safe-zone-standard.md`.
+7. GitHub validates queue schema, queue generation state, revision, destinations, credentials, schedule, copy, quality state and media metadata before Buffer can be mutated.
+8. All media selected for that dispatch plan is remotely fetched and checked **before the first Buffer mutation**. The preflight verifies HTTPS, final URL, HTTP success, expected content type, file size, and where supplied, approved byte count and SHA-256.
+9. PDF/document posts additionally require a document title, thumbnail and page count. Current guardrails reject more than 300 pages or more than 100,000,000 bytes.
+10. Image posts require useful `ALT_TEXT` and are rejected above 10,000,000 bytes. The alt text is carried into Buffer's image metadata.
+11. Buffer acceptance records the returned Buffer post ID for every successful destination. Partial batches preserve accepted-destination idempotency and do not blindly recreate successful destinations.
+12. **Buffer acceptance is not publication proof.** After the due time, the publication verifier queries the exact Buffer post ID. Only Buffer state `sent` with `sentAt` is recorded as verified publication. Buffer state `error` is recorded as failed. A post still unresolved more than 30 minutes after due time is marked UNKNOWN/pending and surfaced for review.
+13. Post-level metrics are collected when Buffer exposes them. PDF/document posts retain a native LinkedIn analytics requirement because Buffer carousel analytics may be incomplete or unavailable.
 
-## Supported fields
+## Supported single-post fields
+
+Text-only example:
 
 ```text
 POST_ID: tte-li-013
@@ -55,9 +68,9 @@ REVISION: 1
 CATEGORY: buyer_diagnostics
 TARGETS: personal,main
 MODE: schedule
-SCHEDULE_AT_PERSONAL: 2026-09-01T08:15:00+01:00
-SCHEDULE_AT_MAIN: 2026-09-02T09:00:00+01:00
-MEDIA_URL:
+CONTENT_QA: PASS
+SCHEDULE_AT_PERSONAL: 2026-09-01T16:00:00+01:00
+SCHEDULE_AT_MAIN: 2026-09-02T17:00:00+01:00
 ---
 Fallback copy
 ---PERSONAL---
@@ -66,26 +79,68 @@ Founder-led version
 Company-page version
 ```
 
-`TARGETS` accepts `personal`, `main`, `secondary` or comma-separated combinations. Legacy `business`, `both` and `all` remain supported. Live-ready queue items use `MODE: schedule` or `MODE: queue`. A public HTTPS `MEDIA_URL` is optional.
+Single-image additions:
 
-## Safety behaviour
+```text
+CONTENT_QA: PASS
+SAFE_ZONE_QA: PASS
+MEDIA_URL: https://example.com/visual.png
+MEDIA_KIND: image
+ALT_TEXT: Clear description of the visual and its useful meaning
+MEDIA_BYTES: 845221
+MEDIA_SHA256: <64-character SHA-256 when the media is locked>
+```
 
-- Only a newly opened issue beginning `[APPROVED LINKEDIN WEEK]` or the single-post fallback `[APPROVED LINKEDIN]` can trigger the workflow.
-- The issue author must be the repository owner.
-- Local YES/NO choices cannot contact Buffer and persist across refreshes on the same device.
-- A queue version or revision change invalidates the affected saved approval.
-- NO selections are excluded from the batch and do not match either trigger.
-- Posts over 3,000 characters fail validation.
-- Schedules must be valid future ISO date/times.
-- Media must use HTTPS.
-- All inputs are preflighted before the first Buffer mutation.
-- Buffer cannot provide an atomic transaction across channels. If a later network/API call fails, every earlier Buffer post ID is recorded and the issue warns against a blind retry.
-- Buffer acceptance proves queue or schedule creation, not LinkedIn publication. Publication needs separate evidence.
+PDF/document additions:
 
-## Activation status — 9 August 2026
+```text
+CONTENT_QA: PASS
+MEDIA_URL: https://example.com/carousel.pdf
+MEDIA_KIND: document
+DOCUMENT_TITLE: Five places repeat revenue quietly leaks
+DOCUMENT_THUMBNAIL_URL: https://example.com/carousel-cover.jpg
+DOCUMENT_PAGE_COUNT: 6
+MEDIA_BYTES: 5187344
+MEDIA_SHA256: <64-character SHA-256>
+```
 
-- Personal, main and secondary routing checks passed before activation.
-- Every two-channel combination and the three-channel combination passed before activation.
-- The mobile Content Swiper, initial 18-post queue and three-channel workflow are implemented.
-- `BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID` is securely configured.
-- No scheduled or live post has been approved by this build.
+`TARGETS` accepts `personal`, `main`, `secondary` or comma-separated combinations. Legacy `business`, `both` and `all` aliases remain supported.
+
+## Schedule integrity
+
+- `Europe/London` is the operating timezone.
+- A schedule must be a valid future ISO date/time.
+- The live release path rejects an approved time if it is within five minutes of dispatch or already passed.
+- Existing owner-approved schedules must never be silently moved. A change in time requires a new approved revision.
+- New, unapproved inventory should use the current later-day testing policy in `LINKEDIN_CONTENT_STRATEGY_2026.md` rather than mechanically reproducing the historical morning-heavy queue.
+- Existing per-channel and account capacity guards remain active.
+- `MODE: draft` is deliberately excluded from scheduled queue-capacity and daily-placement accounting because Buffer drafts do not consume scheduled publishing capacity and cannot publish until explicitly scheduled.
+
+## Failure classes and recovery
+
+The system fails closed rather than guessing. Operational failures should be distinguishable as:
+
+- approval/revision/queue preflight
+- content/safe-zone quality gate
+- media URL/type/size/hash preflight
+- Buffer authentication/channel access
+- Buffer capacity
+- Buffer mutation
+- publication verification
+- analytics unavailable/native analytics required
+
+A successful Buffer destination is never recreated simply because another destination failed later. A failed or unknown publication must not be counted as published.
+
+## Current verified state — 21 August 2026
+
+- Personal, main and secondary Buffer channel routing is configured.
+- Weekly approval and capacity-release logic is live and has returned real Buffer post IDs.
+- Verified six-page PDF assets exist in the queue for current carousel records such as `tte-li-002` and `tte-li-005`.
+- The PDF/document scheduling path has already been accepted by Buffer. The old statement that the document mutation was unvalidated is superseded.
+- A read-only queue diagnostic on 20 August 2026 reported 26 scheduled LinkedIn posts, zero past-due scheduled posts and complete pagination.
+- The hardened release adds immutable media preflight, image alt-text enforcement, explicit content/safe-zone QA gates, independent post-publication verification, sent/error/UNKNOWN states, draft-canary terminal verification and an analytics/native-analytics learning loop.
+- A clean single-image Buffer-draft canary remains an explicit activation-gate item. It is non-public and must not be confused with permission to publish a new public LinkedIn post.
+
+## Release rule
+
+Do not call the system fully watertight merely because code exists. The v3 hardening release gate remains open until CI passes, the safe image canary succeeds, the current PDF path is regression-tested, publication verification produces real post-publication evidence, documentation matches the implementation and the final supervisor check reports no unexplained backlog.

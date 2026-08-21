@@ -5,22 +5,32 @@ on:
     paths:
       - 'apps/linkedin-review/**'
       - 'scripts/linkedin-review-core.cjs'
+      - 'scripts/linkedin-media-preflight.cjs'
+      - 'scripts/linkedin-week-batch.cjs'
       - 'scripts/linkedin-notion-quality-gate.cjs'
       - 'scripts/linkedin-buffer-capacity.cjs'
       - 'scripts/build-linkedin-master-ledger.mjs'
       - 'tests/linkedin-*.test.cjs'
+      - 'docs/LINKEDIN_*.md'
       - '.github/workflows/linkedin-buffer-autopost.yml'
+      - '.github/workflows/linkedin-publication-verifier.yml'
+      - '.github/workflows/buffer-usage-check-once.yml'
       - '.github/workflows/linkedin-review-ci.yml'
   push:
     branches: [main]
     paths:
       - 'apps/linkedin-review/**'
       - 'scripts/linkedin-review-core.cjs'
+      - 'scripts/linkedin-media-preflight.cjs'
+      - 'scripts/linkedin-week-batch.cjs'
       - 'scripts/linkedin-notion-quality-gate.cjs'
       - 'scripts/linkedin-buffer-capacity.cjs'
       - 'scripts/build-linkedin-master-ledger.mjs'
       - 'tests/linkedin-*.test.cjs'
+      - 'docs/LINKEDIN_*.md'
       - '.github/workflows/linkedin-buffer-autopost.yml'
+      - '.github/workflows/linkedin-publication-verifier.yml'
+      - '.github/workflows/buffer-usage-check-once.yml'
       - '.github/workflows/linkedin-review-ci.yml'
 
 permissions:
@@ -38,14 +48,39 @@ jobs:
           node-version: 22
       - name: Install review-service dependency
         run: npm install --prefix apps/linkedin-review --ignore-scripts --no-audit --no-fund
-      - name: Validate queue, approval, live quality and cross-device sync logic
+      - name: Validate queue, approval, media, publication rails and cross-device sync logic
         run: |
-          node --test tests/linkedin-buffer-capacity.test.cjs tests/linkedin-decision-sync.test.cjs tests/linkedin-review-core.test.cjs tests/linkedin-notion-quality-gate.test.cjs tests/linkedin-week-batch.test.cjs
+          node --test tests/linkedin-buffer-capacity.test.cjs tests/linkedin-decision-sync.test.cjs tests/linkedin-review-core.test.cjs tests/linkedin-media-preflight.test.cjs tests/linkedin-notion-quality-gate.test.cjs tests/linkedin-week-batch.test.cjs tests/linkedin-hardening-static.test.cjs
           node --test --test-name-pattern='manual Next|carousel can receive|carousel previews|slow GitHub audit|Swiper is a checked|UI distinguishes|review decisions persist|daily capacity display|review projection uses|weekly hand-off' tests/linkedin-review-static.test.cjs
           node --check apps/linkedin-review/app.js
           node --check apps/linkedin-review/sync.js
           node --check apps/linkedin-review/netlify/functions/review-decisions.mjs
           node --check scripts/build-linkedin-master-ledger.mjs
+          node --check scripts/linkedin-review-core.cjs
+          node --check scripts/linkedin-media-preflight.cjs
+          node --check scripts/linkedin-week-batch.cjs
           node --check scripts/linkedin-notion-quality-gate.cjs
           node -e "import('./apps/linkedin-review/netlify/functions/review-decisions.mjs').then(() => console.log('decision sync function imports'))"
           node -e "const q=require('./apps/linkedin-review/queue.json'); if(q.posts.length < 18) process.exit(1); for(const p of q.posts){if(!p.id||!p.copy||!p.targets?.length||!p.scheduledAt) process.exit(1)}"
+      - name: Regression-test a real ready carousel through the remote media gate
+        run: |
+          node <<'NODE'
+          const queue = require('./apps/linkedin-review/queue.json');
+          const { preflightMedia } = require('./scripts/linkedin-media-preflight.cjs');
+          const post = queue.posts.find((item) => item.format === 'carousel' && item.carousel?.readiness === 'ready');
+          if (!post) throw new Error('No ready carousel is available for remote regression testing.');
+          preflightMedia({
+            mediaUrl: post.mediaUrl,
+            mediaKind: 'document',
+            documentThumbnailUrl: post.documentThumbnailUrl,
+            documentPageCount: post.carousel.slideCount,
+            mediaBytes: post.carousel.pdfBytes,
+            mediaSha256: post.carousel.pdfSha256,
+          }).then((proof) => {
+            if (!proof?.media?.sha256 || proof.media.sha256 !== post.carousel.pdfSha256) throw new Error('Ready carousel integrity proof did not match queue metadata.');
+            console.log(`verified ${post.id}: ${proof.media.bytes} bytes / ${proof.media.sha256}`);
+          }).catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE

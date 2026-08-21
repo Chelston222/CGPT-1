@@ -1,0 +1,59 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = path.join(__dirname, '..');
+const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
+
+const autopost = read('.github/workflows/linkedin-buffer-autopost.yml');
+const verifier = read('.github/workflows/linkedin-publication-verifier.yml');
+const strategy = read('docs/LINKEDIN_CONTENT_STRATEGY_2026.md');
+
+test('all approved media is preflighted before the first Buffer createPost mutation', () => {
+  const preflightIndex = autopost.indexOf('await preflightMedia(job.request, fetch)');
+  const mutationIndex = autopost.indexOf('buildCreatePostMutation(channel, job.request.mode, media)');
+  assert.ok(preflightIndex >= 0, 'media preflight call is missing');
+  assert.ok(mutationIndex > preflightIndex, 'Buffer mutation can occur before media preflight');
+  assert.match(autopost, /MEDIA_SHA256|mediaProof\.sha256/);
+});
+
+test('publication verifier is read-only towards Buffer and distinguishes sent, error and unknown', () => {
+  assert.doesNotMatch(verifier, /mutation\s+CreatePost|createPost\s*\(/i);
+  assert.doesNotMatch(verifier, /deletePost|updatePost|movePost/i);
+  assert.match(verifier, /post\(input:\s*\{\s*id:/);
+  assert.match(verifier, /post\.status === 'sent'/);
+  assert.match(verifier, /post\.status === 'error'/);
+  assert.match(verifier, /LINKEDIN_PUBLICATION_PENDING/);
+  assert.match(verifier, /externalLink/);
+  assert.match(verifier, /sentAt/);
+});
+
+test('publication verification cannot label Buffer acceptance as publication', () => {
+  assert.match(autopost, /Buffer acceptance, not proof of LinkedIn publication/);
+  assert.match(verifier, /LINKEDIN_PUBLICATION_VERIFIED/);
+});
+
+test('non-public draft canaries terminate as verified drafts and stay out of analytics', () => {
+  assert.match(verifier, /LINKEDIN_DRAFT_CANARY_VERIFIED/);
+  assert.match(verifier, /post\.status === 'draft'/);
+  assert.ok(
+    verifier.includes("if (/^MODE:\\s*draft\\s*$/mi.test(String(issue.body || ''))) continue;"),
+    'analytics job must skip MODE: draft issues',
+  );
+  assert.match(verifier, /A draft canary must never silently become scheduled or sent/);
+});
+
+test('analytics loop retains a native LinkedIn route for document posts', () => {
+  assert.match(verifier, /LINKEDIN_NATIVE_ANALYTICS_REQUIRED/);
+  assert.match(verifier, /metricsUpdatedAt/);
+  assert.match(verifier, /application\/pdf/);
+});
+
+test('new scheduling policy preserves old approvals and tests later-day windows', () => {
+  assert.match(strategy, /Do \*\*not\*\* silently move an already owner-approved schedule/);
+  assert.match(strategy, /15:00 and 20:00/);
+  assert.match(strategy, /70% visual \/ 30% text-only/);
+});

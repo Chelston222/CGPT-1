@@ -129,6 +129,13 @@ function resolveCopy(copy, target) {
   return text;
 }
 
+function optionalPositiveInteger(raw, fieldName) {
+  if (raw == null || String(raw).trim() === '') return null;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1) throw new Error(`${fieldName} must be a positive integer.`);
+  return value;
+}
+
 function validateRequest(body, env = {}, now = Date.now()) {
   const { header, copy } = parseIssueBody(body);
   const targets = normaliseTargets(header.TARGETS || header.TARGET || 'personal');
@@ -151,10 +158,19 @@ function validateRequest(body, env = {}, now = Date.now()) {
     throw new Error('SAFE_ZONE_QA: PASS is required for image posts after inspecting the native-resolution creative.');
   }
 
+  const mediaAltText = String(header.ALT_TEXT || '').trim();
   const documentTitle = String(header.DOCUMENT_TITLE || '').trim();
-  if (mediaUrl && mediaKind === 'document' && !documentTitle) throw new Error('DOCUMENT_TITLE is required for a LinkedIn PDF carousel.');
   const documentThumbnailUrl = mediaKind === 'document' ? validateStableMediaUrl(header.DOCUMENT_THUMBNAIL_URL, 'DOCUMENT_THUMBNAIL_URL') : null;
+  const documentPageCount = optionalPositiveInteger(header.DOCUMENT_PAGE_COUNT, 'DOCUMENT_PAGE_COUNT');
+  const mediaBytes = optionalPositiveInteger(header.MEDIA_BYTES, 'MEDIA_BYTES');
+  const mediaSha256 = String(header.MEDIA_SHA256 || '').trim() || null;
+
+  if (mediaUrl && mediaKind === 'image' && !mediaAltText) throw new Error('ALT_TEXT is required for LinkedIn image posts.');
+  if (mediaUrl && mediaKind === 'document' && !documentTitle) throw new Error('DOCUMENT_TITLE is required for a LinkedIn PDF carousel.');
   if (mediaUrl && mediaKind === 'document' && !documentThumbnailUrl) throw new Error('DOCUMENT_THUMBNAIL_URL is required for a LinkedIn PDF carousel.');
+  if (mediaUrl && mediaKind === 'document' && !documentPageCount) throw new Error('DOCUMENT_PAGE_COUNT is required for a LinkedIn PDF carousel.');
+  if (mediaSha256 && !/^[a-f0-9]{64}$/i.test(mediaSha256)) throw new Error('MEDIA_SHA256 must be a 64-character hexadecimal SHA-256 digest.');
+
   const channels = targets.map((target) => {
     const secretName = TARGET_SECRET_NAMES[target];
     const id = env[secretName];
@@ -177,8 +193,12 @@ function validateRequest(body, env = {}, now = Date.now()) {
     mediaKind,
     contentQa,
     safeZoneQa,
+    mediaAltText,
+    mediaBytes,
+    mediaSha256,
     documentTitle,
     documentThumbnailUrl,
+    documentPageCount,
     channels,
   };
 }
@@ -228,7 +248,8 @@ function buildCreatePostMutation(channel, mode, media = null) {
   if (normalisedMedia?.url && normalisedMedia.kind === 'document') {
     fields.push(`assets: [{ document: { url: ${JSON.stringify(normalisedMedia.url)}, title: ${JSON.stringify(normalisedMedia.title)}, thumbnailUrl: ${JSON.stringify(normalisedMedia.thumbnailUrl)} } }]`);
   } else if (normalisedMedia?.url) {
-    fields.push(`assets: [{ image: { url: ${JSON.stringify(normalisedMedia.url)} } }]`);
+    const metadata = normalisedMedia.altText ? `, metadata: { altText: ${JSON.stringify(normalisedMedia.altText)} }` : '';
+    fields.push(`assets: [{ image: { url: ${JSON.stringify(normalisedMedia.url)}${metadata} } }]`);
   }
 
   return `
@@ -236,7 +257,7 @@ function buildCreatePostMutation(channel, mode, media = null) {
       createPost(input: {
         ${fields.join(',\n        ')}
       }) {
-        ... on PostActionSuccess { post { id text assets { id mimeType } } }
+        ... on PostActionSuccess { post { id text dueAt status assets { id mimeType } } }
         ... on MutationError { message }
       }
     }
@@ -249,6 +270,7 @@ module.exports = {
   TRIPLE_TWO_LINKEDIN_PAGE,
   buildCreatePostMutation,
   normaliseTargets,
+  optionalPositiveInteger,
   parseIssueBody,
   resolveCopy,
   resolveSchedule,

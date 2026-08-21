@@ -13,7 +13,7 @@ jobs:
     if: startsWith(github.event.issue.title, '[BUFFER USAGE CHECK]') && github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect Buffer queue and channel health
+      - name: Inspect Buffer queue, publication evidence and channel health
         uses: actions/github-script@v7
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
@@ -43,6 +43,27 @@ jobs:
                   throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
                 }
                 return { data: payload.data, headers: response.headers };
+              }
+
+              function acceptedRows(comments) {
+                const rows = [];
+                for (const comment of comments) {
+                  const body = String(comment.body || '');
+                  const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
+                  let match;
+                  while ((match = regex.exec(body))) rows.push({ bufferId: match[2], dueAt: match[3] || null });
+                }
+                return rows;
+              }
+
+              function markedIds(comments, marker) {
+                const ids = new Set();
+                const regex = new RegExp(`<!-- ${marker} bufferId=([^\\s>]+)`, 'g');
+                for (const comment of comments) {
+                  let match;
+                  while ((match = regex.exec(String(comment.body || '')))) ids.add(match[1]);
+                }
+                return ids;
               }
 
               if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured');
@@ -81,20 +102,58 @@ jobs:
                 };
               });
 
+              const since = new Date(now - 35 * 24 * 60 * 60 * 1000).toISOString();
+              const repoIssues = await github.paginate(github.rest.issues.listForRepo, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'all',
+                creator: context.repo.owner,
+                since,
+                per_page: 100,
+              });
+              const approvalIssues = repoIssues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+              let publicationBacklog = 0;
+              let analyticsBacklog = 0;
+              let explicitPublicationFailures = 0;
+
+              for (const issue of approvalIssues) {
+                const comments = await github.paginate(github.rest.issues.listComments, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  per_page: 100,
+                });
+                const accepted = acceptedRows(comments);
+                const verified = markedIds(comments, 'LINKEDIN_PUBLICATION_VERIFIED');
+                const failed = markedIds(comments, 'LINKEDIN_PUBLICATION_FAILED');
+                const analytics = markedIds(comments, 'LINKEDIN_ANALYTICS_CAPTURED');
+                const native = markedIds(comments, 'LINKEDIN_NATIVE_ANALYTICS_REQUIRED');
+                explicitPublicationFailures += failed.size;
+
+                for (const row of accepted) {
+                  const due = Date.parse(row.dueAt || '');
+                  if (Number.isFinite(due) && now - due >= 30 * 60 * 1000 && !verified.has(row.bufferId) && !failed.has(row.bufferId)) publicationBacklog += 1;
+                  if (verified.has(row.bufferId) && !analytics.has(row.bufferId) && !native.has(row.bufferId)) analyticsBacklog += 1;
+                }
+              }
+
               const rateLimit = accountResult.headers.get('ratelimit') || '(not returned)';
               const policy = accountResult.headers.get('ratelimit-policy') || '(not returned)';
               const lines = rows.map((r) => `- **${r.name}**: scheduled **${r.scheduled}**, past-due **${r.pastDue}**, next due **${r.nextDue || 'none'}**${r.oldestPastDue ? `, oldest past-due **${r.oldestPastDue}**` : ''}`);
               const suspicious = rows.filter((r) => r.pastDue > 0);
-              const diagnosis = suspicious.length
-                ? `⚠️ ${suspicious.map((r)=>r.name).join(', ')} has scheduled posts whose due time has already passed. Buffer accepted them but they have not left scheduled state, which points to a Buffer→LinkedIn publication/channel problem rather than a GitHub queue-supply problem.`
-                : '✅ No past-due scheduled posts were found. The Buffer queues are draining normally at this instant.';
+              let diagnosis;
+              if (suspicious.length || publicationBacklog > 0 || explicitPublicationFailures > 0) {
+                diagnosis = `⚠️ Release health is not fully green. Past-due scheduled destinations: ${suspicious.length}; publication-verification backlog: ${publicationBacklog}; explicit publication failures: ${explicitPublicationFailures}.`;
+              } else {
+                diagnosis = '✅ No past-due scheduled posts or unresolved publication-verification backlog were found. Buffer queues are draining normally at this instant.';
+              }
 
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
                 body: [
-                  '## Buffer live queue diagnostic',
+                  '## Buffer + LinkedIn release diagnostic',
                   '',
                   diagnosis,
                   '',
@@ -102,10 +161,13 @@ jobs:
                   '',
                   `- Total scheduled across configured LinkedIn channels: **${posts.length}**`,
                   `- Buffer result pagination incomplete: **${scheduledResult.data?.posts?.pageInfo?.hasNextPage ? 'YES' : 'NO'}**`,
+                  `- Publication-verification backlog (>30 min past due): **${publicationBacklog}**`,
+                  `- Explicit publication failures recorded: **${explicitPublicationFailures}**`,
+                  `- Analytics/native-capture backlog: **${analyticsBacklog}**`,
                   `- API rate-limit header: \`${rateLimit}\``,
                   `- API rate-limit policy: \`${policy}\``,
                   '',
-                  'This diagnostic is strictly read-only. It cannot publish, edit or reschedule Buffer posts.'
+                  'This diagnostic is strictly read-only towards Buffer and LinkedIn. It cannot publish, edit, delete or reschedule a Buffer post.'
                 ].join('\n')
               });
             } catch (error) {
@@ -115,11 +177,11 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
                 body: [
-                  '## Buffer live queue diagnostic failed closed',
+                  '## Buffer + LinkedIn release diagnostic failed closed',
                   '',
                   `- Error: \`${safeMessage}\``,
-                  '- No Buffer publish, edit, reschedule or creation action was attempted.',
-                  '- Treat current Buffer queue state as unverified until this diagnostic passes.'
+                  '- No Buffer publish, edit, delete, reschedule or creation action was attempted.',
+                  '- Treat current release state as unverified until this diagnostic passes.'
                 ].join('\n')
               });
               core.setFailed(safeMessage);
