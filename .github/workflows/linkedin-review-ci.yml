@@ -14,6 +14,7 @@ on:
       - 'docs/LINKEDIN_*.md'
       - '.github/workflows/linkedin-buffer-autopost.yml'
       - '.github/workflows/linkedin-publication-verifier.yml'
+      - '.github/workflows/linkedin-publication-backfill.yml'
       - '.github/workflows/buffer-usage-check-once.yml'
       - '.github/workflows/linkedin-review-ci.yml'
   push:
@@ -30,6 +31,7 @@ on:
       - 'docs/LINKEDIN_*.md'
       - '.github/workflows/linkedin-buffer-autopost.yml'
       - '.github/workflows/linkedin-publication-verifier.yml'
+      - '.github/workflows/linkedin-publication-backfill.yml'
       - '.github/workflows/buffer-usage-check-once.yml'
       - '.github/workflows/linkedin-review-ci.yml'
 
