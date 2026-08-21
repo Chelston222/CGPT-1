@@ -13,7 +13,7 @@ jobs:
     if: startsWith(github.event.issue.title, '[BUFFER USAGE CHECK]') && github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect Buffer queue, publication evidence and channel health
+      - name: Inspect Buffer queue, exact post, publication evidence and channel health
         uses: actions/github-script@v7
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
@@ -68,6 +68,10 @@ jobs:
 
               if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured');
 
+              const issueBody = String(context.payload.issue.body || '');
+              const exactPostId = issueBody.match(/^BUFFER_POST_ID:\s*([^\s]+)\s*$/mi)?.[1] || null;
+              if (exactPostId && !/^[A-Za-z0-9_-]{10,64}$/.test(exactPostId)) throw new Error('BUFFER_POST_ID is malformed.');
+
               const accountResult = await buffer('query UsageCheck { account { organizations { id } } }');
               const organizationId = accountResult.data?.account?.organizations?.[0]?.id;
               if (!organizationId) throw new Error('Buffer returned no organisation ID');
@@ -78,6 +82,13 @@ jobs:
                 process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID,
               ].filter(Boolean);
               if (!ids.length) throw new Error('No Buffer LinkedIn channel IDs are configured');
+
+              let exactPost = null;
+              if (exactPostId) {
+                const exactResult = await buffer(`query ExactPostStatus { post(input: { id: ${JSON.stringify(exactPostId)} }) { id status dueAt sentAt externalLink channelId error { message supportUrl } assets { id mimeType } } }`);
+                exactPost = exactResult.data?.post || null;
+                if (!exactPost) throw new Error(`Buffer returned no post for ${exactPostId}.`);
+              }
 
               const query = `query ScheduledCapacity { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(ids)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`;
               const scheduledResult = await buffer(query);
@@ -140,6 +151,18 @@ jobs:
               const rateLimit = accountResult.headers.get('ratelimit') || '(not returned)';
               const policy = accountResult.headers.get('ratelimit-policy') || '(not returned)';
               const lines = rows.map((r) => `- **${r.name}**: scheduled **${r.scheduled}**, past-due **${r.pastDue}**, next due **${r.nextDue || 'none'}**${r.oldestPastDue ? `, oldest past-due **${r.oldestPastDue}**` : ''}`);
+              const exactLines = exactPost ? [
+                '',
+                '### Exact Buffer post',
+                `- Buffer post ID: \`${exactPost.id}\``,
+                `- Status: **${exactPost.status || 'unknown'}**`,
+                `- Channel: **${names[exactPost.channelId] || exactPost.channelId || 'unknown'}**`,
+                `- Due at: **${exactPost.dueAt || 'none'}**`,
+                `- Sent at: **${exactPost.sentAt || 'none'}**`,
+                `- External link: ${exactPost.externalLink || 'none'}`,
+                `- Error: ${exactPost.error?.message || 'none'}`,
+                `- Asset MIME types: ${(exactPost.assets || []).map((asset) => asset.mimeType).filter(Boolean).join(', ') || 'none returned'}`,
+              ] : [];
               const suspicious = rows.filter((r) => r.pastDue > 0);
               let diagnosis;
               if (suspicious.length || publicationBacklog > 0 || explicitPublicationFailures > 0) {
@@ -158,6 +181,7 @@ jobs:
                   diagnosis,
                   '',
                   ...lines,
+                  ...exactLines,
                   '',
                   `- Total scheduled across configured LinkedIn channels: **${posts.length}**`,
                   `- Buffer result pagination incomplete: **${scheduledResult.data?.posts?.pageInfo?.hasNextPage ? 'YES' : 'NO'}**`,
