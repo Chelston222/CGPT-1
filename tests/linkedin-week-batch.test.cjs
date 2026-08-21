@@ -45,6 +45,7 @@ test('locks a complete weekly request to queue version and post revisions', () =
   assert.equal(batch.weekEnd, '2026-08-23');
   assert.equal(batch.jobs.length, 2);
   assert.equal(batch.jobs[1].request.channels[1].text, 'Secondary angle');
+  assert.equal(batch.jobs[0].request.contentQa, 'pass');
 });
 
 test('fails the whole preflight when the queue or a revision changed', () => {
@@ -91,6 +92,24 @@ test('fails closed instead of sending a carousel as a text-only post', () => {
     () => validateWeeklyBatch(body({ items: 'tte-li-001@3' }), carouselQueue, ENV, Date.parse('2026-08-09T00:00:00Z')),
     /carousel PDF and public thumbnail are not verified and publishable/,
   );
+});
+
+test('weekly image posts require an explicit safe-zone pass on the exact queue revision', () => {
+  const imagePost = {
+    ...queue.posts[0],
+    format: 'image',
+    mediaUrl: 'https://example.com/visual.png',
+    mediaAlt: 'Revenue recovery visual',
+  };
+  const unsafe = { ...queue, posts: [imagePost] };
+  assert.throws(
+    () => validateWeeklyBatch(body({ items: 'tte-li-001@3' }), unsafe, ENV, Date.parse('2026-08-09T00:00:00Z')),
+    /missing an explicit safe-zone QA pass/,
+  );
+
+  const safe = { ...queue, posts: [{ ...imagePost, safeZoneQa: 'PASS' }] };
+  const result = validateWeeklyBatch(body({ items: 'tte-li-001@3' }), safe, ENV, Date.parse('2026-08-09T00:00:00Z'));
+  assert.equal(result.jobs[0].request.safeZoneQa, 'pass');
 });
 
 test('accepts a full 105-placement week when each account stays within five per day', () => {

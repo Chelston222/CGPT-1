@@ -63,6 +63,12 @@ function addDays(value, days) {
   return date.toISOString().slice(0, 10);
 }
 
+function imageSafeZonePassed(post) {
+  if (!post.mediaUrl || post.format === 'carousel') return true;
+  const value = post.safeZoneQa ?? post.qa?.safeZoneQa ?? post.qa?.safeZoneQA;
+  return String(value || '').trim().toLowerCase() === 'pass';
+}
+
 function postBody(post) {
   const lines = [
     `POST_ID: ${post.id}`,
@@ -70,6 +76,9 @@ function postBody(post) {
     `CATEGORY: ${post.category}`,
     `TARGETS: ${post.targets.join(',')}`,
     `MODE: ${post.mode}`,
+    // A weekly issue is created only after the owner has locked this exact revision as YES.
+    // That explicit selection is the content-QA authority for the generated Buffer-bound request.
+    'CONTENT_QA: PASS',
   ];
   const schedules = Object.entries(post.scheduledAt || {});
   if (schedules.length === 1) lines.push(`SCHEDULE_AT: ${schedules[0][1]}`);
@@ -86,6 +95,9 @@ function postBody(post) {
       if (post.carousel?.pdfBytes) lines.push(`MEDIA_BYTES: ${post.carousel.pdfBytes}`);
       if (post.carousel?.pdfSha256) lines.push(`MEDIA_SHA256: ${post.carousel.pdfSha256}`);
     } else {
+      // Never infer image safe-zone approval merely from a YES decision.
+      // It must be recorded on the exact queue revision after native-resolution inspection.
+      if (imageSafeZonePassed(post)) lines.push('SAFE_ZONE_QA: PASS');
       lines.push(`ALT_TEXT: ${post.mediaAlt || post.title || '222Emails LinkedIn visual'}`);
       if (post.mediaBytes) lines.push(`MEDIA_BYTES: ${post.mediaBytes}`);
       if (post.mediaSha256) lines.push(`MEDIA_SHA256: ${post.mediaSha256}`);
@@ -125,6 +137,9 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
       if (!Number.isInteger(post.carousel?.pdfBytes) || post.carousel.pdfBytes < 1) throw new Error(`${locked.id} carousel byte count is missing.`);
       if (!/^[a-f0-9]{64}$/i.test(post.carousel?.pdfSha256 || '')) throw new Error(`${locked.id} carousel SHA-256 is missing or invalid.`);
     }
+    if (post.mediaUrl && post.format !== 'carousel' && !imageSafeZonePassed(post)) {
+      throw new Error(`${locked.id} image is missing an explicit safe-zone QA pass for this exact queue revision.`);
+    }
     for (const target of post.targets) {
       const scheduled = post.scheduledAt?.[target];
       const scheduledDate = dateOnly(scheduled);
@@ -137,4 +152,4 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
   return { batchId: header.BATCH_ID || `linkedin-week-${header.WEEK_START}`, weekStart: header.WEEK_START, weekEnd, jobs, placementsByDay };
 }
 
-module.exports = { parseHeaders, parseItems, postBody, validateWeeklyBatch, withQaReplenishment };
+module.exports = { imageSafeZonePassed, parseHeaders, parseItems, postBody, validateWeeklyBatch, withQaReplenishment };

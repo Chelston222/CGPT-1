@@ -118,13 +118,16 @@ jobs:
                 const plan = planCapacityWindow(jobs, occupancy, accepted);
 
                 const targetByChannelId = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [id, target]));
-                const proposedJobs = plan.dispatch.map(({ job, channel }) => ({ post: job.post, request: { channels: [channel] } }));
+                const proposedJobs = plan.dispatch.map(({ job, channel }) => ({
+                  post: job.post,
+                  request: { mode: job.request.mode, channels: [channel] },
+                }));
                 const proposedDates = new Set(plan.dispatch.map(({ channel }) => localDate(channel.dueAt, queue.timezone || 'Europe/London')).filter(Boolean));
                 const occupiedJobs = capacity.scheduled
                   .filter((entry) => proposedDates.has(localDate(entry.dueAt, queue.timezone || 'Europe/London')))
                   .map((entry, index) => ({
                     post: { id: `buffer-existing-${index}`, revision: 1 },
-                    request: { channels: [{ target: targetByChannelId[entry.channelId], dueAt: entry.dueAt }] },
+                    request: { mode: 'schedule', channels: [{ target: targetByChannelId[entry.channelId], dueAt: entry.dueAt }] },
                   }));
                 validateDailyPlacementLimit([...occupiedJobs, ...proposedJobs], 15, 5, queue.timezone || 'Europe/London');
 
