@@ -10,6 +10,7 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
 const autopost = read('.github/workflows/linkedin-buffer-autopost.yml');
 const verifier = read('.github/workflows/linkedin-publication-verifier.yml');
+const backfill = read('.github/workflows/linkedin-publication-backfill.yml');
 const strategy = read('docs/LINKEDIN_CONTENT_STRATEGY_2026.md');
 
 test('all approved media is preflighted before the first Buffer createPost mutation', () => {
@@ -34,6 +35,19 @@ test('publication verifier is read-only towards Buffer and distinguishes sent, e
   assert.match(verifier, /LINKEDIN_PUBLICATION_PENDING/);
   assert.match(verifier, /externalLink/);
   assert.match(verifier, /sentAt/);
+});
+
+test('publication backfill is read-only and uses cursor pagination', () => {
+  assert.doesNotMatch(backfill, /mutation\s+CreatePost|createPost\s*\(/i);
+  assert.doesNotMatch(backfill, /deletePost|updatePost|movePost/i);
+  assert.match(backfill, /hasNextPage/);
+  assert.match(backfill, /endCursor/);
+  assert.match(backfill, /after:/);
+  assert.match(backfill, /LINKEDIN_PUBLICATION_VERIFIED/);
+  assert.match(backfill, /LINKEDIN_PUBLICATION_FAILED/);
+  assert.match(backfill, /LINKEDIN_DRAFT_CANARY_VERIFIED/);
+  assert.match(backfill, /LINKEDIN_NATIVE_ANALYTICS_REQUIRED/);
+  assert.match(backfill, /strictly read-only|read-only/i);
 });
 
 test('publication verification cannot label Buffer acceptance as publication', () => {
