@@ -149,6 +149,15 @@ function validateRequest(body, env = {}, now = Date.now()) {
   const mediaKind = (header.MEDIA_KIND || (mediaUrl && /\.pdf(?:$|\?)/i.test(mediaUrl) ? 'document' : 'image')).toLowerCase();
   if (!['image', 'document'].includes(mediaKind)) throw new Error('MEDIA_KIND must be image or document.');
 
+  const contentQa = String(header.CONTENT_QA || '').trim().toLowerCase();
+  const safeZoneQa = String(header.SAFE_ZONE_QA || '').trim().toLowerCase();
+  if (contentQa !== 'pass') {
+    throw new Error('CONTENT_QA: PASS is required before any LinkedIn post can reach Buffer.');
+  }
+  if (mediaUrl && mediaKind === 'image' && safeZoneQa !== 'pass') {
+    throw new Error('SAFE_ZONE_QA: PASS is required for image posts after inspecting the native-resolution creative.');
+  }
+
   const mediaAltText = String(header.ALT_TEXT || '').trim();
   const documentTitle = String(header.DOCUMENT_TITLE || '').trim();
   const documentThumbnailUrl = mediaKind === 'document' ? validateStableMediaUrl(header.DOCUMENT_THUMBNAIL_URL, 'DOCUMENT_THUMBNAIL_URL') : null;
@@ -182,6 +191,8 @@ function validateRequest(body, env = {}, now = Date.now()) {
     mode,
     mediaUrl,
     mediaKind,
+    contentQa,
+    safeZoneQa,
     mediaAltText,
     mediaBytes,
     mediaSha256,
