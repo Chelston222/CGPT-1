@@ -20,6 +20,11 @@ test('all approved media is preflighted before the first Buffer createPost mutat
   assert.match(autopost, /MEDIA_SHA256|mediaProof\.sha256/);
 });
 
+test('draft mode survives capacity planning into daily placement validation', () => {
+  assert.match(autopost, /request: \{ mode: job\.request\.mode, channels: \[channel\] \}/);
+  assert.match(autopost, /request: \{ mode: 'schedule', channels: \[\{ target: targetByChannelId\[entry\.channelId\], dueAt: entry\.dueAt \}\] \}/);
+});
+
 test('publication verifier is read-only towards Buffer and distinguishes sent, error and unknown', () => {
   assert.doesNotMatch(verifier, /mutation\s+CreatePost|createPost\s*\(/i);
   assert.doesNotMatch(verifier, /deletePost|updatePost|movePost/i);
