@@ -30,20 +30,34 @@ jobs:
         with:
           node-version: '24'
       - name: Run LinkedIn hardening and RR14 integrity tests
-        run: node --test tests/linkedin-*.test.cjs tests/rr14-content-pool.test.cjs
+        shell: bash
+        run: |
+          set +e
+          node --test tests/linkedin-*.test.cjs tests/rr14-content-pool.test.cjs 2>&1 | tee /tmp/linkedin-hardening-tests.txt
+          code=${PIPESTATUS[0]}
+          exit "$code"
       - name: Record manual test result
         if: github.event_name == 'issues' && always()
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('node:fs');
             const passed = '${{ job.status }}' === 'success';
+            let output = '';
+            try { output = fs.readFileSync('/tmp/linkedin-hardening-tests.txt', 'utf8'); } catch {}
+            if (output.length > 30000) output = output.slice(-30000);
+            const body = [
+              passed
+                ? '✅ LinkedIn hardening + RR14 integrity test suite passed on the current default-branch checkout.'
+                : '❌ LinkedIn hardening + RR14 integrity test suite failed.',
+              '',
+              output ? `<details><summary>Test output</summary>\n\n\`\`\`text\n${output}\n\`\`\`\n</details>` : 'No test output file was available.',
+            ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: passed
-                ? '✅ LinkedIn hardening + RR14 integrity test suite passed on the current default-branch checkout.'
-                : '❌ LinkedIn hardening + RR14 integrity test suite failed. Inspect the workflow run before treating the release contract as green.',
+              body,
             });
             await github.rest.issues.update({
               owner: context.repo.owner,
