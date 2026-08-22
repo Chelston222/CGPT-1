@@ -1,0 +1,119 @@
+name: LinkedIn Terminal Reconcile
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-terminal-reconcile
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: startsWith(github.event.issue.title, '[LINKEDIN TERMINAL RECONCILE]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve only evidence-backed non-public or intentionally removed historical records
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
+
+            function idsFromHeader(body) {
+              const match = String(body || '').match(/^DELETE_POST_IDS:\s*([^\n]+)/mi);
+              return match ? match[1].split(',').map((id) => id.trim()).filter(Boolean) : [];
+            }
+            function acceptedRows(comments) {
+              const rows = [];
+              for (const comment of comments) {
+                const body = String(comment.body || '');
+                const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
+                let match;
+                while ((match = regex.exec(body))) rows.push({ label: match[1].trim(), bufferId: match[2], dueAt: match[3] || null });
+              }
+              return rows;
+            }
+            function markerSet(comments, marker) {
+              const ids = new Set();
+              const regex = new RegExp(`<!-- ${marker} bufferId=([^\\s>]+)`, 'g');
+              for (const comment of comments) {
+                let match;
+                while ((match = regex.exec(String(comment.body || '')))) ids.add(match[1]);
+              }
+              return ids;
+            }
+
+            // A deletion counts only when a cleanup issue both listed the exact ID and has
+            // bot evidence that the cleanup completed. Merely mentioning an ID is insufficient.
+            const deletionEvidence = new Map();
+            for (const issue of issues.filter((i) => !i.pull_request && /BUFFER CLEANUP/i.test(i.title))) {
+              const ids = idsFromHeader(issue.body);
+              if (!ids.length) continue;
+              const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+              const completed = comments.some((comment) => comment.user?.login === 'github-actions[bot]' && /Buffer (?:priority )?cleanup complete|Buffer cleanup completed/i.test(String(comment.body || '')));
+              if (!completed) continue;
+              for (const id of ids) deletionEvidence.set(id, issue.number);
+            }
+
+            const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+            let superseded = 0;
+            let retiredDrafts = 0;
+            let unresolved = 0;
+
+            for (const issue of candidates) {
+              const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+              const pending = markerSet(comments, 'LINKEDIN_PUBLICATION_PENDING');
+              if (!pending.size) continue;
+              const terminal = new Set([
+                ...markerSet(comments, 'LINKEDIN_PUBLICATION_VERIFIED'),
+                ...markerSet(comments, 'LINKEDIN_PUBLICATION_FAILED'),
+                ...markerSet(comments, 'LINKEDIN_PUBLICATION_SUPERSEDED'),
+                ...markerSet(comments, 'LINKEDIN_DRAFT_CANARY_RETIRED'),
+                ...markerSet(comments, 'LINKEDIN_DRAFT_CANARY_VERIFIED'),
+              ]);
+              const rows = acceptedRows(comments);
+              const isDraft = /^MODE:\s*draft\s*$/mi.test(String(issue.body || '')) || comments.some((comment) => /Mode:\s*\*\*draft\*\*|Audit status:\s*\*\*buffer_draft\*\*/i.test(String(comment.body || '')));
+              const lines = [];
+
+              for (const row of rows) {
+                if (!pending.has(row.bufferId) || terminal.has(row.bufferId)) continue;
+                if (isDraft) {
+                  retiredDrafts += 1;
+                  lines.push(`- ✅ ${row.label}: \`${row.bufferId}\` was an explicitly non-public Buffer draft. Its disappearance from historical Buffer results is terminal **retired draft**, not an unverified publication.`);
+                  lines.push(`  <!-- LINKEDIN_DRAFT_CANARY_RETIRED bufferId=${row.bufferId} -->`);
+                } else if (deletionEvidence.has(row.bufferId)) {
+                  superseded += 1;
+                  const cleanupIssue = deletionEvidence.get(row.bufferId);
+                  lines.push(`- ✅ ${row.label}: \`${row.bufferId}\` was explicitly deleted by governed cleanup issue #${cleanupIssue} before publication. Terminal state: **superseded, not published**.`);
+                  lines.push(`  <!-- LINKEDIN_PUBLICATION_SUPERSEDED bufferId=${row.bufferId} cleanupIssue=${cleanupIssue} -->`);
+                } else {
+                  unresolved += 1;
+                }
+              }
+
+              if (lines.length) await github.rest.issues.createComment({
+                owner, repo, issue_number: issue.number,
+                body: ['## Evidence-backed terminal reconciliation', '', ...lines, '', 'These terminal states do not claim publication. They distinguish intentional non-public retirement/removal from genuine publication evidence.'].join('\n'),
+              });
+            }
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: context.issue.number,
+              body: [
+                '## Terminal reconciliation complete', '',
+                `- Controlled-deletion placements marked superseded: **${superseded}**`,
+                `- Explicit non-public drafts marked retired: **${retiredDrafts}**`,
+                `- Pending placements without evidence-backed terminal classification: **${unresolved}**`, '',
+                unresolved ? '⚠️ Unexplained historical records remain. Do not treat them as resolved.' : '✅ Every historical pending record in scope now has an evidence-backed terminal classification.',
+                '', 'No Buffer or LinkedIn mutation was performed.'
+              ].join('\n'),
+            });
+            if (unresolved) core.setFailed(`${unresolved} unexplained historical publication records remain.`);
+            else await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
