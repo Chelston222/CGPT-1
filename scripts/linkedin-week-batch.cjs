@@ -9,6 +9,7 @@ const QA_REPLENISHMENT_PATHS = [
   path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-11.json'),
   path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-17.json'),
   path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-22.json'),
+  path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-22-rr14-wave2.json'),
 ];
 
 function withQaReplenishment(queue) {
