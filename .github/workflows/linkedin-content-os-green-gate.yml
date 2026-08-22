@@ -182,7 +182,9 @@ jobs:
               `Operational GREEN is measured from the hardening boundary (${new Date(HARDENING_CUTOFF).toISOString()}). Older native-only analytics debt stays visible and is never rewritten as captured, but it does not permanently poison the new release contract.`,
             ].join('\n');
 
-            const allOpen = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', creator: owner, per_page: 100 });
+            // Health issues are created by github-actions[bot], so this lookup must not
+            // filter by owner creator or every run would create a duplicate singleton.
+            const allOpen = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
             const existing = allOpen.find((issue) => !issue.pull_request && issue.title === HEALTH_TITLE);
             if (green) {
               if (existing) {
