@@ -8,6 +8,7 @@ const { validateDailyPlacementLimit } = require('./linkedin-buffer-capacity.cjs'
 const QA_REPLENISHMENT_PATHS = [
   path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-11.json'),
   path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-17.json'),
+  path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-22.json'),
 ];
 
 function withQaReplenishment(queue) {
@@ -76,8 +77,6 @@ function postBody(post) {
     `CATEGORY: ${post.category}`,
     `TARGETS: ${post.targets.join(',')}`,
     `MODE: ${post.mode}`,
-    // A weekly issue is created only after the owner has locked this exact revision as YES.
-    // That explicit selection is the content-QA authority for the generated Buffer-bound request.
     'CONTENT_QA: PASS',
   ];
   const schedules = Object.entries(post.scheduledAt || {});
@@ -95,8 +94,6 @@ function postBody(post) {
       if (post.carousel?.pdfBytes) lines.push(`MEDIA_BYTES: ${post.carousel.pdfBytes}`);
       if (post.carousel?.pdfSha256) lines.push(`MEDIA_SHA256: ${post.carousel.pdfSha256}`);
     } else {
-      // Never infer image safe-zone approval merely from a YES decision.
-      // It must be recorded on the exact queue revision after native-resolution inspection.
       if (imageSafeZonePassed(post)) lines.push('SAFE_ZONE_QA: PASS');
       lines.push(`ALT_TEXT: ${post.mediaAlt || post.title || '222Emails LinkedIn visual'}`);
       if (post.mediaBytes) lines.push(`MEDIA_BYTES: ${post.mediaBytes}`);
