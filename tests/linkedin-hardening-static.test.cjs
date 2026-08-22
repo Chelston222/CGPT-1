@@ -76,3 +76,18 @@ test('new scheduling policy preserves old approvals and tests later-day windows'
   assert.match(strategy, /15:00 and 20:00/);
   assert.match(strategy, /70% visual \/ 30% text-only/);
 });
+
+test('a surviving concurrency run drains every open approval rather than only its trigger issue', () => {
+  assert.match(autopost, /state: 'open', creator: owner, per_page: 100/);
+  assert.match(autopost, /sort\(\(a, b\) => a\.number - b\.number\)/);
+  assert.doesNotMatch(autopost, /context\.eventName === 'issues'\s*\?\s*\[context\.payload\.issue\]/);
+  assert.match(autopost, /full open approval queue|drain all/i);
+});
+
+test('one-shot approvals must exactly match a current locked queue revision', () => {
+  assert.match(autopost, /requestFingerprint/);
+  assert.match(autopost, /postBody\(queuePost\)/);
+  assert.match(autopost, /approval body does not exactly match the locked queue copy, schedule, targets or media/);
+  assert.match(autopost, /Legacy issue-only dispatch is disabled/);
+  assert.doesNotMatch(autopost, /repository-owner-approved-legacy/);
+});
