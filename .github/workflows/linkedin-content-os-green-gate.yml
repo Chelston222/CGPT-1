@@ -1,6 +1,8 @@
 name: LinkedIn Content OS Green Gate
 
 on:
+  issues:
+    types: [opened]
   workflow_dispatch:
   schedule:
     - cron: '12 6,18 * * *'
@@ -15,6 +17,7 @@ concurrency:
 
 jobs:
   audit:
+    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[CONTENT OS CHECK]') && github.event.issue.user.login == github.repository_owner)
     runs-on: ubuntu-latest
     steps:
       - name: Audit closed-loop LinkedIn release health
@@ -49,15 +52,15 @@ jobs:
             function acceptedRows(comments) {
               const rows = [];
               for (const comment of comments) {
+                const body = String(comment.body || '');
                 const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
                 let match;
-                const body = String(comment.body || '');
                 while ((match = regex.exec(body))) rows.push({ bufferId: match[2], dueAt: match[3] || null });
               }
               return rows;
             }
 
-            function markerSet(comments, kind) {
+            function markers(comments, kind) {
               const out = new Set();
               const regex = new RegExp(`<!-- ${kind} bufferId=([^\\s>]+)`, 'g');
               for (const comment of comments) {
@@ -101,15 +104,22 @@ jobs:
             let analyticsApiBacklog = 0;
             let nativeCaptureBacklog = 0;
             let legacyDispatchesAfterCutoff = 0;
+            let superseded = 0;
+            let retiredDrafts = 0;
 
             for (const issue of approvalIssues) {
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
-              const verified = markerSet(comments, 'LINKEDIN_PUBLICATION_VERIFIED');
-              const failed = markerSet(comments, 'LINKEDIN_PUBLICATION_FAILED');
-              const analytics = markerSet(comments, 'LINKEDIN_ANALYTICS_CAPTURED');
-              const nativeRequired = markerSet(comments, 'LINKEDIN_NATIVE_ANALYTICS_REQUIRED');
-              const nativeCaptured = markerSet(comments, 'LINKEDIN_NATIVE_ANALYTICS_CAPTURED');
+              const verified = markers(comments, 'LINKEDIN_PUBLICATION_VERIFIED');
+              const failed = markers(comments, 'LINKEDIN_PUBLICATION_FAILED');
+              const supersededIds = markers(comments, 'LINKEDIN_PUBLICATION_SUPERSEDED');
+              const draftRetired = markers(comments, 'LINKEDIN_DRAFT_CANARY_RETIRED');
+              const draftVerified = markers(comments, 'LINKEDIN_DRAFT_CANARY_VERIFIED');
+              const analytics = markers(comments, 'LINKEDIN_ANALYTICS_CAPTURED');
+              const nativeRequired = markers(comments, 'LINKEDIN_NATIVE_ANALYTICS_REQUIRED');
+              const nativeCaptured = markers(comments, 'LINKEDIN_NATIVE_ANALYTICS_CAPTURED');
               publicationFailures += failed.size;
+              superseded += supersededIds.size;
+              retiredDrafts += draftRetired.size;
 
               for (const comment of comments) {
                 const ts = Date.parse(comment.created_at || comment.updated_at || '');
@@ -117,18 +127,18 @@ jobs:
               }
 
               for (const row of acceptedRows(comments)) {
+                const terminal = verified.has(row.bufferId) || failed.has(row.bufferId) || supersededIds.has(row.bufferId) || draftRetired.has(row.bufferId) || draftVerified.has(row.bufferId);
                 const due = Date.parse(row.dueAt || '');
-                const overdue = Number.isFinite(due) && now - due >= 30 * 60 * 1000;
-                if (overdue && !verified.has(row.bufferId) && !failed.has(row.bufferId)) publicationBacklog += 1;
-                if (verified.has(row.bufferId) && !analytics.has(row.bufferId) && !nativeRequired.has(row.bufferId)) analyticsApiBacklog += 1;
-                if (nativeRequired.has(row.bufferId) && !nativeCaptured.has(row.bufferId)) nativeCaptureBacklog += 1;
+                if (Number.isFinite(due) && now - due >= 30 * 60 * 1000 && !terminal) publicationBacklog += 1;
+                if (verified.has(row.bufferId) && !analytics.has(row.bufferId) && !nativeRequired.has(row.bufferId) && !nativeCaptured.has(row.bufferId)) analyticsApiBacklog += 1;
+                if (verified.has(row.bufferId) && nativeRequired.has(row.bufferId) && !nativeCaptured.has(row.bufferId)) nativeCaptureBacklog += 1;
               }
             }
 
             const paginationIncomplete = scheduled.data?.posts?.pageInfo?.hasNextPage === true;
-            const queueNonEmpty = Object.values(queue).every((row) => row.scheduled > 0 && row.scheduled <= 10);
+            const queueHealthy = Object.values(queue).every((row) => row.scheduled > 0 && row.scheduled <= 10);
             const noPastDue = Object.values(queue).every((row) => row.pastDue === 0);
-            const green = queueNonEmpty
+            const green = queueHealthy
               && noPastDue
               && !paginationIncomplete
               && publicationBacklog === 0
@@ -139,36 +149,35 @@ jobs:
               && openApprovals === 0;
 
             const checks = [
-              ['Queue non-empty and within 10/channel', queueNonEmpty],
+              ['Queue healthy and non-empty', queueHealthy],
               ['No past-due scheduled posts', noPastDue],
               ['Buffer pagination complete', !paginationIncomplete],
               ['Publication verification current', publicationBacklog === 0],
               ['No explicit publication failures', publicationFailures === 0],
-              ['Buffer analytics captured/routed', analyticsApiBacklog === 0],
-              ['Native analytics capture current', nativeCaptureBacklog === 0],
+              ['Buffer analytics captured or correctly routed', analyticsApiBacklog === 0],
+              ['Native LinkedIn analytics capture current', nativeCaptureBacklog === 0],
               ['No legacy dispatch since hardening', legacyDispatchesAfterCutoff === 0],
               ['No approval left waiting between cycles', openApprovals === 0],
             ];
+
             const body = [
-              '# LinkedIn Content OS health',
-              '',
-              green ? '🟢 **GREEN** — every release invariant currently passes.' : '🟠 **NOT GREEN** — at least one closed-loop invariant needs attention.',
-              '',
-              ...checks.map(([label, pass]) => `- ${pass ? '✅' : '❌'} ${label}`),
-              '',
+              '# LinkedIn Content OS health', '',
+              green ? '🟢 **GREEN** — every closed-loop invariant currently passes.' : '🟠 **NOT GREEN** — at least one closed-loop invariant still needs evidence or action.', '',
+              ...checks.map(([label, pass]) => `- ${pass ? '✅' : '❌'} ${label}`), '',
               `- Chelston personal: **${queue.personal.scheduled} scheduled**, **${queue.personal.pastDue} past-due**, next **${queue.personal.nextDue || 'none'}**`,
               `- Main 222Emails: **${queue.main.scheduled} scheduled**, **${queue.main.pastDue} past-due**, next **${queue.main.nextDue || 'none'}**`,
               `- Retention Lab: **${queue.secondary.scheduled} scheduled**, **${queue.secondary.pastDue} past-due**, next **${queue.secondary.nextDue || 'none'}**`,
               `- Publication verification backlog: **${publicationBacklog}**`,
               `- Publication failures: **${publicationFailures}**`,
+              `- Intentionally superseded/not-published historical placements: **${superseded}**`,
+              `- Retired non-public draft canaries: **${retiredDrafts}**`,
               `- Buffer analytics backlog: **${analyticsApiBacklog}**`,
               `- Native analytics capture backlog: **${nativeCaptureBacklog}**`,
               `- Legacy dispatches after hardening cutoff: **${legacyDispatchesAfterCutoff}**`,
               `- Open approval issues: **${openApprovals}**`,
               `- Buffer pagination incomplete: **${paginationIncomplete ? 'YES' : 'NO'}**`,
-              `- Checked at: **${new Date(now).toISOString()}**`,
-              '',
-              'GREEN is intentionally strict: Buffer acceptance alone is not enough. Publication evidence, analytics closure, queue health and locked-current approval provenance must all be current.',
+              `- Checked at: **${new Date(now).toISOString()}**`, '',
+              'Superseded and retired-draft markers are terminal but never count as publication. GREEN requires actual publication evidence for published placements and actual analytics closure for verified sent posts.',
             ].join('\n');
 
             const allOpen = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', creator: owner, per_page: 100 });
@@ -184,5 +193,9 @@ jobs:
               await github.rest.issues.create({ owner, repo, title: HEALTH_TITLE, body });
             }
 
+            if (context.eventName === 'issues') {
+              await github.rest.issues.createComment({ owner, repo, issue_number: context.issue.number, body });
+              await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
+            }
             core.summary.addHeading('LinkedIn Content OS Green Gate').addRaw(body).write();
             if (!green) core.setFailed('LinkedIn Content OS is not GREEN. See the health issue for failed invariants.');
