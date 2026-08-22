@@ -11,6 +11,9 @@ permissions:
   issues: write
   contents: read
 
+# One global release lock protects Buffer capacity calculations. GitHub keeps at
+# most one pending run per concurrency group, so every surviving run drains the
+# full open approval queue rather than processing only its triggering issue.
 concurrency:
   group: linkedin-buffer-capacity-release
   cancel-in-progress: false
@@ -37,7 +40,7 @@ jobs:
             const fs = require('node:fs');
             const { buildCreatePostMutation, validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
             const { preflightMedia } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-media-preflight.cjs'));
-            const { validateWeeklyBatch, withQaReplenishment } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
+            const { postBody, validateWeeklyBatch, withQaReplenishment } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
             const { acceptedMarker, classifyBufferFailure, localDate, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
             const { assertLiveNotionQualityGate } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-quality-gate.cjs'));
 
@@ -79,10 +82,37 @@ jobs:
               return { counts, scheduled };
             }
 
-            const issues = context.eventName === 'issues'
-              ? [context.payload.issue]
-              : (await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', creator: owner, per_page: 100 }))
-                .filter((issue) => !issue.pull_request && (issue.title.startsWith('[APPROVED LINKEDIN WEEK]') || issue.title.startsWith('[APPROVED LINKEDIN]')));
+            function requestFingerprint(request) {
+              return JSON.stringify({
+                postId: request.postId,
+                revision: String(request.revision),
+                category: request.category,
+                mode: request.mode,
+                mediaUrl: request.mediaUrl || null,
+                mediaKind: request.mediaKind,
+                mediaAltText: request.mediaAltText || '',
+                mediaBytes: request.mediaBytes || null,
+                mediaSha256: request.mediaSha256 || null,
+                documentTitle: request.documentTitle || '',
+                documentThumbnailUrl: request.documentThumbnailUrl || null,
+                documentPageCount: request.documentPageCount || null,
+                channels: request.channels.map((channel) => ({
+                  target: channel.target,
+                  id: channel.id,
+                  text: channel.text,
+                  dueAt: channel.dueAt || null,
+                })),
+              });
+            }
+
+            // Never process only the triggering issue. GitHub concurrency may replace an
+            // older pending run with a newer one, so the surviving run must drain all
+            // current approvals under the same global capacity lock.
+            const issues = (await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', creator: owner, per_page: 100,
+            }))
+              .filter((issue) => !issue.pull_request && (issue.title.startsWith('[APPROVED LINKEDIN WEEK]') || issue.title.startsWith('[APPROVED LINKEDIN]')))
+              .sort((a, b) => a.number - b.number);
 
             for (const issue of issues) {
               const results = [];
@@ -91,26 +121,36 @@ jobs:
                 const accepted = parseAcceptedMarkers(comments);
                 const isWeekly = issue.title.startsWith('[APPROVED LINKEDIN WEEK]');
                 const batch = isWeekly ? validateWeeklyBatch(issue.body || '', baseQueue, process.env, Date.parse(issue.created_at), { allowGeneratedAtDrift: accepted.size > 0 }) : null;
-                const request = isWeekly ? null : validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
-                const jobs = batch?.jobs || [{ post: { id: request.postId, revision: request.revision, category: request.category }, request }];
+
+                let jobs;
+                if (isWeekly) {
+                  jobs = batch.jobs;
+                } else {
+                  const approvedRequest = validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
+                  const queuePost = (queue.posts || []).find((post) => post.id === approvedRequest.postId && String(post.revision) === String(approvedRequest.revision));
+                  if (!queuePost) throw new Error(`${approvedRequest.postId}@${approvedRequest.revision} is not the current locked queue revision. Legacy issue-only dispatch is disabled.`);
+                  const lockedRequest = validateRequest(postBody(queuePost), process.env, Date.parse(issue.created_at));
+                  if (requestFingerprint(approvedRequest) !== requestFingerprint(lockedRequest)) {
+                    throw new Error(`${approvedRequest.postId}@${approvedRequest.revision} approval body does not exactly match the locked queue copy, schedule, targets or media.`);
+                  }
+                  jobs = [{ post: queuePost, request: lockedRequest }];
+                }
 
                 const qualitySnapshots = [];
-                let qualityMode = 'repository-owner-approved-legacy';
+                const modes = new Set();
                 for (const job of jobs) {
                   const queuePost = (queue.posts || []).find((post) => post.id === job.post.id && String(post.revision) === String(job.post.revision));
-                  if (queuePost && process.env.NOTION_API_KEY && queuePost.sourceType !== 'qa_replenishment' && queuePost.sourceType !== 'qa_weekly_replenishment') {
+                  if (!queuePost) throw new Error(`${job.post.id}@${job.post.revision} is not the current locked queue revision.`);
+                  if (process.env.NOTION_API_KEY && queuePost.sourceType !== 'qa_replenishment' && queuePost.sourceType !== 'qa_weekly_replenishment') {
                     const quality = await assertLiveNotionQualityGate(queuePost, process.env.NOTION_API_KEY, fetch);
-                    qualityMode = 'live-notion';
+                    modes.add('live-notion');
                     qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, ...quality.snapshot, mode: 'live-notion' });
-                  } else if (queuePost) {
-                    qualityMode = 'owner-approved-current-queue';
-                    qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, mode: 'owner-approved-current-queue' });
-                  } else if (isWeekly) {
-                    throw new Error(`${job.post.id}@${job.post.revision} is not the current queue revision.`);
                   } else {
-                    qualitySnapshots.push({ id: job.post.id, revision: job.post.revision, mode: 'repository-owner-approved-legacy' });
+                    modes.add('owner-approved-current-queue');
+                    qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, mode: 'owner-approved-current-queue' });
                   }
                 }
+                const qualityMode = modes.size === 1 ? [...modes][0] : [...modes].sort().join('+');
 
                 const channelIdByTarget = Object.fromEntries(jobs.flatMap((job) => job.request.channels.map((channel) => [channel.target, channel.id])));
                 const capacity = await queueOccupancy(Object.values(channelIdByTarget));
@@ -131,8 +171,6 @@ jobs:
                   }));
                 validateDailyPlacementLimit([...occupiedJobs, ...proposedJobs], 15, 5, queue.timezone || 'Europe/London');
 
-                // Every media asset is downloaded and verified before the first Buffer mutation.
-                // This protects against broken URLs, HTML error pages, MIME swaps, oversize media and changed approved PDFs.
                 const mediaProofs = new Map();
                 for (const { job } of plan.dispatch) {
                   const proofKey = `${job.post.id}@${job.post.revision}`;
@@ -172,7 +210,7 @@ jobs:
                     `- Quality gate mode: **${qualityMode}**`,
                     ...qualityLines,
                     `- Audit status: **${waiting ? 'approved — waiting for Buffer capacity' : 'scheduled'}**`,
-                    batch ? `- Approved week: **${batch.weekStart} to ${batch.weekEnd}**` : `- Queue post: **${jobs[0].post.id || 'legacy issue'}**`,
+                    batch ? `- Approved week: **${batch.weekStart} to ${batch.weekEnd}**` : `- Queue post: **${jobs[0].post.id}**`,
                     `- Already accepted before this run: **${plan.alreadyAccepted.length}**`,
                     `- Accepted in this run: **${results.length}**`,
                     `- Waiting for a free queue slot: **${waiting}**`,
