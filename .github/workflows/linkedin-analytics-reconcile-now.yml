@@ -1,0 +1,112 @@
+name: LinkedIn Analytics Reconcile Now
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-analytics-reconcile-now
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: startsWith(github.event.issue.title, '[LINKEDIN ANALYTICS NOW]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Capture Buffer metrics or route truthfully to native analytics
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured');
+
+            async function buffer(query) {
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.BUFFER_API_KEY}` },
+                body: JSON.stringify({ query }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              const messages = (payload.errors || []).map((error) => error.message).filter(Boolean);
+              if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
+              return payload.data;
+            }
+
+            const since = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
+            const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+            let capturedNow = 0;
+            let routedNativeNow = 0;
+            let alreadyResolved = 0;
+            let unavailable = 0;
+
+            for (const issue of candidates) {
+              if (/^MODE:\s*draft\s*$/mi.test(String(issue.body || ''))) continue;
+              const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+              const body = comments.map((comment) => String(comment.body || '')).join('\n');
+              const verified = [...new Set([...body.matchAll(/<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=([^\s>]+)/g)].map((m) => m[1]))];
+              const captured = new Set([...body.matchAll(/<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
+              const nativeRequired = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_REQUIRED bufferId=([^\s>]+)/g)].map((m) => m[1]));
+              const nativeCaptured = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
+
+              for (const bufferId of verified) {
+                if (captured.has(bufferId) || nativeRequired.has(bufferId) || nativeCaptured.has(bufferId)) {
+                  alreadyResolved += 1;
+                  continue;
+                }
+                const data = await buffer(`query MetricsNow { post(input: { id: ${JSON.stringify(bufferId)} }) { id status sentAt externalLink metricsUpdatedAt metrics { type name value unit } assets { mimeType source } } }`);
+                const post = data?.post;
+                if (!post || post.status !== 'sent') {
+                  unavailable += 1;
+                  continue;
+                }
+                const metrics = post.metrics || [];
+                if (metrics.length && post.metricsUpdatedAt) {
+                  const lines = metrics.map((metric) => `- ${metric.name || metric.type}: **${metric.value}**${metric.unit === 'percentage' ? '%' : ''}`);
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: issue.number,
+                    body: [
+                      '📊 Buffer post-level analytics captured by reconciliation.', '',
+                      `- Buffer post ID: \`${bufferId}\``,
+                      `- Metrics refreshed: **${post.metricsUpdatedAt}**`,
+                      ...lines, '',
+                      `<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=${bufferId} metricsUpdatedAt=${post.metricsUpdatedAt} -->`,
+                    ].join('\n'),
+                  });
+                  capturedNow += 1;
+                } else {
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: issue.number,
+                    body: [
+                      '📎 Native LinkedIn analytics required.', '',
+                      `- Buffer post ID: \`${bufferId}\``,
+                      `- LinkedIn destination: ${post.externalLink || 'available from the LinkedIn account'}`,
+                      '- Buffer currently exposes no usable post-level metrics for this sent placement.',
+                      '- Do not invent or infer private LinkedIn impressions, profile/Page visits, saves or commercial responses. Capture them natively before closing the learning loop.', '',
+                      `<!-- LINKEDIN_NATIVE_ANALYTICS_REQUIRED bufferId=${bufferId} -->`,
+                    ].join('\n'),
+                  });
+                  routedNativeNow += 1;
+                }
+              }
+            }
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: context.issue.number,
+              body: [
+                '## Analytics reconciliation complete', '',
+                `- Buffer analytics captured now: **${capturedNow}**`,
+                `- Newly routed to native LinkedIn analytics: **${routedNativeNow}**`,
+                `- Already analytics-resolved/routed: **${alreadyResolved}**`,
+                `- Verified IDs unavailable as current sent Buffer records: **${unavailable}**`, '',
+                routedNativeNow ? '⚠️ Native LinkedIn capture remains a real dependency for the routed posts. No private metric has been guessed.' : '✅ No new native analytics dependency was created in this pass.',
+              ].join('\n'),
+            });
+            await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
