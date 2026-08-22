@@ -1,0 +1,188 @@
+name: LinkedIn Content OS Green Gate
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '12 6,18 * * *'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-content-os-green-gate
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Audit closed-loop LinkedIn release health
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
+          BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
+          BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const LEGACY_CUTOFF = Date.parse('2026-08-22T23:25:00Z');
+            const HEALTH_TITLE = '[CONTENT OS HEALTH] LinkedIn release gate';
+
+            async function buffer(query) {
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: {
+                  'content-type': 'application/json',
+                  authorization: `Bearer ${process.env.BUFFER_API_KEY}`,
+                },
+                body: JSON.stringify({ query }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              const messages = (payload.errors || []).map((error) => error.message).filter(Boolean);
+              if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
+              return { data: payload.data, headers: response.headers };
+            }
+
+            function acceptedRows(comments) {
+              const rows = [];
+              for (const comment of comments) {
+                const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
+                let match;
+                const body = String(comment.body || '');
+                while ((match = regex.exec(body))) rows.push({ bufferId: match[2], dueAt: match[3] || null });
+              }
+              return rows;
+            }
+
+            function markerSet(comments, kind) {
+              const out = new Set();
+              const regex = new RegExp(`<!-- ${kind} bufferId=([^\\s>]+)`, 'g');
+              for (const comment of comments) {
+                let match;
+                while ((match = regex.exec(String(comment.body || '')))) out.add(match[1]);
+              }
+              return out;
+            }
+
+            if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured.');
+            const channelIds = {
+              personal: process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID,
+              main: process.env.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID,
+              secondary: process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID,
+            };
+            if (Object.values(channelIds).some((id) => !id)) throw new Error('One or more LinkedIn Buffer channel IDs are missing.');
+
+            const account = await buffer('query ContentOsAccount { account { organizations { id } } }');
+            const organizationId = account.data?.account?.organizations?.[0]?.id;
+            if (!organizationId) throw new Error('Buffer returned no organisation ID.');
+
+            const scheduled = await buffer(`query ContentOsScheduled { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(Object.values(channelIds))} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`);
+            const posts = (scheduled.data?.posts?.edges || []).map((edge) => edge.node);
+            const now = Date.now();
+            const queue = Object.fromEntries(Object.entries(channelIds).map(([target, id]) => {
+              const rows = posts.filter((post) => post.channelId === id);
+              return [target, {
+                scheduled: rows.length,
+                pastDue: rows.filter((post) => post.dueAt && Date.parse(post.dueAt) < now).length,
+                nextDue: rows.filter((post) => post.dueAt && Date.parse(post.dueAt) >= now).sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0]?.dueAt || null,
+              }];
+            }));
+
+            const since = new Date(now - 45 * 24 * 60 * 60 * 1000).toISOString();
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
+            const approvalIssues = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+            const openApprovals = approvalIssues.filter((issue) => issue.state === 'open' && issue.title.startsWith('[APPROVED LINKEDIN')).length;
+
+            let publicationBacklog = 0;
+            let publicationFailures = 0;
+            let analyticsApiBacklog = 0;
+            let nativeCaptureBacklog = 0;
+            let legacyDispatchesAfterCutoff = 0;
+
+            for (const issue of approvalIssues) {
+              const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+              const verified = markerSet(comments, 'LINKEDIN_PUBLICATION_VERIFIED');
+              const failed = markerSet(comments, 'LINKEDIN_PUBLICATION_FAILED');
+              const analytics = markerSet(comments, 'LINKEDIN_ANALYTICS_CAPTURED');
+              const nativeRequired = markerSet(comments, 'LINKEDIN_NATIVE_ANALYTICS_REQUIRED');
+              const nativeCaptured = markerSet(comments, 'LINKEDIN_NATIVE_ANALYTICS_CAPTURED');
+              publicationFailures += failed.size;
+
+              for (const comment of comments) {
+                const ts = Date.parse(comment.created_at || comment.updated_at || '');
+                if (Number.isFinite(ts) && ts >= LEGACY_CUTOFF && String(comment.body || '').includes('repository-owner-approved-legacy')) legacyDispatchesAfterCutoff += 1;
+              }
+
+              for (const row of acceptedRows(comments)) {
+                const due = Date.parse(row.dueAt || '');
+                const overdue = Number.isFinite(due) && now - due >= 30 * 60 * 1000;
+                if (overdue && !verified.has(row.bufferId) && !failed.has(row.bufferId)) publicationBacklog += 1;
+                if (verified.has(row.bufferId) && !analytics.has(row.bufferId) && !nativeRequired.has(row.bufferId)) analyticsApiBacklog += 1;
+                if (nativeRequired.has(row.bufferId) && !nativeCaptured.has(row.bufferId)) nativeCaptureBacklog += 1;
+              }
+            }
+
+            const paginationIncomplete = scheduled.data?.posts?.pageInfo?.hasNextPage === true;
+            const queueNonEmpty = Object.values(queue).every((row) => row.scheduled > 0 && row.scheduled <= 10);
+            const noPastDue = Object.values(queue).every((row) => row.pastDue === 0);
+            const green = queueNonEmpty
+              && noPastDue
+              && !paginationIncomplete
+              && publicationBacklog === 0
+              && publicationFailures === 0
+              && analyticsApiBacklog === 0
+              && nativeCaptureBacklog === 0
+              && legacyDispatchesAfterCutoff === 0
+              && openApprovals === 0;
+
+            const checks = [
+              ['Queue non-empty and within 10/channel', queueNonEmpty],
+              ['No past-due scheduled posts', noPastDue],
+              ['Buffer pagination complete', !paginationIncomplete],
+              ['Publication verification current', publicationBacklog === 0],
+              ['No explicit publication failures', publicationFailures === 0],
+              ['Buffer analytics captured/routed', analyticsApiBacklog === 0],
+              ['Native analytics capture current', nativeCaptureBacklog === 0],
+              ['No legacy dispatch since hardening', legacyDispatchesAfterCutoff === 0],
+              ['No approval left waiting between cycles', openApprovals === 0],
+            ];
+            const body = [
+              '# LinkedIn Content OS health',
+              '',
+              green ? '🟢 **GREEN** — every release invariant currently passes.' : '🟠 **NOT GREEN** — at least one closed-loop invariant needs attention.',
+              '',
+              ...checks.map(([label, pass]) => `- ${pass ? '✅' : '❌'} ${label}`),
+              '',
+              `- Chelston personal: **${queue.personal.scheduled} scheduled**, **${queue.personal.pastDue} past-due**, next **${queue.personal.nextDue || 'none'}**`,
+              `- Main 222Emails: **${queue.main.scheduled} scheduled**, **${queue.main.pastDue} past-due**, next **${queue.main.nextDue || 'none'}**`,
+              `- Retention Lab: **${queue.secondary.scheduled} scheduled**, **${queue.secondary.pastDue} past-due**, next **${queue.secondary.nextDue || 'none'}**`,
+              `- Publication verification backlog: **${publicationBacklog}**`,
+              `- Publication failures: **${publicationFailures}**`,
+              `- Buffer analytics backlog: **${analyticsApiBacklog}**`,
+              `- Native analytics capture backlog: **${nativeCaptureBacklog}**`,
+              `- Legacy dispatches after hardening cutoff: **${legacyDispatchesAfterCutoff}**`,
+              `- Open approval issues: **${openApprovals}**`,
+              `- Buffer pagination incomplete: **${paginationIncomplete ? 'YES' : 'NO'}**`,
+              `- Checked at: **${new Date(now).toISOString()}**`,
+              '',
+              'GREEN is intentionally strict: Buffer acceptance alone is not enough. Publication evidence, analytics closure, queue health and locked-current approval provenance must all be current.',
+            ].join('\n');
+
+            const allOpen = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', creator: owner, per_page: 100 });
+            const existing = allOpen.find((issue) => !issue.pull_request && issue.title === HEALTH_TITLE);
+            if (green) {
+              if (existing) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body });
+                await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'closed', state_reason: 'completed' });
+              }
+            } else if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title: HEALTH_TITLE, body });
+            }
+
+            core.summary.addHeading('LinkedIn Content OS Green Gate').addRaw(body).write();
+            if (!green) core.setFailed('LinkedIn Content OS is not GREEN. See the health issue for failed invariants.');
