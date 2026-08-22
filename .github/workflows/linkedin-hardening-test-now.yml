@@ -16,10 +16,6 @@ permissions:
   contents: read
   issues: write
 
-concurrency:
-  group: linkedin-hardening-test-now
-  cancel-in-progress: false
-
 jobs:
   test:
     if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[LINKEDIN HARDENING TEST]') && github.event.issue.user.login == github.repository_owner)
