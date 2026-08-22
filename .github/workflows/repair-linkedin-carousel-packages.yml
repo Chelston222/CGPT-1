@@ -1,0 +1,142 @@
+name: Repair LinkedIn Carousel Packages
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: repair-linkedin-carousel-packages
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[REPAIR LINKEDIN CAROUSELS]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deterministic PDF renderer
+        run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Verify and repair carousel packages from locked slide renders
+        id: repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import glob, hashlib, json, os
+          from datetime import datetime, timezone
+          from PIL import Image
+
+          queue_path = 'apps/linkedin-review/queue.json'
+          with open(queue_path, encoding='utf-8') as f:
+              queue = json.load(f)
+
+          repaired = []
+          checked = 0
+          now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+          for post in queue.get('posts', []):
+              if post.get('format') != 'carousel':
+                  continue
+              carousel = post.get('carousel') or {}
+              library_id = str(carousel.get('libraryId') or '').strip()
+              if not library_id:
+                  raise SystemExit(f"{post.get('id')} carousel has no libraryId")
+              folder = os.path.join('apps/linkedin-review/media/carousels', library_id)
+              pdfs = glob.glob(os.path.join(folder, '*.pdf'))
+              slides = sorted(glob.glob(os.path.join(folder, 'slide-*.webp')), key=lambda p: int(os.path.basename(p).split('-')[1].split('.')[0]))
+              thumbnail = os.path.join(folder, 'thumbnail.jpg')
+              if len(pdfs) != 1 or not slides or not os.path.isfile(thumbnail):
+                  raise SystemExit(f"{post.get('id')} carousel package is incomplete: pdfs={len(pdfs)} slides={len(slides)} thumbnail={os.path.isfile(thumbnail)}")
+              pdf_path = pdfs[0]
+              checked += 1
+              raw = open(pdf_path, 'rb').read()
+              current_bytes = len(raw)
+              current_hash = hashlib.sha256(raw).hexdigest()
+              expected_bytes = int(carousel.get('pdfBytes') or 0)
+              expected_hash = str(carousel.get('pdfSha256') or '')
+              if current_bytes == expected_bytes and current_hash == expected_hash:
+                  continue
+
+              images = []
+              for slide in slides:
+                  with Image.open(slide) as image:
+                      images.append(image.convert('RGB'))
+              images[0].save(pdf_path, 'PDF', resolution=144.0, save_all=True, append_images=images[1:])
+              for image in images:
+                  image.close()
+              raw = open(pdf_path, 'rb').read()
+              if not raw.startswith(b'%PDF-'):
+                  raise SystemExit(f"{post.get('id')} regenerated file is not a PDF")
+              new_bytes = len(raw)
+              new_hash = hashlib.sha256(raw).hexdigest()
+              if new_bytes <= 0 or new_bytes >= 100 * 1024 * 1024:
+                  raise SystemExit(f"{post.get('id')} regenerated PDF size is invalid: {new_bytes}")
+
+              old_revision = int(post.get('revision') or 0)
+              post['revision'] = old_revision + 1
+              carousel['pdfBytes'] = new_bytes
+              carousel['pdfSha256'] = new_hash
+              carousel['readiness'] = 'ready'
+              carousel['verifiedAt'] = now
+              post.setdefault('history', []).append({
+                  'state': 'media_repaired',
+                  'at': now,
+                  'actor': 'github-actions[bot]',
+                  'note': f'Carousel package regenerated from {len(slides)} locked WebP slides after repository byte/hash mismatch; revision {old_revision} -> {old_revision + 1}.',
+              })
+              repaired.append({'id': post.get('id'), 'libraryId': library_id, 'bytes': new_bytes, 'sha256': new_hash, 'revision': post['revision']})
+
+          if repaired:
+              queue['generatedAt'] = now
+              with open(queue_path, 'w', encoding='utf-8') as f:
+                  json.dump(queue, f, indent=2, ensure_ascii=False)
+                  f.write('\n')
+          with open('/tmp/carousel-repair.json', 'w', encoding='utf-8') as f:
+              json.dump({'checked': checked, 'repaired': repaired}, f)
+          print(json.dumps({'checked': checked, 'repaired': repaired}, indent=2))
+          PY
+      - name: Commit repaired binary packages and locked metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- apps/linkedin-review/queue.json apps/linkedin-review/media/carousels; then
+            echo 'No carousel repair commit required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/linkedin-review/queue.json apps/linkedin-review/media/carousels
+          git commit -m 'Repair LinkedIn carousel package integrity'
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Report repair result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            let result = { checked: 0, repaired: [] };
+            try { result = JSON.parse(fs.readFileSync('/tmp/carousel-repair.json', 'utf8')); } catch {}
+            const failed = '${{ job.status }}' !== 'success';
+            const lines = (result.repaired || []).map((item) => `- ${item.id} / carousel ${item.libraryId}: revision **${item.revision}**, **${item.bytes} bytes**, SHA-256 \`${item.sha256}\``);
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                failed ? '❌ Carousel package integrity repair failed closed.' : '✅ Carousel package integrity verified/repaired.', '',
+                `- Carousel records checked: **${result.checked || 0}**`,
+                `- Packages regenerated: **${(result.repaired || []).length}**`,
+                ...(lines.length ? lines : ['- No byte/hash repair was required.']), '',
+                'Any regenerated asset receives a new queue revision. Old approvals therefore cannot silently publish changed media.'
+              ].join('\n'),
+            });
+            if (!failed) await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
