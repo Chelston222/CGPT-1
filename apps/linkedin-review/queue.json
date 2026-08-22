@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-09T20:15:00+01:00",
+  "generatedAt": "2026-08-22T23:41:55.868312Z",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -66,7 +66,7 @@
     },
     {
       "id": "tte-li-002",
-      "revision": 2,
+      "revision": 3,
       "title": "Your booking platform is not your follow-up strategy",
       "category": "email_revenue_education",
       "funnelStage": "mof",
@@ -90,9 +90,9 @@
         "libraryId": "028",
         "slideCount": 6,
         "readiness": "ready",
-        "pdfBytes": 6391783,
-        "pdfSha256": "ab363af03a9d8d47f6cd53413a57f40261920df2f2d2829aeacca246850d28ee",
-        "verifiedAt": "2026-08-09T17:10:00+01:00",
+        "pdfBytes": 679127,
+        "pdfSha256": "7b8c5e2b28ba28ea6255c64853b5876587685d510494ab0f8995e3ffb60b1d8c",
+        "verifiedAt": "2026-08-22T23:41:55.868312Z",
         "sourceFolder": "028 - Your Booking Reminder Cannot Do the Job of a Rebooking Email"
       },
       "sourceUrl": "https://app.notion.com/3b0e72eb858781c79397c947e5e61962",
@@ -132,6 +132,12 @@
           "state": "reschedule_requested",
           "actor": "system",
           "note": "Moved from the 17 August example week into the week beginning 9 August; existing human approval retained."
+        },
+        {
+          "state": "media_repaired",
+          "at": "2026-08-22T23:41:55.868312Z",
+          "actor": "github-actions[bot]",
+          "note": "Carousel package regenerated from 6 locked WebP slides after repository byte/hash mismatch; revision 2 -> 3."
         }
       ]
     },
@@ -227,7 +233,7 @@
     },
     {
       "id": "tte-li-005",
-      "revision": 2,
+      "revision": 3,
       "title": "Five places repeat revenue quietly leaks",
       "category": "buyer_diagnostics",
       "funnelStage": "mof",
@@ -251,9 +257,9 @@
         "libraryId": "015",
         "slideCount": 6,
         "readiness": "ready",
-        "pdfBytes": 5187344,
-        "pdfSha256": "61af11051a78f9d2ee360b3dca1f28288aea71286bb09679f13427b3ce57745a",
-        "verifiedAt": "2026-08-09T17:10:00+01:00",
+        "pdfBytes": 638474,
+        "pdfSha256": "cf174e0f0cf8222db5af231be99319542c18fed79eb95cbbc6be1d7cc8ce2e99",
+        "verifiedAt": "2026-08-22T23:41:55.868312Z",
         "sourceFolder": "015 - Fix Retention Before You Buy More Leads"
       },
       "sourceUrl": "https://app.notion.com/3ace72eb8587812a9424c2d52531fcdd",
@@ -293,6 +299,12 @@
           "state": "reschedule_requested",
           "actor": "system",
           "note": "Moved from the 17 August example week into the week beginning 9 August; existing human approval retained."
+        },
+        {
+          "state": "media_repaired",
+          "at": "2026-08-22T23:41:55.868312Z",
+          "actor": "github-actions[bot]",
+          "note": "Carousel package regenerated from 6 locked WebP slides after repository byte/hash mismatch; revision 2 -> 3."
         }
       ]
     },
@@ -625,7 +637,7 @@
     },
     {
       "id": "tte-li-013",
-      "revision": 4,
+      "revision": 5,
       "title": "The client return leak checklist",
       "category": "buyer_diagnostics",
       "funnelStage": "mof",
@@ -653,9 +665,9 @@
         "libraryId": "017",
         "slideCount": 6,
         "readiness": "ready",
-        "pdfBytes": 5152900,
-        "pdfSha256": "5d0dbf3dece867cf4a0f5523a6f2c78fb467e576e459cbf2cda49fcb3823eb95",
-        "verifiedAt": "2026-08-09T17:10:00+01:00",
+        "pdfBytes": 658048,
+        "pdfSha256": "27e523988538958e7f4b3257b00c6a2d5cde015912d2c673d9c59886d6300976",
+        "verifiedAt": "2026-08-22T23:41:55.868312Z",
         "sourceFolder": "017 - 4 Places Rebooking Opportunity Hides Inside Your Client List"
       },
       "sourceUrl": "https://app.notion.com/3ace72eb8587812a9424c2d52531fcdd",
@@ -695,6 +707,12 @@
           "state": "review",
           "actor": "system",
           "note": "Reflowed into the new five-per-channel cadence; fresh approval required for this revision."
+        },
+        {
+          "state": "media_repaired",
+          "at": "2026-08-22T23:41:55.868312Z",
+          "actor": "github-actions[bot]",
+          "note": "Carousel package regenerated from 6 locked WebP slides after repository byte/hash mismatch; revision 4 -> 5."
         }
       ]
     },
