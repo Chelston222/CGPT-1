@@ -1,0 +1,334 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-23T22:12:00+01:00",
+  "weekStart": "2026-09-14",
+  "weekEnd": "2026-09-20",
+  "sourceBasis": {
+    "learningReport": "GitHub issue #352, mature-evidence richer-trait calibration on 2026-08-23",
+    "distributionPolicy": "apps/linkedin-review/distribution-policy.json",
+    "positioning": "Revenue Recovery for appointment-led SMEs",
+    "evidenceRules": [
+      "Use mature verified performance evidence only",
+      "Prefer diagnostic, customer-state, timing, framework, system-contrast and human-behaviour patterns where they fit naturally",
+      "Preserve UK English",
+      "No em dashes",
+      "No invented client outcomes or revenue",
+      "Personal, Main 222Emails and Retention School must have distinct reasons to exist",
+      "Review only until explicit owner approval"
+    ]
+  },
+  "approvalRule": "These records are QA/review candidates only. No record has publish permission until Chelston explicitly approves it through the owner approval gate.",
+  "posts": [
+    {
+      "id": "tte-learning-v2-personal-08",
+      "revision": 1,
+      "title": "The question changed from what should I post",
+      "category": "founder_operating_principle",
+      "contentRole": "founder_story",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": ["personal"],
+      "mode": "schedule",
+      "scheduledAt": {"personal": "2026-09-14T12:15:00+01:00"},
+      "copy": {
+        "default": "I have changed the question I ask when planning LinkedIn content.\n\nIt used to be:\n\n“What should I post?”\n\nNow I would rather ask:\n\n“What have we learned that deserves another test?”\n\nThat sounds like a small change, but it changes the whole content process.\n\nA post is no longer just an isolated idea.\n\nIt can test a diagnosis.\nIt can test a story structure.\nIt can test whether a practical framework gets saved.\nIt can test whether a specific customer problem starts conversations.\n\nThen the next post has a reason to exist beyond keeping the calendar full.\n\nI still want creativity.\n\nI just want creativity attached to evidence, so each week teaches the next one something useful."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-personal-09",
+      "revision": 1,
+      "title": "A full CRM can still hide a follow-up problem",
+      "category": "buyer_diagnostics",
+      "contentRole": "diagnosis",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": ["personal"],
+      "mode": "schedule",
+      "scheduledAt": {"personal": "2026-09-15T16:15:00+01:00"},
+      "copy": {
+        "default": "A CRM can contain every customer and still fail to answer the useful questions.\n\nWho is waiting for a reply?\nWho enquired but never booked?\nWho cancelled and still has no new appointment?\nWho is genuinely due to return?\nWho used to come regularly and has now gone quiet?\nWho has already booked and should be excluded from follow-up?\n\nHaving the names is not the same as knowing their state.\n\nThat distinction matters because follow-up decisions depend on what is true now.\n\nA database tells you who exists.\n\nA useful lifecycle system should help the business understand what should happen next, who owns it, and what event means the job is finished."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-personal-10",
+      "revision": 1,
+      "title": "The highest-value automation might be the one that stops",
+      "category": "automation_quality",
+      "contentRole": "authority",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": ["personal"],
+      "mode": "schedule",
+      "scheduledAt": {"personal": "2026-09-16T08:15:00+01:00"},
+      "copy": {
+        "default": "The most valuable rule in an automation is sometimes the rule that stops it.\n\nCustomer books? Stop.\nStaff member takes over? Pause.\nCustomer says no? Stop.\nCustomer opts out? Stop.\nThe commercial window has passed? Stop.\nThe person enters a different journey? Reclassify them.\n\nIt is easy to judge automation by how reliably it sends.\n\nBut reliability is not the same as relevance.\n\nA system that keeps sending after its job is finished is not more automated.\n\nIt is less aware of the customer.\n\nI increasingly think good lifecycle design is as much about knowing when to leave somebody alone as knowing when to follow up."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-personal-11",
+      "revision": 1,
+      "title": "The handoff is where good automation can become awkward",
+      "category": "handoff_logic",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": ["personal"],
+      "mode": "schedule",
+      "scheduledAt": {"personal": "2026-09-17T14:15:00+01:00"},
+      "copy": {
+        "default": "The awkward part of automation is often not the first message.\n\nIt is the handoff.\n\nThe system sends the acknowledgement.\nA staff member replies personally.\nThe customer starts a real conversation.\n\nThen the automated follow-up arrives anyway as if none of that happened.\n\nTechnically, every component worked.\n\nCommercially, the system lost context.\n\nA clean journey needs to know when ownership changes.\n\nWho has the conversation now?\nShould automation pause?\nWhat event returns the person to an automated path?\n\nThe more automation a business adds, the more important those boundaries become.\n\nThe goal is not human versus automated.\n\nIt is making sure each one knows when it has the job."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-personal-12",
+      "revision": 1,
+      "title": "A percentage without a denominator can fool you",
+      "category": "proof_discipline",
+      "contentRole": "proof",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": ["personal"],
+      "mode": "schedule",
+      "scheduledAt": {"personal": "2026-09-18T08:15:00+01:00"},
+      "copy": {
+        "default": "A percentage can look impressive while the evidence underneath it is tiny.\n\nThat is something I have been forcing myself to respect more in content analytics.\n\nA high engagement rate on a very small number of impressions is interesting.\n\nIt is not automatically a winner.\n\nThe denominator matters.\nThe age of the post matters.\nThe quality of the people engaging matters.\nAnd eventually the commercial outcome matters.\n\nSo I would rather say:\n\n“This looks promising. Test it again.”\n\nthan:\n\n“We cracked the algorithm.”\n\nThe same principle applies to business proof generally.\n\nStrong evidence gets more useful when you are precise about what it does and does not prove."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-personal-13",
+      "revision": 1,
+      "title": "The best time to follow up depends on what happened",
+      "category": "timing_logic",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": ["personal"],
+      "mode": "schedule",
+      "scheduledAt": {"personal": "2026-09-19T10:15:00+01:00"},
+      "copy": {
+        "default": "There is no universally perfect follow-up delay.\n\nBecause “follow up” can describe completely different situations.\n\nA new enquiry that has heard nothing for a day.\nA cancellation from this morning.\nA no-show from yesterday.\nA first-time client approaching a normal return point.\nA loyal regular who is now unusually overdue.\nA dormant client absent for a year.\n\nThose moments carry different levels of intent and urgency.\n\nSo I would not start with:\n\n“Should the delay be three days or five?”\n\nI would start with:\n\n“What happened, what normally happens next, and when does intervention become genuinely useful?”\n\nTiming becomes much easier to design once the customer state is clear."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-personal-14",
+      "revision": 1,
+      "title": "Seven questions before I would build a recovery system",
+      "category": "diagnosis_first_sales",
+      "contentRole": "offer",
+      "funnelStage": "bof",
+      "format": "text",
+      "targets": ["personal"],
+      "mode": "schedule",
+      "scheduledAt": {"personal": "2026-09-20T18:15:00+01:00"},
+      "copy": {
+        "default": "Before I would recommend building a Revenue Recovery system, I would want seven answers.\n\n1. Where is the customer dropping out?\n2. What evidence says the gap is real?\n3. How much intent already existed?\n4. Is the timing still commercially relevant?\n5. Can the right people be contacted appropriately?\n6. What should happen when they respond or book?\n7. Is the realistic opportunity worth fixing?\n\nOnly then does the implementation become interesting.\n\nMaybe the answer is email.\nMaybe SMS.\nMaybe a booking change.\nMaybe a staff handoff.\nMaybe no new system at all.\n\nThat is the logic behind the Revenue Recovery Check.\n\nDiagnose the missed-revenue moment first.\n\nMake the solution earn its place second."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-main-06",
+      "revision": 1,
+      "title": "A database is not a lifecycle system",
+      "category": "lifecycle_foundations",
+      "contentRole": "authority",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": ["main"],
+      "mode": "schedule",
+      "scheduledAt": {"main": "2026-09-14T14:30:00+01:00"},
+      "copy": {
+        "default": "A customer database answers one useful question:\n\nWho exists?\n\nA lifecycle system has to answer several more.\n\nWhat state is each customer in?\nWhat should normally happen next?\nWhen does action become useful?\nWho owns the next step?\nWhat should stop the journey?\nWhat outcome should be measured?\n\nThat is why simply collecting more customer data does not automatically improve retention.\n\nThe commercial value comes from turning relevant data into better decisions about timing, ownership and the next appropriate action."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-main-07",
+      "revision": 1,
+      "title": "Four Revenue Recovery states worth separating",
+      "category": "recovery_framework",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": ["main"],
+      "mode": "schedule",
+      "scheduledAt": {"main": "2026-09-15T16:30:00+01:00"},
+      "copy": {
+        "default": "Four customers can all be described as “lost revenue” while needing completely different treatment.\n\n1. Enquired, never booked.\nIntent existed, but the buying journey stalled.\n\n2. Cancelled, not rebooked.\nA booking existed, then the plan changed.\n\n3. No-showed, unresolved.\nIntent was strong enough to book, but attendance failed.\n\n4. Previously active, now overdue.\nThe relationship already existed, but the normal return pattern broke.\n\nRevenue Recovery becomes more useful when those states are separated before a message is written.\n\nDifferent mechanism.\nDifferent timing.\nDifferent next action."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-main-08",
+      "revision": 1,
+      "title": "Every automation needs an exit condition",
+      "category": "automation_quality",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": ["main"],
+      "mode": "schedule",
+      "scheduledAt": {"main": "2026-09-16T08:30:00+01:00"},
+      "copy": {
+        "default": "Before launching an automated follow-up, define the exit condition.\n\nThe customer books.\nThe customer replies and a team member takes ownership.\nThe customer explicitly declines.\nThe customer opts out.\nThe relevant time window closes.\nThe customer enters a different journey.\n\nWithout exit logic, a technically successful automation can create commercially poor behaviour.\n\nMessages keep arriving after the problem has already been solved.\n\nA good trigger starts the right journey.\n\nA good exit condition knows when that journey has finished."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-main-09",
+      "revision": 1,
+      "title": "No-show prevention and no-show recovery use different logic",
+      "category": "no_show_recovery",
+      "contentRole": "diagnosis",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": ["main"],
+      "mode": "schedule",
+      "scheduledAt": {"main": "2026-09-17T14:30:00+01:00"},
+      "copy": {
+        "default": "A reminder before an appointment and a recovery journey after a no-show solve different problems.\n\nBefore the appointment, the job is prevention.\n\nConfirm the time.\nReduce avoidable uncertainty.\nMake rearranging clear where appropriate.\n\nAfter the no-show, the customer state has changed.\n\nNow the business needs to decide whether contact is appropriate, how easy rescheduling should be, when a human should step in, and when follow-up should stop.\n\nOne workflow should not be expected to do both jobs simply because the same customer is involved."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-main-10",
+      "revision": 1,
+      "title": "Four checks for automation health",
+      "category": "automation_health",
+      "contentRole": "resource",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": ["main"],
+      "mode": "schedule",
+      "scheduledAt": {"main": "2026-09-18T09:30:00+01:00"},
+      "copy": {
+        "default": "A simple automation health check has four layers.\n\n1. Entry\nAre the right customers still entering?\n\n2. Experience\nAre the message, links, timing and next step still correct?\n\n3. Exit\nDoes the journey stop or hand off when the customer state changes?\n\n4. Outcome\nIs the system producing the commercial or customer behaviour it was built for?\n\nA green “active” toggle only answers a fifth, much narrower question:\n\nIs the workflow switched on?\n\nUseful automation health requires more than uptime."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-secondary-06",
+      "revision": 1,
+      "title": "Lesson: customer states are transitions, not labels",
+      "category": "customer_state",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": ["secondary"],
+      "mode": "schedule",
+      "scheduledAt": {"secondary": "2026-09-14T12:45:00+01:00"},
+      "taxonomy": {"category": "Lifecycle Foundations", "season": "Season 1", "lesson_or_resource": "Lesson 10"},
+      "copy": {
+        "default": "Retention School: States are useful because customers move between them.\n\nEnquired → Booked.\nBooked → Attended.\nAttended → Due to return.\nDue → Overdue.\nCancelled → Rebooked.\nNo-show → Resolved.\nDormant → Reactivated.\n\nThe important part is the transition.\n\nWhat event moved the person into the new state?\nWhat job now exists?\nWhat action should become possible?\nWhat old action should stop?\n\nThinking in transitions helps automation respond to what changed instead of treating a customer label as permanent."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-secondary-07",
+      "revision": 1,
+      "title": "Resource: rebooking journey teardown",
+      "category": "rebooking_model",
+      "contentRole": "resource",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": ["secondary"],
+      "mode": "schedule",
+      "scheduledAt": {"secondary": "2026-09-15T16:45:00+01:00"},
+      "taxonomy": {"category": "Rebooking", "season": "Season 1", "lesson_or_resource": "Resource 05"},
+      "copy": {
+        "default": "Retention School resource: Tear down a rebooking journey with six questions.\n\n1. What service or behaviour creates an expected return interval?\n2. When does a reminder become useful rather than premature?\n3. How does the system know the customer has already rebooked?\n4. What message helps without pretending urgency?\n5. What happens if the customer ignores it?\n6. When does the journey stop?\n\nIf those answers are unclear, writing better copy is not the first fix.\n\nThe journey logic needs to become clearer first."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-secondary-08",
+      "revision": 1,
+      "title": "Lesson: suppression is part of the experience",
+      "category": "suppression_logic",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": ["secondary"],
+      "mode": "schedule",
+      "scheduledAt": {"secondary": "2026-09-16T08:45:00+01:00"},
+      "taxonomy": {"category": "Automation Design", "season": "Season 1", "lesson_or_resource": "Lesson 11"},
+      "copy": {
+        "default": "Retention School: Suppression is not only a deliverability setting.\n\nIt is part of customer experience.\n\nA person who has already booked should not keep receiving rebooking prompts.\nA person who opted out should not re-enter through a careless workflow.\nA customer in an active complaint or sensitive service state may need different treatment.\nA staff-owned conversation may need automation paused.\n\nThe question is not only:\n\n“Who can enter this sequence?”\n\nIt is also:\n\n“Who should definitely not be in it right now?”"
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-secondary-09",
+      "revision": 1,
+      "title": "Lesson: measure the outcome that matches the job",
+      "category": "measurement",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": ["secondary"],
+      "mode": "schedule",
+      "scheduledAt": {"secondary": "2026-09-17T14:45:00+01:00"},
+      "taxonomy": {"category": "Measurement", "season": "Season 1", "lesson_or_resource": "Lesson 12"},
+      "copy": {
+        "default": "Retention School: The metric should match the job.\n\nIf the journey exists to recover cancellations, measure recovered bookings.\n\nIf it exists to improve rebooking, measure return behaviour in the relevant window.\n\nIf it exists to restart a dormant relationship, measure meaningful reactivation, not only opens.\n\nOpens and clicks can help diagnose what happened inside the journey.\n\nThey are not automatically the business outcome.\n\nStart with the job.\n\nThen choose the metric that would tell you whether that job actually got done."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-learning-v2-secondary-10",
+      "revision": 1,
+      "title": "Resource: five questions before a win-back automation",
+      "category": "win_back",
+      "contentRole": "resource",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": ["secondary"],
+      "mode": "schedule",
+      "scheduledAt": {"secondary": "2026-09-18T10:45:00+01:00"},
+      "taxonomy": {"category": "Win-back", "season": "Season 1", "lesson_or_resource": "Resource 06"},
+      "copy": {
+        "default": "Retention School resource: Before automating a win-back, answer five questions.\n\n1. What counts as dormant for this specific service or customer pattern?\n2. Is there evidence the person was previously valuable or engaged?\n3. What has changed since their last interaction?\n4. What would make returning easier now?\n5. When should the system stop trying?\n\n“Has not purchased recently” is usually too broad to design from.\n\nA useful win-back begins with a clearer definition of who has actually lapsed and why another contact could be relevant."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    }
+  ]
+}
