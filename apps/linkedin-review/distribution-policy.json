@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "effectiveDate": "2026-08-23",
+  "timezone": "Europe/London",
+  "strategy": "extreme_creation_selective_publishing_extreme_distribution",
+  "accounts": {
+    "personal": {
+      "displayRole": "Chelston personal LinkedIn",
+      "primaryJob": "founder trust, authority, conversation and acquisition",
+      "baselinePerDay": 1,
+      "maximumPerDay": 2,
+      "maximumPerWeek": 14,
+      "bonusRule": "A second daily post is earned, never automatically filled. It requires genuine founder capture, real-world proof, a timely observation or another source with clear incremental value.",
+      "allowedContentRoles": [
+        "authority",
+        "diagnosis",
+        "proof",
+        "founder_story",
+        "teaching",
+        "offer",
+        "milestone"
+      ],
+      "preferredSourceTypes": [
+        "founder_capture",
+        "client_evidence",
+        "research",
+        "existing_inventory",
+        "repurpose"
+      ]
+    },
+    "main": {
+      "displayRole": "222Emails company LinkedIn",
+      "primaryJob": "company proof, Revenue Recovery category education, systems, resources and route clarity",
+      "targetPerWeek": {
+        "minimum": 3,
+        "maximum": 5
+      },
+      "maximumPerDay": 1,
+      "maximumPerWeek": 5,
+      "allowedContentRoles": [
+        "authority",
+        "diagnosis",
+        "proof",
+        "teaching",
+        "offer",
+        "resource",
+        "milestone"
+      ],
+      "rules": [
+        "Do not mirror personal-profile copy verbatim by default.",
+        "Prefer company evidence, category education, annotated systems, resources and offer clarity.",
+        "A post must have a distinct company-page reason to exist."
+      ]
+    },
+    "secondary": {
+      "displayRole": "Retention School",
+      "legacyDisplayRole": "Retention Lab",
+      "primaryJob": "free retention education, curriculum, resources and audience compounding",
+      "maximumPerDay": 1,
+      "maximumPerWeek": 5,
+      "allowedContentRoles": [
+        "teaching",
+        "resource",
+        "diagnosis"
+      ],
+      "requiredTaxonomy": [
+        "category",
+        "season",
+        "lesson_or_resource"
+      ],
+      "rules": [
+        "Do not use Retention School as a dump for unused personal or 222Emails posts.",
+        "Every post must teach, diagnose or provide a reusable resource.",
+        "Paid content, direct access and 1:1 offers may be layered later, but public publishing must not invent unverified prices, promises or access rights.",
+        "The Buffer channel may keep the legacy technical target name secondary until the live account identity is safely renamed and verified."
+      ]
+    }
+  },
+  "contentRoles": [
+    "authority",
+    "diagnosis",
+    "proof",
+    "founder_story",
+    "teaching",
+    "offer",
+    "resource",
+    "milestone"
+  ],
+  "sourceTypes": [
+    "founder_capture",
+    "client_evidence",
+    "research",
+    "existing_inventory",
+    "repurpose"
+  ],
+  "founderCapture": {
+    "calendarTime": "08:00-08:15",
+    "requiredHumanInput": [
+      "the real story or event",
+      "what happened",
+      "what changed or was learned",
+      "two real photos or screenshots where useful"
+    ],
+    "possibleRoutes": [
+      "personal_core",
+      "personal_bonus",
+      "222emails",
+      "retention_school",
+      "resource",
+      "proof",
+      "repurpose_later",
+      "no_publish"
+    ],
+    "rule": "Never manufacture a story to fill a slot."
+  },
+  "queueMigration": {
+    "existingInventoryTreatment": [
+      "KEEP",
+      "MOVE",
+      "REPURPOSE",
+      "RETIRE"
+    ],
+    "deleteUnclassified": false,
+    "changeRecurringBufferScheduleBeforeSnapshot": false,
+    "automaticBonusSlot": false
+  },
+  "successMetrics": {
+    "primary": [
+      "qualified_conversations",
+      "qualified_revenue_recovery_checks",
+      "paid_progression",
+      "attributable_revenue_where_defensible"
+    ],
+    "supporting": [
+      "impressions",
+      "impressions_per_post",
+      "relevant_profile_visits",
+      "ICP_comments",
+      "qualified_DMs",
+      "saves_shares",
+      "resource_usage",
+      "content_reuse_yield",
+      "founder_effort"
+    ],
+    "reviewWindowsDays": [14, 30]
+  }
+}
