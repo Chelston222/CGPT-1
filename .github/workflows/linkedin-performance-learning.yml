@@ -32,7 +32,7 @@ jobs:
           script: |
             const fs = require('node:fs');
             const path = require('node:path');
-            const engine = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-performance-learning.cjs'));
+            const engine = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-performance-learning-v2.cjs'));
             const policy = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/performance-policy.json'), 'utf8'));
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -59,19 +59,26 @@ jobs:
               const text = String(name).toLowerCase();
               if (text.includes('chelston')) return 'personal';
               if (text.includes('retention')) return 'secondary';
-              if (text.includes('main') || text.includes('222 emails')) return 'main';
+              if (text.includes('main') || text.includes('222 emails') || text.includes('222emails')) return 'main';
               return null;
-            }
-
-            function hourInLondon(iso) {
-              if (!iso) return null;
-              const d = new Date(iso);
-              if (Number.isNaN(d.getTime())) return null;
-              return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hourCycle: 'h23' }).format(d);
             }
 
             function scheduledFor(post, target) {
               return post.scheduledAt?.[target] || Object.values(post.scheduledAt || {})[0] || null;
+            }
+
+            function markerSet(comments, marker) {
+              const out = new Set();
+              const regex = new RegExp(`<!-- ${marker} bufferId=([^\\s>]+)`, 'g');
+              for (const comment of comments) {
+                let match;
+                while ((match = regex.exec(String(comment.body || '')))) out.add(match[1]);
+              }
+              return out;
+            }
+
+            function increment(map, key) {
+              map[key] = (map[key] || 0) + 1;
             }
 
             async function buffer(query) {
@@ -93,6 +100,8 @@ jobs:
             const approvals = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
             const usedIds = new Set();
             const records = [];
+            const evidenceExclusions = {};
+            let verifiedPlacementsSeen = 0;
 
             for (const issue of approvals) {
               const headers = engine.parseHeaders(issue.body || '');
@@ -101,10 +110,16 @@ jobs:
               const placements = engine.extractPlacements(comments);
               const analytics = engine.extractAnalyticsByBufferId(comments);
               const commercial = engine.extractCommercialSignals(comments);
+              const verifiedIds = markerSet(comments, 'LINKEDIN_PUBLICATION_VERIFIED');
+              verifiedPlacementsSeen += verifiedIds.size;
               for (const placement of placements) {
                 usedIds.add(placement.queueId);
                 const measured = analytics.get(placement.bufferId);
-                if (!measured) continue;
+                const eligibility = engine.analyticsEligibility({ placement, measured, verifiedIds, now, policy });
+                if (!eligibility.eligible) {
+                  increment(evidenceExclusions, eligibility.reason);
+                  continue;
+                }
                 const meta = bankById.get(placement.queueId);
                 const target = targetFromChannelName(placement.channelName) || meta?.targets?.[0] || String(headers.TARGETS || headers.TARGET || '').split(',')[0].trim() || null;
                 const copy = meta?.copy?.default || engine.parseIssueCopy(issue.body || '');
@@ -117,8 +132,11 @@ jobs:
                   category: meta?.category || headers.CATEGORY || 'uncategorised',
                   format: meta?.format || (headers.MEDIA_URL ? 'visual' : 'text'),
                   traits: engine.inferTraits(copy),
-                  hourBucket: hourInLondon(placement.dueAt),
+                  hourBucket: engine.londonHour(placement.dueAt),
+                  weekdayBucket: engine.londonWeekday(placement.dueAt),
+                  slotBucket: engine.slotBucket(placement.dueAt),
                   dueAt: placement.dueAt,
+                  analyticsUpdatedAt: measured.updatedAt,
                   copy,
                   metrics: measured.metrics,
                   commercialSignals: commercial.get(placement.bufferId) || [],
@@ -126,13 +144,15 @@ jobs:
               }
             }
 
-            const combinedModel = engine.buildPerformanceModel(records, policy);
-            const byTarget = {};
+            const combinedModel = engine.buildPerformanceModel(records, policy, now);
+            const localModels = {};
+            const localCounts = {};
             for (const target of ['personal', 'main', 'secondary']) {
               const local = records.filter((r) => r.target === target);
-              byTarget[target] = local.length >= policy.minimumTargetRecordsForLocalModel
-                ? engine.buildPerformanceModel(local, policy)
-                : combinedModel;
+              localCounts[target] = local.length;
+              localModels[target] = local.length >= policy.minimumTargetRecordsForLocalModel
+                ? engine.buildPerformanceModel(local, policy, now)
+                : null;
             }
 
             const occupancy = { personal: 0, main: 0, secondary: 0 };
@@ -153,9 +173,12 @@ jobs:
             }
 
             const lookaheadEnd = now + policy.lookaheadDays * 24 * 60 * 60 * 1000;
+            const fatigueCutoff = now - Number(policy.fatigue?.recentLookbackDays || 14) * 24 * 60 * 60 * 1000;
             const recommendations = {};
+            const bankGaps = {};
+
             for (const target of ['personal', 'main', 'secondary']) {
-              const model = byTarget[target];
+              const recentRecords = records.filter((r) => r.target === target && Date.parse(r.dueAt || '') >= fatigueCutoff);
               const available = bank.filter((post) => {
                 if (usedIds.has(post.id)) return false;
                 if (post.status !== 'review') return false;
@@ -163,70 +186,93 @@ jobs:
                 if (!(post.targets || []).includes(target)) return false;
                 const due = Date.parse(scheduledFor(post, target) || '');
                 return Number.isFinite(due) && due > now + 30 * 60 * 1000 && due <= lookaheadEnd;
-              }).map((post) => engine.scoreCandidate({
-                ...post,
-                hourBucket: hourInLondon(scheduledFor(post, target)),
-              }, model, policy)).sort((a, b) => b.candidateScore - a.candidateScore);
+              }).map((post) => {
+                const scheduledAtResolved = scheduledFor(post, target);
+                const scored = engine.scoreCandidateHierarchical({
+                  ...post,
+                  scheduledAtResolved,
+                  hourBucket: engine.londonHour(scheduledAtResolved),
+                  weekdayBucket: engine.londonWeekday(scheduledAtResolved),
+                  slotBucket: engine.slotBucket(scheduledAtResolved),
+                }, combinedModel, localModels[target], localCounts[target], policy);
+                return engine.applyFatiguePenalty(scored, recentRecords, policy);
+              }).sort((a, b) => b.candidateScore - a.candidateScore);
 
               const deficit = bufferReadError ? Math.min(5, available.length) : Math.max(0, Math.min(5, policy.queueTargetPerChannel - occupancy[target]));
               const n = Math.min(deficit, available.length);
               if (!n) {
                 recommendations[target] = [];
+                bankGaps[target] = Math.max(0, deficit);
                 continue;
               }
+
               const exploitN = Math.max(1, Math.floor(n * policy.exploitRatio));
               const exploreN = n >= 3 ? Math.max(1, Math.round(n * policy.exploreRatio)) : 0;
               const adjacentN = Math.max(0, n - exploitN - exploreN);
               const selected = [];
               const takeUnique = (pool, count, lane) => {
-                const eligible = pool.filter((p) => !selected.some((s) => s.id === p.id));
+                const eligible = pool.filter((p) => !selected.some((s) => s.id === p.id) && engine.passesCandidateFloor(p, lane, policy));
                 for (const p of engine.selectDiverseCandidates(eligible, count, policy)) selected.push({ ...p, lane });
               };
+
               takeUnique(available, exploitN, 'EXPLOIT');
-              const sampledCategories = new Set(model.categories.filter((x) => x.samples >= 1).map((x) => x.key));
+              const sampledCategories = new Set(combinedModel.categories.filter((x) => x.samples >= 1).map((x) => x.key));
               const adjacentPool = available.filter((p) => sampledCategories.has(p.category));
               takeUnique(adjacentPool, adjacentN, 'ADJACENT');
               const explorePool = available.filter((p) => !sampledCategories.has(p.category));
               takeUnique(explorePool.length ? explorePool : available.slice().reverse(), exploreN, 'EXPLORE');
               takeUnique(available, n - selected.length, 'ADJACENT');
               recommendations[target] = selected;
+              bankGaps[target] = Math.max(0, deficit - selected.length);
             }
 
-            const topPosts = combinedModel.scored.slice().sort((a, b) => b.score - a.score).slice(0, 8);
+            const topPosts = combinedModel.scored.slice().sort((a, b) => b.decisionScore - a.decisionScore).slice(0, 8);
             const weakCategories = combinedModel.categories.filter((x) => x.samples >= policy.minimumSamplesForSuppression && x.adjustedScore < 40);
             const commercialCount = records.reduce((sum, row) => sum + (row.commercialSignals?.length || 0), 0);
             const metricLine = (row) => {
               const m = row.metrics || {};
-              return `${row.id} · score **${row.score}** · confidence **${row.confidenceClass}** · ${m.engagementRate ?? row.observedEngagement?.toFixed(2) ?? '?'}% engagement · ${row.impressions || 0} impressions · ${row.interactions || 0} interactions${row.commercialValue > 0 ? ` · commercial value score ${row.commercialValue.toFixed(1)}` : ''}`;
+              return `${row.id} · current score **${row.decisionScore}** · evidence score **${row.score}** · confidence **${row.confidenceClass}** · ${m.engagementRate ?? row.observedEngagement?.toFixed(2) ?? '?'}% engagement · ${row.impressions || 0} impressions · ${row.interactions || 0} interactions · recency ${row.recencyWeight}${row.commercialValue > 0 ? ` · commercial value score ${row.commercialValue.toFixed(1)}` : ''}`;
             };
             const recLines = [];
             for (const target of ['personal', 'main', 'secondary']) {
               recLines.push(`### ${target === 'personal' ? 'Chelston personal' : target === 'main' ? 'Main 222Emails' : 'Retention School / secondary'}`);
-              recLines.push(`Buffer scheduled: **${bufferReadError ? 'unknown' : occupancy[target]}** · target runway: **${policy.queueTargetPerChannel}**`);
-              if (!recommendations[target].length) recLines.push('- No replenishment required or no eligible future candidate in the lookahead window.');
-              for (const p of recommendations[target]) recLines.push(`- **${p.lane}** · \`${p.id}@${p.revision}\` · ${p.title} · score **${p.candidateScore}** · ${p.category} · ${scheduledFor(p, target)} · source ${p._sourceFile}`);
+              recLines.push(`Buffer scheduled: **${bufferReadError ? 'unknown' : occupancy[target]}** · target runway: **${policy.queueTargetPerChannel}** · mature local evidence: **${localCounts[target]}**`);
+              if (!recommendations[target].length) recLines.push('- No replenishment required, no eligible future candidate in the lookahead window, or every candidate fell below the quality floor.');
+              for (const p of recommendations[target]) recLines.push(`- **${p.lane}** · \`${p.id}@${p.revision}\` · ${p.title} · score **${p.candidateScore}** · pre-fatigue **${p.preFatigueScore}** · fatigue penalty **${p.fatiguePenalty}** · similarity **${p.maxRecentSimilarity}** · local model weight **${p.localEvidenceWeight}** · ${p.category} · ${scheduledFor(p, target)} · source ${p._sourceFile}`);
+              if (bankGaps[target] > 0) recLines.push(`- ⚠️ Quality-preserving bank gap: **${bankGaps[target]}** slot(s). Create stronger content rather than filling these with sub-floor posts.`);
               recLines.push('');
             }
 
+            const exclusionLines = Object.entries(evidenceExclusions).sort((a, b) => b[1] - a[1]).map(([reason, count]) => `- ${reason}: **${count}**`);
             const body = [
               '# LinkedIn performance learning engine', '',
               `Updated: **${new Date(now).toISOString()}**`,
-              `Measured placements used: **${records.length}**`,
-              `Commercial outcome markers captured: **${commercialCount}**`,
+              `Verified placements seen: **${verifiedPlacementsSeen}**`,
+              `Mature measured placements used: **${records.length}**`,
+              `Commercial outcome markers captured on mature evidence: **${commercialCount}**`,
               `Content-bank posts inspected: **${bank.length}**`,
               bufferReadError ? `⚠️ Buffer capacity read failed closed: ${bufferReadError}` : '✅ Live Buffer capacity read succeeded.', '',
+              '## Evidence quality filter',
+              `- Minimum post age: **${policy.analyticsMinimumPostAgeHours} hours**`,
+              `- Analytics refresh must be at least **${policy.analyticsFreshnessAfterDueMinutes} minutes after due/publication time**`,
+              `- Recency half-life: **${policy.recencyHalfLifeDays} days**`,
+              ...(exclusionLines.length ? exclusionLines : ['- No analytics records were excluded.']), '',
               '## What is winning now',
-              ...(topPosts.length ? topPosts.map((row) => `- ${metricLine(row)}`) : ['- Not enough measured Buffer analytics yet. Keep collecting evidence; do not invent a winner.']), '',
+              ...(topPosts.length ? topPosts.map((row) => `- ${metricLine(row)}`) : ['- Not enough mature verified analytics yet. Keep collecting evidence; do not invent a winner.']), '',
               '## Category model',
-              ...(combinedModel.categories.slice(0, 10).map((x) => `- ${x.key}: **${x.adjustedScore}** · ${x.samples} sample${x.samples === 1 ? '' : 's'}`)), '',
+              ...(combinedModel.categories.slice(0, 10).map((x) => `- ${x.key}: **${x.adjustedScore}** · ${x.samples} samples · weighted evidence ${x.evidenceWeight}`)), '',
               '## Trait model',
-              ...(combinedModel.traits.slice(0, 12).map((x) => `- ${x.key}: **${x.adjustedScore}** · ${x.samples} sample${x.samples === 1 ? '' : 's'}`)), '',
-              '## Time-window model',
-              ...(combinedModel.hours.slice(0, 8).map((x) => `- ${x.key}:00 Europe/London · **${x.adjustedScore}** · ${x.samples} sample${x.samples === 1 ? '' : 's'}`)), '',
+              ...(combinedModel.traits.slice(0, 12).map((x) => `- ${x.key}: **${x.adjustedScore}** · ${x.samples} samples · weighted evidence ${x.evidenceWeight}`)), '',
+              '## Day model',
+              ...(combinedModel.weekdays.slice(0, 7).map((x) => `- ${x.key}: **${x.adjustedScore}** · ${x.samples} samples`)), '',
+              '## Hour model',
+              ...(combinedModel.hours.slice(0, 8).map((x) => `- ${x.key}:00 Europe/London · **${x.adjustedScore}** · ${x.samples} samples`)), '',
+              '## Day + hour slot model',
+              ...(combinedModel.slots.slice(0, 8).map((x) => `- ${x.key}: **${x.adjustedScore}** · ${x.samples} samples`)), '',
               '## Performance-ranked replenishment',
               ...recLines,
               '## Suppression / caution',
-              ...(weakCategories.length ? weakCategories.map((x) => `- ${x.key}: eligible for temporary down-weighting at **${x.adjustedScore}** after ${x.samples} measured samples.`) : ['- No category has enough weak evidence to suppress yet. Small samples stay exploratory rather than being killed prematurely.']), '',
+              ...(weakCategories.length ? weakCategories.map((x) => `- ${x.key}: eligible for temporary down-weighting at **${x.adjustedScore}** after ${x.samples} mature samples.`) : ['- No category has enough weak mature evidence to suppress yet. Small samples stay exploratory rather than being killed prematurely.']), '',
               '## Commercial attribution marker',
               '- When a LinkedIn post drives a meaningful downstream action, record it on that source issue as:',
               '- `<!-- LINKEDIN_COMMERCIAL_SIGNAL bufferId=<buffer-id> type=dm|enquiry|fit_check|qualified|proposal|paid valueGbp=<optional> -->`',
