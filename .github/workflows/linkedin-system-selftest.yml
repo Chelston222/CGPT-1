@@ -28,66 +28,86 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          exec > >(tee /tmp/linkedin-selftest.log) 2>&1
+          : > /tmp/linkedin-selftest-failures.log
           status=0
           failures=()
-          {
-            for script in \
-              scripts/linkedin-performance-learning.cjs \
-              scripts/linkedin-performance-learning-v2.cjs \
-              scripts/linkedin-content-traits-v2.cjs \
-              scripts/linkedin-qa-bank-audit.cjs \
-              scripts/linkedin-week-batch.cjs \
-              scripts/linkedin-content-supply.cjs
-            do
-              echo "=== SYNTAX $script ==="
-              if node --check "$script"; then
-                echo "PASS_SYNTAX $script"
-              else
-                echo "FAIL_SYNTAX $script"
-                failures+=("syntax:$script")
-                status=1
-              fi
-            done
 
-            for testfile in \
-              tests/linkedin-buffer-capacity.test.cjs \
-              tests/linkedin-week-batch.test.cjs \
-              tests/linkedin-green-gate-cutoff.test.cjs \
-              tests/linkedin-performance-learning.test.cjs \
-              tests/linkedin-performance-learning-v2.test.cjs \
-              tests/linkedin-content-traits-v2.test.cjs \
-              tests/linkedin-performance-policy.test.cjs \
-              tests/linkedin-performance-workflow-static.test.cjs \
-              tests/linkedin-commercial-outcome-capture.test.cjs \
-              tests/linkedin-content-supply.test.cjs
-            do
-              echo "=== TEST_FILE $testfile ==="
-              if node --test "$testfile"; then
-                echo "PASS_FILE $testfile"
-              else
-                echo "FAIL_FILE $testfile"
-                failures+=("$testfile")
-                status=1
-              fi
-            done
-
-            echo "=== QA_BANK_AUDIT ==="
-            if node scripts/linkedin-qa-bank-audit.cjs; then
-              echo "PASS_QA_BANK_AUDIT"
+          for script in \
+            scripts/linkedin-performance-learning.cjs \
+            scripts/linkedin-performance-learning-v2.cjs \
+            scripts/linkedin-content-traits-v2.cjs \
+            scripts/linkedin-qa-bank-audit.cjs \
+            scripts/linkedin-week-batch.cjs \
+            scripts/linkedin-content-supply.cjs
+          do
+            echo "=== SYNTAX $script ==="
+            if node --check "$script"; then
+              echo "PASS_SYNTAX $script"
             else
-              echo "FAIL_QA_BANK_AUDIT"
-              failures+=("qa-bank-audit")
+              echo "FAIL_SYNTAX $script"
+              echo "FAIL_SYNTAX $script" >> /tmp/linkedin-selftest-failures.log
+              failures+=("syntax:$script")
               status=1
             fi
+          done
 
-            echo "=== FAILURE SUMMARY ==="
-            if [ ${#failures[@]} -eq 0 ]; then
-              echo "NO_FAILURES"
+          for testfile in \
+            tests/linkedin-buffer-capacity.test.cjs \
+            tests/linkedin-week-batch.test.cjs \
+            tests/linkedin-green-gate-cutoff.test.cjs \
+            tests/linkedin-performance-learning.test.cjs \
+            tests/linkedin-performance-learning-v2.test.cjs \
+            tests/linkedin-content-traits-v2.test.cjs \
+            tests/linkedin-performance-policy.test.cjs \
+            tests/linkedin-performance-workflow-static.test.cjs \
+            tests/linkedin-commercial-outcome-capture.test.cjs \
+            tests/linkedin-content-supply.test.cjs
+          do
+            echo "=== TEST_FILE $testfile ==="
+            tmpfile="$(mktemp)"
+            if node --test "$testfile" >"$tmpfile" 2>&1; then
+              cat "$tmpfile"
+              echo "PASS_FILE $testfile"
             else
-              printf 'FAILURE %s\n' "${failures[@]}"
+              cat "$tmpfile"
+              echo "FAIL_FILE $testfile"
+              {
+                echo "===== FAIL_FILE $testfile ====="
+                cat "$tmpfile"
+                echo
+              } >> /tmp/linkedin-selftest-failures.log
+              failures+=("$testfile")
+              status=1
             fi
-          } 2>&1 | tee /tmp/linkedin-selftest.log
-          exit $status
+            rm -f "$tmpfile"
+          done
+
+          echo "=== QA_BANK_AUDIT ==="
+          auditfile="$(mktemp)"
+          if node scripts/linkedin-qa-bank-audit.cjs >"$auditfile" 2>&1; then
+            cat "$auditfile"
+            echo "PASS_QA_BANK_AUDIT"
+          else
+            cat "$auditfile"
+            echo "FAIL_QA_BANK_AUDIT"
+            {
+              echo "===== FAIL_QA_BANK_AUDIT ====="
+              cat "$auditfile"
+              echo
+            } >> /tmp/linkedin-selftest-failures.log
+            failures+=("qa-bank-audit")
+            status=1
+          fi
+          rm -f "$auditfile"
+
+          echo "=== FAILURE SUMMARY ==="
+          if [ ${#failures[@]} -eq 0 ]; then
+            echo "NO_FAILURES"
+          else
+            printf 'FAILURE %s\n' "${failures[@]}"
+          fi
+          exit "$status"
       - name: Record self-test result
         if: always() && github.event_name == 'issues'
         uses: actions/github-script@v7
@@ -97,23 +117,19 @@ jobs:
           script: |
             const fs = require('node:fs');
             const pass = process.env.TEST_OUTCOME === 'success';
-            let log = '';
-            try { log = fs.readFileSync('/tmp/linkedin-selftest.log', 'utf8'); } catch {}
-            const lines = log.split(/\r?\n/);
-            const failures = lines.filter((line) => /^(?:FAILURE|FAIL_FILE|FAIL_SYNTAX|FAIL_QA_BANK_AUDIT)\b/.test(line));
-            const diagnostics = lines.slice(-120).join('\n').trim();
+            let failures = '';
+            try { failures = fs.readFileSync('/tmp/linkedin-selftest-failures.log', 'utf8').trim(); } catch {}
             const body = [
               '# LinkedIn Content OS self-test', '',
               pass ? '✅ **PASS**' : '❌ **FAIL**', '',
               '- Syntax: performance learner, v2 learner, richer trait taxonomy, QA-bank auditor, weekly batch gate, content-supply model',
-              '- Regression files run individually for exact failure attribution',
+              '- Regression files run individually with exact assertion capture',
               '- Full discoverable QA-bank audit', '',
-              ...(failures.length ? ['## Exact failures', ...[...new Set(failures)].map((x) => `- \`${x}\``), ''] : []),
-              pass ? 'The tested Content OS invariants hold together on the current repository state.' : 'At least one tested invariant failed. Diagnostic tail follows.',
-              !pass && diagnostics ? '' : null,
-              !pass && diagnostics ? '```text' : null,
-              !pass && diagnostics ? diagnostics.slice(-14000) : null,
-              !pass && diagnostics ? '```' : null,
+              pass ? 'The tested Content OS invariants hold together on the current repository state.' : 'At least one tested invariant failed. Exact failure output follows.',
+              !pass && failures ? '' : null,
+              !pass && failures ? '```text' : null,
+              !pass && failures ? failures.slice(-20000) : null,
+              !pass && failures ? '```' : null,
             ].filter((x) => x !== null).join('\n');
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
             await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed', state_reason: pass ? 'completed' : 'not_planned' });
