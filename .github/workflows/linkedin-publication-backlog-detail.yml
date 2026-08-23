@@ -50,7 +50,8 @@ jobs:
               return set;
             }
 
-            const since = new Date(now - 14 * 24 * 60 * 60 * 1000).toISOString();
+            // Match the production Content OS evidence window exactly.
+            const since = new Date(now - 45 * 24 * 60 * 60 * 1000).toISOString();
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', since, per_page: 100 });
             const approvals = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
             for (const issue of approvals) {
@@ -73,6 +74,7 @@ jobs:
               '# Current LinkedIn publication backlog detail', '',
               `Checked: **${new Date(now).toISOString()}**`,
               `Hardening cutoff: **${new Date(cutoff).toISOString()}**`,
+              `Evidence window: **45 days**`,
               `Current unresolved post-hardening placements beyond grace: **${rows.length}**`, '',
               ...(rows.length ? rows.map((row) => `- Issue #${row.issueNumber} · ${row.issueTitle}\n  - ${row.label}\n  - Buffer ID: \`${row.bufferId}\`\n  - Due: **${row.dueAt}**\n  - Accepted: **${new Date(row.acceptedAt).toISOString()}**`) : ['- ✅ None.']), '',
               'This diagnostic is GitHub-evidence-only and performs no Buffer mutation.',
