@@ -1,0 +1,32 @@
+name: LinkedIn Buffer Migration Recovery
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-buffer-migration-apply
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    if: startsWith(github.event.issue.title, '[APPROVED BUFFER MIGRATION RECOVERY]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Recover exact owner-approved migration remainder
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
+          BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
+          BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
+        with:
+          script: |
+            const { run } = require('./scripts/linkedin-buffer-migration-recovery.cjs');
+            await run({ github, context, core, env: process.env, workspace: process.env.GITHUB_WORKSPACE, now: Date.now() });
