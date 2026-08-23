@@ -14,7 +14,7 @@
     "interactionDensityWeight": 0.25,
     "reachWeight": 0.15,
     "impressionsWeight": 0.1,
-    "commercialWeight": 0.25,
+    "commercialWeight": 0.5,
     "confidenceImpressions": 100,
     "priorScore": 50,
     "priorWeight": 2
@@ -28,7 +28,7 @@
     "Never suppress a category on fewer than three measured samples.",
     "Shrink small-sample engagement toward the observed median before ranking.",
     "Use channel-specific evidence when at least three measured posts exist for that channel; otherwise fall back to the combined model.",
-    "Prefer commercial signals such as DMs, enquiries, Revenue Recovery Check progression and attributable revenue over vanity metrics whenever those signals are captured.",
+    "When any commercial signals are captured, give them up to 50 percent of the observed performance score so DMs, enquiries, Revenue Recovery Check progression, proposals and paid outcomes outrank vanity engagement.",
     "Keep 15 percent of recommendations available for deliberate exploration so the system does not converge prematurely.",
     "Do not auto-publish or create owner approval on the basis of a performance score alone."
   ]
