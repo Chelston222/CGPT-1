@@ -25,23 +25,27 @@ jobs:
       - name: Run Content OS regression suite
         id: tests
         continue-on-error: true
+        shell: bash
         run: |
-          node --check scripts/linkedin-performance-learning.cjs
-          node --check scripts/linkedin-performance-learning-v2.cjs
-          node --check scripts/linkedin-content-traits-v2.cjs
-          node --check scripts/linkedin-qa-bank-audit.cjs
-          node --check scripts/linkedin-week-batch.cjs
-          node --test \
-            tests/linkedin-buffer-capacity.test.cjs \
-            tests/linkedin-week-batch.test.cjs \
-            tests/linkedin-green-gate-cutoff.test.cjs \
-            tests/linkedin-performance-learning.test.cjs \
-            tests/linkedin-performance-learning-v2.test.cjs \
-            tests/linkedin-content-traits-v2.test.cjs \
-            tests/linkedin-performance-policy.test.cjs \
-            tests/linkedin-performance-workflow-static.test.cjs \
-            tests/linkedin-commercial-outcome-capture.test.cjs
-          node scripts/linkedin-qa-bank-audit.cjs
+          set -o pipefail
+          {
+            node --check scripts/linkedin-performance-learning.cjs
+            node --check scripts/linkedin-performance-learning-v2.cjs
+            node --check scripts/linkedin-content-traits-v2.cjs
+            node --check scripts/linkedin-qa-bank-audit.cjs
+            node --check scripts/linkedin-week-batch.cjs
+            node --test \
+              tests/linkedin-buffer-capacity.test.cjs \
+              tests/linkedin-week-batch.test.cjs \
+              tests/linkedin-green-gate-cutoff.test.cjs \
+              tests/linkedin-performance-learning.test.cjs \
+              tests/linkedin-performance-learning-v2.test.cjs \
+              tests/linkedin-content-traits-v2.test.cjs \
+              tests/linkedin-performance-policy.test.cjs \
+              tests/linkedin-performance-workflow-static.test.cjs \
+              tests/linkedin-commercial-outcome-capture.test.cjs
+            node scripts/linkedin-qa-bank-audit.cjs
+          } 2>&1 | tee /tmp/linkedin-selftest.log
       - name: Record self-test result
         if: always() && github.event_name == 'issues'
         uses: actions/github-script@v7
@@ -49,15 +53,25 @@ jobs:
           TEST_OUTCOME: ${{ steps.tests.outcome }}
         with:
           script: |
+            const fs = require('node:fs');
             const pass = process.env.TEST_OUTCOME === 'success';
+            let diagnostics = '';
+            try {
+              const lines = fs.readFileSync('/tmp/linkedin-selftest.log', 'utf8').split(/\r?\n/);
+              diagnostics = lines.slice(-100).join('\n').trim();
+            } catch {}
             const body = [
               '# LinkedIn Content OS self-test', '',
               pass ? '✅ **PASS**' : '❌ **FAIL**', '',
               '- JavaScript syntax checks: performance learner, v2 learner, trait taxonomy, QA-bank auditor, weekly batch gate',
               '- Regression tests: Buffer cadence, weekly approvals, Green Gate cutoff, performance scoring, mature-evidence v2, richer content traits, policy invariants, learning workflow, commercial attribution',
               '- Full discoverable QA-bank audit', '',
-              pass ? 'The tested Content OS invariants hold together on the current repository state.' : 'At least one tested invariant failed. Treat the Content OS as needing repair before relying on this self-test.',
-            ].join('\n');
+              pass ? 'The tested Content OS invariants hold together on the current repository state.' : 'At least one tested invariant failed. Diagnostic tail is included below.',
+              !pass && diagnostics ? '' : null,
+              !pass && diagnostics ? '```text' : null,
+              !pass && diagnostics ? diagnostics.slice(-12000) : null,
+              !pass && diagnostics ? '```' : null,
+            ].filter((x) => x !== null).join('\n');
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
             await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed', state_reason: pass ? 'completed' : 'not_planned' });
             if (!pass) core.setFailed('LinkedIn Content OS self-test failed.');
