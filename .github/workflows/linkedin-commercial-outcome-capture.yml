@@ -36,6 +36,8 @@ jobs:
             const count = Number(headers.COUNT || 1);
             const valueRaw = headers.VALUE_GBP;
             const valueGbp = valueRaw === undefined || valueRaw === '' ? null : Number(valueRaw);
+            const captureIssue = context.issue.number;
+            const captureMarker = `<!-- LINKEDIN_OUTCOME_CAPTURE captureIssue=${captureIssue} -->`;
             const allowed = new Set(['dm', 'reply', 'enquiry', 'fit_check', 'qualified', 'proposal', 'paid']);
 
             function fail(message) {
@@ -57,6 +59,16 @@ jobs:
             const verifiedByTrustedBot = comments.some((comment) => comment.user?.login === 'github-actions[bot]' && String(comment.body || '').includes(`<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=${bufferId} `));
             if (!verifiedByTrustedBot) fail('The supplied BUFFER_ID is not independently publication-verified on the supplied source issue. Refusing attribution.');
 
+            const alreadyCaptured = comments.some((comment) => comment.user?.login === 'github-actions[bot]' && String(comment.body || '').includes(captureMarker));
+            if (alreadyCaptured) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: captureIssue,
+                body: `✅ This capture issue was already applied to source issue #${sourceIssue}. Retry treated as idempotent; no commercial signal was added again.`,
+              });
+              await github.rest.issues.update({ owner, repo, issue_number: captureIssue, state: 'closed', state_reason: 'completed' });
+              return;
+            }
+
             const existingCount = comments.reduce((sum, comment) => {
               if (comment.user?.login !== 'github-actions[bot]') return sum;
               const regex = new RegExp(`<!--\\s*LINKEDIN_COMMERCIAL_SIGNAL\\s+bufferId=${bufferId}\\s+type=${type}(?:\\s+valueGbp=[^\\s>]+)?\\s*-->`, 'g');
@@ -73,14 +85,16 @@ jobs:
               `- Count added: **${count}**`,
               valueGbp !== null ? `- Attributable GBP value recorded: **£${valueGbp.toFixed(2)}**` : null,
               `- Previous markers for this Buffer ID/type: **${existingCount}**`,
+              `- Capture issue: **#${captureIssue}**`,
               note ? `- Note: ${note}` : null,
               '',
               ...markers,
+              captureMarker,
             ].filter(Boolean).join('\n');
 
             await github.rest.issues.createComment({ owner, repo, issue_number: sourceIssue, body: outcomeComment });
             await github.rest.issues.createComment({
-              owner, repo, issue_number: context.issue.number,
+              owner, repo, issue_number: captureIssue,
               body: `✅ Captured ${count} verified **${type}** outcome${count === 1 ? '' : 's'} against source issue #${sourceIssue} / Buffer \`${bufferId}\`. The performance learner will include this on its next pass.`,
             });
-            await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
+            await github.rest.issues.update({ owner, repo, issue_number: captureIssue, state: 'closed', state_reason: 'completed' });
