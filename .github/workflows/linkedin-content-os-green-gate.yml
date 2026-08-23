@@ -130,10 +130,10 @@ jobs:
               for (const row of acceptedRows(comments)) {
                 const terminal = verified.has(row.bufferId) || failed.has(row.bufferId) || supersededIds.has(row.bufferId) || draftRetired.has(row.bufferId) || draftVerified.has(row.bufferId);
                 const due = Date.parse(row.dueAt || '');
-                if (Number.isFinite(due) && now - due >= 30 * 60 * 1000 && !terminal) publicationBacklog += 1;
+                const isCurrent = Number.isFinite(row.acceptedAt) && row.acceptedAt >= HARDENING_CUTOFF;
+                if (isCurrent && Number.isFinite(due) && now - due >= 30 * 60 * 1000 && !terminal) publicationBacklog += 1;
                 if (!verified.has(row.bufferId)) continue;
 
-                const isCurrent = Number.isFinite(row.acceptedAt) && row.acceptedAt >= HARDENING_CUTOFF;
                 if (!analytics.has(row.bufferId) && !nativeRequired.has(row.bufferId) && !nativeCaptured.has(row.bufferId)) {
                   if (isCurrent) currentAnalyticsBacklog += 1;
                 }
@@ -179,11 +179,9 @@ jobs:
               `- Open approval issues: **${openApprovals}**`,
               `- Buffer pagination incomplete: **${paginationIncomplete ? 'YES' : 'NO'}**`,
               `- Checked at: **${new Date(now).toISOString()}**`, '',
-              `Operational GREEN is measured from the hardening boundary (${new Date(HARDENING_CUTOFF).toISOString()}). Older native-only analytics debt stays visible and is never rewritten as captured, but it does not permanently poison the new release contract.`,
+              `Operational GREEN is measured from the hardening boundary (${new Date(HARDENING_CUTOFF).toISOString()}). Older publication/analytics debt stays visible in historical reconciliation and is never rewritten as captured, but it does not permanently poison the current release contract.`,
             ].join('\n');
 
-            // Health issues are created by github-actions[bot], so this lookup must not
-            // filter by owner creator or every run would create a duplicate singleton.
             const allOpen = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
             const existing = allOpen.find((issue) => !issue.pull_request && issue.title === HEALTH_TITLE);
             if (green) {
