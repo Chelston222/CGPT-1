@@ -1,0 +1,46 @@
+name: LinkedIn QA Bank Audit
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-qa-bank-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[LINKEDIN QA BANK CHECK]') && github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit all review-ready LinkedIn banks
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const path = require('node:path');
+            const { auditQaBanks } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-qa-bank-audit.cjs'));
+            const result = auditQaBanks();
+            const body = [
+              '# LinkedIn QA bank audit', '',
+              result.ok ? '✅ **PASS**' : '❌ **FAIL**', '',
+              `- QA files audited: **${result.totalQaFiles}**`,
+              `- QA posts audited: **${result.totalQaPosts}**`,
+              `- Strict learning-v2 posts: **${result.strictV2Posts}**`,
+              `- Errors: **${result.errors.length}**`,
+              `- Warnings: **${result.warnings.length}**`, '',
+              ...(result.errors.length ? ['## Errors', ...result.errors.map((x) => `- ${x}`), ''] : []),
+              ...(result.warnings.length ? ['## Warnings', ...result.warnings.slice(0, 30).map((x) => `- ${x}`), result.warnings.length > 30 ? `- ...and ${result.warnings.length - 30} more.` : '', ''].filter(Boolean) : []),
+              'This audit is read-only. Passing QA does not create publication permission.',
+            ].join('\n');
+            if (context.eventName === 'issues') {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
+              await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed', state_reason: result.ok ? 'completed' : 'not_planned' });
+            }
+            core.summary.addHeading('LinkedIn QA Bank Audit').addRaw(body).write();
+            if (!result.ok) core.setFailed('LinkedIn QA bank audit failed.');
