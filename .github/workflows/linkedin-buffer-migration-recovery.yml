@@ -5,11 +5,12 @@ on:
     types: [opened]
 
 permissions:
+  actions: write
   contents: read
   issues: write
 
 concurrency:
-  group: linkedin-buffer-migration-apply
+  group: linkedin-buffer-migration-recovery
   cancel-in-progress: false
 
 jobs:
@@ -18,6 +19,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Stop any hung original migration executor
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const workflowId = 'linkedin-buffer-migration-apply.yml';
+            const activeStates = new Set(['queued', 'in_progress', 'waiting', 'requested', 'pending']);
+            const sourceIssue = await github.rest.issues.get({ owner, repo, issue_number: 386 });
+            const sourceCreatedAt = Date.parse(sourceIssue.data.created_at || '');
+
+            async function activeRuns() {
+              const runs = await github.rest.actions.listWorkflowRuns({ owner, repo, workflow_id: workflowId, event: 'issues', per_page: 20 });
+              return (runs.data.workflow_runs || []).filter((run) => {
+                const createdAt = Date.parse(run.created_at || '');
+                return activeStates.has(run.status) && Number.isFinite(createdAt) && createdAt >= sourceCreatedAt;
+              });
+            }
+
+            let active = await activeRuns();
+            for (const run of active) {
+              core.warning(`Cancelling active original Buffer migration run ${run.id} (${run.status}).`);
+              try {
+                await github.rest.actions.cancelWorkflowRun({ owner, repo, run_id: run.id });
+              } catch (error) {
+                if (error.status !== 409) throw error;
+              }
+            }
+
+            for (let attempt = 0; attempt < 30; attempt += 1) {
+              active = await activeRuns();
+              if (!active.length) break;
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+            active = await activeRuns();
+            if (active.length) throw new Error(`Original migration executor is still active after cancellation: ${active.map((run) => `${run.id}:${run.status}`).join(', ')}`);
+            core.info('No active original migration executor remains. Safe to enter recovery preflight.');
 
       - name: Recover exact owner-approved migration remainder
         uses: actions/github-script@v7
