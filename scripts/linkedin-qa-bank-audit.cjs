@@ -1,0 +1,160 @@
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+const { DEFAULT_CADENCE_POLICY, localDate, weekKeyFromLocalDate } = require('./linkedin-buffer-capacity.cjs');
+const { jaccardSimilarity } = require('./linkedin-performance-learning-v2.cjs');
+
+const ROOT = path.join(__dirname, '..');
+const REVIEW_DIR = path.join(ROOT, 'apps', 'linkedin-review');
+const QUEUE_PATH = path.join(REVIEW_DIR, 'queue.json');
+const DISTRIBUTION_PATH = path.join(REVIEW_DIR, 'distribution-policy.json');
+
+function words(text = '') {
+  return String(text).trim().split(/\s+/).filter(Boolean).length;
+}
+
+function dateOnly(value) {
+  return String(value || '').slice(0, 10);
+}
+
+function loadJson(file) {
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function auditQaBanks() {
+  const errors = [];
+  const warnings = [];
+  const queue = loadJson(QUEUE_PATH);
+  const distribution = loadJson(DISTRIBUTION_PATH);
+  const files = fs.readdirSync(REVIEW_DIR).filter((name) => /^qa-replenishment-.*\.json$/.test(name)).sort();
+  const globalIds = new Map((queue.posts || []).map((post) => [post.id, 'queue.json']));
+  const allNewCopies = [];
+  const fileSummaries = [];
+
+  for (const name of files) {
+    const fullPath = path.join(REVIEW_DIR, name);
+    let payload;
+    try {
+      payload = loadJson(fullPath);
+    } catch (error) {
+      errors.push(`${name}: invalid JSON: ${error.message}`);
+      continue;
+    }
+
+    if (!Number.isInteger(payload.schemaVersion)) errors.push(`${name}: schemaVersion must be an integer.`);
+    if (!Array.isArray(payload.posts)) errors.push(`${name}: posts must be an array.`);
+    if (!Array.isArray(payload.posts)) continue;
+
+    const strictV2 = payload.posts.some((post) => post.sourceType === 'performance_learning_v2');
+    const slotKeys = new Set();
+    const daily = new Map();
+    const weekly = new Map();
+
+    for (const post of payload.posts) {
+      const prefix = `${name}/${post.id || '<missing-id>'}`;
+      if (!/^[a-z0-9-]+$/.test(String(post.id || ''))) errors.push(`${prefix}: id must be lowercase kebab-case.`);
+      if (!Number.isInteger(post.revision) || post.revision < 1) errors.push(`${prefix}: revision must be a positive integer.`);
+      if (!post.title || !String(post.title).trim()) errors.push(`${prefix}: title is required.`);
+      if (!post.category || !String(post.category).trim()) errors.push(`${prefix}: category is required.`);
+      if (!['text', 'image', 'carousel', 'visual'].includes(String(post.format || ''))) errors.push(`${prefix}: unsupported format ${post.format}.`);
+      if (!Array.isArray(post.targets) || !post.targets.length) errors.push(`${prefix}: at least one target is required.`);
+      if (!['schedule', 'queue'].includes(post.mode)) errors.push(`${prefix}: mode must be schedule or queue.`);
+      if (post.status !== 'review') errors.push(`${prefix}: status must remain review in QA banks.`);
+      if (post.qa?.status !== 'ready_for_human_review' || post.qa?.approvalEligible !== true || post.qa?.publishPermission !== false) errors.push(`${prefix}: QA flags must be ready_for_human_review / approvalEligible true / publishPermission false.`);
+      const copy = post.copy?.default || '';
+      if (!String(copy).trim()) errors.push(`${prefix}: copy.default is required.`);
+      if (String(copy).includes('—')) errors.push(`${prefix}: em dash is prohibited.`);
+      if (/\b222 Emails\b/.test(String(copy))) errors.push(`${prefix}: use 222Emails, not 222 Emails.`);
+      if (/\bTriple Two Emails\b/.test(String(copy)) && !(post.targets || []).includes('personal')) warnings.push(`${prefix}: spoken-name styling appears outside personal copy; confirm it is intentional.`);
+
+      if (globalIds.has(post.id)) errors.push(`${prefix}: duplicate post id already defined in ${globalIds.get(post.id)}.`);
+      else globalIds.set(post.id, name);
+
+      const count = words(copy);
+      if (strictV2) {
+        if (count < 45) errors.push(`${prefix}: v2 copy is too thin at ${count} words.`);
+        if (count > 280) errors.push(`${prefix}: v2 copy is too long at ${count} words.`);
+        if (!post.contentRole) errors.push(`${prefix}: v2 contentRole is required.`);
+      }
+
+      for (const target of post.targets || []) {
+        if (!['personal', 'main', 'secondary'].includes(target)) errors.push(`${prefix}: unknown target ${target}.`);
+        const schedule = post.scheduledAt?.[target];
+        if (!schedule || Number.isNaN(Date.parse(schedule))) {
+          errors.push(`${prefix}: valid scheduledAt.${target} is required.`);
+          continue;
+        }
+        const date = dateOnly(schedule);
+        if (payload.weekStart && date < payload.weekStart) errors.push(`${prefix}: ${target} schedule is before weekStart.`);
+        if (payload.weekEnd && date > payload.weekEnd) errors.push(`${prefix}: ${target} schedule is after weekEnd.`);
+        const slot = `${target}:${schedule}`;
+        if (slotKeys.has(slot)) errors.push(`${prefix}: duplicate ${target} schedule slot ${schedule}.`);
+        slotKeys.add(slot);
+        const local = localDate(schedule, distribution.timezone || 'Europe/London');
+        const dayKey = `${local}:${target}`;
+        const weekKey = `${weekKeyFromLocalDate(local)}:${target}`;
+        daily.set(dayKey, (daily.get(dayKey) || 0) + 1);
+        weekly.set(weekKey, (weekly.get(weekKey) || 0) + 1);
+
+        if (strictV2) {
+          const allowedRoles = distribution.accounts?.[target]?.allowedContentRoles || [];
+          if (!allowedRoles.includes(post.contentRole)) errors.push(`${prefix}: contentRole ${post.contentRole} is not allowed for ${target}.`);
+          if (target === 'secondary') {
+            const taxonomy = post.taxonomy || {};
+            for (const key of ['category', 'season', 'lesson_or_resource']) if (!taxonomy[key]) errors.push(`${prefix}: Retention School taxonomy.${key} is required.`);
+          }
+        }
+      }
+
+      if (strictV2) allNewCopies.push({ name, id: post.id, copy });
+    }
+
+    for (const [key, count] of daily) {
+      const target = key.split(':').at(-1);
+      const max = DEFAULT_CADENCE_POLICY[target]?.maxPerDay;
+      if (Number.isFinite(max) && count > max) errors.push(`${name}: ${key} has ${count} placements; cadence maximum is ${max}.`);
+    }
+    for (const [key, count] of weekly) {
+      const target = key.split(':').at(-1);
+      const max = DEFAULT_CADENCE_POLICY[target]?.maxPerWeek;
+      if (Number.isFinite(max) && count > max) errors.push(`${name}: ${key} has ${count} placements; weekly cadence maximum is ${max}.`);
+    }
+
+    fileSummaries.push({ name, posts: payload.posts.length, strictV2 });
+  }
+
+  for (let i = 0; i < allNewCopies.length; i += 1) {
+    for (let j = i + 1; j < allNewCopies.length; j += 1) {
+      const a = allNewCopies[i];
+      const b = allNewCopies[j];
+      const similarity = jaccardSimilarity(a.copy, b.copy);
+      if (similarity >= 0.72) errors.push(`${a.name}/${a.id} and ${b.name}/${b.id} are too textually similar (${similarity.toFixed(3)}).`);
+      else if (similarity >= 0.60) warnings.push(`${a.name}/${a.id} and ${b.name}/${b.id} are moderately similar (${similarity.toFixed(3)}).`);
+    }
+  }
+
+  return {
+    ok: errors.length === 0,
+    files: fileSummaries,
+    errors,
+    warnings,
+    totalQaFiles: fileSummaries.length,
+    totalQaPosts: fileSummaries.reduce((sum, row) => sum + row.posts, 0),
+    strictV2Posts: allNewCopies.length,
+  };
+}
+
+if (require.main === module) {
+  const result = auditQaBanks();
+  if (process.argv.includes('--json')) console.log(JSON.stringify(result, null, 2));
+  else {
+    console.log(`LinkedIn QA bank audit: ${result.ok ? 'PASS' : 'FAIL'}`);
+    console.log(`QA files: ${result.totalQaFiles}; QA posts: ${result.totalQaPosts}; strict v2 posts: ${result.strictV2Posts}`);
+    for (const warning of result.warnings) console.log(`WARN: ${warning}`);
+    for (const error of result.errors) console.error(`ERROR: ${error}`);
+  }
+  if (!result.ok) process.exitCode = 1;
+}
+
+module.exports = { auditQaBanks };
