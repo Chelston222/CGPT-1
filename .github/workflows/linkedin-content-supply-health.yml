@@ -1,0 +1,106 @@
+name: LinkedIn Content Supply Health
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+  schedule:
+    - cron: '52 6 * * *'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-content-supply-health
+  cancel-in-progress: false
+
+jobs:
+  supply:
+    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[LINKEDIN SUPPLY CHECK]') && github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Measure current-policy review-bank runway
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const { DEFAULT_POLICY, TARGETS, evaluateSupply } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-content-supply.cjs'));
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const now = Date.now();
+            const REPORT_TITLE = '[LINKEDIN CONTENT SUPPLY HEALTH] Review bank';
+            const dir = path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review');
+            const files = ['queue.json', ...fs.readdirSync(dir).filter((name) => /^qa-replenishment-.*\.json$/.test(name)).sort()];
+            const byId = new Map();
+            for (const file of files) {
+              const payload = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+              for (const post of payload.posts || []) byId.set(post.id, { ...post, _sourceFile: file });
+            }
+
+            const reservedIds = new Set();
+            const since = new Date(now - 180 * 86400000).toISOString();
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
+            for (const issue of issues) {
+              if (issue.pull_request || !/\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(String(issue.title || ''))) continue;
+              const body = String(issue.body || '');
+              const single = body.match(/^POST_ID:\s*([^\s]+)\s*$/mi)?.[1];
+              if (single) reservedIds.add(single);
+              const batch = body.match(/^APPROVED_ITEMS:\s*(.*)$/mi)?.[1] || '';
+              for (const item of batch.split(',').map((x) => x.trim()).filter(Boolean)) {
+                const match = item.match(/^([a-z0-9-]+)@\d+$/i);
+                if (match) reservedIds.add(match[1]);
+              }
+            }
+
+            const supply = evaluateSupply([...byId.values()], reservedIds, now, DEFAULT_POLICY);
+            const lines = [];
+            for (const target of TARGETS) {
+              const row = supply.targets[target];
+              const label = target === 'personal' ? 'Chelston personal' : target === 'main' ? 'Main 222Emails' : 'Retention School';
+              lines.push(`### ${label}`);
+              lines.push(`- Current-policy future review-ready: **${row.currentCount} / ${row.reserveTarget}**`);
+              lines.push(`- Reserve gap: **${row.gap}**`);
+              lines.push(`- Legacy future candidates visible but not counted as current reserve: **${row.legacyCount}**`);
+              lines.push(`- Expired current-policy review candidates: **${row.expired.length}**`);
+              const weeks = Object.entries(row.byWeek).sort(([a], [b]) => a.localeCompare(b));
+              if (weeks.length) lines.push(`- Current-policy supply by week: ${weeks.map(([week, count]) => `**${week}: ${count}**`).join(' · ')}`);
+              lines.push('');
+            }
+
+            const body = [
+              '# LinkedIn content supply health', '',
+              supply.green ? '🟢 **GREEN** — at least two weeks of current-policy review-ready reserve is available at the configured baseline.' : '🟠 **REPLENISH** — current-policy review-ready reserve is below target.', '',
+              `- Lookahead: **${DEFAULT_POLICY.lookaheadDays} days**`,
+              '- Reserve targets: **14 personal · 10 Main 222Emails · 10 Retention School**',
+              `- Total current-policy reserve gap: **${supply.totalGap}**`,
+              `- Reserved/previously approved post IDs excluded: **${reservedIds.size}**`,
+              `- Checked at: **${new Date(now).toISOString()}**`, '',
+              ...lines,
+              '## Contract',
+              '- This monitor measures future review-ready supply, not Buffer queue depth.',
+              '- Historical/legacy content remains visible but does not satisfy the current-policy reserve target.',
+              '- A supply gap is a content-creation signal, not publication permission.',
+              '- This workflow never creates Buffer posts, reschedules content or manufactures owner approval.',
+            ].join('\n');
+
+            const open = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
+            const existing = open.find((issue) => !issue.pull_request && issue.title === REPORT_TITLE);
+            if (supply.green) {
+              if (existing) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body });
+                await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'closed', state_reason: 'completed' });
+              }
+            } else if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title: REPORT_TITLE, body });
+            }
+
+            if (context.eventName === 'issues') {
+              await github.rest.issues.createComment({ owner, repo, issue_number: context.issue.number, body });
+              await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
+            }
+            core.summary.addHeading('LinkedIn Content Supply Health').addRaw(body).write();
