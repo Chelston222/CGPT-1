@@ -1,6 +1,7 @@
 'use strict';
 
 const base = require('./linkedin-performance-learning.cjs');
+const traitEngine = require('./linkedin-content-traits-v2.cjs');
 
 const STOPWORDS = new Set([
   'the','and','that','this','with','from','have','your','you','for','are','was','were','but','not','into','they','their','then','than','what','when','where','which','will','would','could','should','about','after','before','because','while','just','more','most','some','only','also','very','been','being','our','out','who','how','why','can','does','did','its','his','her','them','there','here','like','get','got','has','had','too','all','any','one','two','three','four','five','six','seven','eight','nine','ten'
@@ -117,7 +118,7 @@ function modelValue(rows, key, fallback = 50) {
 function scoreAgainstModel(candidate, model, policy = {}) {
   const prior = safeNumber(policy?.scoring?.priorScore, 50);
   const copy = candidate.copy?.default || candidate.copy || '';
-  const traits = candidate.traits || base.inferTraits(copy);
+  const traits = candidate.traits || traitEngine.inferTraits(copy);
   const traitScores = traits.map((trait) => modelValue(model.traits, trait, null)).filter(Number.isFinite);
   const traitScore = traitScores.length ? traitScores.reduce((a, b) => a + b, 0) / traitScores.length : prior;
   const category = modelValue(model.categories, candidate.category, prior);
@@ -194,6 +195,7 @@ function passesCandidateFloor(candidate, lane, policy = {}) {
 
 module.exports = {
   ...base,
+  inferTraits: traitEngine.inferTraits,
   analyticsEligibility,
   applyFatiguePenalty,
   buildPerformanceModel,
