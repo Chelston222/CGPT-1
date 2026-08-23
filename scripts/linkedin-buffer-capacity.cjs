@@ -58,6 +58,10 @@ function validateDailyPlacementLimit(jobs, limit = MAX_PLACEMENTS_PER_DAY, perCh
     const [date, target] = channelOverflow[0].split(':');
     throw new Error(`${date} has ${channelOverflow[1]} placements for ${target}; maximum is ${perChannelLimit} per channel.`);
   }
+
+  // The legacy broad capacity ceiling stays as a defence-in-depth guard, but
+  // every live release must also satisfy the current three-account cadence.
+  validateCadenceContract(jobs, DEFAULT_CADENCE_POLICY, timeZone);
   return Object.fromEntries([...counts.entries()].sort());
 }
 
