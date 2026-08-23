@@ -37,6 +37,7 @@ jobs:
             tests/linkedin-green-gate-cutoff.test.cjs \
             tests/linkedin-performance-learning.test.cjs \
             tests/linkedin-performance-learning-v2.test.cjs \
+            tests/linkedin-content-traits-v2.test.cjs \
             tests/linkedin-performance-policy.test.cjs \
             tests/linkedin-performance-workflow-static.test.cjs \
             tests/linkedin-commercial-outcome-capture.test.cjs
@@ -53,7 +54,7 @@ jobs:
               '# LinkedIn Content OS self-test', '',
               pass ? '✅ **PASS**' : '❌ **FAIL**', '',
               '- JavaScript syntax checks: performance learner, v2 learner, trait taxonomy, QA-bank auditor, weekly batch gate',
-              '- Regression tests: Buffer cadence, weekly approvals, Green Gate cutoff, performance scoring, mature-evidence v2, policy invariants, learning workflow, commercial attribution',
+              '- Regression tests: Buffer cadence, weekly approvals, Green Gate cutoff, performance scoring, mature-evidence v2, richer content traits, policy invariants, learning workflow, commercial attribution',
               '- Full discoverable QA-bank audit', '',
               pass ? 'The tested Content OS invariants hold together on the current repository state.' : 'At least one tested invariant failed. Treat the Content OS as needing repair before relying on this self-test.',
             ].join('\n');
