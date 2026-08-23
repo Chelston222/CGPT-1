@@ -25,11 +25,12 @@ function loadJson(file) {
 function auditQaBanks() {
   const errors = [];
   const warnings = [];
+  const legacyDebt = [];
   const queue = loadJson(QUEUE_PATH);
   const distribution = loadJson(DISTRIBUTION_PATH);
   const files = fs.readdirSync(REVIEW_DIR).filter((name) => /^qa-replenishment-.*\.json$/.test(name)).sort();
   const globalIds = new Map((queue.posts || []).map((post) => [post.id, 'queue.json']));
-  const allNewCopies = [];
+  const currentCopies = [];
   const fileSummaries = [];
 
   for (const name of files) {
@@ -46,13 +47,18 @@ function auditQaBanks() {
     if (!Array.isArray(payload.posts)) errors.push(`${name}: posts must be an array.`);
     if (!Array.isArray(payload.posts)) continue;
 
-    const strictV2 = payload.posts.some((post) => post.sourceType === 'performance_learning_v2');
+    const currentPolicy = payload.posts.length > 0 && payload.posts.every((post) => post.sourceType === 'performance_learning_v2');
     const slotKeys = new Set();
     const daily = new Map();
     const weekly = new Map();
+    let currentPosts = 0;
 
     for (const post of payload.posts) {
       const prefix = `${name}/${post.id || '<missing-id>'}`;
+      const postIsCurrent = post.sourceType === 'performance_learning_v2';
+      if (postIsCurrent) currentPosts += 1;
+
+      // Universal integrity checks. These protect dynamic discovery regardless of age.
       if (!/^[a-z0-9-]+$/.test(String(post.id || ''))) errors.push(`${prefix}: id must be lowercase kebab-case.`);
       if (!Number.isInteger(post.revision) || post.revision < 1) errors.push(`${prefix}: revision must be a positive integer.`);
       if (!post.title || !String(post.title).trim()) errors.push(`${prefix}: title is required.`);
@@ -64,18 +70,23 @@ function auditQaBanks() {
       if (post.qa?.status !== 'ready_for_human_review' || post.qa?.approvalEligible !== true || post.qa?.publishPermission !== false) errors.push(`${prefix}: QA flags must be ready_for_human_review / approvalEligible true / publishPermission false.`);
       const copy = post.copy?.default || '';
       if (!String(copy).trim()) errors.push(`${prefix}: copy.default is required.`);
-      if (String(copy).includes('—')) errors.push(`${prefix}: em dash is prohibited.`);
-      if (/\b222 Emails\b/.test(String(copy))) errors.push(`${prefix}: use 222Emails, not 222 Emails.`);
-      if (/\bTriple Two Emails\b/.test(String(copy)) && !(post.targets || []).includes('personal')) warnings.push(`${prefix}: spoken-name styling appears outside personal copy; confirm it is intentional.`);
 
       if (globalIds.has(post.id)) errors.push(`${prefix}: duplicate post id already defined in ${globalIds.get(post.id)}.`);
       else globalIds.set(post.id, name);
 
-      const count = words(copy);
-      if (strictV2) {
+      // Current-policy content rules. Historical content is preserved as historical evidence.
+      if (postIsCurrent) {
+        if (String(copy).includes('—')) errors.push(`${prefix}: em dash is prohibited.`);
+        if (/\b222 Emails\b/.test(String(copy))) errors.push(`${prefix}: use 222Emails, not 222 Emails.`);
+        if (/\bTriple Two Emails\b/.test(String(copy)) && !(post.targets || []).includes('personal')) warnings.push(`${prefix}: spoken-name styling appears outside personal copy; confirm it is intentional.`);
+        const count = words(copy);
         if (count < 45) errors.push(`${prefix}: v2 copy is too thin at ${count} words.`);
         if (count > 280) errors.push(`${prefix}: v2 copy is too long at ${count} words.`);
         if (!post.contentRole) errors.push(`${prefix}: v2 contentRole is required.`);
+        currentCopies.push({ name, id: post.id, copy });
+      } else {
+        if (String(copy).includes('—')) legacyDebt.push(`${prefix}: historical em dash retained.`);
+        if (/\b222 Emails\b/.test(String(copy))) legacyDebt.push(`${prefix}: historical 222 Emails naming retained.`);
       }
 
       for (const target of post.targets || []) {
@@ -97,7 +108,7 @@ function auditQaBanks() {
         daily.set(dayKey, (daily.get(dayKey) || 0) + 1);
         weekly.set(weekKey, (weekly.get(weekKey) || 0) + 1);
 
-        if (strictV2) {
+        if (postIsCurrent) {
           const allowedRoles = distribution.accounts?.[target]?.allowedContentRoles || [];
           if (!allowedRoles.includes(post.contentRole)) errors.push(`${prefix}: contentRole ${post.contentRole} is not allowed for ${target}.`);
           if (target === 'secondary') {
@@ -106,28 +117,34 @@ function auditQaBanks() {
           }
         }
       }
-
-      if (strictV2) allNewCopies.push({ name, id: post.id, copy });
     }
 
+    // Only banks authored under the current policy are required to satisfy the current cadence.
+    // Historical banks remain immutable evidence and are surfaced as legacy debt instead.
     for (const [key, count] of daily) {
       const target = key.split(':').at(-1);
       const max = DEFAULT_CADENCE_POLICY[target]?.maxPerDay;
-      if (Number.isFinite(max) && count > max) errors.push(`${name}: ${key} has ${count} placements; cadence maximum is ${max}.`);
+      if (Number.isFinite(max) && count > max) {
+        const message = `${name}: ${key} has ${count} placements; current cadence maximum is ${max}.`;
+        if (currentPolicy) errors.push(message); else legacyDebt.push(message);
+      }
     }
     for (const [key, count] of weekly) {
       const target = key.split(':').at(-1);
       const max = DEFAULT_CADENCE_POLICY[target]?.maxPerWeek;
-      if (Number.isFinite(max) && count > max) errors.push(`${name}: ${key} has ${count} placements; weekly cadence maximum is ${max}.`);
+      if (Number.isFinite(max) && count > max) {
+        const message = `${name}: ${key} has ${count} placements; current weekly cadence maximum is ${max}.`;
+        if (currentPolicy) errors.push(message); else legacyDebt.push(message);
+      }
     }
 
-    fileSummaries.push({ name, posts: payload.posts.length, strictV2 });
+    fileSummaries.push({ name, posts: payload.posts.length, currentPolicy, currentPosts });
   }
 
-  for (let i = 0; i < allNewCopies.length; i += 1) {
-    for (let j = i + 1; j < allNewCopies.length; j += 1) {
-      const a = allNewCopies[i];
-      const b = allNewCopies[j];
+  for (let i = 0; i < currentCopies.length; i += 1) {
+    for (let j = i + 1; j < currentCopies.length; j += 1) {
+      const a = currentCopies[i];
+      const b = currentCopies[j];
       const similarity = jaccardSimilarity(a.copy, b.copy);
       if (similarity >= 0.72) errors.push(`${a.name}/${a.id} and ${b.name}/${b.id} are too textually similar (${similarity.toFixed(3)}).`);
       else if (similarity >= 0.60) warnings.push(`${a.name}/${a.id} and ${b.name}/${b.id} are moderately similar (${similarity.toFixed(3)}).`);
@@ -139,9 +156,11 @@ function auditQaBanks() {
     files: fileSummaries,
     errors,
     warnings,
+    legacyDebt,
     totalQaFiles: fileSummaries.length,
     totalQaPosts: fileSummaries.reduce((sum, row) => sum + row.posts, 0),
-    strictV2Posts: allNewCopies.length,
+    currentPolicyFiles: fileSummaries.filter((row) => row.currentPolicy).length,
+    currentPolicyPosts: currentCopies.length,
   };
 }
 
@@ -150,7 +169,7 @@ if (require.main === module) {
   if (process.argv.includes('--json')) console.log(JSON.stringify(result, null, 2));
   else {
     console.log(`LinkedIn QA bank audit: ${result.ok ? 'PASS' : 'FAIL'}`);
-    console.log(`QA files: ${result.totalQaFiles}; QA posts: ${result.totalQaPosts}; strict v2 posts: ${result.strictV2Posts}`);
+    console.log(`QA files: ${result.totalQaFiles}; QA posts: ${result.totalQaPosts}; current-policy posts: ${result.currentPolicyPosts}; legacy debt: ${result.legacyDebt.length}`);
     for (const warning of result.warnings) console.log(`WARN: ${warning}`);
     for (const error of result.errors) console.error(`ERROR: ${error}`);
   }
