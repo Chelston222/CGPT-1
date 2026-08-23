@@ -28,13 +28,28 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          status=0
+          failures=()
           {
-            node --check scripts/linkedin-performance-learning.cjs
-            node --check scripts/linkedin-performance-learning-v2.cjs
-            node --check scripts/linkedin-content-traits-v2.cjs
-            node --check scripts/linkedin-qa-bank-audit.cjs
-            node --check scripts/linkedin-week-batch.cjs
-            node --test \
+            for script in \
+              scripts/linkedin-performance-learning.cjs \
+              scripts/linkedin-performance-learning-v2.cjs \
+              scripts/linkedin-content-traits-v2.cjs \
+              scripts/linkedin-qa-bank-audit.cjs \
+              scripts/linkedin-week-batch.cjs \
+              scripts/linkedin-content-supply.cjs
+            do
+              echo "=== SYNTAX $script ==="
+              if node --check "$script"; then
+                echo "PASS_SYNTAX $script"
+              else
+                echo "FAIL_SYNTAX $script"
+                failures+=("syntax:$script")
+                status=1
+              fi
+            done
+
+            for testfile in \
               tests/linkedin-buffer-capacity.test.cjs \
               tests/linkedin-week-batch.test.cjs \
               tests/linkedin-green-gate-cutoff.test.cjs \
@@ -43,9 +58,36 @@ jobs:
               tests/linkedin-content-traits-v2.test.cjs \
               tests/linkedin-performance-policy.test.cjs \
               tests/linkedin-performance-workflow-static.test.cjs \
-              tests/linkedin-commercial-outcome-capture.test.cjs
-            node scripts/linkedin-qa-bank-audit.cjs
+              tests/linkedin-commercial-outcome-capture.test.cjs \
+              tests/linkedin-content-supply.test.cjs
+            do
+              echo "=== TEST_FILE $testfile ==="
+              if node --test "$testfile"; then
+                echo "PASS_FILE $testfile"
+              else
+                echo "FAIL_FILE $testfile"
+                failures+=("$testfile")
+                status=1
+              fi
+            done
+
+            echo "=== QA_BANK_AUDIT ==="
+            if node scripts/linkedin-qa-bank-audit.cjs; then
+              echo "PASS_QA_BANK_AUDIT"
+            else
+              echo "FAIL_QA_BANK_AUDIT"
+              failures+=("qa-bank-audit")
+              status=1
+            fi
+
+            echo "=== FAILURE SUMMARY ==="
+            if [ ${#failures[@]} -eq 0 ]; then
+              echo "NO_FAILURES"
+            else
+              printf 'FAILURE %s\n' "${failures[@]}"
+            fi
           } 2>&1 | tee /tmp/linkedin-selftest.log
+          exit $status
       - name: Record self-test result
         if: always() && github.event_name == 'issues'
         uses: actions/github-script@v7
@@ -55,21 +97,22 @@ jobs:
           script: |
             const fs = require('node:fs');
             const pass = process.env.TEST_OUTCOME === 'success';
-            let diagnostics = '';
-            try {
-              const lines = fs.readFileSync('/tmp/linkedin-selftest.log', 'utf8').split(/\r?\n/);
-              diagnostics = lines.slice(-100).join('\n').trim();
-            } catch {}
+            let log = '';
+            try { log = fs.readFileSync('/tmp/linkedin-selftest.log', 'utf8'); } catch {}
+            const lines = log.split(/\r?\n/);
+            const failures = lines.filter((line) => /^(?:FAILURE|FAIL_FILE|FAIL_SYNTAX|FAIL_QA_BANK_AUDIT)\b/.test(line));
+            const diagnostics = lines.slice(-120).join('\n').trim();
             const body = [
               '# LinkedIn Content OS self-test', '',
               pass ? '✅ **PASS**' : '❌ **FAIL**', '',
-              '- JavaScript syntax checks: performance learner, v2 learner, trait taxonomy, QA-bank auditor, weekly batch gate',
-              '- Regression tests: Buffer cadence, weekly approvals, Green Gate cutoff, performance scoring, mature-evidence v2, richer content traits, policy invariants, learning workflow, commercial attribution',
+              '- Syntax: performance learner, v2 learner, richer trait taxonomy, QA-bank auditor, weekly batch gate, content-supply model',
+              '- Regression files run individually for exact failure attribution',
               '- Full discoverable QA-bank audit', '',
-              pass ? 'The tested Content OS invariants hold together on the current repository state.' : 'At least one tested invariant failed. Diagnostic tail is included below.',
+              ...(failures.length ? ['## Exact failures', ...[...new Set(failures)].map((x) => `- \`${x}\``), ''] : []),
+              pass ? 'The tested Content OS invariants hold together on the current repository state.' : 'At least one tested invariant failed. Diagnostic tail follows.',
               !pass && diagnostics ? '' : null,
               !pass && diagnostics ? '```text' : null,
-              !pass && diagnostics ? diagnostics.slice(-12000) : null,
+              !pass && diagnostics ? diagnostics.slice(-14000) : null,
               !pass && diagnostics ? '```' : null,
             ].filter((x) => x !== null).join('\n');
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
