@@ -1,0 +1,256 @@
+name: LinkedIn Buffer Migration Apply
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-buffer-migration-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: startsWith(github.event.issue.title, '[APPROVED BUFFER MIGRATION]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply exact owner-approved migration
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
+          BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
+          BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = context.issue.number;
+            const manifestPath = 'apps/linkedin-review/buffer-migration-2026-08-23.json';
+            const expectedBlobSha = '9bb89ddf0d8a392f03a4f8c97c5cead8d8faeb1c';
+            const manifest = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, manifestPath), 'utf8'));
+            const policy = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/distribution-policy.json'), 'utf8'));
+
+            function headers(body = '') {
+              const out = {};
+              for (const line of String(body).split(/\r?\n/)) {
+                const match = line.match(/^([A-Z][A-Z0-9_]+):\s*(.*)$/);
+                if (match) out[match[1]] = match[2].trim();
+              }
+              return out;
+            }
+
+            function localDate(value, timeZone = 'Europe/London') {
+              const date = new Date(value);
+              if (Number.isNaN(date.getTime())) throw new Error(`Invalid date ${value}`);
+              return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+            }
+
+            function weekKey(local) {
+              const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(local || '');
+              if (!match) throw new Error(`Invalid local date ${local}`);
+              const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+              const day = date.getUTCDay() || 7;
+              date.setUTCDate(date.getUTCDate() + 4 - day);
+              const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+              const week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+              return `${date.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+            }
+
+            function normalizeIso(value) {
+              const date = new Date(value);
+              if (Number.isNaN(date.getTime())) throw new Error(`Invalid ISO timestamp ${value}`);
+              return date.toISOString();
+            }
+
+            async function buffer(query, variables = {}) {
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.BUFFER_API_KEY}` },
+                body: JSON.stringify({ query, variables }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              const fatal = (payload.errors || []).map((error) => error.message).filter(Boolean);
+              if (!response.ok || fatal.length) throw new Error(fatal.join('; ') || `Buffer HTTP ${response.status}`);
+              return payload.data;
+            }
+
+            async function scheduledPosts(channelIds) {
+              const account = await buffer('query MigrationAccount { account { organizations { id } } }');
+              const organizationId = account.account?.organizations?.[0]?.id;
+              if (!organizationId) throw new Error('Buffer returned no organisation ID.');
+              const data = await buffer(`query MigrationScheduled { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(channelIds)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`);
+              if (data.posts?.pageInfo?.hasNextPage) throw new Error('Buffer scheduled-post query exceeds 100 rows; refusing incomplete migration evidence.');
+              return (data.posts?.edges || []).map((edge) => edge.node);
+            }
+
+            function cadenceFailures(rows, targetByChannel) {
+              const daily = new Map();
+              const weekly = new Map();
+              for (const row of rows) {
+                const target = targetByChannel[row.channelId];
+                if (!target) continue;
+                const date = localDate(row.dueAt, manifest.timezone || policy.timezone || 'Europe/London');
+                const week = weekKey(date);
+                daily.set(`${date}:${target}`, (daily.get(`${date}:${target}`) || 0) + 1);
+                weekly.set(`${week}:${target}`, (weekly.get(`${week}:${target}`) || 0) + 1);
+              }
+              const failures = [];
+              for (const [key, count] of daily) {
+                const target = key.split(':').at(-1);
+                const max = Number(policy.accounts?.[target]?.maximumPerDay);
+                if (Number.isFinite(max) && count > max) failures.push(`${key} ${count}>${max}/day`);
+              }
+              for (const [key, count] of weekly) {
+                const target = key.split(':').at(-1);
+                const max = Number(policy.accounts?.[target]?.maximumPerWeek);
+                if (Number.isFinite(max) && count > max) failures.push(`${key} ${count}>${max}/week`);
+              }
+              return failures;
+            }
+
+            if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured.');
+            const channelIds = {
+              personal: process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID,
+              main: process.env.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID,
+              secondary: process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID,
+            };
+            if (Object.values(channelIds).some((id) => !id)) throw new Error('One or more LinkedIn Buffer channel IDs are missing.');
+            const targetByChannel = Object.fromEntries(Object.entries(channelIds).map(([target, id]) => [id, target]));
+
+            const approval = headers(context.payload.issue.body || '');
+            if (approval.MIGRATION_ID !== 'buffer-migration-2026-08-23') throw new Error('MIGRATION_ID does not match the locked migration.');
+            if (approval.MANIFEST_BLOB_SHA !== expectedBlobSha) throw new Error('MANIFEST_BLOB_SHA does not match the locked manifest revision.');
+            if (approval.SOURCE_SNAPSHOT_ISSUE !== '381') throw new Error('SOURCE_SNAPSHOT_ISSUE must be 381.');
+            if (approval.PLAN_SELFTEST_ISSUE !== '382') throw new Error('PLAN_SELFTEST_ISSUE must be 382.');
+            if (approval.APPLY !== 'YES') throw new Error('APPLY: YES is required.');
+
+            const manifestMeta = await github.rest.repos.getContent({ owner, repo, path: manifestPath, ref: context.sha });
+            if (Array.isArray(manifestMeta.data) || manifestMeta.data.sha !== expectedBlobSha) throw new Error('Checked-out migration manifest blob differs from the owner-approved blob.');
+            if (manifest.status !== 'classified_not_applied' || manifest.sourceSnapshotIssue !== 381 || manifest.governingIssue !== 331) throw new Error('Migration manifest is not in the expected classified-not-applied state.');
+
+            const nonKeep = manifest.placements.filter((row) => row.decision !== 'KEEP');
+            if (nonKeep.length !== 4) throw new Error(`Expected exactly 4 non-KEEP decisions; found ${nonKeep.length}.`);
+            if (nonKeep.filter((row) => row.decision === 'MOVE').length !== 2 || nonKeep.filter((row) => row.decision === 'REPURPOSE').length !== 2) throw new Error('Migration must contain exactly two MOVE and two REPURPOSE rows.');
+            if (manifest.placements.some((row) => row.decision === 'RETIRE')) throw new Error('This approved migration must not retire source inventory.');
+
+            const now = Date.now();
+            for (const row of nonKeep) {
+              if (Date.parse(row.bufferDueAt) <= now + 60 * 60 * 1000) throw new Error(`${row.id} original due time is too close or passed; re-snapshot and re-approve.`);
+              if (row.decision === 'MOVE' && Date.parse(row.proposedDueAt) <= now + 60 * 60 * 1000) throw new Error(`${row.id} proposed due time is too close or passed; re-plan.`);
+            }
+
+            // Rebuild the immutable queue-id -> Buffer-id ledger from the owner approval audit trail.
+            const bufferIdByQueueKey = new Map();
+            for (const row of manifest.placements) {
+              const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: row.approvalIssue, per_page: 100 });
+              const key = `${row.id}@${row.revision}`;
+              const regex = new RegExp(`^-\\s+${row.id.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}@${row.revision}\\s+·\\s+[^:]+:\\s+Buffer post ID\\s+\\x60([^\\x60]+)\\x60`, 'm');
+              let found = null;
+              for (const comment of comments) {
+                const match = String(comment.body || '').match(regex);
+                if (match) { found = match[1]; break; }
+              }
+              if (!found) throw new Error(`Could not recover Buffer ID for ${key} from approval issue #${row.approvalIssue}.`);
+              bufferIdByQueueKey.set(key, found);
+            }
+
+            const before = await scheduledPosts(Object.values(channelIds));
+            const beforeById = new Map(before.map((post) => [post.id, post]));
+            if (before.length !== manifest.summary.livePlacements) throw new Error(`Live queue drift: expected ${manifest.summary.livePlacements} scheduled placements from #381; found ${before.length}.`);
+            for (const row of manifest.placements) {
+              const key = `${row.id}@${row.revision}`;
+              const bufferId = bufferIdByQueueKey.get(key);
+              const post = beforeById.get(bufferId);
+              if (!post) throw new Error(`Live queue drift: ${key} / ${bufferId} is no longer scheduled.`);
+              if (post.channelId !== channelIds[row.target]) throw new Error(`Live queue drift: ${key} changed target channel.`);
+              if (normalizeIso(post.dueAt) !== normalizeIso(row.bufferDueAt)) throw new Error(`Live queue drift: ${key} dueAt is ${post.dueAt}, expected ${row.bufferDueAt}.`);
+            }
+
+            const expectedBeforeFailures = cadenceFailures(before, targetByChannel);
+            if (!expectedBeforeFailures.includes('2026-W35:main 7>5/week') || !expectedBeforeFailures.includes('2026-W35:secondary 7>5/week')) throw new Error(`Preflight no longer matches source snapshot cadence defect: ${expectedBeforeFailures.join(', ') || 'none'}.`);
+
+            const existingComments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issueNumber, per_page: 100 });
+            const appliedMarkers = new Set();
+            const markerRegex = /<!-- BUFFER_MIGRATION_APPLIED key=([^\s>]+)/g;
+            for (const comment of existingComments) {
+              let match;
+              while ((match = markerRegex.exec(String(comment.body || '')))) appliedMarkers.add(match[1]);
+              markerRegex.lastIndex = 0;
+            }
+
+            const applied = [];
+            for (const row of nonKeep) {
+              const key = `${row.id}@${row.revision}:${row.target}`;
+              const bufferId = bufferIdByQueueKey.get(`${row.id}@${row.revision}`);
+              if (appliedMarkers.has(key)) {
+                applied.push({ key, bufferId, action: row.decision, alreadyApplied: true });
+                continue;
+              }
+
+              if (row.decision === 'MOVE') {
+                const dueAt = normalizeIso(row.proposedDueAt);
+                const data = await buffer(`mutation EditPost($input: EditPostInput!) { editPost(input: $input) { ... on PostActionSuccess { post { id dueAt status } } ... on MutationError { message } } }`, {
+                  input: { id: bufferId, mode: 'customScheduled', dueAt },
+                });
+                if (!data.editPost?.post?.id) throw new Error(`${key} Buffer edit failed: ${data.editPost?.message || 'no post returned'}`);
+                if (data.editPost.post.id !== bufferId || normalizeIso(data.editPost.post.dueAt) !== dueAt) throw new Error(`${key} Buffer edit readback did not match requested ID/time.`);
+                await github.rest.issues.createComment({ owner, repo, issue_number: issueNumber, body: `✅ MOVE applied: ${key} · Buffer \`${bufferId}\` · ${row.bufferDueAt} → ${dueAt}\n<!-- BUFFER_MIGRATION_APPLIED key=${key} action=MOVE bufferId=${bufferId} dueAt=${dueAt} -->` });
+                applied.push({ key, bufferId, action: 'MOVE', dueAt });
+              } else if (row.decision === 'REPURPOSE') {
+                const data = await buffer(`mutation DeletePost($input: DeletePostInput!) { deletePost(input: $input) { ... on DeletePostSuccess { id } ... on MutationError { message } } }`, { input: { id: bufferId } });
+                if (data.deletePost?.id !== bufferId) throw new Error(`${key} Buffer delete failed: ${data.deletePost?.message || 'deleted ID not returned'}`);
+                await github.rest.issues.createComment({ owner, repo, issue_number: issueNumber, body: `✅ REPURPOSE removed from feed schedule: ${key} · Buffer \`${bufferId}\` · source content preserved via manifest route \`${row.repurposeRoute}\`.\n<!-- BUFFER_MIGRATION_APPLIED key=${key} action=REPURPOSE bufferId=${bufferId} -->` });
+                applied.push({ key, bufferId, action: 'REPURPOSE', route: row.repurposeRoute });
+              }
+            }
+
+            const after = await scheduledPosts(Object.values(channelIds));
+            const afterById = new Map(after.map((post) => [post.id, post]));
+            if (after.length !== before.length - 2) throw new Error(`Post-write queue size is ${after.length}; expected ${before.length - 2} after two REPURPOSE removals.`);
+            for (const row of manifest.placements.filter((row) => row.decision === 'KEEP')) {
+              const bufferId = bufferIdByQueueKey.get(`${row.id}@${row.revision}`);
+              const post = afterById.get(bufferId);
+              if (!post || post.channelId !== channelIds[row.target] || normalizeIso(post.dueAt) !== normalizeIso(row.bufferDueAt)) throw new Error(`KEEP invariant failed for ${row.id}@${row.revision}; a protected placement changed.`);
+            }
+            for (const row of manifest.placements.filter((row) => row.decision === 'MOVE')) {
+              const bufferId = bufferIdByQueueKey.get(`${row.id}@${row.revision}`);
+              const post = afterById.get(bufferId);
+              if (!post || normalizeIso(post.dueAt) !== normalizeIso(row.proposedDueAt)) throw new Error(`MOVE verification failed for ${row.id}@${row.revision}.`);
+            }
+            for (const row of manifest.placements.filter((row) => row.decision === 'REPURPOSE')) {
+              const bufferId = bufferIdByQueueKey.get(`${row.id}@${row.revision}`);
+              if (afterById.has(bufferId)) throw new Error(`REPURPOSE verification failed for ${row.id}@${row.revision}; placement is still scheduled.`);
+            }
+
+            const finalFailures = cadenceFailures(after, targetByChannel);
+            if (finalFailures.length) throw new Error(`Post-write v1.12 cadence still fails: ${finalFailures.join(', ')}`);
+
+            const counts = Object.fromEntries(Object.entries(channelIds).map(([target, id]) => [target, after.filter((post) => post.channelId === id).length]));
+            const body = [
+              '# Buffer migration applied and verified', '',
+              `- Manifest blob: \`${expectedBlobSha}\``,
+              `- Source snapshot: #381`,
+              `- Plan self-test: #382`,
+              `- Scheduled placements before: **${before.length}**`,
+              `- Scheduled placements after: **${after.length}**`,
+              `- Personal after: **${counts.personal || 0}**`,
+              `- 222Emails company after: **${counts.main || 0}**`,
+              `- Retention School after: **${counts.secondary || 0}**`,
+              '- v1.12 daily/weekly cadence: **PASS**',
+              '- KEEP invariants: **PASS**',
+              '- MOVE same-ID readback: **PASS**',
+              '- REPURPOSE schedule removal: **PASS**', '',
+              'The source content for REPURPOSE items remains in the repository and migration manifest. This operation changed only the four explicitly classified live feed placements.',
+              '', '<!-- BUFFER_MIGRATION_COMPLETE id=buffer-migration-2026-08-23 -->',
+            ].join('\n');
+            await github.rest.issues.createComment({ owner, repo, issue_number: issueNumber, body });
+            await github.rest.issues.update({ owner, repo, issue_number: issueNumber, state: 'closed', state_reason: 'completed' });
+            core.summary.addHeading('Buffer migration').addRaw(body).write();
