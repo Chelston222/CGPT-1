@@ -21,7 +21,7 @@ test('detects founder, contrarian and diagnostic traits', () => {
   assert.ok(traits.includes('story'));
 });
 
-test('shrinks small samples and ranks stronger performance above weak performance', () => {
+test('shrinks small samples twice so tiny viral-looking posts do not dominate', () => {
   const records = [
     { id: 'winner', category: 'founder', format: 'text', traits: ['founder_voice'], metrics: { reactions: 4, comments: 0, engagementRate: 5.41, impressions: 74, reach: 40 } },
     { id: 'weak', category: 'generic', format: 'text', traits: ['more_leads_frame'], metrics: { reactions: 0, comments: 0, engagementRate: 0, impressions: 47, reach: 29 } },
@@ -32,7 +32,8 @@ test('shrinks small samples and ranks stronger performance above weak performanc
   const weak = model.scored.find((row) => row.id === 'weak');
   const tiny = model.scored.find((row) => row.id === 'tiny');
   assert.ok(winner.score > weak.score);
-  assert.ok(tiny.shrunkEngagement < 10, 'tiny sample should be shrunk toward the baseline');
+  assert.ok(tiny.shrunkEngagement < 10, 'tiny engagement percentage should be shrunk toward the baseline');
+  assert.ok(tiny.coreScore < tiny.rawCoreScore, 'tiny final evidence score should be pulled toward the prior');
 });
 
 test('candidate scoring prefers traits/categories with better observed evidence', () => {
