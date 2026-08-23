@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Use observed LinkedIn performance to prioritise future approved 222Emails content without overfitting small samples or bypassing human publication approval.",
+  "queueTargetPerChannel": 8,
+  "queueMaximumPerChannel": 10,
+  "lookaheadDays": 14,
+  "minimumTargetRecordsForLocalModel": 3,
+  "minimumSamplesForSuppression": 3,
+  "exploitRatio": 0.6,
+  "adjacentRatio": 0.25,
+  "exploreRatio": 0.15,
+  "scoring": {
+    "engagementWeight": 0.5,
+    "interactionDensityWeight": 0.25,
+    "reachWeight": 0.15,
+    "impressionsWeight": 0.1,
+    "commercialWeight": 0.25,
+    "confidenceImpressions": 100,
+    "priorScore": 50,
+    "priorWeight": 2
+  },
+  "selection": {
+    "sameCategoryPenalty": 12,
+    "samePrimaryTraitPenalty": 6
+  },
+  "guardrails": [
+    "Never infer publication from Buffer acceptance alone.",
+    "Never suppress a category on fewer than three measured samples.",
+    "Shrink small-sample engagement toward the observed median before ranking.",
+    "Use channel-specific evidence when at least three measured posts exist for that channel; otherwise fall back to the combined model.",
+    "Prefer commercial signals such as DMs, enquiries, Revenue Recovery Check progression and attributable revenue over vanity metrics whenever those signals are captured.",
+    "Keep 15 percent of recommendations available for deliberate exploration so the system does not converge prematurely.",
+    "Do not auto-publish or create owner approval on the basis of a performance score alone."
+  ]
+}
