@@ -54,3 +54,14 @@ test('diverse selection penalises category repetition', () => {
   ], 2);
   assert.deepEqual(selected.map((x) => x.id), ['a', 'c']);
 });
+
+test('commercial outcomes can outrank stronger vanity engagement', () => {
+  const comments = [{ body: '<!-- LINKEDIN_COMMERCIAL_SIGNAL bufferId=buyer type=paid valueGbp=595 -->' }];
+  const signals = engine.extractCommercialSignals(comments);
+  const records = [
+    { id: 'vanity', category: 'reach', format: 'text', traits: ['story'], metrics: { reactions: 8, comments: 2, engagementRate: 8, impressions: 200, reach: 150 }, commercialSignals: signals.get('vanity') || [] },
+    { id: 'buyer', category: 'offer', format: 'text', traits: ['cta'], metrics: { reactions: 1, comments: 0, engagementRate: 1, impressions: 80, reach: 50 }, commercialSignals: signals.get('buyer') || [] },
+  ];
+  const scored = engine.buildPerformanceModel(records).scored;
+  assert.ok(scored.find((r) => r.id === 'buyer').score > scored.find((r) => r.id === 'vanity').score);
+});
