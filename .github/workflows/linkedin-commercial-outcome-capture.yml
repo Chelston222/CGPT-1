@@ -1,0 +1,86 @@
+name: LinkedIn Commercial Outcome Capture
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-commercial-outcome-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    if: startsWith(github.event.issue.title, '[LINKEDIN OUTCOME]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate and attach commercial outcome to verified publication
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const body = String(context.payload.issue.body || '');
+            const headers = {};
+            for (const line of body.split(/\r?\n/)) {
+              const match = line.match(/^([A-Z][A-Z0-9_]+):\s*(.*)$/);
+              if (match) headers[match[1]] = match[2].trim();
+            }
+
+            const bufferId = headers.BUFFER_ID || '';
+            const sourceIssue = Number(headers.SOURCE_ISSUE || 0);
+            const type = String(headers.TYPE || '').toLowerCase();
+            const count = Number(headers.COUNT || 1);
+            const valueRaw = headers.VALUE_GBP;
+            const valueGbp = valueRaw === undefined || valueRaw === '' ? null : Number(valueRaw);
+            const allowed = new Set(['dm', 'reply', 'enquiry', 'fit_check', 'qualified', 'proposal', 'paid']);
+
+            function fail(message) {
+              throw new Error(message);
+            }
+
+            if (!/^[A-Za-z0-9_-]+$/.test(bufferId)) fail('BUFFER_ID is required and must be a Buffer post ID.');
+            if (!Number.isInteger(sourceIssue) || sourceIssue < 1) fail('SOURCE_ISSUE must be a positive GitHub issue number.');
+            if (!allowed.has(type)) fail(`TYPE must be one of: ${[...allowed].join(', ')}.`);
+            if (!Number.isInteger(count) || count < 1 || count > 100) fail('COUNT must be an integer from 1 to 100.');
+            if (valueGbp !== null && (!Number.isFinite(valueGbp) || valueGbp < 0)) fail('VALUE_GBP must be a non-negative number when supplied.');
+            if (valueGbp !== null && count !== 1) fail('COUNT must be 1 when VALUE_GBP is supplied so revenue is never multiplied ambiguously.');
+
+            const source = await github.rest.issues.get({ owner, repo, issue_number: sourceIssue });
+            if (source.data.pull_request) fail('SOURCE_ISSUE must refer to a LinkedIn approval issue, not a pull request.');
+            if (!/\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(String(source.data.title || ''))) fail('SOURCE_ISSUE is not a LinkedIn approval issue.');
+
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: sourceIssue, per_page: 100 });
+            const verifiedByTrustedBot = comments.some((comment) => comment.user?.login === 'github-actions[bot]' && String(comment.body || '').includes(`<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=${bufferId} `));
+            if (!verifiedByTrustedBot) fail('The supplied BUFFER_ID is not independently publication-verified on the supplied source issue. Refusing attribution.');
+
+            const existingCount = comments.reduce((sum, comment) => {
+              if (comment.user?.login !== 'github-actions[bot]') return sum;
+              const regex = new RegExp(`<!--\\s*LINKEDIN_COMMERCIAL_SIGNAL\\s+bufferId=${bufferId.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\s+type=${type}(?:\\s+valueGbp=[^\\s>]+)?\\s*-->`, 'g');
+              return sum + [...String(comment.body || '').matchAll(regex)].length;
+            }, 0);
+
+            const marker = `<!-- LINKEDIN_COMMERCIAL_SIGNAL bufferId=${bufferId} type=${type}${valueGbp !== null ? ` valueGbp=${valueGbp}` : ''} -->`;
+            const markers = Array.from({ length: count }, () => marker);
+            const note = String(headers.NOTE || '').trim();
+            const outcomeComment = [
+              '💼 Verified LinkedIn commercial outcome captured.', '',
+              `- Buffer post ID: \`${bufferId}\``,
+              `- Outcome type: **${type}**`,
+              `- Count added: **${count}**`,
+              valueGbp !== null ? `- Attributable GBP value recorded: **£${valueGbp.toFixed(2)}**` : null,
+              `- Previous markers for this Buffer ID/type: **${existingCount}**`,
+              note ? `- Note: ${note}` : null,
+              '',
+              ...markers,
+            ].filter(Boolean).join('\n');
+
+            await github.rest.issues.createComment({ owner, repo, issue_number: sourceIssue, body: outcomeComment });
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: context.issue.number,
+              body: `✅ Captured ${count} verified **${type}** outcome${count === 1 ? '' : 's'} against source issue #${sourceIssue} / Buffer \`${bufferId}\`. The performance learner will include this on its next pass.`,
+            });
+            await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
