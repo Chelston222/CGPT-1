@@ -31,11 +31,11 @@ test('enforces current three-account daily cadence while retaining broad capacit
 });
 
 test('enforces weekly company and Retention School ceilings', () => {
-  const main = Array.from({ length: 5 }, (_, index) => job(`main-${index}`, [['main', `2026-08-${17 + index}T09:00:00Z']]));
+  const main = Array.from({ length: 5 }, (_, index) => job(`main-${index}`, [['main', `2026-08-${17 + index}T09:00:00Z`]]));
   assert.doesNotThrow(() => validateCadenceContract(main));
   assert.throws(() => validateCadenceContract([...main, job('main-six', [['main', '2026-08-23T09:00:00Z']])]), /maximum is 5 per week/);
 
-  const school = Array.from({ length: 5 }, (_, index) => job(`school-${index}`, [['secondary', `2026-08-${17 + index}T10:00:00Z']]));
+  const school = Array.from({ length: 5 }, (_, index) => job(`school-${index}`, [['secondary', `2026-08-${17 + index}T10:00:00Z`]]));
   assert.doesNotThrow(() => validateCadenceContract(school));
   assert.throws(() => validateCadenceContract([...school, job('school-six', [['secondary', '2026-08-23T10:00:00Z']])]), /maximum is 5 per week/);
 });
