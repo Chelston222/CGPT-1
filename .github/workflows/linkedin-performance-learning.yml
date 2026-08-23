@@ -1,0 +1,251 @@
+name: LinkedIn Performance Learning Engine
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+  schedule:
+    - cron: '37 20 * * *'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-performance-learning
+  cancel-in-progress: false
+
+jobs:
+  learn:
+    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[LINKEDIN LEARNING NOW]') && github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Learn from observed performance and rank replenishment
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
+          BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
+          BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const engine = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-performance-learning.cjs'));
+            const policy = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/performance-policy.json'), 'utf8'));
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const now = Date.now();
+            const REPORT_TITLE = '[LINKEDIN LEARNING ENGINE] Performance-ranked replenishment';
+            const targetIds = {
+              personal: process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID,
+              main: process.env.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID,
+              secondary: process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID,
+            };
+
+            function readContentBank() {
+              const dir = path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review');
+              const files = ['queue.json', ...fs.readdirSync(dir).filter((name) => /^qa-replenishment-.*\.json$/.test(name)).sort()];
+              const byId = new Map();
+              for (const file of files) {
+                const payload = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+                for (const post of payload.posts || []) byId.set(post.id, { ...post, _sourceFile: file });
+              }
+              return [...byId.values()];
+            }
+
+            function targetFromChannelName(name = '') {
+              const text = String(name).toLowerCase();
+              if (text.includes('chelston')) return 'personal';
+              if (text.includes('retention')) return 'secondary';
+              if (text.includes('main') || text.includes('222 emails')) return 'main';
+              return null;
+            }
+
+            function hourInLondon(iso) {
+              if (!iso) return null;
+              const d = new Date(iso);
+              if (Number.isNaN(d.getTime())) return null;
+              return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hourCycle: 'h23' }).format(d);
+            }
+
+            function scheduledFor(post, target) {
+              return post.scheduledAt?.[target] || Object.values(post.scheduledAt || {})[0] || null;
+            }
+
+            async function buffer(query) {
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.BUFFER_API_KEY}` },
+                body: JSON.stringify({ query }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              const messages = (payload.errors || []).map((error) => error.message).filter(Boolean);
+              if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
+              return payload.data;
+            }
+
+            const bank = readContentBank();
+            const bankById = new Map(bank.map((post) => [post.id, post]));
+            const since = new Date(now - 90 * 24 * 60 * 60 * 1000).toISOString();
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', since, per_page: 100 });
+            const approvals = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+            const usedIds = new Set();
+            const records = [];
+
+            for (const issue of approvals) {
+              const headers = engine.parseHeaders(issue.body || '');
+              if (headers.POST_ID) usedIds.add(headers.POST_ID);
+              const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+              const placements = engine.extractPlacements(comments);
+              const analytics = engine.extractAnalyticsByBufferId(comments);
+              const commercial = engine.extractCommercialSignals(comments);
+              for (const placement of placements) {
+                usedIds.add(placement.queueId);
+                const measured = analytics.get(placement.bufferId);
+                if (!measured) continue;
+                const meta = bankById.get(placement.queueId);
+                const target = targetFromChannelName(placement.channelName) || meta?.targets?.[0] || String(headers.TARGETS || headers.TARGET || '').split(',')[0].trim() || null;
+                const copy = meta?.copy?.default || engine.parseIssueCopy(issue.body || '');
+                records.push({
+                  id: placement.queueId,
+                  revision: placement.revision,
+                  bufferId: placement.bufferId,
+                  issueNumber: issue.number,
+                  target,
+                  category: meta?.category || headers.CATEGORY || 'uncategorised',
+                  format: meta?.format || (headers.MEDIA_URL ? 'visual' : 'text'),
+                  traits: engine.inferTraits(copy),
+                  hourBucket: hourInLondon(placement.dueAt),
+                  dueAt: placement.dueAt,
+                  copy,
+                  metrics: measured.metrics,
+                  commercialSignals: commercial.get(placement.bufferId) || [],
+                });
+              }
+            }
+
+            const combinedModel = engine.buildPerformanceModel(records, policy);
+            const byTarget = {};
+            for (const target of ['personal', 'main', 'secondary']) {
+              const local = records.filter((r) => r.target === target);
+              byTarget[target] = local.length >= policy.minimumTargetRecordsForLocalModel
+                ? engine.buildPerformanceModel(local, policy)
+                : combinedModel;
+            }
+
+            const occupancy = { personal: 0, main: 0, secondary: 0 };
+            let bufferReadError = null;
+            try {
+              if (!process.env.BUFFER_API_KEY || Object.values(targetIds).some((id) => !id)) throw new Error('Buffer API key or LinkedIn channel IDs are missing.');
+              const account = await buffer('query LearningAccount { account { organizations { id } } }');
+              const organizationId = account?.account?.organizations?.[0]?.id;
+              if (!organizationId) throw new Error('Buffer returned no organisation ID.');
+              const data = await buffer(`query LearningCapacity { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(Object.values(targetIds))} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`);
+              if (data.posts?.pageInfo?.hasNextPage) throw new Error('Buffer returned more than 100 scheduled posts; refusing an incomplete capacity view.');
+              for (const edge of data.posts?.edges || []) {
+                const target = Object.entries(targetIds).find(([, id]) => id === edge.node.channelId)?.[0];
+                if (target) occupancy[target] += 1;
+              }
+            } catch (error) {
+              bufferReadError = error.message;
+            }
+
+            const lookaheadEnd = now + policy.lookaheadDays * 24 * 60 * 60 * 1000;
+            const recommendations = {};
+            for (const target of ['personal', 'main', 'secondary']) {
+              const model = byTarget[target];
+              const available = bank.filter((post) => {
+                if (usedIds.has(post.id)) return false;
+                if (post.status !== 'review') return false;
+                if (post.qa && (post.qa.status !== 'ready_for_human_review' || post.qa.approvalEligible !== true || post.qa.publishPermission !== false)) return false;
+                if (!(post.targets || []).includes(target)) return false;
+                const due = Date.parse(scheduledFor(post, target) || '');
+                return Number.isFinite(due) && due > now + 30 * 60 * 1000 && due <= lookaheadEnd;
+              }).map((post) => engine.scoreCandidate({
+                ...post,
+                hourBucket: hourInLondon(scheduledFor(post, target)),
+              }, model, policy)).sort((a, b) => b.candidateScore - a.candidateScore);
+
+              const deficit = bufferReadError ? Math.min(5, available.length) : Math.max(0, Math.min(5, policy.queueTargetPerChannel - occupancy[target]));
+              const n = Math.min(deficit, available.length);
+              if (!n) {
+                recommendations[target] = [];
+                continue;
+              }
+              const exploitN = Math.max(1, Math.floor(n * policy.exploitRatio));
+              const exploreN = n >= 3 ? Math.max(1, Math.round(n * policy.exploreRatio)) : 0;
+              const adjacentN = Math.max(0, n - exploitN - exploreN);
+              const selected = [];
+              const takeUnique = (pool, count, lane) => {
+                const eligible = pool.filter((p) => !selected.some((s) => s.id === p.id));
+                for (const p of engine.selectDiverseCandidates(eligible, count, policy)) selected.push({ ...p, lane });
+              };
+              takeUnique(available, exploitN, 'EXPLOIT');
+              const sampledCategories = new Set(model.categories.filter((x) => x.samples >= 1).map((x) => x.key));
+              const adjacentPool = available.filter((p) => sampledCategories.has(p.category));
+              takeUnique(adjacentPool, adjacentN, 'ADJACENT');
+              const explorePool = available.filter((p) => !sampledCategories.has(p.category));
+              takeUnique(explorePool.length ? explorePool : available.slice().reverse(), exploreN, 'EXPLORE');
+              takeUnique(available, n - selected.length, 'ADJACENT');
+              recommendations[target] = selected;
+            }
+
+            const topPosts = combinedModel.scored.slice().sort((a, b) => b.score - a.score).slice(0, 8);
+            const weakCategories = combinedModel.categories.filter((x) => x.samples >= policy.minimumSamplesForSuppression && x.adjustedScore < 40);
+            const commercialCount = records.reduce((sum, row) => sum + (row.commercialSignals?.length || 0), 0);
+            const metricLine = (row) => {
+              const m = row.metrics || {};
+              return `${row.id} · score **${row.score}** · confidence **${row.confidenceClass}** · ${m.engagementRate ?? row.observedEngagement?.toFixed(2) ?? '?'}% engagement · ${row.impressions || 0} impressions · ${row.interactions || 0} interactions${row.commercialValue > 0 ? ` · commercial value score ${row.commercialValue.toFixed(1)}` : ''}`;
+            };
+            const recLines = [];
+            for (const target of ['personal', 'main', 'secondary']) {
+              recLines.push(`### ${target === 'personal' ? 'Chelston personal' : target === 'main' ? 'Main 222Emails' : 'Retention School / secondary'}`);
+              recLines.push(`Buffer scheduled: **${bufferReadError ? 'unknown' : occupancy[target]}** · target runway: **${policy.queueTargetPerChannel}**`);
+              if (!recommendations[target].length) recLines.push('- No replenishment required or no eligible future candidate in the lookahead window.');
+              for (const p of recommendations[target]) recLines.push(`- **${p.lane}** · \`${p.id}@${p.revision}\` · ${p.title} · score **${p.candidateScore}** · ${p.category} · ${scheduledFor(p, target)} · source ${p._sourceFile}`);
+              recLines.push('');
+            }
+
+            const body = [
+              '# LinkedIn performance learning engine', '',
+              `Updated: **${new Date(now).toISOString()}**`,
+              `Measured placements used: **${records.length}**`,
+              `Commercial outcome markers captured: **${commercialCount}**`,
+              `Content-bank posts inspected: **${bank.length}**`,
+              bufferReadError ? `⚠️ Buffer capacity read failed closed: ${bufferReadError}` : '✅ Live Buffer capacity read succeeded.', '',
+              '## What is winning now',
+              ...(topPosts.length ? topPosts.map((row) => `- ${metricLine(row)}`) : ['- Not enough measured Buffer analytics yet. Keep collecting evidence; do not invent a winner.']), '',
+              '## Category model',
+              ...(combinedModel.categories.slice(0, 10).map((x) => `- ${x.key}: **${x.adjustedScore}** · ${x.samples} sample${x.samples === 1 ? '' : 's'}`)), '',
+              '## Trait model',
+              ...(combinedModel.traits.slice(0, 12).map((x) => `- ${x.key}: **${x.adjustedScore}** · ${x.samples} sample${x.samples === 1 ? '' : 's'}`)), '',
+              '## Time-window model',
+              ...(combinedModel.hours.slice(0, 8).map((x) => `- ${x.key}:00 Europe/London · **${x.adjustedScore}** · ${x.samples} sample${x.samples === 1 ? '' : 's'}`)), '',
+              '## Performance-ranked replenishment',
+              ...recLines,
+              '## Suppression / caution',
+              ...(weakCategories.length ? weakCategories.map((x) => `- ${x.key}: eligible for temporary down-weighting at **${x.adjustedScore}** after ${x.samples} measured samples.`) : ['- No category has enough weak evidence to suppress yet. Small samples stay exploratory rather than being killed prematurely.']), '',
+              '## Commercial attribution marker',
+              '- When a LinkedIn post drives a meaningful downstream action, record it on that source issue as:',
+              '- `<!-- LINKEDIN_COMMERCIAL_SIGNAL bufferId=<buffer-id> type=dm|enquiry|fit_check|qualified|proposal|paid valueGbp=<optional> -->`',
+              '- Once any commercial evidence exists, those downstream outcomes can contribute up to **50%** of observed performance scoring.', '',
+              '## Guardrails',
+              ...policy.guardrails.map((rule) => `- ${rule}`), '',
+              '**This engine recommends from already QA-eligible content. It does not publish, reschedule, or manufacture owner approval.**',
+            ].join('\n');
+
+            const open = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
+            let report = open.find((issue) => !issue.pull_request && issue.title === REPORT_TITLE);
+            if (report) {
+              report = (await github.rest.issues.update({ owner, repo, issue_number: report.number, body })).data;
+            } else {
+              report = (await github.rest.issues.create({ owner, repo, title: REPORT_TITLE, body })).data;
+            }
+
+            core.summary.addHeading('LinkedIn Performance Learning').addRaw(body).write();
+            if (context.eventName === 'issues') {
+              await github.rest.issues.createComment({ owner, repo, issue_number: context.issue.number, body: `✅ Learning pass complete. Ranked report: #${report.number}.` });
+              await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
+            }
