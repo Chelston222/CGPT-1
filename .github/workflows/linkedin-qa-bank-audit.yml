@@ -28,19 +28,22 @@ jobs:
             const result = auditQaBanks();
             const body = [
               '# LinkedIn QA bank audit', '',
-              result.ok ? '✅ **PASS**' : '❌ **FAIL**', '',
+              result.ok ? '✅ **CURRENT POLICY PASS**' : '❌ **CURRENT POLICY FAIL**', '',
               `- QA files audited: **${result.totalQaFiles}**`,
               `- QA posts audited: **${result.totalQaPosts}**`,
-              `- Strict learning-v2 posts: **${result.strictV2Posts}**`,
-              `- Errors: **${result.errors.length}**`,
-              `- Warnings: **${result.warnings.length}**`, '',
-              ...(result.errors.length ? ['## Errors', ...result.errors.map((x) => `- ${x}`), ''] : []),
-              ...(result.warnings.length ? ['## Warnings', ...result.warnings.slice(0, 30).map((x) => `- ${x}`), result.warnings.length > 30 ? `- ...and ${result.warnings.length - 30} more.` : '', ''].filter(Boolean) : []),
-              'This audit is read-only. Passing QA does not create publication permission.',
+              `- Current-policy files: **${result.currentPolicyFiles}**`,
+              `- Current-policy posts: **${result.currentPolicyPosts}**`,
+              `- Current blocking errors: **${result.errors.length}**`,
+              `- Current warnings: **${result.warnings.length}**`,
+              `- Preserved legacy-policy debt items: **${result.legacyDebt.length}**`, '',
+              ...(result.errors.length ? ['## Current blockers', ...result.errors.map((x) => `- ${x}`), ''] : []),
+              ...(result.warnings.length ? ['## Current warnings', ...result.warnings.slice(0, 30).map((x) => `- ${x}`), result.warnings.length > 30 ? `- ...and ${result.warnings.length - 30} more.` : '', ''].filter(Boolean) : []),
+              ...(result.legacyDebt.length ? ['## Preserved legacy debt', '- Historical records are intentionally not rewritten to satisfy newer policy.', ...result.legacyDebt.slice(0, 20).map((x) => `- ${x}`), result.legacyDebt.length > 20 ? `- ...and ${result.legacyDebt.length - 20} more historical items.` : '', ''].filter(Boolean) : []),
+              'This audit is read-only. Passing current-policy QA does not create publication permission.',
             ].join('\n');
             if (context.eventName === 'issues') {
               await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
               await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed', state_reason: result.ok ? 'completed' : 'not_planned' });
             }
             core.summary.addHeading('LinkedIn QA Bank Audit').addRaw(body).write();
-            if (!result.ok) core.setFailed('LinkedIn QA bank audit failed.');
+            if (!result.ok) core.setFailed('LinkedIn QA bank audit failed current-policy validation.');
