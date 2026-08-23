@@ -1,11 +1,17 @@
 {
-  "schemaVersion": 1,
-  "purpose": "Use observed LinkedIn performance to prioritise future approved 222Emails content without overfitting small samples or bypassing human publication approval.",
+  "schemaVersion": 2,
+  "purpose": "Use mature, verified LinkedIn performance evidence to prioritise future approved 222Emails content without overfitting small samples, stale analytics, recent repetition or vanity engagement.",
   "queueTargetPerChannel": 8,
   "queueMaximumPerChannel": 10,
   "lookaheadDays": 14,
   "minimumTargetRecordsForLocalModel": 3,
+  "localModelFullStrengthRecords": 20,
   "minimumSamplesForSuppression": 3,
+  "analyticsMinimumPostAgeHours": 24,
+  "analyticsFreshnessAfterDueMinutes": 5,
+  "recencyHalfLifeDays": 28,
+  "minimumCandidateScore": 48,
+  "exploreMinimumCandidateScore": 45,
   "exploitRatio": 0.6,
   "adjacentRatio": 0.25,
   "exploreRatio": 0.15,
@@ -19,15 +25,29 @@
     "priorScore": 50,
     "priorWeight": 2
   },
+  "fatigue": {
+    "recentLookbackDays": 14,
+    "similarityThreshold": 0.55,
+    "similarityPenaltyMax": 25,
+    "categoryRecentSoftCap": 2,
+    "categoryPenalty": 4,
+    "primaryTraitSoftCap": 4,
+    "primaryTraitPenalty": 2
+  },
   "selection": {
     "sameCategoryPenalty": 12,
     "samePrimaryTraitPenalty": 6
   },
   "guardrails": [
     "Never infer publication from Buffer acceptance alone.",
+    "Only mature analytics snapshots from independently verified publications may influence the winner model.",
+    "Reject analytics snapshots whose refresh timestamp predates publication or the configured post-publication grace period.",
     "Never suppress a category on fewer than three measured samples.",
     "Shrink small-sample engagement toward the observed median before ranking.",
-    "Use channel-specific evidence when at least three measured posts exist for that channel; otherwise fall back to the combined model.",
+    "Decay older evidence so current audience behaviour matters more than historical performance while retaining a stable prior.",
+    "Blend channel-specific evidence with the combined model until the local channel has enough records to stand on its own.",
+    "Penalise candidates that are too textually similar to recent posts or repeat a recently saturated category or primary trait.",
+    "Do not fill a queue deficit with a candidate below the configured quality floor.",
     "When any commercial signals are captured, give them up to 50 percent of the observed performance score so DMs, enquiries, Revenue Recovery Check progression, proposals and paid outcomes outrank vanity engagement.",
     "Keep 15 percent of recommendations available for deliberate exploration so the system does not converge prematurely.",
     "Do not auto-publish or create owner approval on the basis of a performance score alone."
