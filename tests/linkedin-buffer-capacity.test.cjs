@@ -7,6 +7,7 @@ const {
   classifyBufferFailure,
   parseAcceptedMarkers,
   planCapacityWindow,
+  validateCadenceContract,
   validateDailyPlacementLimit,
 } = require('../scripts/linkedin-buffer-capacity.cjs');
 
@@ -17,16 +18,26 @@ function job(id, channels, mode = 'schedule') {
   };
 }
 
-test('allows fifteen total placements but no more than five on one channel per day', () => {
-  const jobs = ['personal', 'main', 'secondary'].flatMap((target) =>
-    Array.from({ length: 5 }, (_, index) => job(`${target}-${index}`, [[target, '2026-08-17T08:00:00Z']])),
-  );
-  assert.equal(validateDailyPlacementLimit(jobs)['2026-08-17'], 15);
-  assert.throws(() => validateDailyPlacementLimit([...jobs, job('overflow', [['personal', '2026-08-17T12:00:00Z']])]), /maximum is 15/);
-  assert.throws(() => validateDailyPlacementLimit([
-    ...jobs.filter((entry) => !entry.post.id.startsWith('secondary-')),
-    job('personal-six', [['personal', '2026-08-17T12:00:00Z']]),
-  ]), /maximum is 5 per channel/);
+test('enforces current three-account daily cadence while retaining broad capacity guard', () => {
+  const valid = [
+    job('personal-core', [['personal', '2026-08-17T08:00:00Z']]),
+    job('personal-bonus', [['personal', '2026-08-17T16:00:00Z']]),
+    job('main', [['main', '2026-08-17T09:00:00Z']]),
+    job('secondary', [['secondary', '2026-08-17T10:00:00Z']]),
+  ];
+  assert.equal(validateDailyPlacementLimit(valid)['2026-08-17'], 4);
+  assert.throws(() => validateDailyPlacementLimit([...valid, job('personal-third', [['personal', '2026-08-17T18:00:00Z']])]), /new cadence maximum is 2 per day/);
+  assert.throws(() => validateDailyPlacementLimit([...valid, job('main-second', [['main', '2026-08-17T18:00:00Z']])]), /new cadence maximum is 1 per day/);
+});
+
+test('enforces weekly company and Retention School ceilings', () => {
+  const main = Array.from({ length: 5 }, (_, index) => job(`main-${index}`, [['main', `2026-08-${17 + index}T09:00:00Z']]));
+  assert.doesNotThrow(() => validateCadenceContract(main));
+  assert.throws(() => validateCadenceContract([...main, job('main-six', [['main', '2026-08-23T09:00:00Z']])]), /maximum is 5 per week/);
+
+  const school = Array.from({ length: 5 }, (_, index) => job(`school-${index}`, [['secondary', `2026-08-${17 + index}T10:00:00Z']]));
+  assert.doesNotThrow(() => validateCadenceContract(school));
+  assert.throws(() => validateCadenceContract([...school, job('school-six', [['secondary', '2026-08-23T10:00:00Z']])]), /maximum is 5 per week/);
 });
 
 test('counts a multi-channel post once per destination', () => {
@@ -48,7 +59,7 @@ test('plans only free Buffer slots and preserves chronological order', () => {
   assert.deepEqual(plan.waiting.map((item) => item.key), ['first@1:main', 'later@1:personal']);
 });
 
-test('non-public drafts bypass scheduled queue capacity and daily placement limits', () => {
+test('non-public drafts bypass scheduled queue capacity and cadence limits', () => {
   const draft = job('draft-canary', [['personal', null]], 'draft');
   const plan = planCapacityWindow([draft], { personal: 10, main: 10, secondary: 10 });
   assert.deepEqual(plan.dispatch.map((item) => item.key), ['draft-canary@1:personal']);
