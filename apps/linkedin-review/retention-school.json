@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "effectiveDate": "2026-08-23",
+  "brand": "Retention School",
+  "legacyBrand": "Retention Lab",
+  "purpose": "Free, structured retention education that compounds trust and routes qualified people towards deeper help without turning every lesson into a sales post.",
+  "freeLayer": {
+    "categories": [
+      {
+        "id": "retention-foundations",
+        "name": "Retention Foundations",
+        "promise": "Understand why customers return, lapse and disappear, and what a healthy retention system needs before tactics."
+      },
+      {
+        "id": "lifecycle-systems",
+        "name": "Lifecycle Systems",
+        "promise": "Design the journeys, triggers, timing and exclusions that make follow-up useful rather than noisy."
+      },
+      {
+        "id": "revenue-recovery",
+        "name": "Revenue Recovery",
+        "promise": "Find missed enquiries, weak follow-up, overdue customers and other recoverable demand before buying more traffic."
+      },
+      {
+        "id": "crm-automation",
+        "name": "CRM & Automation",
+        "promise": "Turn customer data into reliable workflows with fewer manual hand-offs and clearer ownership."
+      },
+      {
+        "id": "deliverability",
+        "name": "Deliverability",
+        "promise": "Build sending practices that protect inbox placement, consent, reputation and long-term reach."
+      },
+      {
+        "id": "measurement-testing",
+        "name": "Measurement & Testing",
+        "promise": "Measure the customer and commercial outcome, not just opens, clicks and activity."
+      },
+      {
+        "id": "breakdowns",
+        "name": "Breakdowns",
+        "promise": "Learn from real, permission-safe examples, teardowns and annotated systems without fake proof."
+      }
+    ],
+    "seasonModel": {
+      "definition": "A bounded learning sequence inside one category with a single learner outcome.",
+      "defaultLessons": "4-8",
+      "requirements": [
+        "clear season outcome",
+        "ordered lessons",
+        "one practical action per lesson",
+        "final synthesis or resource",
+        "no filler lesson created merely to hit a count"
+      ]
+    },
+    "resourceTypes": [
+      "checklist",
+      "template",
+      "worksheet",
+      "framework",
+      "teardown",
+      "swipe_file",
+      "mini_playbook"
+    ]
+  },
+  "initialSeasons": [
+    {
+      "id": "s01-client-return-basics",
+      "categoryId": "retention-foundations",
+      "title": "Season 1: The Client Return System",
+      "outcome": "Map the moments between first enquiry and repeat business and identify where customers currently fall out.",
+      "lessons": [
+        "Why a booking reminder is not a retention system",
+        "The five return moments every appointment-led business should map",
+        "What happens after the first visit",
+        "When a customer becomes overdue",
+        "Win-back without desperation",
+        "The exclusions that stop useful follow-up becoming spam"
+      ],
+      "resource": "Client Return Journey Map"
+    },
+    {
+      "id": "s02-recover-before-acquire",
+      "categoryId": "revenue-recovery",
+      "title": "Season 2: Recover Before You Acquire",
+      "outcome": "Audit the revenue already sitting inside enquiries, follow-up gaps and dormant customer relationships before spending more on acquisition.",
+      "lessons": [
+        "The four places demand usually disappears",
+        "Missed enquiry recovery",
+        "Quote and consultation follow-up",
+        "No-show and cancellation recovery",
+        "Dormant customer reactivation",
+        "How to decide whether the opportunity is commercially worth fixing"
+      ],
+      "resource": "Revenue Recovery Checksheet"
+    }
+  ],
+  "paidLayer": {
+    "status": "planned_not_publicly_locked",
+    "possibleRoutes": [
+      "deeper premium resources",
+      "direct access / office-hours style support",
+      "1:1 advisory or implementation"
+    ],
+    "rule": "Do not publish pricing, availability, entitlements or guarantees until the specific paid offer is separately verified and approved."
+  },
+  "publishingRules": [
+    "Every Retention School post must map to a category and either a season, resource or standalone diagnostic lesson.",
+    "Do not repost 222Emails promotional copy merely to keep the channel active.",
+    "Free lessons should be useful without requiring a sales call.",
+    "Use a commercial CTA only when it is the natural next step for the lesson.",
+    "Preserve proof safety and permission boundaries."
+  ]
+}
