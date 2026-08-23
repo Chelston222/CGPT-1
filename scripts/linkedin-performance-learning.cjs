@@ -6,7 +6,7 @@ const DEFAULT_POLICY = {
     interactionDensityWeight: 0.25,
     reachWeight: 0.15,
     impressionsWeight: 0.10,
-    commercialWeight: 0.25,
+    commercialWeight: 0.50,
     confidenceImpressions: 100,
     priorScore: 50,
     priorWeight: 2,
@@ -95,6 +95,30 @@ function extractAnalyticsByBufferId(comments = []) {
   return map;
 }
 
+function extractCommercialSignals(comments = []) {
+  const map = new Map();
+  const regex = /<!--\s*LINKEDIN_COMMERCIAL_SIGNAL\s+bufferId=([^\s>]+)\s+type=([a-z_]+)(?:\s+valueGbp=([0-9]+(?:\.[0-9]+)?))?\s*-->/gi;
+  for (const comment of comments) {
+    let match;
+    while ((match = regex.exec(String(comment.body || '')))) {
+      const signal = { type: match[2].toLowerCase(), valueGbp: match[3] ? Number(match[3]) : null };
+      if (!map.has(match[1])) map.set(match[1], []);
+      map.get(match[1]).push(signal);
+    }
+  }
+  return map;
+}
+
+function commercialSignalValue(signals = []) {
+  const weights = { dm: 1, reply: 1, enquiry: 2, fit_check: 3, qualified: 4, proposal: 5, paid: 8 };
+  let value = 0;
+  for (const signal of signals || []) {
+    value += weights[String(signal.type || '').toLowerCase()] || 0;
+    if (Number.isFinite(signal.valueGbp) && signal.valueGbp > 0) value += Math.min(8, Math.log10(signal.valueGbp + 1) * 2);
+  }
+  return value;
+}
+
 function inferTraits(copy = '') {
   const text = String(copy).trim();
   const lower = text.toLowerCase();
@@ -153,24 +177,29 @@ function enrichPerformance(records = [], policy = DEFAULT_POLICY) {
     const sample = Math.max(impressions, reach);
     const confidence = Math.min(1, Math.sqrt(sample / Math.max(1, policy.scoring.confidenceImpressions)));
     const shrunkEngagement = observedEngagement * confidence + baseline * (1 - confidence);
-    const densityDenominator = Math.max(1, reach || impressions);
-    const interactionDensity = (interactions / densityDenominator) * 100;
-    return { ...record, impressions, reach, interactions, observedEngagement, confidence, shrunkEngagement, interactionDensity };
+    const interactionDensity = (interactions / Math.max(1, reach || impressions)) * 100;
+    const commercialValue = commercialSignalValue(record.commercialSignals || []);
+    return { ...record, impressions, reach, interactions, observedEngagement, confidence, shrunkEngagement, interactionDensity, commercialValue };
   });
   const engagements = prelim.map((r) => r.shrunkEngagement);
   const densities = prelim.map((r) => r.interactionDensity);
+  const commercialValues = prelim.map((r) => r.commercialValue);
+  const hasCommercialEvidence = commercialValues.some((v) => v > 0);
   const maxReach = Math.max(1, ...prelim.map((r) => r.reach));
   const maxImpressions = Math.max(1, ...prelim.map((r) => r.impressions));
   return prelim.map((record) => {
     const s = policy.scoring;
-    const score = 100 * (
+    const core = 100 * (
       s.engagementWeight * percentileRank(record.shrunkEngagement, engagements)
       + s.interactionDensityWeight * percentileRank(record.interactionDensity, densities)
       + s.reachWeight * (Math.log1p(record.reach) / Math.log1p(maxReach))
       + s.impressionsWeight * (Math.log1p(record.impressions) / Math.log1p(maxImpressions))
     );
+    const commercialWeight = hasCommercialEvidence ? Math.min(0.5, Math.max(0, Number(s.commercialWeight || 0))) : 0;
+    const commercial = hasCommercialEvidence ? 100 * percentileRank(record.commercialValue, commercialValues) : 0;
+    const score = core * (1 - commercialWeight) + commercial * commercialWeight;
     const confidenceClass = Math.max(record.impressions, record.reach) >= 150 ? 'high' : Math.max(record.impressions, record.reach) >= 50 ? 'medium' : 'low';
-    return { ...record, score: Number(score.toFixed(2)), confidenceClass };
+    return { ...record, coreScore: Number(core.toFixed(2)), commercialScore: Number(commercial.toFixed(2)), score: Number(score.toFixed(2)), confidenceClass };
   });
 }
 
@@ -245,6 +274,8 @@ module.exports = {
   parseAnalyticsComment,
   extractPlacements,
   extractAnalyticsByBufferId,
+  extractCommercialSignals,
+  commercialSignalValue,
   inferTraits,
   enrichPerformance,
   aggregateBy,
