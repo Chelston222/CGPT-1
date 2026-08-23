@@ -59,7 +59,7 @@ jobs:
 
             const existingCount = comments.reduce((sum, comment) => {
               if (comment.user?.login !== 'github-actions[bot]') return sum;
-              const regex = new RegExp(`<!--\\s*LINKEDIN_COMMERCIAL_SIGNAL\\s+bufferId=${bufferId.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\s+type=${type}(?:\\s+valueGbp=[^\\s>]+)?\\s*-->`, 'g');
+              const regex = new RegExp(`<!--\\s*LINKEDIN_COMMERCIAL_SIGNAL\\s+bufferId=${bufferId}\\s+type=${type}(?:\\s+valueGbp=[^\\s>]+)?\\s*-->`, 'g');
               return sum + [...String(comment.body || '').matchAll(regex)].length;
             }, 0);
 
