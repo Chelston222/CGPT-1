@@ -1,0 +1,65 @@
+name: LinkedIn Content OS Self-Test
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-content-os-selftest
+  cancel-in-progress: false
+
+jobs:
+  selftest:
+    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[LINKEDIN SYSTEM SELFTEST]') && github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run Content OS regression suite
+        id: tests
+        continue-on-error: true
+        run: |
+          node --check scripts/linkedin-performance-learning.cjs
+          node --check scripts/linkedin-performance-learning-v2.cjs
+          node --check scripts/linkedin-content-traits-v2.cjs
+          node --check scripts/linkedin-qa-bank-audit.cjs
+          node --check scripts/linkedin-week-batch.cjs
+          node --test \
+            tests/linkedin-buffer-capacity.test.cjs \
+            tests/linkedin-week-batch.test.cjs \
+            tests/linkedin-green-gate-cutoff.test.cjs \
+            tests/linkedin-performance-learning.test.cjs \
+            tests/linkedin-performance-learning-v2.test.cjs \
+            tests/linkedin-performance-policy.test.cjs \
+            tests/linkedin-performance-workflow-static.test.cjs \
+            tests/linkedin-commercial-outcome-capture.test.cjs
+          node scripts/linkedin-qa-bank-audit.cjs
+      - name: Record self-test result
+        if: always() && github.event_name == 'issues'
+        uses: actions/github-script@v7
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        with:
+          script: |
+            const pass = process.env.TEST_OUTCOME === 'success';
+            const body = [
+              '# LinkedIn Content OS self-test', '',
+              pass ? '✅ **PASS**' : '❌ **FAIL**', '',
+              '- JavaScript syntax checks: performance learner, v2 learner, trait taxonomy, QA-bank auditor, weekly batch gate',
+              '- Regression tests: Buffer cadence, weekly approvals, Green Gate cutoff, performance scoring, mature-evidence v2, policy invariants, learning workflow, commercial attribution',
+              '- Full discoverable QA-bank audit', '',
+              pass ? 'The tested Content OS invariants hold together on the current repository state.' : 'At least one tested invariant failed. Treat the Content OS as needing repair before relying on this self-test.',
+            ].join('\n');
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
+            await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed', state_reason: pass ? 'completed' : 'not_planned' });
+            if (!pass) core.setFailed('LinkedIn Content OS self-test failed.');
+      - name: Fail job when regression suite failed
+        if: steps.tests.outcome != 'success'
+        run: exit 1
