@@ -13,6 +13,7 @@ on:
       - 'scripts/linkedin-performance-learning-v2.cjs'
       - 'scripts/linkedin-content-traits-v2.cjs'
       - 'scripts/linkedin-qa-bank-audit.cjs'
+      - 'scripts/linkedin-content-supply.cjs'
       - 'scripts/build-linkedin-master-ledger.mjs'
       - 'tests/linkedin-*.test.cjs'
       - 'docs/LINKEDIN_*.md'
@@ -22,6 +23,7 @@ on:
       - '.github/workflows/linkedin-performance-learning.yml'
       - '.github/workflows/linkedin-commercial-outcome-capture.yml'
       - '.github/workflows/linkedin-qa-bank-audit.yml'
+      - '.github/workflows/linkedin-content-supply-health.yml'
       - '.github/workflows/linkedin-system-selftest.yml'
       - '.github/workflows/linkedin-content-os-green-gate.yml'
       - '.github/workflows/buffer-usage-check-once.yml'
@@ -39,6 +41,7 @@ on:
       - 'scripts/linkedin-performance-learning-v2.cjs'
       - 'scripts/linkedin-content-traits-v2.cjs'
       - 'scripts/linkedin-qa-bank-audit.cjs'
+      - 'scripts/linkedin-content-supply.cjs'
       - 'scripts/build-linkedin-master-ledger.mjs'
       - 'tests/linkedin-*.test.cjs'
       - 'docs/LINKEDIN_*.md'
@@ -48,6 +51,7 @@ on:
       - '.github/workflows/linkedin-performance-learning.yml'
       - '.github/workflows/linkedin-commercial-outcome-capture.yml'
       - '.github/workflows/linkedin-qa-bank-audit.yml'
+      - '.github/workflows/linkedin-content-supply-health.yml'
       - '.github/workflows/linkedin-system-selftest.yml'
       - '.github/workflows/linkedin-content-os-green-gate.yml'
       - '.github/workflows/buffer-usage-check-once.yml'
@@ -70,7 +74,7 @@ jobs:
         run: npm install --prefix apps/linkedin-review --ignore-scripts --no-audit --no-fund
       - name: Validate queue, approval, media, publication, learning rails and cross-device sync logic
         run: |
-          node --test tests/linkedin-buffer-capacity.test.cjs tests/linkedin-decision-sync.test.cjs tests/linkedin-review-core.test.cjs tests/linkedin-media-preflight.test.cjs tests/linkedin-notion-quality-gate.test.cjs tests/linkedin-week-batch.test.cjs tests/linkedin-hardening-static.test.cjs tests/linkedin-green-gate-cutoff.test.cjs tests/linkedin-performance-learning.test.cjs tests/linkedin-performance-learning-v2.test.cjs tests/linkedin-content-traits-v2.test.cjs tests/linkedin-performance-policy.test.cjs tests/linkedin-performance-workflow-static.test.cjs tests/linkedin-commercial-outcome-capture.test.cjs
+          node --test tests/linkedin-buffer-capacity.test.cjs tests/linkedin-decision-sync.test.cjs tests/linkedin-review-core.test.cjs tests/linkedin-media-preflight.test.cjs tests/linkedin-notion-quality-gate.test.cjs tests/linkedin-week-batch.test.cjs tests/linkedin-hardening-static.test.cjs tests/linkedin-green-gate-cutoff.test.cjs tests/linkedin-performance-learning.test.cjs tests/linkedin-performance-learning-v2.test.cjs tests/linkedin-content-traits-v2.test.cjs tests/linkedin-performance-policy.test.cjs tests/linkedin-performance-workflow-static.test.cjs tests/linkedin-commercial-outcome-capture.test.cjs tests/linkedin-content-supply.test.cjs
           node --test --test-name-pattern='manual Next|carousel can receive|carousel previews|slow GitHub audit|Swiper is a checked|UI distinguishes|review decisions persist|daily capacity display|review projection uses|weekly hand-off' tests/linkedin-review-static.test.cjs
           node --check apps/linkedin-review/app.js
           node --check apps/linkedin-review/sync.js
@@ -84,6 +88,7 @@ jobs:
           node --check scripts/linkedin-performance-learning-v2.cjs
           node --check scripts/linkedin-content-traits-v2.cjs
           node --check scripts/linkedin-qa-bank-audit.cjs
+          node --check scripts/linkedin-content-supply.cjs
           node scripts/linkedin-qa-bank-audit.cjs
           node -e "import('./apps/linkedin-review/netlify/functions/review-decisions.mjs').then(() => console.log('decision sync function imports'))"
           node -e "const q=require('./apps/linkedin-review/queue.json'); if(q.posts.length < 18) process.exit(1); for(const p of q.posts){if(!p.id||!p.copy||!p.targets?.length||!p.scheduledAt) process.exit(1)}"
