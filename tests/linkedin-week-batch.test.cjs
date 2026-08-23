@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { parseItems, validateWeeklyBatch } = require('../scripts/linkedin-week-batch.cjs');
+const { parseItems, qaReplenishmentPaths, validateWeeklyBatch, withQaReplenishment } = require('../scripts/linkedin-week-batch.cjs');
 
 const ENV = {
   BUFFER_API_KEY: 'test-key',
@@ -112,39 +112,84 @@ test('weekly image posts require an explicit safe-zone pass on the exact queue r
   assert.equal(result.jobs[0].request.safeZoneQa, 'pass');
 });
 
-test('accepts a full 105-placement week when each account stays within five per day', () => {
-  const largeQueue = {
-    ...queue,
-    posts: Array.from({ length: 105 }, (_, index) => {
-      const target = ['personal', 'main', 'secondary'][index % 3];
-      const day = 17 + Math.floor(index / 15);
-      const hour = 8 + Math.floor((index % 15) / 3);
-      const minute = (index % 3) * 15;
-      return {
-        id: `post-${String(index + 1).padStart(3, '0')}`,
-        revision: 1,
-        category: 'education',
-        mode: 'schedule',
-        targets: [target],
-        scheduledAt: { [target]: `2026-08-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00+01:00` },
-        copy: { default: `Useful post ${index + 1}` },
-      };
-    }),
-  };
-  const items = largeQueue.posts.map((post) => `${post.id}@1`).join(',');
-  const result = validateWeeklyBatch(body({ items }), largeQueue, ENV, Date.parse('2026-08-09T00:00:00Z'));
-  assert.equal(result.jobs.length, 105);
+test('accepts the current maximum strategic cadence of 24 placements per week', () => {
+  const posts = [];
+  for (let day = 0; day < 7; day += 1) {
+    const date = 17 + day;
+    posts.push({
+      id: `personal-a-${day}`, revision: 1, category: 'education', mode: 'schedule', targets: ['personal'],
+      scheduledAt: { personal: `2026-08-${String(date).padStart(2, '0')}T08:15:00+01:00` }, copy: { default: `Personal A ${day}` },
+    });
+    posts.push({
+      id: `personal-b-${day}`, revision: 1, category: 'education', mode: 'schedule', targets: ['personal'],
+      scheduledAt: { personal: `2026-08-${String(date).padStart(2, '0')}T16:15:00+01:00` }, copy: { default: `Personal B ${day}` },
+    });
+  }
+  for (let day = 0; day < 5; day += 1) {
+    const date = 17 + day;
+    posts.push({
+      id: `main-${day}`, revision: 1, category: 'education', mode: 'schedule', targets: ['main'],
+      scheduledAt: { main: `2026-08-${String(date).padStart(2, '0')}T09:30:00+01:00` }, copy: { default: `Main ${day}` },
+    });
+    posts.push({
+      id: `secondary-${day}`, revision: 1, category: 'education', mode: 'schedule', targets: ['secondary'],
+      scheduledAt: { secondary: `2026-08-${String(date).padStart(2, '0')}T10:45:00+01:00` }, copy: { default: `Secondary ${day}` },
+    });
+  }
+  const strategicQueue = { ...queue, posts };
+  const items = posts.map((post) => `${post.id}@1`).join(',');
+  const result = validateWeeklyBatch(body({ items }), strategicQueue, ENV, Date.parse('2026-08-09T00:00:00Z'));
+  assert.equal(result.jobs.length, 24);
 });
 
-test('rejects a sixth placement for one account on one day before Buffer is contacted', () => {
-  const posts = Array.from({ length: 6 }, (_, index) => ({
-    id: `post-${index}`, revision: 1, category: 'education', mode: 'schedule',
-    targets: ['personal'], scheduledAt: { personal: '2026-08-17T08:15:00+01:00' },
+test('rejects a third personal placement on one day before Buffer is contacted', () => {
+  const posts = Array.from({ length: 3 }, (_, index) => ({
+    id: `personal-${index}`, revision: 1, category: 'education', mode: 'schedule',
+    targets: ['personal'], scheduledAt: { personal: `2026-08-17T${String(8 + index * 4).padStart(2, '0')}:15:00+01:00` },
     copy: { default: `Useful post ${index}` },
   }));
   const overloaded = { ...queue, posts };
   assert.throws(
     () => validateWeeklyBatch(body({ items: posts.map((post) => `${post.id}@1`).join(',') }), overloaded, ENV, Date.parse('2026-08-09T00:00:00Z')),
-    /maximum is 5 per channel/,
+    /new cadence maximum is 2 per day/,
   );
+});
+
+test('rejects a second Main 222Emails placement on one day before Buffer is contacted', () => {
+  const posts = Array.from({ length: 2 }, (_, index) => ({
+    id: `main-over-${index}`, revision: 1, category: 'education', mode: 'schedule',
+    targets: ['main'], scheduledAt: { main: `2026-08-17T${String(9 + index * 4).padStart(2, '0')}:30:00+01:00` },
+    copy: { default: `Main post ${index}` },
+  }));
+  const overloaded = { ...queue, posts };
+  assert.throws(
+    () => validateWeeklyBatch(body({ items: posts.map((post) => `${post.id}@1`).join(',') }), overloaded, ENV, Date.parse('2026-08-09T00:00:00Z')),
+    /new cadence maximum is 1 per day/,
+  );
+});
+
+test('future QA banks are discovered automatically but remain review-only until explicit approval', () => {
+  const paths = qaReplenishmentPaths();
+  assert.ok(paths.some((file) => file.endsWith('qa-replenishment-2026-09-07-learning-v2.json')));
+  const effective = withQaReplenishment({ schemaVersion: 2, generatedAt: queue.generatedAt, posts: [] });
+  const post = effective.posts.find((item) => item.id === 'tte-learning-v2-personal-01');
+  assert.ok(post);
+  assert.equal(post.status, 'review');
+  assert.equal(post.qa.approvalEligible, true);
+  assert.equal(post.qa.publishPermission, false);
+});
+
+test('an explicitly approved future QA item can pass the canonical weekly gate without inline issue copy', () => {
+  const futureQueue = { schemaVersion: 2, generatedAt: queue.generatedAt, posts: [] };
+  const futureBody = [
+    'BATCH_ID: future-learning-v2-test',
+    'WEEK_START: 2026-09-07',
+    'QUEUE_SCHEMA: 2',
+    `QUEUE_GENERATED_AT: ${queue.generatedAt}`,
+    'APPROVED_ITEMS: tte-learning-v2-personal-01@1',
+  ].join('\n');
+  const result = validateWeeklyBatch(futureBody, futureQueue, ENV, Date.parse('2026-08-23T12:00:00Z'));
+  assert.equal(result.jobs.length, 1);
+  assert.equal(result.jobs[0].post.id, 'tte-learning-v2-personal-01');
+  assert.equal(result.jobs[0].request.contentQa, 'pass');
 });
