@@ -5,17 +5,19 @@ const path = require('node:path');
 const { validateRequest } = require('./linkedin-review-core.cjs');
 const { validateDailyPlacementLimit } = require('./linkedin-buffer-capacity.cjs');
 
-const QA_REPLENISHMENT_PATHS = [
-  path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-11.json'),
-  path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-17.json'),
-  path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-22.json'),
-  path.join(__dirname, '..', 'apps', 'linkedin-review', 'qa-replenishment-2026-08-22-rr14-wave2.json'),
-];
+const QA_REPLENISHMENT_DIR = path.join(__dirname, '..', 'apps', 'linkedin-review');
+
+function qaReplenishmentPaths() {
+  return fs.readdirSync(QA_REPLENISHMENT_DIR)
+    .filter((name) => /^qa-replenishment-.*\.json$/.test(name))
+    .sort()
+    .map((name) => path.join(QA_REPLENISHMENT_DIR, name));
+}
 
 function withQaReplenishment(queue) {
   const existingIds = new Set((queue.posts || []).map((post) => post.id));
   const additions = [];
-  for (const filePath of QA_REPLENISHMENT_PATHS) {
+  for (const filePath of qaReplenishmentPaths()) {
     let supplemental = { posts: [] };
     try {
       supplemental = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -150,4 +152,4 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
   return { batchId: header.BATCH_ID || `linkedin-week-${header.WEEK_START}`, weekStart: header.WEEK_START, weekEnd, jobs, placementsByDay };
 }
 
-module.exports = { imageSafeZonePassed, parseHeaders, parseItems, postBody, validateWeeklyBatch, withQaReplenishment };
+module.exports = { imageSafeZonePassed, parseHeaders, parseItems, postBody, qaReplenishmentPaths, validateWeeklyBatch, withQaReplenishment };
