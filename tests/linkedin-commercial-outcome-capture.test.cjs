@@ -19,6 +19,13 @@ test('commercial outcome capture only allows bounded outcome taxonomy and unambi
   assert.match(workflow, /COUNT must be 1 when VALUE_GBP is supplied/);
 });
 
+test('commercial outcome capture is retry-idempotent by capture issue', () => {
+  assert.match(workflow, /LINKEDIN_OUTCOME_CAPTURE captureIssue=/);
+  assert.match(workflow, /alreadyCaptured/);
+  assert.match(workflow, /Retry treated as idempotent/);
+  assert.match(workflow, /captureMarker/);
+});
+
 test('commercial outcome capture does not call Buffer or LinkedIn mutation APIs', () => {
   assert.doesNotMatch(workflow, /api\.buffer\.com/);
   assert.doesNotMatch(workflow, /linkedin\.com\/.*(?:post|share|update)/i);
