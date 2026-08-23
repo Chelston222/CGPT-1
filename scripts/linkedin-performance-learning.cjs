@@ -189,17 +189,18 @@ function enrichPerformance(records = [], policy = DEFAULT_POLICY) {
   const maxImpressions = Math.max(1, ...prelim.map((r) => r.impressions));
   return prelim.map((record) => {
     const s = policy.scoring;
-    const core = 100 * (
+    const rawCore = 100 * (
       s.engagementWeight * percentileRank(record.shrunkEngagement, engagements)
       + s.interactionDensityWeight * percentileRank(record.interactionDensity, densities)
       + s.reachWeight * (Math.log1p(record.reach) / Math.log1p(maxReach))
       + s.impressionsWeight * (Math.log1p(record.impressions) / Math.log1p(maxImpressions))
     );
+    const evidenceCore = rawCore * record.confidence + Number(s.priorScore || 50) * (1 - record.confidence);
     const commercialWeight = hasCommercialEvidence ? Math.min(0.5, Math.max(0, Number(s.commercialWeight || 0))) : 0;
     const commercial = hasCommercialEvidence ? 100 * percentileRank(record.commercialValue, commercialValues) : 0;
-    const score = core * (1 - commercialWeight) + commercial * commercialWeight;
+    const score = evidenceCore * (1 - commercialWeight) + commercial * commercialWeight;
     const confidenceClass = Math.max(record.impressions, record.reach) >= 150 ? 'high' : Math.max(record.impressions, record.reach) >= 50 ? 'medium' : 'low';
-    return { ...record, coreScore: Number(core.toFixed(2)), commercialScore: Number(commercial.toFixed(2)), score: Number(score.toFixed(2)), confidenceClass };
+    return { ...record, rawCoreScore: Number(rawCore.toFixed(2)), coreScore: Number(evidenceCore.toFixed(2)), commercialScore: Number(commercial.toFixed(2)), score: Number(score.toFixed(2)), confidenceClass };
   });
 }
 
