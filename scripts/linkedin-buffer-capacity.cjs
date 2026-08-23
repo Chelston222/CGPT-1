@@ -5,6 +5,12 @@ const MAX_PLACEMENTS_PER_CHANNEL_PER_DAY = 5;
 const MAX_PLACEMENTS_PER_DAY = 15;
 const TARGETS = ['personal', 'main', 'secondary'];
 
+const DEFAULT_CADENCE_POLICY = Object.freeze({
+  personal: Object.freeze({ maxPerDay: 2, maxPerWeek: 14 }),
+  main: Object.freeze({ maxPerDay: 1, maxPerWeek: 5 }),
+  secondary: Object.freeze({ maxPerDay: 1, maxPerWeek: 5 }),
+});
+
 function placementKey(postId, revision, target) {
   return `${postId}@${revision}:${target}`;
 }
@@ -16,6 +22,17 @@ function localDate(value, timeZone = 'Europe/London') {
   return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
+function weekKeyFromLocalDate(local) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(local || '');
+  if (!match) return '';
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  return `${date.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
 function placementDate(job, channel, timeZone = 'Europe/London') {
   const approvedSchedule = job.post.scheduledAt?.[channel.target];
   return approvedSchedule ? String(approvedSchedule).slice(0, 10) : localDate(channel.dueAt, timeZone);
@@ -25,7 +42,6 @@ function validateDailyPlacementLimit(jobs, limit = MAX_PLACEMENTS_PER_DAY, perCh
   const counts = new Map();
   const channelCounts = new Map();
   for (const job of jobs) {
-    // Buffer drafts are not live queue placements and have no approved due date.
     if (job.request.mode === 'draft') continue;
     for (const channel of job.request.channels) {
       const date = placementDate(job, channel, timeZone);
@@ -45,6 +61,43 @@ function validateDailyPlacementLimit(jobs, limit = MAX_PLACEMENTS_PER_DAY, perCh
   return Object.fromEntries([...counts.entries()].sort());
 }
 
+function validateCadenceContract(jobs, policy = DEFAULT_CADENCE_POLICY, timeZone = 'Europe/London') {
+  const daily = new Map();
+  const weekly = new Map();
+
+  for (const job of jobs) {
+    if (job.request.mode === 'draft') continue;
+    for (const channel of job.request.channels) {
+      const targetPolicy = policy[channel.target];
+      if (!targetPolicy) throw new Error(`${job.post.id} uses unknown cadence target ${channel.target}.`);
+      const date = placementDate(job, channel, timeZone);
+      if (!date) throw new Error(`${job.post.id} / ${channel.target} has no scheduled date.`);
+      const week = weekKeyFromLocalDate(date);
+      const dailyKey = `${date}:${channel.target}`;
+      const weeklyKey = `${week}:${channel.target}`;
+      daily.set(dailyKey, (daily.get(dailyKey) || 0) + 1);
+      weekly.set(weeklyKey, (weekly.get(weeklyKey) || 0) + 1);
+    }
+  }
+
+  for (const [key, count] of daily.entries()) {
+    const target = key.split(':').at(-1);
+    const maximum = Number(policy[target].maxPerDay);
+    if (count > maximum) throw new Error(`${key} has ${count} placements; new cadence maximum is ${maximum} per day.`);
+  }
+
+  for (const [key, count] of weekly.entries()) {
+    const target = key.split(':').at(-1);
+    const maximum = Number(policy[target].maxPerWeek);
+    if (count > maximum) throw new Error(`${key} has ${count} placements; new cadence maximum is ${maximum} per week.`);
+  }
+
+  return {
+    daily: Object.fromEntries([...daily.entries()].sort()),
+    weekly: Object.fromEntries([...weekly.entries()].sort()),
+  };
+}
+
 function planCapacityWindow(jobs, occupancy = {}, acceptedKeys = new Set(), perChannelLimit = FREE_PLAN_MAX_SCHEDULED_PER_CHANNEL) {
   const available = Object.fromEntries(TARGETS.map((target) => [target, Math.max(0, perChannelLimit - Number(occupancy[target] || 0))]));
   const dispatch = [];
@@ -61,7 +114,6 @@ function planCapacityWindow(jobs, occupancy = {}, acceptedKeys = new Set(), perC
     if (acceptedKeys.has(placement.key)) {
       alreadyAccepted.push(placement);
     } else if (placement.job.request.mode === 'draft') {
-      // Drafts are non-public and do not consume the scheduled-post queue.
       dispatch.push(placement);
     } else if (available[placement.channel.target] > 0) {
       dispatch.push(placement);
@@ -109,6 +161,7 @@ function classifyBufferFailure({ status = 0, messages = [], headers = {} } = {})
 }
 
 module.exports = {
+  DEFAULT_CADENCE_POLICY,
   FREE_PLAN_MAX_SCHEDULED_PER_CHANNEL,
   MAX_PLACEMENTS_PER_CHANNEL_PER_DAY,
   MAX_PLACEMENTS_PER_DAY,
@@ -118,5 +171,7 @@ module.exports = {
   parseAcceptedMarkers,
   placementKey,
   planCapacityWindow,
+  validateCadenceContract,
   validateDailyPlacementLimit,
+  weekKeyFromLocalDate,
 };
