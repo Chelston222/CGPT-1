@@ -13,9 +13,33 @@ const {
   parseMigrationMarkers,
   validateManifest,
 } = require('./linkedin-buffer-migration-apply.cjs');
+const { withQaReplenishment } = require('./linkedin-week-batch.cjs');
 
 const SOURCE_APPROVAL_ISSUE = 386;
 const SOURCE_PROGRESS_SNAPSHOT_ISSUE = 387;
+
+function lockedMoveCopy(workspace, manifest) {
+  const baseQueue = JSON.parse(fs.readFileSync(path.join(workspace, 'apps/linkedin-review/queue.json'), 'utf8'));
+  const effectiveQueue = withQaReplenishment(baseQueue);
+  const effectiveByKey = new Map((effectiveQueue.posts || []).map((post) => [`${post.id}@${post.revision}`, post]));
+  const locked = new Map();
+
+  for (const row of manifest.placements.filter((item) => item.decision === 'MOVE')) {
+    const key = `${row.id}@${row.revision}`;
+    const post = effectiveByKey.get(key);
+    if (!post) throw new Error(`${key} is missing from the effective locked queue.`);
+    if (!(post.targets || []).includes(row.target)) throw new Error(`${key} no longer targets ${row.target}.`);
+    const originalScheduledAt = post.scheduledAt?.[row.target];
+    if (!originalScheduledAt || normalizeIso(originalScheduledAt) !== normalizeIso(row.bufferDueAt)) {
+      throw new Error(`${key} locked queue time no longer matches the migration source snapshot.`);
+    }
+    if (post.mediaUrl) throw new Error(`${key} MOVE unexpectedly contains media; text-preserving recovery only supports the locked text-only rows.`);
+    const text = post.copy?.[row.target] || post.copy?.default;
+    if (!String(text || '').trim()) throw new Error(`${key} has no exact locked text to preserve during Buffer edit.`);
+    locked.set(key, { post, text: String(text) });
+  }
+  return locked;
+}
 
 async function run({ github, context, core, env = process.env, workspace = process.env.GITHUB_WORKSPACE, now = Date.now() }) {
   const owner = context.repo.owner;
@@ -24,6 +48,7 @@ async function run({ github, context, core, env = process.env, workspace = proce
   const manifest = JSON.parse(fs.readFileSync(path.join(workspace, MANIFEST_PATH), 'utf8'));
   const policy = JSON.parse(fs.readFileSync(path.join(workspace, 'apps/linkedin-review/distribution-policy.json'), 'utf8'));
   const nonKeep = validateManifest(manifest);
+  const moveCopy = lockedMoveCopy(workspace, manifest);
 
   const approval = parseHeaders(context.payload.issue.body || '');
   if (approval.MIGRATION_ID !== MIGRATION_ID) throw new Error('MIGRATION_ID does not match the locked migration.');
@@ -94,9 +119,9 @@ async function run({ github, context, core, env = process.env, workspace = proce
     sourceMarkers = parseMigrationMarkers(sourceComments);
   }
 
-  let before = await scheduledPosts();
+  const before = await scheduledPosts();
   if (before.length < 24 || before.length > 25) throw new Error(`Recovery checkpoint expected 24-25 scheduled placements; found ${before.length}.`);
-  let beforeById = new Map(before.map((post) => [post.id, post]));
+  const beforeById = new Map(before.map((post) => [post.id, post]));
 
   for (const row of manifest.placements.filter((item) => item.decision === 'KEEP')) {
     const bufferId = bufferIdByQueueKey.get(`${row.id}@${row.revision}`);
@@ -111,8 +136,8 @@ async function run({ github, context, core, env = process.env, workspace = proce
     const queueKey = `${row.id}@${row.revision}`;
     const actionKey = `${queueKey}:${row.target}`;
     const bufferId = bufferIdByQueueKey.get(queueKey);
-    let current = await scheduledPosts();
-    let currentPost = current.find((post) => post.id === bufferId);
+    const current = await scheduledPosts();
+    const currentPost = current.find((post) => post.id === bufferId);
 
     if (row.decision === 'REPURPOSE' && !currentPost) {
       if (!sourceMarkers.applied.has(actionKey)) {
@@ -140,12 +165,14 @@ async function run({ github, context, core, env = process.env, workspace = proce
 
     if (row.decision === 'MOVE') {
       const dueAt = normalizeIso(row.proposedDueAt);
+      const exactText = moveCopy.get(queueKey)?.text;
+      if (!String(exactText || '').trim()) throw new Error(`${actionKey} exact locked text is unavailable.`);
       const data = await buffer('mutation EditPost($input: EditPostInput!) { editPost(input: $input) { ... on PostActionSuccess { post { id dueAt status } } ... on MutationError { message } } }', {
-        input: { id: bufferId, mode: 'customScheduled', dueAt },
+        input: { id: bufferId, mode: 'customScheduled', dueAt, schedulingType: 'automatic', text: exactText },
       });
       if (!data.editPost?.post?.id) throw new Error(`${actionKey} Buffer edit failed: ${data.editPost?.message || 'no post returned'}`);
       if (data.editPost.post.id !== bufferId || normalizeIso(data.editPost.post.dueAt) !== dueAt) throw new Error(`${actionKey} Buffer edit readback did not match requested ID/time.`);
-      await recordSource(`✅ MOVE applied during recovery: ${actionKey} · Buffer \`${bufferId}\` · ${row.bufferDueAt} → ${dueAt}\n<!-- BUFFER_MIGRATION_APPLIED key=${actionKey} action=MOVE bufferId=${bufferId} dueAt=${dueAt} recovery=1 -->`);
+      await recordSource(`✅ MOVE applied during recovery with exact locked text preserved: ${actionKey} · Buffer \`${bufferId}\` · ${row.bufferDueAt} → ${dueAt}\n<!-- BUFFER_MIGRATION_APPLIED key=${actionKey} action=MOVE bufferId=${bufferId} dueAt=${dueAt} recovery=1 exactText=locked -->`);
       recovered.push(`${actionKey}=moved`);
     } else if (row.decision === 'REPURPOSE') {
       const data = await buffer('mutation DeletePost($input: DeletePostInput!) { deletePost(input: $input) { ... on DeletePostSuccess { id } ... on MutationError { message } } }', { input: { id: bufferId } });
@@ -189,6 +216,7 @@ async function run({ github, context, core, env = process.env, workspace = proce
     '- KEEP invariants: **PASS**',
     '- MOVE verification: **PASS**',
     '- REPURPOSE verification: **PASS**',
+    '- MOVE copy contract: **exact locked text preserved**',
     `- Recovery actions: ${recovered.join(', ')}`,
   ].join('\n');
 
@@ -196,12 +224,13 @@ async function run({ github, context, core, env = process.env, workspace = proce
   await github.rest.issues.createComment({ owner, repo, issue_number: recoveryIssue, body: summary });
   await github.rest.issues.update({ owner, repo, issue_number: SOURCE_APPROVAL_ISSUE, state: 'closed', state_reason: 'completed' });
   await github.rest.issues.update({ owner, repo, issue_number: recoveryIssue, state: 'closed', state_reason: 'completed' });
-  core.summary.addHeading('Buffer migration recovery').addRaw(summary).write();
+  if (core?.summary) core.summary.addHeading('Buffer migration recovery').addRaw(summary).write();
   return { after, counts, recovered };
 }
 
 module.exports = {
   SOURCE_APPROVAL_ISSUE,
   SOURCE_PROGRESS_SNAPSHOT_ISSUE,
+  lockedMoveCopy,
   run,
 };
