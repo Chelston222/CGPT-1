@@ -39,9 +39,7 @@ jobs:
                   throw new Error(`Buffer returned non-JSON response (HTTP ${response.status})`);
                 }
                 const messages = (payload.errors || []).map((e) => e.message).filter(Boolean);
-                if (!response.ok || messages.length) {
-                  throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
-                }
+                if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
                 return { data: payload.data, headers: response.headers };
               }
 
@@ -67,7 +65,6 @@ jobs:
               }
 
               if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured');
-
               const issueBody = String(context.payload.issue.body || '');
               const exactPostId = issueBody.match(/^BUFFER_POST_ID:\s*([^\s]+)\s*$/mi)?.[1] || null;
               if (exactPostId && !/^[A-Za-z0-9_-]{10,64}$/.test(exactPostId)) throw new Error('BUFFER_POST_ID is malformed.');
@@ -100,9 +97,9 @@ jobs:
                 [process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID]: '222Emails | Retention Lab',
               };
               const rows = ids.map((id) => {
-                const channelPosts = posts.filter((p) => p.channelId === id);
+                const channelPosts = posts.filter((p) => p.channelId === id).sort((a,b) => new Date(a.dueAt)-new Date(b.dueAt));
                 const pastDue = channelPosts.filter((p) => p.dueAt && new Date(p.dueAt).getTime() < now);
-                const next = channelPosts.filter((p) => p.dueAt && new Date(p.dueAt).getTime() >= now).sort((a,b) => new Date(a.dueAt)-new Date(b.dueAt))[0];
+                const next = channelPosts.find((p) => p.dueAt && new Date(p.dueAt).getTime() >= now);
                 return {
                   id,
                   name: names[id] || id,
@@ -110,7 +107,8 @@ jobs:
                   pastDue: pastDue.length,
                   free: Math.max(0, 10 - channelPosts.length),
                   nextDue: next?.dueAt || null,
-                  oldestPastDue: pastDue.sort((a,b)=>new Date(a.dueAt)-new Date(b.dueAt))[0]?.dueAt || null,
+                  oldestPastDue: pastDue[0]?.dueAt || null,
+                  scheduledTimes: channelPosts.map((p) => p.dueAt).filter(Boolean),
                 };
               });
 
@@ -141,13 +139,14 @@ jobs:
                 const failed = markedIds(comments, 'LINKEDIN_PUBLICATION_FAILED');
                 const superseded = markedIds(comments, 'LINKEDIN_PUBLICATION_SUPERSEDED');
                 const retiredDrafts = markedIds(comments, 'LINKEDIN_DRAFT_CANARY_RETIRED');
+                const ownerAbandoned = markedIds(comments, 'LINKEDIN_OWNER_ABANDONED_DRAFT');
                 const draftVerified = markedIds(comments, 'LINKEDIN_DRAFT_CANARY_VERIFIED');
-                const terminal = new Set([...verified, ...failed, ...superseded, ...retiredDrafts, ...draftVerified]);
+                const terminal = new Set([...verified, ...failed, ...superseded, ...retiredDrafts, ...ownerAbandoned, ...draftVerified]);
                 const analytics = markedIds(comments, 'LINKEDIN_ANALYTICS_CAPTURED');
                 const native = markedIds(comments, 'LINKEDIN_NATIVE_ANALYTICS_REQUIRED');
                 const nativeCaptured = markedIds(comments, 'LINKEDIN_NATIVE_ANALYTICS_CAPTURED');
                 explicitPublicationFailures += failed.size;
-                terminalTombstones += superseded.size + retiredDrafts.size;
+                terminalTombstones += superseded.size + retiredDrafts.size + ownerAbandoned.size;
 
                 for (const row of accepted) {
                   const due = Date.parse(row.dueAt || '');
@@ -158,7 +157,10 @@ jobs:
 
               const rateLimit = accountResult.headers.get('ratelimit') || '(not returned)';
               const policy = accountResult.headers.get('ratelimit-policy') || '(not returned)';
-              const lines = rows.map((r) => `- **${r.name}**: scheduled **${r.scheduled}**, free **${r.free}**, past-due **${r.pastDue}**, next due **${r.nextDue || 'none'}**${r.oldestPastDue ? `, oldest past-due **${r.oldestPastDue}**` : ''}`);
+              const lines = rows.flatMap((r) => [
+                `- **${r.name}**: scheduled **${r.scheduled}**, free **${r.free}**, past-due **${r.pastDue}**, next due **${r.nextDue || 'none'}**${r.oldestPastDue ? `, oldest past-due **${r.oldestPastDue}**` : ''}`,
+                `  - Scheduled windows: ${r.scheduledTimes.length ? r.scheduledTimes.map((value) => `\`${value}\``).join(', ') : 'none'}`,
+              ]);
               const exactLines = exactPost ? [
                 '',
                 '### Exact Buffer post',
@@ -176,7 +178,7 @@ jobs:
               if (suspicious.length || publicationBacklog > 0 || explicitPublicationFailures > 0) {
                 diagnosis = `⚠️ Release health is not fully green. Past-due scheduled destinations: ${suspicious.length}; publication-verification backlog: ${publicationBacklog}; explicit publication failures: ${explicitPublicationFailures}.`;
               } else {
-                diagnosis = '✅ No past-due scheduled posts or unresolved publication-verification backlog were found. Historical deleted/retired Buffer IDs are treated as non-blocking terminal tombstones.';
+                diagnosis = '✅ No past-due scheduled posts or unresolved publication-verification backlog were found. Historical deleted/retired/owner-abandoned Buffer records are non-blocking terminal tombstones.';
               }
 
               await github.rest.issues.createComment({
@@ -184,13 +186,7 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
                 body: [
-                  '## Buffer + LinkedIn release diagnostic',
-                  '',
-                  diagnosis,
-                  '',
-                  ...lines,
-                  ...exactLines,
-                  '',
+                  '## Buffer + LinkedIn release diagnostic', '', diagnosis, '', ...lines, ...exactLines, '',
                   `- Total scheduled across configured LinkedIn channels: **${posts.length}**`,
                   `- Buffer result pagination incomplete: **${scheduledResult.data?.posts?.pageInfo?.hasNextPage ? 'YES' : 'NO'}**`,
                   `- Publication-verification backlog (>30 min past due): **${publicationBacklog}**`,
@@ -198,8 +194,7 @@ jobs:
                   `- Explicit publication failures recorded: **${explicitPublicationFailures}**`,
                   `- Analytics/native-capture backlog: **${analyticsBacklog}**`,
                   `- API rate-limit header: \`${rateLimit}\``,
-                  `- API rate-limit policy: \`${policy}\``,
-                  '',
+                  `- API rate-limit policy: \`${policy}\``, '',
                   'This diagnostic is strictly read-only towards Buffer and LinkedIn. It cannot publish, edit, delete or reschedule a Buffer post.'
                 ].join('\n')
               });
@@ -211,8 +206,7 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
                 body: [
-                  '## Buffer + LinkedIn release diagnostic failed closed',
-                  '',
+                  '## Buffer + LinkedIn release diagnostic failed closed', '',
                   `- Error: \`${safeMessage}\``,
                   '- No Buffer publish, edit, delete, reschedule or creation action was attempted.',
                   '- Treat current release state as unverified until this diagnostic passes.'
