@@ -76,6 +76,7 @@ jobs:
                 ...markerSet(comments, 'LINKEDIN_PUBLICATION_SUPERSEDED'),
                 ...markerSet(comments, 'LINKEDIN_DRAFT_CANARY_RETIRED'),
                 ...markerSet(comments, 'LINKEDIN_DRAFT_CANARY_VERIFIED'),
+                ...markerSet(comments, 'LINKEDIN_OWNER_ABANDONED_DRAFT'),
               ]);
               const rows = acceptedRows(comments);
               const isDraft = /^MODE:\s*draft\s*$/mi.test(String(issue.body || '')) || comments.some((comment) => /Mode:\s*\*\*draft\*\*|Audit status:\s*\*\*buffer_draft\*\*/i.test(String(comment.body || '')));
