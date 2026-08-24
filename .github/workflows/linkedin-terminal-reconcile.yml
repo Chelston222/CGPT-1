@@ -50,8 +50,6 @@ jobs:
               return ids;
             }
 
-            // A deletion counts only when a cleanup issue both listed the exact ID and has
-            // bot evidence that the cleanup completed. Merely mentioning an ID is insufficient.
             const deletionEvidence = new Map();
             for (const issue of issues.filter((i) => !i.pull_request && /BUFFER CLEANUP/i.test(i.title))) {
               const ids = idsFromHeader(issue.body);
@@ -66,6 +64,7 @@ jobs:
             let superseded = 0;
             let retiredDrafts = 0;
             let unresolved = 0;
+            const unresolvedRows = [];
 
             for (const issue of candidates) {
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
@@ -95,6 +94,7 @@ jobs:
                   lines.push(`  <!-- LINKEDIN_PUBLICATION_SUPERSEDED bufferId=${row.bufferId} cleanupIssue=${cleanupIssue} -->`);
                 } else {
                   unresolved += 1;
+                  unresolvedRows.push({ issueNumber: issue.number, label: row.label, bufferId: row.bufferId, dueAt: row.dueAt || 'unknown' });
                 }
               }
 
@@ -104,13 +104,15 @@ jobs:
               });
             }
 
+            const unresolvedLines = unresolvedRows.map((row) => `- Issue #${row.issueNumber} · ${row.label} · Buffer ID \`${row.bufferId}\` · due ${row.dueAt}`);
             await github.rest.issues.createComment({
               owner, repo, issue_number: context.issue.number,
               body: [
                 '## Terminal reconciliation complete', '',
                 `- Controlled-deletion placements marked superseded: **${superseded}**`,
                 `- Explicit non-public drafts marked retired: **${retiredDrafts}**`,
-                `- Pending placements without evidence-backed terminal classification: **${unresolved}**`, '',
+                `- Pending placements without evidence-backed terminal classification: **${unresolved}**`,
+                ...(unresolvedLines.length ? ['', '### Unresolved records', ...unresolvedLines] : []), '',
                 unresolved ? '⚠️ Unexplained historical records remain. Do not treat them as resolved.' : '✅ Every historical pending record in scope now has an evidence-backed terminal classification.',
                 '', 'No Buffer or LinkedIn mutation was performed.'
               ].join('\n'),
