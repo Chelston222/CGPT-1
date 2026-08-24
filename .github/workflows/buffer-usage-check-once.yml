@@ -108,6 +108,7 @@ jobs:
                   name: names[id] || id,
                   scheduled: channelPosts.length,
                   pastDue: pastDue.length,
+                  free: Math.max(0, 10 - channelPosts.length),
                   nextDue: next?.dueAt || null,
                   oldestPastDue: pastDue.sort((a,b)=>new Date(a.dueAt)-new Date(b.dueAt))[0]?.dueAt || null,
                 };
@@ -126,6 +127,7 @@ jobs:
               let publicationBacklog = 0;
               let analyticsBacklog = 0;
               let explicitPublicationFailures = 0;
+              let terminalTombstones = 0;
 
               for (const issue of approvalIssues) {
                 const comments = await github.paginate(github.rest.issues.listComments, {
@@ -137,20 +139,26 @@ jobs:
                 const accepted = acceptedRows(comments);
                 const verified = markedIds(comments, 'LINKEDIN_PUBLICATION_VERIFIED');
                 const failed = markedIds(comments, 'LINKEDIN_PUBLICATION_FAILED');
+                const superseded = markedIds(comments, 'LINKEDIN_PUBLICATION_SUPERSEDED');
+                const retiredDrafts = markedIds(comments, 'LINKEDIN_DRAFT_CANARY_RETIRED');
+                const draftVerified = markedIds(comments, 'LINKEDIN_DRAFT_CANARY_VERIFIED');
+                const terminal = new Set([...verified, ...failed, ...superseded, ...retiredDrafts, ...draftVerified]);
                 const analytics = markedIds(comments, 'LINKEDIN_ANALYTICS_CAPTURED');
                 const native = markedIds(comments, 'LINKEDIN_NATIVE_ANALYTICS_REQUIRED');
+                const nativeCaptured = markedIds(comments, 'LINKEDIN_NATIVE_ANALYTICS_CAPTURED');
                 explicitPublicationFailures += failed.size;
+                terminalTombstones += superseded.size + retiredDrafts.size;
 
                 for (const row of accepted) {
                   const due = Date.parse(row.dueAt || '');
-                  if (Number.isFinite(due) && now - due >= 30 * 60 * 1000 && !verified.has(row.bufferId) && !failed.has(row.bufferId)) publicationBacklog += 1;
-                  if (verified.has(row.bufferId) && !analytics.has(row.bufferId) && !native.has(row.bufferId)) analyticsBacklog += 1;
+                  if (Number.isFinite(due) && now - due >= 30 * 60 * 1000 && !terminal.has(row.bufferId)) publicationBacklog += 1;
+                  if (verified.has(row.bufferId) && !analytics.has(row.bufferId) && !native.has(row.bufferId) && !nativeCaptured.has(row.bufferId)) analyticsBacklog += 1;
                 }
               }
 
               const rateLimit = accountResult.headers.get('ratelimit') || '(not returned)';
               const policy = accountResult.headers.get('ratelimit-policy') || '(not returned)';
-              const lines = rows.map((r) => `- **${r.name}**: scheduled **${r.scheduled}**, past-due **${r.pastDue}**, next due **${r.nextDue || 'none'}**${r.oldestPastDue ? `, oldest past-due **${r.oldestPastDue}**` : ''}`);
+              const lines = rows.map((r) => `- **${r.name}**: scheduled **${r.scheduled}**, free **${r.free}**, past-due **${r.pastDue}**, next due **${r.nextDue || 'none'}**${r.oldestPastDue ? `, oldest past-due **${r.oldestPastDue}**` : ''}`);
               const exactLines = exactPost ? [
                 '',
                 '### Exact Buffer post',
@@ -168,7 +176,7 @@ jobs:
               if (suspicious.length || publicationBacklog > 0 || explicitPublicationFailures > 0) {
                 diagnosis = `⚠️ Release health is not fully green. Past-due scheduled destinations: ${suspicious.length}; publication-verification backlog: ${publicationBacklog}; explicit publication failures: ${explicitPublicationFailures}.`;
               } else {
-                diagnosis = '✅ No past-due scheduled posts or unresolved publication-verification backlog were found. Buffer queues are draining normally at this instant.';
+                diagnosis = '✅ No past-due scheduled posts or unresolved publication-verification backlog were found. Historical deleted/retired Buffer IDs are treated as non-blocking terminal tombstones.';
               }
 
               await github.rest.issues.createComment({
@@ -186,6 +194,7 @@ jobs:
                   `- Total scheduled across configured LinkedIn channels: **${posts.length}**`,
                   `- Buffer result pagination incomplete: **${scheduledResult.data?.posts?.pageInfo?.hasNextPage ? 'YES' : 'NO'}**`,
                   `- Publication-verification backlog (>30 min past due): **${publicationBacklog}**`,
+                  `- Non-blocking terminal tombstones recognised: **${terminalTombstones}**`,
                   `- Explicit publication failures recorded: **${explicitPublicationFailures}**`,
                   `- Analytics/native-capture backlog: **${analyticsBacklog}**`,
                   `- API rate-limit header: \`${rateLimit}\``,
@@ -194,6 +203,7 @@ jobs:
                   'This diagnostic is strictly read-only towards Buffer and LinkedIn. It cannot publish, edit, delete or reschedule a Buffer post.'
                 ].join('\n')
               });
+              await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
             } catch (error) {
               const safeMessage = String(error?.message || error).replace(/Bearer\s+\S+/gi, 'Bearer [REDACTED]').slice(0, 1000);
               await github.rest.issues.createComment({
