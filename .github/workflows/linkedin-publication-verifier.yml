@@ -73,11 +73,14 @@ jobs:
               const failed = markerSet(comments, 'LINKEDIN_PUBLICATION_FAILED');
               const pending = markerSet(comments, 'LINKEDIN_PUBLICATION_PENDING');
               const draftVerified = markerSet(comments, 'LINKEDIN_DRAFT_CANARY_VERIFIED');
+              const superseded = markerSet(comments, 'LINKEDIN_PUBLICATION_SUPERSEDED');
+              const retiredDrafts = markerSet(comments, 'LINKEDIN_DRAFT_CANARY_RETIRED');
+              const terminal = new Set([...verified, ...failed, ...draftVerified, ...superseded, ...retiredDrafts]);
               const isDraft = /^MODE:\s*draft\s*$/mi.test(String(issue.body || ''));
               const rows = acceptedRows(comments);
 
               for (const row of rows) {
-                if (verified.has(row.bufferId) || failed.has(row.bufferId) || draftVerified.has(row.bufferId)) continue;
+                if (terminal.has(row.bufferId)) continue;
                 const due = row.dueAt ? Date.parse(row.dueAt) : NaN;
                 if (!isDraft && Number.isFinite(due) && due > now - 5 * 60 * 1000) continue;
 
@@ -117,7 +120,6 @@ jobs:
                     });
                     continue;
                   }
-                  // A draft canary must never silently become scheduled or sent.
                   await github.rest.issues.createComment({
                     owner, repo, issue_number: issue.number,
                     body: [
@@ -230,9 +232,10 @@ jobs:
               const verified = [...body.matchAll(/<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=([^\s>]+)/g)].map((m) => m[1]);
               const captured = new Set([...body.matchAll(/<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
               const nativeRequired = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_REQUIRED bufferId=([^\s>]+)/g)].map((m) => m[1]));
+              const nativeCaptured = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
 
               for (const bufferId of verified) {
-                if (captured.has(bufferId)) continue;
+                if (captured.has(bufferId) || nativeRequired.has(bufferId) || nativeCaptured.has(bufferId)) continue;
                 const data = await buffer(`query Metrics { post(input: { id: ${JSON.stringify(bufferId)} }) { id status sentAt externalLink metricsUpdatedAt metrics { type name value unit } assets { mimeType source } } }`);
                 const post = data?.post;
                 if (!post || post.status !== 'sent') continue;
