@@ -75,7 +75,8 @@ jobs:
               const draftVerified = markerSet(comments, 'LINKEDIN_DRAFT_CANARY_VERIFIED');
               const superseded = markerSet(comments, 'LINKEDIN_PUBLICATION_SUPERSEDED');
               const retiredDrafts = markerSet(comments, 'LINKEDIN_DRAFT_CANARY_RETIRED');
-              const terminal = new Set([...verified, ...failed, ...draftVerified, ...superseded, ...retiredDrafts]);
+              const ownerAbandoned = markerSet(comments, 'LINKEDIN_OWNER_ABANDONED_DRAFT');
+              const terminal = new Set([...verified, ...failed, ...draftVerified, ...superseded, ...retiredDrafts, ...ownerAbandoned]);
               const isDraft = /^MODE:\s*draft\s*$/mi.test(String(issue.body || ''));
               const rows = acceptedRows(comments);
 
