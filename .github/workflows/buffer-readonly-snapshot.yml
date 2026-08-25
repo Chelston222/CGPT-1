@@ -1,0 +1,95 @@
+name: Buffer Read-only Snapshot
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  snapshot:
+    if: github.event.issue.title == '[BUFFER SNAPSHOT] Read-only 3-account queue evidence' && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Capture scheduled Buffer inventory without writes
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
+          BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
+          BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const targets = {
+              personal: process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID,
+              main: process.env.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID,
+              secondary: process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID,
+            };
+            const missing = Object.entries(targets).filter(([, id]) => !id).map(([name]) => name);
+            if (!process.env.BUFFER_API_KEY || missing.length) {
+              throw new Error(`Missing Buffer configuration: ${[!process.env.BUFFER_API_KEY ? 'api_key' : null, ...missing].filter(Boolean).join(', ')}`);
+            }
+
+            async function buffer(query) {
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${process.env.BUFFER_API_KEY}`,
+                },
+                body: JSON.stringify({ query }),
+              });
+              let payload;
+              try { payload = await response.json(); } catch { payload = {}; }
+              const messages = (payload.errors || []).map((error) => error.message).filter(Boolean);
+              if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
+              return payload.data;
+            }
+
+            const account = await buffer('query CapacityAccount { account { organizations { id } } }');
+            const organizationId = account.account?.organizations?.[0]?.id;
+            if (!organizationId) throw new Error('Buffer returned no organisation ID.');
+
+            const channelIds = Object.values(targets);
+            const query = `query ScheduledCapacity { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(channelIds)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`;
+            const data = await buffer(query);
+            if (data.posts?.pageInfo?.hasNextPage) throw new Error('More than 100 scheduled posts returned; refusing incomplete snapshot.');
+
+            const targetById = Object.fromEntries(Object.entries(targets).map(([target, id]) => [id, target]));
+            const rows = (data.posts?.edges || [])
+              .map((edge) => ({
+                target: targetById[edge.node.channelId] || 'unknown',
+                postId: edge.node.id,
+                dueAt: edge.node.dueAt,
+                status: edge.node.status,
+              }))
+              .sort((a, b) => String(a.dueAt).localeCompare(String(b.dueAt)));
+            const counts = { personal: 0, main: 0, secondary: 0, unknown: 0 };
+            for (const row of rows) counts[row.target] = (counts[row.target] || 0) + 1;
+
+            const lines = rows.map((row) => `- ${row.target}: \`${row.postId}\` · ${row.dueAt} · ${row.status}`);
+            const body = [
+              '## Read-only Buffer snapshot',
+              '',
+              `Captured: **${new Date().toISOString()}**`,
+              '',
+              `- personal scheduled: **${counts.personal}**`,
+              `- main scheduled: **${counts.main}**`,
+              `- secondary scheduled: **${counts.secondary}**`,
+              `- unknown-channel scheduled: **${counts.unknown}**`,
+              `- total scheduled across configured channels: **${rows.length}**`,
+              '- pagination complete: **YES**',
+              '- Buffer mutation performed: **NO**',
+              '',
+              '### Scheduled inventory',
+              ...(lines.length ? lines : ['- No scheduled posts returned for the configured channels.']),
+              '',
+              'This snapshot proves scheduled inventory only. It does not prove publication, channel display names, recurring posting-schedule configuration, connection health, or native LinkedIn analytics.',
+            ].join('\n');
+            await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            await github.rest.issues.update({ owner, repo, issue_number, state: 'closed' });
