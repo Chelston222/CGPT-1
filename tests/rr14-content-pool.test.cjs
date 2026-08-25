@@ -64,7 +64,10 @@ test('RR14 schedules are present, parseable and stay within per-channel daily pl
   for (const [key, count] of counts) assert.ok(count <= 5, `${key} has ${count} placements`);
 });
 
-test('both RR14 waves are loaded by the current locked-queue loader', () => {
-  assert.match(loader, /qa-replenishment-2026-08-22\.json/);
-  assert.match(loader, /qa-replenishment-2026-08-22-rr14-wave2\.json/);
+test('current locked-queue loader discovers QA replenishment files dynamically, including both RR14 waves', () => {
+  assert.match(loader, /readdirSync\(QA_REPLENISHMENT_DIR\)/);
+  assert.match(loader, /\^qa-replenishment-\.\*\\\.json\$/);
+  assert.match(loader, /withQaReplenishment/);
+  assert.ok(fs.existsSync(wave1Path));
+  assert.ok(fs.existsSync(wave2Path));
 });
