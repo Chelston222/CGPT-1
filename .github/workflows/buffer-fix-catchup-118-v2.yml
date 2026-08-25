@@ -1,62 +1,18 @@
-name: Buffer Fix Catchup 118 v2
+name: Buffer Fix Catchup 118 v2 [RETIRED]
+
+# Historical one-off recovery workflow for closed issue #118.
+# Retained as audit history, but deliberately non-executable so it cannot
+# mutate an old Buffer post or create permanent Actions failure noise.
 
 on:
-  issues:
-    types: [opened]
+  workflow_dispatch:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
-  fix:
-    if: github.event.issue.title == '[BUFFER FIX 118 V2] Apply approved catch-up revision now' && github.event.issue.user.login == github.repository_owner
+  retired:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - name: Correct exact approved Buffer post
-        uses: actions/github-script@v7
-        env:
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-        with:
-          script: |
-            const id = '6a846e26033c29724fd12f54';
-            const text = `Sorry for forgetting to post this morning to everyone watching me build Triple Two Emails 🚀
-
-Turns out even the guy building client return systems can forget to return to his own LinkedIn feed 😅
-
-Which is actually a pretty good example of the problem.
-
-People forget.
-They get busy.
-They mean to come back later.
-
-Clients do exactly the same thing with bookings.
-
-A first-time client leaves without rebooking.
-An enquiry says “I’ll come back to you”.
-A regular quietly slips past their normal return window.
-
-Nothing dramatic happened.
-Nobody necessarily chose a competitor.
-Life just got in the way.
-
-Then a few weeks later the diary has gaps and the business thinks it needs more leads.
-
-Sometimes it does.
-
-But sometimes the easier win is simply making sure good clients and warm enquiries are reminded at the right moment.
-
-That is exactly the kind of thing I’m building 222Emails to solve:
-
-fewer forgotten bookings,
-fewer cold enquiries,
-and fewer good clients quietly disappearing.`;
-            const query = `mutation EditPost { editPost(input: { id: ${JSON.stringify(id)}, text: ${JSON.stringify(text)}, dueAt: "2026-08-18T14:50:00.000Z" }) { ... on PostActionSuccess { post { id text dueAt status } } ... on MutationError { message } } }`;
-            const response = await fetch('https://api.buffer.com', { method:'POST', headers:{'content-type':'application/json',authorization:`Bearer ${process.env.BUFFER_API_KEY}`}, body:JSON.stringify({query}) });
-            const payload = await response.json();
-            const errors = [...(payload.errors || []).map(e=>e.message), payload.data?.editPost?.message].filter(Boolean);
-            if (!response.ok || errors.length) throw new Error(errors.join('; ') || `Buffer HTTP ${response.status}`);
-            const post = payload.data?.editPost?.post;
-            if (!post?.id) throw new Error('Buffer edit returned no post.');
-            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`✅ Corrected exact Buffer post \`${post.id}\`. Due: **${post.dueAt}**.`});
-            await github.rest.issues.update({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,state:'closed'});
+      - run: echo "Retired one-off Buffer catch-up v2 for closed issue #118."
