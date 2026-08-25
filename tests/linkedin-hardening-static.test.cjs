@@ -55,14 +55,16 @@ test('publication verification cannot label Buffer acceptance as publication', (
   assert.match(verifier, /LINKEDIN_PUBLICATION_VERIFIED/);
 });
 
-test('non-public draft canaries terminate as verified drafts and stay out of analytics', () => {
+test('non-public draft canaries terminate as verified drafts, fail closed on unexpected state, and stay out of analytics', () => {
   assert.match(verifier, /LINKEDIN_DRAFT_CANARY_VERIFIED/);
   assert.match(verifier, /post\.status === 'draft'/);
   assert.ok(
     verifier.includes("if (/^MODE:\\s*draft\\s*$/mi.test(String(issue.body || ''))) continue;"),
     'analytics job must skip MODE: draft issues',
   );
-  assert.match(verifier, /A draft canary must never silently become scheduled or sent/);
+  assert.match(verifier, /Buffer draft canary entered an unexpected state/);
+  assert.match(verifier, /Treat this canary as failed-safe and investigate before using the image path/);
+  assert.match(verifier, /LINKEDIN_PUBLICATION_FAILED/);
 });
 
 test('analytics loop retains a native LinkedIn route for document posts', () => {
