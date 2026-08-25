@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "asset": "Retention School launch approved founder photo",
+  "status": "approved_source_locked_public_host_pending",
+  "source": {
+    "provider": "Google Drive",
+    "fileId": "1L-DyRN4mEiWrR_PjfIyHtrJRsSfBdkmK",
+    "fileName": "retention-school-launch-approved.jpeg",
+    "mimeType": "image/jpeg",
+    "bytes": 479202,
+    "sha256": "5ed1eb2a2d2b597fb1b96662ad4937fc59a824ce0ee9b2430c6cfb0dd8da666a",
+    "width": 1152,
+    "height": 1536
+  },
+  "releaseRule": "Do not publish until a stable public HTTPS media URL serves this exact binary and preflight re-measures 479202 bytes with the exact SHA-256 above.",
+  "notes": [
+    "This is the fourth uploaded sunset founder photo selected for the Retention School launch.",
+    "No redraw, recreation, crop, resize, recompression, enhancement or substitution is approved.",
+    "The previously generated Retention School launch graphic is retired and must not be reused."
+  ]
+}
