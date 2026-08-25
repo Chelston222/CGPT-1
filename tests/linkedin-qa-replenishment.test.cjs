@@ -7,14 +7,12 @@ const test = require('node:test');
 const { withQaReplenishment } = require('../scripts/linkedin-week-batch.cjs');
 
 const root = path.resolve(__dirname, '..');
-const queue = JSON.parse(fs.readFileSync(path.join(root, 'apps/linkedin-review/queue.json'), 'utf8'));
-const qa = JSON.parse(fs.readFileSync(path.join(root, 'apps/linkedin-review/qa-replenishment-2026-08-11.json'), 'utf8'));
-const supplementalFiles = [
-  'qa-replenishment-2026-08-11.json',
-  'qa-replenishment-2026-08-17.json',
-  'qa-replenishment-2026-08-22.json',
-  'qa-replenishment-2026-08-22-rr14-wave2.json',
-];
+const qaDir = path.join(root, 'apps/linkedin-review');
+const queue = JSON.parse(fs.readFileSync(path.join(qaDir, 'queue.json'), 'utf8'));
+const qa = JSON.parse(fs.readFileSync(path.join(qaDir, 'qa-replenishment-2026-08-11.json'), 'utf8'));
+const supplementalFiles = fs.readdirSync(qaDir)
+  .filter((name) => /^qa-replenishment-.*\.json$/.test(name))
+  .sort();
 
 test('original QA replenishment still represents one full 15-placement day without inheriting publish permission', () => {
   assert.equal(qa.posts.length, 15);
@@ -40,7 +38,7 @@ test('effective queue includes every eligible locked supplemental candidate once
   const expectedNewIds = [];
   const seen = new Set(existingIds);
   for (const file of supplementalFiles) {
-    const batch = JSON.parse(fs.readFileSync(path.join(root, 'apps/linkedin-review', file), 'utf8'));
+    const batch = JSON.parse(fs.readFileSync(path.join(qaDir, file), 'utf8'));
     for (const post of batch.posts || []) {
       if (
         seen.has(post.id)
