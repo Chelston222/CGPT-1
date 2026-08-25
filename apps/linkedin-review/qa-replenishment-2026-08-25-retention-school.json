@@ -1,0 +1,39 @@
+{
+  "posts": [
+    {
+      "id": "tte-li-retention-school-launch-20260825",
+      "revision": 1,
+      "title": "Retention School launch",
+      "category": "founder_operator_pov",
+      "funnelStage": "tof",
+      "format": "image",
+      "targets": ["personal"],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-08-25T12:45:00+01:00"
+      },
+      "copy": {
+        "default": "I think more useful business education should be free.\n\nA lot of what I’ve learnt about retention, lifecycle, CRM, deliverability and revenue recovery came from people who taught generously before asking for anything in return.\n\nI want 222Emails to do more of that too.\n\nSo I’m building Retention School.\n\nIt’ll be a free education initiative from 222Emails focused on practical lessons, breakdowns, resources and real-world insights around retention, lifecycle systems, CRM, deliverability, revenue recovery, testing and measurement.\n\nThe goal is simple: make useful retention education easier to access, easier to follow and more valuable over time.\n\nNot more content.\n\nSomething genuinely useful.\n\nRetention School by 222Emails."
+      },
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/retention-school-launch-4k.png",
+      "mediaAlt": "222Emails Retention School launch graphic stating that more useful business education should be free, focused on retention, lifecycle, CRM, deliverability and revenue recovery.",
+      "safeZoneQa": "pass",
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "review",
+          "at": "2026-08-25T11:33:00Z",
+          "actor": "ChatGPT",
+          "note": "Owner-requested Retention School launch prepared for immediate Buffer release with a 3840×3840 rendered asset."
+        }
+      ]
+    }
+  ]
+}
