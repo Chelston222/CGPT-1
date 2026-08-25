@@ -80,11 +80,35 @@ jobs:
             const counts = { personal: 0, main: 0, secondary: 0, unknown: 0 };
             for (const row of rows) counts[row.target] = (counts[row.target] || 0) + 1;
 
-            const policyWeeklyCeilings = { personal: 14, main: 5, secondary: 5 };
+            // Recurring schedule != total release safety ceiling. Personal may publish
+            // an earned bonus post, but only one guaranteed recurring core slot/day is
+            // allowed. Main and secondary should have no more than five recurring slots/week.
+            const recurringPolicy = {
+              personal: { maxWeek: 7, maxPerDay: 1, requireEveryDay: true },
+              main: { maxWeek: 5, maxPerDay: 1, requireEveryDay: false },
+              secondary: { maxWeek: 5, maxPerDay: 1, requireEveryDay: false },
+            };
+
+            function scheduleState(channel) {
+              const activeDays = (channel.postingSchedule || []).filter((day) => !day.paused);
+              const activeSlots = activeDays.flatMap((day) => (day.times || []).map((time) => `${day.day} ${time}`));
+              const dailyCounts = Object.fromEntries(activeDays.map((day) => [day.day, (day.times || []).length]));
+              const p = recurringPolicy[channel.target];
+              const dailyPass = Object.values(dailyCounts).every((count) => count <= p.maxPerDay);
+              const everyDayPass = !p.requireEveryDay || ['mon','tue','wed','thu','fri','sat','sun'].every((day) => dailyCounts[day] === 1);
+              return {
+                activeSlots,
+                dailyCounts,
+                weeklyPass: activeSlots.length <= p.maxWeek,
+                dailyPass,
+                everyDayPass,
+                recurringPass: activeSlots.length <= p.maxWeek && dailyPass && everyDayPass,
+              };
+            }
+
             const configLines = providerChannels.flatMap((channel) => {
-              const activeSlots = (channel.postingSchedule || [])
-                .filter((day) => !day.paused)
-                .flatMap((day) => (day.times || []).map((time) => `${day.day} ${time}`));
+              const s = scheduleState(channel);
+              const p = recurringPolicy[channel.target];
               return [
                 `### ${channel.target}`,
                 `- Provider name: **${channel.name || '(none)'}**`,
@@ -92,14 +116,16 @@ jobs:
                 `- Descriptor/type/service: **${channel.descriptor || '(none)'} / ${channel.type || '(none)'} / ${channel.service || '(none)'}**`,
                 `- Connection state: disconnected **${channel.isDisconnected}**, locked **${channel.isLocked}**, queue paused **${channel.isQueuePaused}**`,
                 `- Provider timezone: **${channel.timezone || '(none)'}**`,
-                `- Active recurring slots (${activeSlots.length}): ${activeSlots.length ? activeSlots.map((slot) => `\`${slot}\``).join(', ') : 'none'}`,
-                `- Active recurring slot count within current weekly safety ceiling (${policyWeeklyCeilings[channel.target]}): **${activeSlots.length <= policyWeeklyCeilings[channel.target] ? 'YES' : 'NO'}**`,
+                `- Active recurring slots (${s.activeSlots.length}): ${s.activeSlots.length ? s.activeSlots.map((slot) => `\`${slot}\``).join(', ') : 'none'}`,
+                `- Recurring weekly target <= ${p.maxWeek}: **${s.weeklyPass ? 'PASS' : 'FAIL'}**`,
+                `- Recurring max ${p.maxPerDay}/day: **${s.dailyPass ? 'PASS' : 'FAIL'}**`,
+                ...(p.requireEveryDay ? [`- Exactly one guaranteed recurring core slot on every day: **${s.everyDayPass ? 'PASS' : 'FAIL'}**`] : []),
                 '',
               ];
             });
             const providerConfigHealthy = providerChannels.every((channel) => {
-              const activeSlots = (channel.postingSchedule || []).filter((day) => !day.paused).reduce((n, day) => n + (day.times || []).length, 0);
-              return channel.timezone === 'Europe/London' && !channel.isDisconnected && !channel.isLocked && !channel.isQueuePaused && activeSlots <= policyWeeklyCeilings[channel.target];
+              const s = scheduleState(channel);
+              return channel.timezone === 'Europe/London' && !channel.isDisconnected && !channel.isLocked && !channel.isQueuePaused && s.recurringPass;
             });
 
             const lines = rows.map((row) => `- ${row.target}: \`${row.postId}\` · ${row.dueAt} · ${row.status}`);
@@ -111,7 +137,7 @@ jobs:
               `Captured: **${new Date().toISOString()}**`,
               '',
               ...configLines,
-              `- Provider configuration health under current safety ceilings: **${providerConfigHealthy ? 'PASS' : 'FAIL'}**`,
+              `- Provider configuration health under current recurring-cadence contract: **${providerConfigHealthy ? 'PASS' : 'FAIL'}**`,
               `- personal scheduled: **${counts.personal}**`,
               `- main scheduled: **${counts.main}**`,
               `- secondary scheduled: **${counts.secondary}**`,
@@ -127,4 +153,4 @@ jobs:
             ].join('\n');
             await github.rest.issues.createComment({ owner, repo, issue_number, body });
             await github.rest.issues.update({ owner, repo, issue_number, state: 'closed', state_reason: providerConfigHealthy ? 'completed' : 'not_planned' });
-            if (!providerConfigHealthy) core.setFailed('Provider channel configuration is not fully aligned with current safety ceilings.');
+            if (!providerConfigHealthy) core.setFailed('Provider channel configuration is not fully aligned with the current recurring-cadence contract.');
