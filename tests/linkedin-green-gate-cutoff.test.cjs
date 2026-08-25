@@ -12,5 +12,27 @@ test('publication backlog only counts current post-hardening acceptances', () =>
 
 test('historical debt remains visible without poisoning current green state', () => {
   assert.match(workflow, /Preserved pre-hardening native analytics debt/);
-  assert.match(workflow, /does not permanently poison the current release contract/);
+  assert.match(workflow, /Historical analytics debt stays visible and is never rewritten as captured/);
+});
+
+test('green requires provider recurring configuration, timezone and connection health', () => {
+  assert.match(workflow, /channel\(input: \{ id:/);
+  assert.match(workflow, /postingSchedule \{ day paused times \}/);
+  assert.match(workflow, /channel\.timezone === 'Europe\/London'/);
+  assert.match(workflow, /!channel\.isDisconnected && !channel\.isLocked && !channel\.isQueuePaused/);
+  assert.match(workflow, /const green = providerConfigHealthy && queueHealthy/);
+});
+
+test('personal recurring schedule is one guaranteed core slot per day, not two automatic slots', () => {
+  assert.match(workflow, /personal: \{ maxWeek: 7, maxPerDay: 1, requireEveryDay: true \}/);
+  assert.match(workflow, /everyDayPass/);
+});
+
+test('company and secondary recurring schedules are capped at five per week', () => {
+  assert.match(workflow, /main: \{ maxWeek: 5, maxPerDay: 1, requireEveryDay: false \}/);
+  assert.match(workflow, /secondary: \{ maxWeek: 5, maxPerDay: 1, requireEveryDay: false \}/);
+});
+
+test('secondary identity must resolve to Retention School before full green', () => {
+  assert.match(workflow, /target !== 'secondary' \|\| \/retention school\/i/);
 });
