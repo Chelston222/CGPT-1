@@ -20,7 +20,7 @@ jobs:
     if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[CONTENT OS CHECK]') && github.event.issue.user.login == github.repository_owner)
     runs-on: ubuntu-latest
     steps:
-      - name: Audit closed-loop LinkedIn release health
+      - name: Audit closed-loop LinkedIn release and recurring configuration health
         uses: actions/github-script@v7
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
@@ -53,8 +53,7 @@ jobs:
                 const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
                 let match;
                 while ((match = regex.exec(body))) rows.push({
-                  bufferId: match[2],
-                  dueAt: match[3] || null,
+                  bufferId: match[2], dueAt: match[3] || null,
                   acceptedAt: Date.parse(comment.created_at || comment.updated_at || ''),
                 });
               }
@@ -71,6 +70,23 @@ jobs:
               return out;
             }
 
+            function recurringState(target, channel) {
+              const policy = {
+                personal: { maxWeek: 7, maxPerDay: 1, requireEveryDay: true },
+                main: { maxWeek: 5, maxPerDay: 1, requireEveryDay: false },
+                secondary: { maxWeek: 5, maxPerDay: 1, requireEveryDay: false },
+              }[target];
+              const active = (channel.postingSchedule || []).filter((day) => !day.paused);
+              const daily = Object.fromEntries(active.map((day) => [day.day, (day.times || []).length]));
+              const weekly = active.reduce((n, day) => n + (day.times || []).length, 0);
+              const dailyPass = Object.values(daily).every((n) => n <= policy.maxPerDay);
+              const everyDayPass = !policy.requireEveryDay || ['mon','tue','wed','thu','fri','sat','sun'].every((day) => daily[day] === 1);
+              return {
+                weekly, daily, weeklyPass: weekly <= policy.maxWeek, dailyPass, everyDayPass,
+                pass: weekly <= policy.maxWeek && dailyPass && everyDayPass,
+              };
+            }
+
             if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured.');
             const channelIds = {
               personal: process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID,
@@ -78,6 +94,22 @@ jobs:
               secondary: process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID,
             };
             if (Object.values(channelIds).some((id) => !id)) throw new Error('One or more LinkedIn Buffer channel IDs are missing.');
+
+            const providerChannels = {};
+            for (const [target, id] of Object.entries(channelIds)) {
+              const result = await buffer(`query GreenGateChannel { channel(input: { id: ${JSON.stringify(id)} }) { id name displayName isDisconnected isLocked isQueuePaused timezone postingSchedule { day paused times } } }`);
+              const channel = result.data?.channel;
+              if (!channel || channel.id !== id) throw new Error(`Buffer returned no configured ${target} channel.`);
+              providerChannels[target] = channel;
+            }
+
+            const providerStates = Object.fromEntries(Object.entries(providerChannels).map(([target, channel]) => [target, {
+              recurring: recurringState(target, channel),
+              connected: !channel.isDisconnected && !channel.isLocked && !channel.isQueuePaused,
+              timezonePass: channel.timezone === 'Europe/London',
+              identityPass: target !== 'secondary' || /retention school/i.test(String(channel.displayName || channel.name || '')),
+            }]));
+            const providerConfigHealthy = Object.values(providerStates).every((state) => state.recurring.pass && state.connected && state.timezonePass && state.identityPass);
 
             const account = await buffer('query ContentOsAccount { account { organizations { id } } }');
             const organizationId = account.data?.account?.organizations?.[0]?.id;
@@ -133,10 +165,7 @@ jobs:
                 const isCurrent = Number.isFinite(row.acceptedAt) && row.acceptedAt >= HARDENING_CUTOFF;
                 if (isCurrent && Number.isFinite(due) && now - due >= 30 * 60 * 1000 && !terminal) publicationBacklog += 1;
                 if (!verified.has(row.bufferId)) continue;
-
-                if (!analytics.has(row.bufferId) && !nativeRequired.has(row.bufferId) && !nativeCaptured.has(row.bufferId)) {
-                  if (isCurrent) currentAnalyticsBacklog += 1;
-                }
+                if (!analytics.has(row.bufferId) && !nativeRequired.has(row.bufferId) && !nativeCaptured.has(row.bufferId) && isCurrent) currentAnalyticsBacklog += 1;
                 if (nativeRequired.has(row.bufferId) && !nativeCaptured.has(row.bufferId)) {
                   if (isCurrent) currentNativeBacklog += 1;
                   else legacyNativeDebt += 1;
@@ -147,9 +176,10 @@ jobs:
             const paginationIncomplete = scheduled.data?.posts?.pageInfo?.hasNextPage === true;
             const queueHealthy = Object.values(queue).every((row) => row.scheduled > 0 && row.scheduled <= 10);
             const noPastDue = Object.values(queue).every((row) => row.pastDue === 0);
-            const green = queueHealthy && noPastDue && !paginationIncomplete && publicationBacklog === 0 && publicationFailures === 0 && currentAnalyticsBacklog === 0 && currentNativeBacklog === 0 && legacyDispatchesAfterCutoff === 0 && openApprovals === 0;
+            const green = providerConfigHealthy && queueHealthy && noPastDue && !paginationIncomplete && publicationBacklog === 0 && publicationFailures === 0 && currentAnalyticsBacklog === 0 && currentNativeBacklog === 0 && legacyDispatchesAfterCutoff === 0 && openApprovals === 0;
 
             const checks = [
+              ['Provider recurring schedules, timezone, connection state and Retention School identity aligned', providerConfigHealthy],
               ['Queue healthy and non-empty', queueHealthy],
               ['No past-due scheduled posts', noPastDue],
               ['Buffer pagination complete', !paginationIncomplete],
@@ -161,13 +191,22 @@ jobs:
               ['No approval left waiting between cycles', openApprovals === 0],
             ];
 
+            const providerLines = Object.entries(providerChannels).flatMap(([target, channel]) => {
+              const state = providerStates[target];
+              return [
+                `- ${target} provider: **${channel.displayName || channel.name || '(unnamed)'}**, timezone **${channel.timezone || '(none)'}**, recurring slots **${state.recurring.weekly}**, connected **${state.connected ? 'YES' : 'NO'}**`,
+                `  - recurring contract: **${state.recurring.pass ? 'PASS' : 'FAIL'}**; timezone: **${state.timezonePass ? 'PASS' : 'FAIL'}**; identity: **${state.identityPass ? 'PASS' : 'FAIL'}**`,
+              ];
+            });
+
             const body = [
               '# LinkedIn Content OS health', '',
-              green ? '🟢 **GREEN** — every current closed-loop invariant passes.' : '🟠 **NOT GREEN** — at least one current closed-loop invariant still needs evidence or action.', '',
+              green ? '🟢 **GREEN** — every current release and recurring-configuration invariant passes.' : '🟠 **NOT GREEN** — at least one release or recurring-configuration invariant still needs evidence or action.', '',
               ...checks.map(([label, pass]) => `- ${pass ? '✅' : '❌'} ${label}`), '',
-              `- Chelston personal: **${queue.personal.scheduled} scheduled**, **${queue.personal.pastDue} past-due**, next **${queue.personal.nextDue || 'none'}**`,
-              `- Main 222Emails: **${queue.main.scheduled} scheduled**, **${queue.main.pastDue} past-due**, next **${queue.main.nextDue || 'none'}**`,
-              `- Retention Lab: **${queue.secondary.scheduled} scheduled**, **${queue.secondary.pastDue} past-due**, next **${queue.secondary.nextDue || 'none'}**`,
+              '### Provider configuration', ...providerLines, '',
+              `- Chelston personal scheduled: **${queue.personal.scheduled}**, past-due **${queue.personal.pastDue}**, next **${queue.personal.nextDue || 'none'}**`,
+              `- Main 222Emails scheduled: **${queue.main.scheduled}**, past-due **${queue.main.pastDue}**, next **${queue.main.nextDue || 'none'}**`,
+              `- Secondary configured channel scheduled: **${queue.secondary.scheduled}**, past-due **${queue.secondary.pastDue}**, next **${queue.secondary.nextDue || 'none'}**`,
               `- Publication verification backlog: **${publicationBacklog}**`,
               `- Publication failures: **${publicationFailures}**`,
               `- Intentionally superseded/not-published historical placements: **${superseded}**`,
@@ -179,7 +218,7 @@ jobs:
               `- Open approval issues: **${openApprovals}**`,
               `- Buffer pagination incomplete: **${paginationIncomplete ? 'YES' : 'NO'}**`,
               `- Checked at: **${new Date(now).toISOString()}**`, '',
-              `Operational GREEN is measured from the hardening boundary (${new Date(HARDENING_CUTOFF).toISOString()}). Older publication/analytics debt stays visible in historical reconciliation and is never rewritten as captured, but it does not permanently poison the current release contract.`,
+              `GREEN now covers both current closed-loop release health and the recurring Buffer configuration that can create future Next Available placements. Historical analytics debt stays visible and is never rewritten as captured.`,
             ].join('\n');
 
             const allOpen = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
