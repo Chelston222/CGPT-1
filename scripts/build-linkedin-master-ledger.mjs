@@ -47,51 +47,23 @@ const normalise = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9
 const hash = (value) => createHash('sha256').update(value).digest('hex');
 let queueChanged = false;
 
-// 9 August is the planning anchor. Since it is already evening in London, the
-// first complete five-per-channel publishing day starts on 10 August. Reflow
-// once, preserving revisions for posts already approved through GitHub so the
-// dispatcher cannot mistake a date correction for fresh approval.
+const CURRENT_CADENCE_POLICY = Object.freeze({
+  personal: Object.freeze({ maxPerDay: 2, maxPerWeek: 14 }),
+  main: Object.freeze({ maxPerDay: 1, maxPerWeek: 5 }),
+  secondary: Object.freeze({ maxPerDay: 1, maxPerWeek: 5 }),
+});
+
+// The historical five-per-channel automatic reflow is retired. Current queue
+// migration must be explicit and inventory-preserving: snapshot first, then
+// classify KEEP / MOVE / REPURPOSE / RETIRE. If legacy-shaped input reappears,
+// fail closed rather than silently recreating the former high-frequency cadence.
 if (
   queue.capacityPolicy?.firstPublishDate !== '2026-08-10'
   || (queue.posts || []).some((post) => Object.hasOwn(post, 'schedule'))
 ) {
-  const accepted = new Set(['tte-li-001', 'tte-li-002', 'tte-li-003', 'tte-li-004', 'tte-li-005', 'tte-li-006']);
-  const slots = {
-    personal: ['08:15', '10:15', '12:15', '14:15', '16:15'],
-    main: ['08:30', '10:30', '12:30', '14:30', '16:30'],
-    secondary: ['08:45', '10:45', '12:45', '14:45', '16:45'],
-  };
-  const counters = { personal: 0, main: 0, secondary: 0 };
-  const day = (offset) => `2026-08-${String(10 + offset).padStart(2, '0')}`;
-
-  for (const post of queue.posts || []) {
-    post.scheduledAt = {};
-    delete post.schedule;
-    for (const target of post.targets || []) {
-      const index = counters[target]++;
-      post.scheduledAt[target] = `${day(Math.floor(index / 5))}T${slots[target][index % 5]}:00+01:00`;
-    }
-    post.history ||= [];
-    if (accepted.has(post.id)) {
-      post.history.push({ at: '2026-08-09T20:15:00+01:00', state: 'reschedule_requested', actor: 'system', note: 'Moved from the 17 August example week into the week beginning 9 August; existing human approval retained.' });
-    } else {
-      post.revision = Number(post.revision || 1) + 1;
-      post.status = 'review';
-      post.history.push({ at: '2026-08-09T20:15:00+01:00', state: 'review', actor: 'system', note: 'Reflowed into the new five-per-channel cadence; fresh approval required for this revision.' });
-    }
-  }
-  queue.generatedAt = '2026-08-09T20:15:00+01:00';
-  queue.capacityPolicy = {
-    planningAnchorDate: '2026-08-09',
-    firstPublishDate: '2026-08-10',
-    maximumPlacementsPerChannelPerDay: 5,
-    maximumAccountPlacementsPerDay: 15,
-    maximumAccountPlacementsPerWeek: 105,
-    bufferFreeScheduledPerChannel: 10,
-    bufferRunwayDaysAtConfiguredRate: 2,
-    releaseCheckHours: 8,
-  };
-  queueChanged = true;
+  throw new Error(
+    'Legacy LinkedIn queue shape detected. Automatic five-per-channel reflow is retired; use the explicit KEEP/MOVE/REPURPOSE/RETIRE migration path.',
+  );
 }
 
 for (const post of queue.posts || []) {
@@ -169,9 +141,11 @@ const ledger = {
     operationalSourceOfTruth: 'this ledger',
     notionRole: 'editorial archive, strategy and private reference',
     publicReviewRole: 'generated live-ready projection only',
-    maxPlacementsPerChannelPerDay: 5,
-    maxAccountPlacementsPerDay: 15,
+    cadencePolicy: CURRENT_CADENCE_POLICY,
+    legacyBroadSafetyCeilingPerChannelPerDay: 5,
+    legacyBroadSafetyCeilingAccountPerDay: 15,
     explicitOwnerApprovalRequired: true,
+    automaticLegacyReflowAllowed: false,
   },
   summary: {
     discoveredChunks: archive.summary?.rawContentChunks || archive.records?.length || 0,
@@ -201,11 +175,11 @@ const manifest = {
   rules: {
     newContentEntersMasterFirst: true,
     historicalApprovalIsNotPublishPermission: true,
-    maximumPlacementsPerChannelPerDay: 5,
-    maximumAccountPlacementsPerDay: 15,
-    maximumAccountPlacementsPerWeek: 105,
+    cadencePolicy: CURRENT_CADENCE_POLICY,
+    legacyBroadSafetyCeilingPerChannelPerDay: 5,
+    legacyBroadSafetyCeilingAccountPerDay: 15,
+    automaticLegacyReflowAllowed: false,
     bufferFreeScheduledPerChannel: 10,
-    bufferRunwayDaysAtConfiguredRate: 2,
     bufferFreeConnectedChannels: 3,
   },
 };
