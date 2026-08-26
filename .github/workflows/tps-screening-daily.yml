@@ -1,0 +1,51 @@
+name: TPS screening daily
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: Screening provider
+        required: false
+        default: tpscheck
+        type: choice
+        options:
+          - tpscheck
+          - tpschecker
+      max_checks:
+        description: Maximum checks this run
+        required: false
+        default: '10'
+  schedule:
+    - cron: '0 7 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  screen:
+    runs-on: ubuntu-latest
+    env:
+      TPSCHECK_API_KEY: ${{ secrets.TPSCHECK_API_KEY }}
+      TPSCHECKER_API_KEY: ${{ secrets.TPSCHECKER_API_KEY }}
+      TPS_PROVIDER: ${{ github.event.inputs.provider || 'tpscheck' }}
+      TPS_MAX_CHECKS_PER_RUN: ${{ github.event.inputs.max_checks || '10' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run quota-safe screening queue
+        run: node apps/tps-screening/run-queue.mjs
+      - name: Commit screening state if changed
+        run: |
+          if git diff --quiet -- apps/tps-screening/state; then
+            echo 'No screening state changes.'
+            exit 0
+          fi
+          git config user.name '222Emails TPS Screening Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add apps/tps-screening/state
+          git commit -m 'Record TPS screening results'
+          git push
