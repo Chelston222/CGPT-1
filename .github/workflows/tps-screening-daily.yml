@@ -6,13 +6,14 @@ on:
       provider:
         description: Screening provider
         required: false
-        default: tpscheck
+        default: auto
         type: choice
         options:
-          - tpscheck
+          - auto
           - tpschecker
+          - tpscheck
       max_checks:
-        description: Maximum checks this run
+        description: Maximum checks for a single-provider manual run
         required: false
         default: '10'
   schedule:
@@ -26,9 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TPSCHECK_API_KEY: ${{ secrets.TPSCHECK_API_KEY }}
-      TPSCHECKER_API_KEY: ${{ secrets.TPSCHECKER_API_KEY }}
-      TPS_PROVIDER: ${{ github.event.inputs.provider || 'tpscheck' }}
-      TPS_MAX_CHECKS_PER_RUN: ${{ github.event.inputs.max_checks || '10' }}
+      TPSCHECKER_EMAIL: ${{ secrets.TPSCHECKER_EMAIL }}
+      TPSCHECKER_PASSWORD: ${{ secrets.TPSCHECKER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,8 +36,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run quota-safe screening queue
-        run: node apps/tps-screening/run-queue.mjs
+
+      - name: Run free-first screening queue
+        shell: bash
+        run: |
+          MODE='${{ github.event.inputs.provider || 'auto' }}'
+          if [ "$MODE" = "auto" ]; then
+            echo 'TPSChecker: consume up to the provider-reported free daily allowance only.'
+            TPS_PROVIDER=tpschecker TPS_MAX_CHECKS_PER_RUN=10 node apps/tps-screening/run-queue.mjs
+            echo 'TPSCheck.uk: overflow up to 2/day, additionally bounded by provider-reported monthly remaining credits.'
+            TPS_PROVIDER=tpscheck TPS_MAX_CHECKS_PER_RUN=2 node apps/tps-screening/run-queue.mjs
+          else
+            TPS_PROVIDER="$MODE" TPS_MAX_CHECKS_PER_RUN='${{ github.event.inputs.max_checks || '10' }}' node apps/tps-screening/run-queue.mjs
+          fi
+
       - name: Commit screening state if changed
         run: |
           if git diff --quiet -- apps/tps-screening/state; then
