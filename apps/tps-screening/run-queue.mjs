@@ -7,24 +7,28 @@ const queuePath = path.join(root, 'state', 'queue.json');
 const resultsPath = path.join(root, 'state', 'results.jsonl');
 
 const maxChecks = Number(process.env.TPS_MAX_CHECKS_PER_RUN || 10);
-const provider = process.env.TPS_PROVIDER || 'tpscheck';
+const provider = process.env.TPS_PROVIDER || 'tpschecker';
 
 const queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
 const pending = queue.filter(x => x.status === 'PENDING');
 
 const status = await providerStatus();
 if (!status[provider]?.enabled) {
-  console.log(JSON.stringify({ state: 'HUMAN_REQUIRED', provider, reason: status[provider]?.reason || 'API credential missing', provider_status: status }, null, 2));
+  console.log(JSON.stringify({ state: 'HUMAN_REQUIRED', provider, reason: 'API credential missing', provider_status: status }, null, 2));
   process.exit(0);
 }
 
 let remaining = maxChecks;
-if (provider === 'tpscheck' && status.tpscheck?.credits?.requests_remaining !== undefined) {
-  remaining = Math.min(remaining, Number(status.tpscheck.credits.requests_remaining));
+if (provider === 'tpschecker') {
+  const free = Number(status.tpschecker?.credits?.free_checks_today ?? 0);
+  remaining = Math.min(remaining, free);
+} else if (provider === 'tpscheck') {
+  const monthly = Number(status.tpscheck?.credits?.requests_remaining ?? 0);
+  remaining = Math.min(remaining, monthly);
 }
 
 if (remaining <= 0) {
-  console.log(JSON.stringify({ state: 'NO_CREDITS', provider, provider_status: status }, null, 2));
+  console.log(JSON.stringify({ state: 'NO_FREE_CREDITS', provider, provider_status: status }, null, 2));
   process.exit(0);
 }
 
@@ -48,7 +52,7 @@ for (const item of batch) {
     };
     completed.push({ lead_id: item.lead_id, phone: item.phone, disposition, tps: result.tps, ctps: result.ctps });
   } catch (error) {
-    if (error.status === 429) break;
+    if (error.status === 402 || error.status === 429) break;
     fs.appendFileSync(resultsPath, JSON.stringify({ ...item, provider, checked_at: new Date().toISOString(), disposition: 'ERROR', error: error.message }) + '\n');
   }
 }
