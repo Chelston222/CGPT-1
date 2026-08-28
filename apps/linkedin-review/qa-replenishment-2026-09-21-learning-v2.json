@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-28T23:22:00+01:00",
+  "weekStart": "2026-09-21",
+  "weekEnd": "2026-09-27",
+  "sourceBasis": {
+    "learningReport": "GitHub issue #352, mature-evidence v2 calibration reviewed on 2026-08-28",
+    "distributionPolicy": "apps/linkedin-review/distribution-policy.json",
+    "positioning": "Revenue Recovery for appointment-led SMEs",
+    "evidenceRules": [
+      "Use mature verified performance evidence only",
+      "Prefer diagnostic, customer-state, timing, framework, system-contrast and human-behaviour patterns where they fit naturally",
+      "Preserve UK English",
+      "No em dashes",
+      "No invented client outcomes or revenue",
+      "Personal, Main 222Emails and Retention School must have distinct reasons to exist",
+      "Review only until explicit owner approval"
+    ]
+  },
+  "approvalRule": "These records are QA/review candidates only. No record has publish permission until Chelston explicitly approves it through the owner approval gate.",
+  "posts": [
+    {
+      "id": "tte-learning-v2-main-11",
+      "revision": 1,
+      "title": "A recovery route should remove the next friction",
+      "category": "route_design",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-21T14:30:00+01:00"
+      },
+      "copy": {
+        "default": "A recovery message is only useful if the next step is easier than the problem it is trying to solve.\n\nIf an enquiry stalled, can the person resume without repeating everything?\n\nIf an appointment was cancelled, is rebooking clear?\n\nIf a client is due to return, can they choose an appropriate route without searching for it?\n\nIf a staff member needs to help, does the system make that handoff obvious?\n\nThe message can be well written and still fail operationally when the route behind it creates more work.\n\nGood follow-up reduces uncertainty.\n\nA good recovery route also reduces the friction between deciding and doing."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false
+      }
+    },
+    {
+      "id": "tte-learning-v2-main-12",
+      "revision": 1,
+      "title": "A live journey needs an exception check",
+      "category": "exception_monitoring",
+      "contentRole": "authority",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-22T16:30:00+01:00"
+      },
+      "copy": {
+        "default": "A lifecycle journey can stay switched on while the business around it changes.\n\nA service is renamed.\nA booking route moves.\nA team member takes on a different responsibility.\nA new offer changes who should enter.\nA customer reply no longer reaches the right person.\n\nNone of those changes has to break the automation completely.\n\nThe journey may continue sending while becoming less relevant or harder to act on.\n\nThat is why a useful operating review should look for exceptions, not only failures.\n\nWhat changed since the journey was approved?\n\nWhat assumption is no longer true?\n\nWhat needs to be updated before the system becomes a quiet source of friction?"
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false
+      }
+    },
+    {
+      "id": "tte-learning-v2-secondary-11",
+      "revision": 1,
+      "title": "Lesson: choose the comparison before judging the journey",
+      "category": "measurement_design",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-23T08:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Measurement",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 10"
+      },
+      "copy": {
+        "default": "Retention School: Choose the comparison before judging the journey\n\nA result is hard to interpret when the comparison is selected afterwards.\n\nBefore a lifecycle test begins, define:\n\nWhat customer state is being measured.\nWhat outcome matches the job.\nHow long the response window should be.\nWhat historical or control comparison is fair.\nWhat changes in season, offer or channel could distort the result.\n\nThen keep those rules stable long enough to learn something useful.\n\nThe aim is not to force certainty from a small test.\n\nIt is to make sure the next decision is based on a comparison that was designed before the outcome was known."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false
+      }
+    }
+  ]
+}
