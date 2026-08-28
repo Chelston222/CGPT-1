@@ -114,8 +114,12 @@ jobs:
             const account = await buffer('query ContentOsAccount { account { organizations { id } } }');
             const organizationId = account.data?.account?.organizations?.[0]?.id;
             if (!organizationId) throw new Error('Buffer returned no organisation ID.');
-            const scheduled = await buffer(`query ContentOsScheduled { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(Object.values(channelIds))} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`);
+            const scheduled = await buffer(`query ContentOsScheduled { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(Object.values(channelIds))} } }) { edges { node { id channelId dueAt status isCustomScheduled shareMode } } pageInfo { hasNextPage } } }`);
             const posts = (scheduled.data?.posts?.edges || []).map((edge) => edge.node);
+            const slotDrivenPosts = posts.filter((post) => !post.isCustomScheduled || post.shareMode !== 'customScheduled');
+            const queueFingerprint = require('node:crypto').createHash('sha256')
+              .update([...posts].sort((a, b) => String(a.id).localeCompare(String(b.id))).map((post) => [post.id, post.channelId, post.dueAt, post.status, post.isCustomScheduled, post.shareMode].join('|')).join('\n'))
+              .digest('hex');
             const now = Date.now();
             const queue = Object.fromEntries(Object.entries(channelIds).map(([target, id]) => {
               const rows = posts.filter((post) => post.channelId === id);
@@ -176,10 +180,12 @@ jobs:
             const paginationIncomplete = scheduled.data?.posts?.pageInfo?.hasNextPage === true;
             const queueHealthy = Object.values(queue).every((row) => row.scheduled > 0 && row.scheduled <= 10);
             const noPastDue = Object.values(queue).every((row) => row.pastDue === 0);
-            const green = providerConfigHealthy && queueHealthy && noPastDue && !paginationIncomplete && publicationBacklog === 0 && publicationFailures === 0 && currentAnalyticsBacklog === 0 && currentNativeBacklog === 0 && legacyDispatchesAfterCutoff === 0 && openApprovals === 0;
+            const fixedTimeQueue = slotDrivenPosts.length === 0;
+            const green = providerConfigHealthy && fixedTimeQueue && queueHealthy && noPastDue && !paginationIncomplete && publicationBacklog === 0 && publicationFailures === 0 && currentAnalyticsBacklog === 0 && currentNativeBacklog === 0 && legacyDispatchesAfterCutoff === 0 && openApprovals === 0;
 
             const checks = [
               ['Provider recurring schedules, timezone, connection state and Retention School identity aligned', providerConfigHealthy],
+              ['Scheduled queue fixed-time and immune to recurring-slot movement', fixedTimeQueue],
               ['Queue healthy and non-empty', queueHealthy],
               ['No past-due scheduled posts', noPastDue],
               ['Buffer pagination complete', !paginationIncomplete],
@@ -204,6 +210,8 @@ jobs:
               green ? '🟢 **GREEN** — every current release and recurring-configuration invariant passes.' : '🟠 **NOT GREEN** — at least one release or recurring-configuration invariant still needs evidence or action.', '',
               ...checks.map(([label, pass]) => `- ${pass ? '✅' : '❌'} ${label}`), '',
               '### Provider configuration', ...providerLines, '',
+              `- Scheduled posts vulnerable to recurring-slot movement: **${slotDrivenPosts.length}**`,
+              `- Immutable queue fingerprint: \`${queueFingerprint}\``,
               `- Chelston personal scheduled: **${queue.personal.scheduled}**, past-due **${queue.personal.pastDue}**, next **${queue.personal.nextDue || 'none'}**`,
               `- Main 222Emails scheduled: **${queue.main.scheduled}**, past-due **${queue.main.pastDue}**, next **${queue.main.nextDue || 'none'}**`,
               `- Secondary configured channel scheduled: **${queue.secondary.scheduled}**, past-due **${queue.secondary.pastDue}**, next **${queue.secondary.nextDue || 'none'}**`,

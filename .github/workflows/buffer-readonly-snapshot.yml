@@ -64,7 +64,7 @@ jobs:
             }
 
             const channelIds = Object.values(targets);
-            const query = `query ScheduledCapacity { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(channelIds)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`;
+            const query = `query ScheduledCapacity { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(channelIds)} } }) { edges { node { id channelId dueAt status isCustomScheduled shareMode } } pageInfo { hasNextPage } } }`;
             const data = await buffer(query);
             if (data.posts?.pageInfo?.hasNextPage) throw new Error('More than 100 scheduled posts returned; refusing incomplete snapshot.');
 
@@ -75,10 +75,16 @@ jobs:
                 postId: edge.node.id,
                 dueAt: edge.node.dueAt,
                 status: edge.node.status,
+                isCustomScheduled: edge.node.isCustomScheduled,
+                shareMode: edge.node.shareMode,
               }))
               .sort((a, b) => String(a.dueAt).localeCompare(String(b.dueAt)));
             const counts = { personal: 0, main: 0, secondary: 0, unknown: 0 };
             for (const row of rows) counts[row.target] = (counts[row.target] || 0) + 1;
+            const slotDriven = rows.filter((row) => !row.isCustomScheduled || row.shareMode !== 'customScheduled');
+            const queueFingerprint = require('node:crypto').createHash('sha256')
+              .update(rows.map((row) => [row.postId, row.target, row.dueAt, row.status, row.isCustomScheduled, row.shareMode].join('|')).join('\n'))
+              .digest('hex');
 
             // Recurring schedule != total release safety ceiling. Personal may publish
             // an earned bonus post, but only one guaranteed recurring core slot/day is
@@ -128,7 +134,7 @@ jobs:
               return channel.timezone === 'Europe/London' && !channel.isDisconnected && !channel.isLocked && !channel.isQueuePaused && s.recurringPass;
             });
 
-            const lines = rows.map((row) => `- ${row.target}: \`${row.postId}\` · ${row.dueAt} · ${row.status}`);
+            const lines = rows.map((row) => `- ${row.target}: \`${row.postId}\` · ${row.dueAt} · ${row.status} · ${row.shareMode} · fixed-time **${row.isCustomScheduled ? 'YES' : 'NO'}**`);
             const body = [
               '## Read-only Buffer snapshot',
               '',
@@ -138,6 +144,9 @@ jobs:
               '',
               ...configLines,
               `- Provider configuration health under current recurring-cadence contract: **${providerConfigHealthy ? 'PASS' : 'FAIL'}**`,
+              `- Scheduled queue entirely fixed-time/customScheduled: **${slotDriven.length === 0 ? 'PASS' : 'FAIL'}**`,
+              `- Slot-driven posts vulnerable to recurring-schedule movement: **${slotDriven.length}**`,
+              `- Immutable queue fingerprint: \`${queueFingerprint}\``,
               `- personal scheduled: **${counts.personal}**`,
               `- main scheduled: **${counts.main}**`,
               `- secondary scheduled: **${counts.secondary}**`,
@@ -153,4 +162,4 @@ jobs:
             ].join('\n');
             await github.rest.issues.createComment({ owner, repo, issue_number, body });
             await github.rest.issues.update({ owner, repo, issue_number, state: 'closed', state_reason: providerConfigHealthy ? 'completed' : 'not_planned' });
-            if (!providerConfigHealthy) core.setFailed('Provider channel configuration is not fully aligned with the current recurring-cadence contract.');
+            if (!providerConfigHealthy || slotDriven.length) core.setFailed(`Buffer repair preconditions are not fully safe: providerConfigHealthy=${providerConfigHealthy}; slotDriven=${slotDriven.length}.`);
