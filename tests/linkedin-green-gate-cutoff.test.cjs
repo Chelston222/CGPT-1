@@ -20,7 +20,14 @@ test('green requires provider recurring configuration, timezone and connection h
   assert.match(workflow, /postingSchedule \{ day paused times \}/);
   assert.match(workflow, /channel\.timezone === 'Europe\/London'/);
   assert.match(workflow, /!channel\.isDisconnected && !channel\.isLocked && !channel\.isQueuePaused/);
-  assert.match(workflow, /const green = providerConfigHealthy && queueHealthy/);
+  assert.match(workflow, /const green = providerConfigHealthy && fixedTimeQueue && queueHealthy/);
+});
+
+test('green requires a fixed-time queue fingerprint before recurring settings change', () => {
+  assert.match(workflow, /isCustomScheduled shareMode/);
+  assert.match(workflow, /slotDrivenPosts/);
+  assert.match(workflow, /createHash\('sha256'\)/);
+  assert.match(workflow, /Scheduled queue fixed-time and immune to recurring-slot movement/);
 });
 
 test('personal recurring schedule is one guaranteed core slot per day, not two automatic slots', () => {
