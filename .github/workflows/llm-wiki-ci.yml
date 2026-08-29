@@ -1,0 +1,40 @@
+name: LLM Wiki CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/llm-wiki/**'
+      - 'context/**'
+      - 'docs/**'
+      - 'SYSTEMS_CONSTITUTION.md'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/llm-wiki/**'
+      - 'context/**'
+      - 'docs/**'
+      - 'SYSTEMS_CONSTITUTION.md'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/llm-wiki
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Initialise and ingest repository knowledge
+        run: |
+          python -m src.cli init
+          python -m src.cli ingest --repo ../..
+          python -m src.cli stats
+      - name: Structural lint
+        run: python -m src.cli lint --fail-on-error
