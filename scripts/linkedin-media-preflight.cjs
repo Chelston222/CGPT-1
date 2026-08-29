@@ -67,6 +67,8 @@ async function readAndHash(response, limit) {
   if (!response.body) throw new Error('Media response has no body.');
   const reader = response.body.getReader();
   const hash = createHash('sha256');
+  const prefixParts = [];
+  let prefixBytes = 0;
   let bytes = 0;
   for (;;) {
     const { done, value } = await reader.read();
@@ -76,14 +78,24 @@ async function readAndHash(response, limit) {
       try { await reader.cancel(); } catch {}
       throw new Error(`Media exceeds the ${limit} byte limit.`);
     }
+    if (prefixBytes < 8) {
+      const remaining = 8 - prefixBytes;
+      const slice = value.subarray(0, Math.min(value.byteLength, remaining));
+      prefixParts.push(Buffer.from(slice));
+      prefixBytes += slice.byteLength;
+    }
     hash.update(Buffer.from(value));
   }
-  return { bytes, sha256: hash.digest('hex') };
+  return { bytes, sha256: hash.digest('hex'), prefix: Buffer.concat(prefixParts) };
 }
 
-function validateContentType(kind, contentType) {
+function validateContentType(kind, contentType, finalUrl) {
   if (kind === 'document') {
-    if (contentType !== 'application/pdf') throw new Error(`Document media returned ${contentType || 'no content type'} instead of application/pdf.`);
+    if (contentType === 'application/pdf') return;
+    const rawGitHubPdf = contentType === 'application/octet-stream'
+      && finalUrl.hostname.toLowerCase() === 'raw.githubusercontent.com'
+      && /\.pdf$/i.test(finalUrl.pathname);
+    if (!rawGitHubPdf) throw new Error(`Document media returned ${contentType || 'no content type'} instead of application/pdf.`);
     return;
   }
   if (!ALLOWED_IMAGE_TYPES.has(contentType)) throw new Error(`Image media returned unsupported content type ${contentType || '(missing)'}.`);
@@ -97,13 +109,16 @@ async function preflightOne(media, fetchImpl = globalThis.fetch) {
 
   const finalUrl = validateHttps(response.url || original.toString(), `${media.fieldName || 'MEDIA_URL'} final URL`);
   const contentType = cleanContentType(response.headers.get('content-type'));
-  validateContentType(media.kind, contentType);
+  validateContentType(media.kind, contentType, finalUrl);
 
   const limit = expectedLimit(media.kind);
   const headerLength = Number(response.headers.get('content-length'));
   if (Number.isFinite(headerLength) && headerLength > limit) throw new Error(`Media Content-Length exceeds the ${limit} byte limit.`);
 
   const measured = await readAndHash(response, limit);
+  if (media.kind === 'document' && measured.prefix.subarray(0, 5).toString('ascii') !== '%PDF-') {
+    throw new Error('Document media did not contain a PDF signature.');
+  }
   if (media.expectedBytes != null && measured.bytes !== media.expectedBytes) {
     throw new Error(`Media byte count changed after approval: expected ${media.expectedBytes}, received ${measured.bytes}.`);
   }
