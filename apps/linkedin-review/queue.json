@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-22T23:41:55.868312Z",
+  "generatedAt": "2026-08-29T14:53:53.690Z",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -948,6 +948,46 @@
           "state": "review",
           "actor": "system",
           "note": "Reflowed into the new five-per-channel cadence; fresh approval required for this revision."
+        }
+      ]
+    },
+    {
+      "id": "tte-li-pdf-intake-canary",
+      "revision": 1,
+      "title": "LinkedIn PDF intake canary",
+      "category": "qa_canary",
+      "funnelStage": "tof",
+      "format": "carousel",
+      "targets": [
+        "personal"
+      ],
+      "mode": "draft",
+      "copy": {
+        "default": "NON-PUBLIC QA CANARY. This draft exists only to prove the governed PDF intake lane and must not be published."
+      },
+      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-pdf-intake-canary/thumbnail.jpg",
+      "mediaAlt": "One-page non-public PDF intake QA canary.",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-pdf-intake-canary/tte-li-pdf-intake-canary.pdf",
+      "documentTitle": "LinkedIn PDF Intake Canary",
+      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-pdf-intake-canary/thumbnail.jpg",
+      "carousel": {
+        "libraryId": "tte-li-pdf-intake-canary",
+        "slideCount": 1,
+        "readiness": "ready",
+        "pdfBytes": 1377,
+        "pdfSha256": "7cd4ad2f5418e87952972c66e4bc6189c61d2fb130d57d3568118118fd121cee",
+        "verifiedAt": "2026-08-29T14:53:53.690Z",
+        "sourceFolder": "ChatGPT PDF intake tte-li-pdf-intake-canary"
+      },
+      "sourceUrl": "https://github.com/Chelston222/CGPT-1/issues/514",
+      "sourceType": "chatgpt_pdf_intake",
+      "status": "review",
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-08-29T14:53:53.690Z",
+          "actor": "github-actions[bot]",
+          "note": "PDF reconstructed from locked base64 chunks, verified, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied."
         }
       ]
     }
