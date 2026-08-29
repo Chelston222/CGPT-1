@@ -10,14 +10,16 @@ const {
   validateDeclaredMetadata,
 } = require('../scripts/linkedin-media-preflight.cjs');
 
-function responseFor(body, type = 'image/png', status = 200) {
-  return new Response(body, {
+function responseFor(body, type = 'image/png', status = 200, url = 'https://example.com/a.png') {
+  const response = new Response(body, {
     status,
     headers: {
       'content-type': type,
       'content-length': String(Buffer.byteLength(body)),
     },
   });
+  Object.defineProperty(response, 'url', { value: url });
+  return response;
 }
 
 test('accepts an HTTPS image only when type, size and optional hash match', async () => {
@@ -33,6 +35,30 @@ test('accepts an HTTPS image only when type, size and optional hash match', asyn
   assert.equal(result.bytes, bytes.length);
   assert.equal(result.sha256, sha);
   assert.equal(result.contentType, 'image/png');
+});
+
+test('accepts raw GitHub PDF octet-stream only when URL and PDF signature are valid', async () => {
+  const bytes = Buffer.from('%PDF-1.7\nminimal test body');
+  const sha = createHash('sha256').update(bytes).digest('hex');
+  const url = 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/a.pdf';
+  const result = await preflightOne({
+    url,
+    fieldName: 'MEDIA_URL',
+    kind: 'document',
+    pageCount: 1,
+    expectedBytes: bytes.length,
+    expectedSha256: sha,
+  }, async () => responseFor(bytes, 'application/octet-stream', 200, url));
+  assert.equal(result.sha256, sha);
+  assert.equal(result.contentType, 'application/octet-stream');
+});
+
+test('rejects octet-stream document without a PDF signature', async () => {
+  const url = 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/a.pdf';
+  await assert.rejects(
+    preflightOne({ url, fieldName: 'MEDIA_URL', kind: 'document', pageCount: 1 }, async () => responseFor('not pdf', 'application/octet-stream', 200, url)),
+    /PDF signature/,
+  );
 });
 
 test('fails closed when the approved media hash changes', async () => {
