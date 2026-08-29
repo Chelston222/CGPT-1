@@ -57,6 +57,21 @@ Higher leverage.
 4. Personalisation before scale.
 5. Human strategy, machine execution.
 
+## Durable memory kernel
+The LLM Wiki under `apps/llm-wiki` is the durable memory layer beneath the operating system.
+
+Memory rules:
+- Markdown and approved machine-readable context remain the durable source of truth.
+- SQLite/search indexes are derived and disposable, never canonical.
+- Agents retrieve durable context from the memory kernel before relying on ad-hoc recollection.
+- Volatile operational facts must be verified at their live system of record before action.
+- Retrieved context must preserve source provenance.
+- Conflicts are surfaced for resolution; canonical truth is never silently overwritten.
+- Agent writes to durable canonical knowledge are proposal-first unless an explicit approved workflow grants commit authority.
+- The memory layer does not weaken any compliance, duplicate-contact, legal or send review gate.
+
+See `apps/llm-wiki/wiki/00-System/Memory Kernel Contract.md`.
+
 ## Data contracts
 ### Lead record
 Required fields:

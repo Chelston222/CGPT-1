@@ -1,0 +1,27 @@
+{
+  "include": [
+    "SYSTEMS_CONSTITUTION.md",
+    "context/**/*.md",
+    "context/**/*.json",
+    "docs/**/*.md",
+    "prompts/**/*.md",
+    "apps/*/README.md",
+    "apps/llm-wiki/wiki/**/*.md"
+  ],
+  "exclude": [
+    "**/.env*",
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/.netlify/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/tmp/**",
+    "tmp/**",
+    "media-staging/**",
+    "assets/**",
+    "**/*.secret.*",
+    "**/*credentials*",
+    "**/*token*"
+  ],
+  "extensions": [".md", ".json", ".txt"]
+}
