@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "tte-li-pdf-intake-canary",
+  "revision": 1,
+  "title": "LinkedIn PDF intake canary",
+  "documentTitle": "LinkedIn PDF Intake Canary",
+  "category": "qa_canary",
+  "funnelStage": "tof",
+  "targets": ["personal"],
+  "mode": "draft",
+  "copy": {
+    "default": "NON-PUBLIC QA CANARY. This draft exists only to prove the governed PDF intake lane and must not be published."
+  },
+  "mediaAlt": "One-page non-public PDF intake QA canary.",
+  "expectedSha256": "7cd4ad2f5418e87952972c66e4bc6189c61d2fb130d57d3568118118fd121cee",
+  "chunks": [
+    "media-staging/pdf-intake/tte-li-pdf-intake-canary/part-001.b64"
+  ],
+  "sourceUrl": "https://github.com/Chelston222/CGPT-1/issues/514"
+}
