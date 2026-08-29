@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "effectiveDate": "2026-08-29",
+  "scope": "All 222Emails, Chelston personal, Retention School and LinkedIn Content OS visual generation, review, packaging and publication workflows.",
+  "hardRule": "ONE CONCEPT = ONE CANVAS = ONE FINAL IMAGE.",
+  "prohibited": [
+    "collage",
+    "contact sheet",
+    "grid of multiple concepts",
+    "moodboard",
+    "thumbnail board",
+    "montage",
+    "diptych",
+    "triptych",
+    "split-screen containing separate finished concepts",
+    "multi-panel preview containing multiple finished posts",
+    "single image that attempts to show a batch of separate social posts",
+    "mockup showing multiple separate finished assets at once"
+  ],
+  "batchRule": "A batch may contain multiple files, but every file must contain exactly one finished concept. Never compress a batch into one image.",
+  "generationPromptPrefix": "HARD CONSTRAINT: Create exactly ONE standalone finished social-media asset for ONE concept only. Use the entire canvas for this single idea. Do not create a collage, grid, contact sheet, montage, moodboard, diptych, triptych, split-screen of separate concepts, thumbnail board, multi-post preview, or multiple finished designs inside one image. If the request mentions a batch, output only one independent image for the current concept; the next concept must be generated as a separate file in a separate generation. One concept = one canvas = one final image.",
+  "truthRules": [
+    "No invented client outcomes, recovered revenue, conversion rates or social engagement metrics.",
+    "No fake dashboards or interfaces presented as evidence.",
+    "Illustrative maths must be explicitly labelled illustrative if used.",
+    "Use verified claims only where source evidence is available.",
+    "Generated decorative details must not imply factual proof."
+  ],
+  "brandRules": [
+    "Use 222Emails naming consistently.",
+    "Revenue Recovery and Client Return Systems positioning must remain clear.",
+    "UK English.",
+    "No em dashes in final copy.",
+    "One dominant idea per asset.",
+    "Mobile-first hierarchy and legibility.",
+    "Do not generate a fake or altered logo when an exact approved logo is required; typeset or source-lock exact branding separately."
+  ],
+  "qa": {
+    "automaticFailIf": [
+      "more than one separate finished concept appears on the canvas",
+      "the image is a contact sheet or concept grid",
+      "the batch is represented as one combined image",
+      "unverified proof-like numbers appear",
+      "critical text is unreadable at mobile-feed size",
+      "branding is malformed or duplicated"
+    ],
+    "onFailure": "Reject the asset. Do not publish, package, source-lock or use it as a style reference. Regenerate the same concept as one standalone image before proceeding."
+  },
+  "publicationContract": "Passing visual QA is necessary but not publication permission. Existing owner approval, source-lock, Buffer capacity, cadence, deduplication and publication-verification controls remain authoritative."
+}
