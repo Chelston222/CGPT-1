@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-29T08:08:00+01:00",
+  "weekStart": "2026-09-21",
+  "weekEnd": "2026-09-27",
+  "sourceBasis": {
+    "learningReport": "GitHub issue #352, mature Performance Learning V2 model updated 2026-08-29",
+    "apexBank": "apps/linkedin-review/apex-content-bank-2026-08-29.json",
+    "distributionPolicy": "apps/linkedin-review/distribution-policy.json",
+    "positioning": "Revenue Recovery for appointment-led SMEs",
+    "evidenceRules": [
+      "Use mature verified performance evidence only",
+      "Prefer system contrast, diagnosis, customer-state and framework patterns",
+      "Preserve UK English",
+      "No em dashes",
+      "No invented outcomes or revenue",
+      "Keep personal and Retention School roles distinct",
+      "Review only until explicit owner approval"
+    ]
+  },
+  "approvalRule": "These records are QA/review candidates only. No record has publish permission until Chelston explicitly approves it through the owner approval gate.",
+  "posts": [
+    {
+      "id": "tte-apex-v1-personal-01",
+      "revision": 1,
+      "title": "Clients buy outcomes, not email marketing",
+      "category": "outcome_positioning",
+      "contentRole": "authority",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": ["personal"],
+      "mode": "schedule",
+      "scheduledAt": {"personal": "2026-09-21T12:15:00+01:00"},
+      "copy": {
+        "default": "I do not think most appointment-led businesses actually want email marketing.\n\nThey want the commercial outcome underneath it.\n\nA good enquiry should not disappear because nobody followed up properly.\nA cancellation should have a sensible route back.\nA satisfied client should not be forgotten simply because they did not remember to rebook.\nA dormant regular should be identifiable before the relationship is completely cold.\n\nEmail can help with some of that.\n\nSo can SMS.\nA better booking route can help.\nClearer ownership can help.\nBetter timing can help.\n\nThat is why I increasingly prefer the language Revenue Recovery.\n\nThe tool is secondary.\n\nThe real job is to find a commercially meaningful moment where existing intent or an existing relationship is being wasted, then build the simplest sensible system to reduce that loss."
+      },
+      "sourceType": "performance_learning_v2",
+      "sourceEvidence": ["issue #352", "apex-022"],
+      "traits": ["outcome_positioning", "system_contrast", "contrarian", "customer_state"],
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    },
+    {
+      "id": "tte-apex-v1-secondary-01",
+      "revision": 1,
+      "title": "Lesson: stop rules are part of customer experience",
+      "category": "automation_quality",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": ["secondary"],
+      "mode": "schedule",
+      "scheduledAt": {"secondary": "2026-09-22T12:45:00+01:00"},
+      "taxonomy": {"category": "Lifecycle Design", "season": "Season 1", "lesson_or_resource": "Lesson 11"},
+      "copy": {
+        "default": "Retention School: Stop rules are part of customer experience.\n\nA lifecycle journey needs to know when its job is finished.\n\nCustomer books? Stop the recovery sequence.\nCustomer replies and a team member takes ownership? Pause the automation.\nCustomer declines? Respect the answer.\nCustomer opts out? Stop.\nThe relevant window passes? End the journey.\nThe customer moves into a different state? Reclassify them.\n\nIt is easy to judge automation by whether messages send on time.\n\nBut technically reliable messaging can still feel careless when the system ignores what happened next.\n\nA useful trigger knows when to begin.\n\nA useful stop rule knows when continuing would no longer help.\n\nGood lifecycle design is not only about when to contact somebody.\n\nIt is also about knowing when to leave them alone."
+      },
+      "sourceType": "performance_learning_v2",
+      "sourceEvidence": ["issue #352", "apex-029"],
+      "traits": ["framework_or_checklist", "customer_state", "human_behaviour", "system_contrast"],
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
+    }
+  ]
+}
