@@ -6,6 +6,7 @@ on:
       - 'apps/llm-wiki/**'
       - 'context/**'
       - 'docs/**'
+      - 'prompts/**'
       - 'SYSTEMS_CONSTITUTION.md'
   push:
     branches: [main]
@@ -13,6 +14,7 @@ on:
       - 'apps/llm-wiki/**'
       - 'context/**'
       - 'docs/**'
+      - 'prompts/**'
       - 'SYSTEMS_CONSTITUTION.md'
   schedule:
     - cron: '17 4 * * *'
@@ -32,7 +34,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Unit tests
+      - name: Compile memory modules
+        run: python -m compileall -q src tests
+      - name: Unit and integration tests
         run: python -m unittest discover -s tests -v
       - name: Initialise and ingest repository knowledge
         run: |
@@ -40,6 +44,21 @@ jobs:
           python -m src.cli ingest --repo ../..
       - name: Hybrid retrieval smoke test
         run: python -m src.cli context "222Emails revenue recovery" --limit 5
+      - name: ChatGPT MCP contract smoke test
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from src.kernel import connect
+          from src.mcp_server import dispatch
+          conn = connect(Path('.data/wiki.db'))
+          init = dispatch(conn, {'jsonrpc':'2.0','id':1,'method':'initialize','params':{}})
+          tools = dispatch(conn, {'jsonrpc':'2.0','id':2,'method':'tools/list','params':{}})
+          names = {tool['name'] for tool in tools['result']['tools']}
+          assert init['result']['serverInfo']['version'] == '3.0.0'
+          assert {'search','fetch','wiki_search','wiki_context','connector_search','wiki_health'} <= names
+          assert all(tool['annotations']['readOnlyHint'] for tool in tools['result']['tools'])
+          conn.close()
+          PY
       - name: Memory health stats
         run: python -m src.cli stats
       - name: Structural and governance lint
