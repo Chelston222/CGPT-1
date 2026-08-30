@@ -2,110 +2,82 @@
 
 Turnkey application-prep engine for Chelston / 222Emails.
 
+## Status
+
+Operational in `READY_TO_SUBMIT` mode. Final Upwork submission remains intentionally manual until official Upwork API access with proposal-submission permission is approved.
+
 ## Operating mode
 
-Default mode: `READY_TO_SUBMIT`.
+The system may discover from permitted public sources, score, deduplicate, draft, QA, queue, export and track Upwork applications. It must not scrape Upwork, replay credentials, use headless/browser auto-clicking, or submit through unapproved automation.
 
-The system may discover, score, deduplicate, draft, QA and queue Upwork applications. It must not scrape Upwork, replay credentials, use headless/browser auto-clicking, or submit a proposal through unapproved automation.
-
-`API_AUTO_SUBMIT` is locked until official Upwork API credentials with proposal-submission permission are present and the mode is explicitly enabled.
+`API_AUTO_SUBMIT` is fail-closed. `upwork_api.py` has no browser fallback and remains locked until official credentials and the live submission schema/scope are verified.
 
 ## Positioning
 
 Headline outcome: Revenue Recovery / Client Return Systems.
 
-Primary problems:
-- unconverted enquiries
-- weak lead follow-up
-- cancellations and no-shows
-- rebooking leakage
-- dormant-client reactivation
-- lifecycle gaps
-- CRM/email/SMS automation
+Primary problems: unconverted enquiries, weak lead follow-up, cancellations/no-shows, rebooking leakage, dormant-client reactivation, lifecycle gaps, and CRM/email/SMS automation.
 
-Implementation tools such as Klaviyo, Mailchimp, HubSpot, MailerLite and Make.com are supporting capabilities, not the headline.
+Implementation tools such as Klaviyo, Mailchimp, HubSpot, MailerLite and Make.com support the outcome rather than define the positioning. `profile-source-of-truth.md` is the proposal truth boundary.
 
 ## States
 
 `DISCOVERED -> SCORED -> REJECTED | NEEDS_HUMAN_FACT | PROPOSAL_READY -> READY_TO_SUBMIT -> SUBMITTED -> REPLIED -> INTERVIEW -> WON | LOST | SUPPRESSED`
 
+`status.py` enforces legal state transitions and calculates submitted, reply, interview, win, Connect and revenue metrics.
+
 ## Scoring
 
-100 points total:
-- positioning fit: 25
-- active pain / urgency: 15
-- budget / effective rate: 15
-- recurring / expansion potential: 15
-- client quality: 10
-- competitive timing: 10
-- proof match: 5
-- delivery feasibility: 5
+100 points total: positioning fit 25, active pain/urgency 15, budget/effective rate 15, recurring/expansion potential 15, client quality 10, competitive timing 10, proof match 5, delivery feasibility 5.
 
-Thresholds:
-- 85-100 APEX
-- 75-84 STRONG
-- 65-74 SELECTIVE
-- below 65 REJECT
+Thresholds: 85-100 APEX, 75-84 STRONG, 65-74 SELECTIVE, below 65 REJECT.
 
 ## Hard gates
 
-Reject or stop when:
-- job is closed
-- duplicate job URL/id already exists in an active or submitted state
-- required facts cannot be verified
-- requested proof/case study would require fabrication
-- capability materially exceeds source-of-truth evidence
-- role is commodity scraping / spam blasting / obvious bad fit
-- client requests prohibited or deceptive behaviour
+Stop when the job is closed, a duplicate active/submitted job exists, required facts cannot be verified, proof would need fabrication, capability exceeds evidence, or the role is an obvious prohibited/deceptive/bad-fit case.
 
-## Manual submission lane
+## Live manual-submission loop
 
-Daily flow:
-1. Discover current jobs from permitted public sources and approved feeds.
-2. Normalise job record.
-3. Score against `config.json`.
-4. Apply hard gates.
-5. Generate proposal and visible screening answers.
-6. Run fact/proof QA.
-7. Save to `queue.json` as `READY_TO_SUBMIT`.
-8. Morning Action Pack surfaces APEX and STRONG jobs.
-9. Chelston opens the direct job URL, checks the prepared application and performs the final Upwork submit action.
-10. Update the queue state to `SUBMITTED`.
+1. The 07:20 TTE Morning Action Pack discovers current Upwork opportunities from permitted public sources.
+2. Candidate is normalised and scored against `config.json`.
+3. Hard gates and duplicate protection run.
+4. Proposal and visible screening answers are generated from verified facts only.
+5. APEX/STRONG records become `READY_TO_SUBMIT`.
+6. `export_ready.py` creates the minimal handoff: direct URL, bid, proposal and screening answers.
+7. Chelston opens the direct URL, verifies the job is still open and performs the final Upwork submit action.
+8. `status.py` advances the record through SUBMITTED, REPLIED, INTERVIEW, WON/LOST and captures commercial telemetry.
+9. Performance evidence informs later scoring/template changes. Do not infer causality from tiny samples.
 
-## API mode
+Warm replies and existing commitments in the Morning Action Pack always outrank cold Upwork applications.
 
-Future mode only. Before activation verify:
-- official Upwork API access is approved
-- OAuth credentials are present outside the repository
-- submit-proposal permission/scope is confirmed
-- duplicate check passes immediately before submission
-- job-open check passes immediately before submission
-- proposal has no unresolved human facts
+## API activation gate
 
-Never store secrets in this repository.
+Before activation all must be true:
+- official Upwork API access approved
+- OAuth/access credentials stored outside repository
+- Submit Proposal permission confirmed against current official documentation
+- exact current GraphQL mutation/schema verified
+- duplicate and job-open checks rerun immediately before submission
+- no unresolved human facts or unsupported proof
+- explicit `UPWORK_API_AUTO_SUBMIT=true`
 
-## Queue contract
+Until then the correct state is READY_TO_SUBMIT, not a browser workaround.
 
-Each record contains:
-- `job_key`
-- `source_url`
-- `title`
-- `client`
-- `country`
-- `budget`
-- `discovered_at`
-- `score_breakdown`
-- `score_total`
-- `tier`
-- `state`
-- `hard_gate_reason`
-- `recommended_bid`
-- `proposal`
-- `screening_answers`
-- `missing_facts`
-- `submitted_at`
-- `outcome`
+## QA
 
-## Success metrics
+`.github/workflows/upwork-os-qa.yml` compiles the module, runs unit tests and proves API submission fails closed by default on every relevant push/PR. Core tests cover duplicate blocking, closed jobs, missing facts, unsupported proof, scoring and ready-queue behaviour.
 
-Track applications, replies, interviews, wins, revenue won, Connects spent, revenue per Connect, response rate and win rate by job archetype.
+## Files
+
+- `app.py`: scoring, gates, queue and dedupe
+- `config.json`: weights, thresholds and safety settings
+- `profile-source-of-truth.md`: positioning and factual claims boundary
+- `queue.json`: persistent application ledger
+- `export_ready.py`: manual-submit handoff
+- `status.py`: lifecycle state machine and telemetry
+- `upwork_api.py`: dormant official-API boundary
+- `test_app.py`: regression tests
+
+## Definition of green
+
+Green means discovery/preparation can operate daily, weak/unsafe/duplicate jobs fail closed, proposals cannot rely on invented proof, the manual submission packet is turnkey, outcomes are trackable, and no unapproved Upwork automation is used. Automatic final submission is not considered a defect while official API eligibility is unavailable.
