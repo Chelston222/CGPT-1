@@ -6,7 +6,7 @@ const DEFAULT_POLICY = {
     interactionDensityWeight: 0.25,
     reachWeight: 0.15,
     impressionsWeight: 0.10,
-    commercialWeight: 0.50,
+    commercialWeight: 0.65,
     confidenceImpressions: 100,
     priorScore: 50,
     priorWeight: 2,
@@ -110,11 +110,25 @@ function extractCommercialSignals(comments = []) {
 }
 
 function commercialSignalValue(signals = []) {
-  const weights = { dm: 1, reply: 1, enquiry: 2, fit_check: 3, qualified: 4, proposal: 5, paid: 8 };
+  const weights = {
+    dm: 1,
+    reply: 1,
+    enquiry: 2,
+    relevant_response: 2,
+    fit_check: 3,
+    qualified: 4,
+    revenue_recovery_check: 5,
+    rrc: 5,
+    growth_check: 6,
+    proposal: 6,
+    paid_progression: 7,
+    paid: 9,
+    buyer: 10,
+  };
   let value = 0;
   for (const signal of signals || []) {
     value += weights[String(signal.type || '').toLowerCase()] || 0;
-    if (Number.isFinite(signal.valueGbp) && signal.valueGbp > 0) value += Math.min(8, Math.log10(signal.valueGbp + 1) * 2);
+    if (Number.isFinite(signal.valueGbp) && signal.valueGbp > 0) value += Math.min(10, Math.log10(signal.valueGbp + 1) * 2);
   }
   return value;
 }
@@ -137,6 +151,17 @@ function inferTraits(copy = '') {
   if (/\b(message me|comment|free revenue recovery check|tally\.so|dm me)\b/i.test(text)) traits.add('cta');
   if (/\bmore (?:leads|traffic)\b/i.test(text)) traits.add('more_leads_frame');
   if (/\b(automation|software|booking platform|booking system|crm)\b/i.test(text)) traits.add('system_contrast');
+
+  // Hook OS first-impression traits. These describe the opening mechanism,
+  // not whether the hook is commercially proven.
+  if (/\?\s*$/.test(first.trim())) traits.add('hook_question');
+  if (/^\s*(if|when|whenever|before|after)\b/i.test(first)) traits.add('hook_condition');
+  if (/\b(what happens|how many|quick test|what brings|where does|why does|what currently happens)\b/i.test(first)) traits.add('hook_diagnostic');
+  if (/\b(lose|lost|leak|leaking|missed|disappear|quiet|gap|fall out|drop off|no-show|lapsed)\b/i.test(first)) traits.add('hook_problem_loss');
+  if (/\b(recover|return|rebook|bring back|more clients|more bookings|less chasing|fuller diary)\b/i.test(first)) traits.add('hook_outcome');
+  if (/\b(vs\.?|versus|what usually happens|what should happen|before.+after|rather than|instead of)\b/i.test(first)) traits.add('hook_contrast');
+  if (/\b(not|isn[’']t|doesn[’']t|don[’']t|but|instead|rather than|may not need)\b/i.test(first)) traits.add('hook_belief_shift');
+
   return [...traits];
 }
 
@@ -196,7 +221,7 @@ function enrichPerformance(records = [], policy = DEFAULT_POLICY) {
       + s.impressionsWeight * (Math.log1p(record.impressions) / Math.log1p(maxImpressions))
     );
     const evidenceCore = rawCore * record.confidence + Number(s.priorScore || 50) * (1 - record.confidence);
-    const commercialWeight = hasCommercialEvidence ? Math.min(0.5, Math.max(0, Number(s.commercialWeight || 0))) : 0;
+    const commercialWeight = hasCommercialEvidence ? Math.min(0.70, Math.max(0, Number(s.commercialWeight || 0))) : 0;
     const commercial = hasCommercialEvidence ? 100 * percentileRank(record.commercialValue, commercialValues) : 0;
     const score = evidenceCore * (1 - commercialWeight) + commercial * commercialWeight;
     const confidenceClass = Math.max(record.impressions, record.reach) >= 150 ? 'high' : Math.max(record.impressions, record.reach) >= 50 ? 'medium' : 'low';
