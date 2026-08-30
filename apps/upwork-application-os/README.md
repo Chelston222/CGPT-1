@@ -65,7 +65,7 @@ Until then the correct state is READY_TO_SUBMIT, not a browser workaround.
 
 ## QA
 
-`.github/workflows/upwork-os-qa.yml` compiles the module, runs unit tests and proves API submission fails closed by default on every relevant push/PR. Core tests cover duplicate blocking, closed jobs, missing facts, unsupported proof, scoring and ready-queue behaviour.
+`.github/workflows/upwork-os-qa.yml` compiles the module, runs unit tests and proves API submission fails closed by default on relevant pushes/PRs and once daily at 06:05 UTC as an integrity check. Core tests cover duplicate blocking, closed jobs, missing facts, unsupported proof, scoring, state transitions, telemetry and API fail-closed behaviour.
 
 ## Files
 
