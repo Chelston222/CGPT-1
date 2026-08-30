@@ -1,0 +1,41 @@
+name: Upwork Application OS QA
+
+on:
+  push:
+    paths:
+      - 'apps/upwork-application-os/**'
+      - '.github/workflows/upwork-os-qa.yml'
+  pull_request:
+    paths:
+      - 'apps/upwork-application-os/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m compileall apps/upwork-application-os
+      - name: Unit tests
+        working-directory: apps/upwork-application-os
+        run: python -m unittest -v test_app.py
+      - name: Fail-closed API check
+        working-directory: apps/upwork-application-os
+        run: |
+          python - <<'PY'
+          import upwork_api
+          assert upwork_api.api_enabled() is False
+          try:
+              upwork_api.submit_proposal({'state':'READY_TO_SUBMIT'})
+          except RuntimeError as e:
+              assert 'disabled' in str(e)
+          else:
+              raise AssertionError('API submission must fail closed')
+          PY
