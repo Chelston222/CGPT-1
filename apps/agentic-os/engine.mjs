@@ -39,12 +39,25 @@ function priorityScore(task, now, config) {
   return Math.round(Object.entries(w).reduce((sum, [k, weight]) => sum + parts[k] * weight, 0) * 100) / 100;
 }
 
+function outcomeSatisfiedForTask(task, state) {
+  if (task.outcomeSatisfied) return true;
+  const keys = new Set([task.desiredOutcomeId, task.desiredOutcome].filter(Boolean));
+  return (state.outcomes || []).some(o => o.satisfied && (keys.has(o.id) || keys.has(o.key) || keys.has(o.name)));
+}
+
+function dependencySatisfied(id, state) {
+  const dep = state.tasks.find(t => t.id === id);
+  if (!dep) return false;
+  if (['COMPLETED', 'OBSOLETE'].includes(dep.status)) return true;
+  return outcomeSatisfiedForTask(dep, state);
+}
+
 function decision(task, state, now, config, canonicalByFamily) {
   const out = { ...task, auditReason: null, supersededBy: task.supersededBy || null };
   const activeStatuses = new Set(['ACTIVE', 'OPEN', 'EXECUTE', 'SCHEDULE', 'BLOCKED', 'DEFER']);
   if (config.terminalStates.includes(task.status)) return out;
 
-  if (task.outcomeSatisfied || state.outcomes?.some(o => o.id === task.desiredOutcome && o.satisfied)) {
+  if (outcomeSatisfiedForTask(task, state)) {
     return { ...out, status: 'OBSOLETE', auditReason: 'Desired outcome is already satisfied.' };
   }
   if (task.supersededBy) return { ...out, status: 'SUPERSEDED', auditReason: `Superseded by ${task.supersededBy}.` };
@@ -59,10 +72,10 @@ function decision(task, state, now, config, canonicalByFamily) {
     return { ...out, status: 'DEFER', auditReason: 'Recurring contract review is due; recurrence loses scheduling privilege until revalidated.' };
   }
   const deps = task.dependencyIds || [];
-  const unsatisfied = deps.filter(id => !state.tasks.some(t => t.id === id && ['COMPLETED', 'OBSOLETE'].includes(t.status)));
+  const unsatisfied = deps.filter(id => !dependencySatisfied(id, state));
   if (unsatisfied.length) return { ...out, status: 'BLOCKED', auditReason: `Blocked by ${unsatisfied.join(', ')}.` };
 
-  const familyKey = task.familyId || task.desiredOutcome;
+  const familyKey = task.familyId || task.desiredOutcomeId || task.desiredOutcome;
   if (familyKey && config.rules.dedupeByFamilyId) {
     const canonical = canonicalByFamily.get(familyKey);
     if (canonical && canonical.id !== task.id) {
@@ -86,8 +99,15 @@ export function evaluateState(state, config) {
   const now = state.now || new Date().toISOString();
   const rawTasks = (state.tasks || []).map(t => ({ status: 'ACTIVE', ...t }));
   const canonicalByFamily = new Map();
-  for (const task of [...rawTasks].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))) {
-    const key = task.familyId || task.desiredOutcome;
+  const canonicalCandidates = rawTasks
+    .filter(t => !config.terminalStates.includes(t.status))
+    .sort((a, b) => {
+      const aFresh = new Date(a.lastValidatedAt || a.createdAt || 0).getTime();
+      const bFresh = new Date(b.lastValidatedAt || b.createdAt || 0).getTime();
+      return bFresh - aFresh;
+    });
+  for (const task of canonicalCandidates) {
+    const key = task.familyId || task.desiredOutcomeId || task.desiredOutcome;
     if (key && !canonicalByFamily.has(key)) canonicalByFamily.set(key, task);
   }
   const stateForEval = { ...state, tasks: rawTasks };
@@ -98,6 +118,14 @@ export function evaluateState(state, config) {
     .sort((a, b) => b.priorityScore - a.priorityScore || new Date(a.deadline || '9999-12-31') - new Date(b.deadline || '9999-12-31'));
 
   const terminalWithoutReason = tasks.filter(t => config.terminalStates.includes(t.status) && t.status !== 'COMPLETED' && !t.auditReason);
+  const executableIds = new Set(ranked.map(t => t.id));
+  const duplicateExecutableFamilies = new Map();
+  for (const t of tasks.filter(t => executableIds.has(t.id))) {
+    const key = t.familyId || t.desiredOutcomeId || t.desiredOutcome;
+    if (!key) continue;
+    duplicateExecutableFamilies.set(key, (duplicateExecutableFamilies.get(key) || 0) + 1);
+  }
+  const duplicateExecutableCount = [...duplicateExecutableFamilies.values()].filter(n => n > 1).length;
   const health = {
     totalTasks: tasks.length,
     executable: ranked.length,
@@ -107,7 +135,8 @@ export function evaluateState(state, config) {
     blocked: tasks.filter(t => t.status === 'BLOCKED').length,
     deferred: tasks.filter(t => t.status === 'DEFER').length,
     terminalWithoutReason: terminalWithoutReason.length,
-    green: terminalWithoutReason.length === 0
+    duplicateExecutableFamilies: duplicateExecutableCount,
+    green: terminalWithoutReason.length === 0 && duplicateExecutableCount === 0
   };
   return { now, tasks, ranked, health };
 }
