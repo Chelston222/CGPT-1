@@ -4,7 +4,7 @@ Turnkey application-prep engine for Chelston / 222Emails.
 
 ## Status
 
-**GREEN: READY_TO_SUBMIT production mode.** Final completion regression suite passes. Final Upwork submission remains intentionally manual until official Upwork API access with proposal-submission permission is approved.
+**GREEN: READY_TO_SUBMIT production mode.** Full-token canonical dedupe, state/suppression safety, telemetry and fail-closed API regression tests pass. Final Upwork submission remains intentionally manual until official Upwork API access with proposal-submission permission is approved.
 
 ## Operating mode
 
@@ -26,7 +26,7 @@ Headline outcome: Revenue Recovery / Client Return Systems. Primary problems: un
 
 ## Hard gates and dedupe
 
-Stop when the job is closed, the canonical job has ever entered the ledger, required facts cannot be verified, proof would need fabrication, capability exceeds evidence, or the role is prohibited/deceptive/bad fit. Upwork `~job` tokens are canonicalised independently of query strings, trailing slashes and discovery-source external IDs. Dedupe is state-agnostic, so even rejected, won, lost or suppressed history cannot silently re-enter the pipeline.
+Stop when the job is closed, the canonical job has ever entered the ledger, required facts cannot be verified, proof would need fabrication, capability exceeds evidence, or the role is prohibited/deceptive/bad fit. Upwork `~job` tokens including letters, numbers, underscores and hyphens are canonicalised independently of query strings, trailing slashes and discovery-source external IDs. Dedupe is state-agnostic, so rejected, won, lost or suppressed history cannot silently re-enter the pipeline.
 
 ## Live loop
 
@@ -47,7 +47,7 @@ Before activation: official Upwork API access approved; credentials outside repo
 
 ## QA
 
-`.github/workflows/upwork-os-qa.yml` compiles, runs unit tests and proves API submission fails closed on relevant pushes/PRs and daily at 06:05 UTC. Tests cover canonical URL identity, permanent duplicate blocking, terminal history, closed jobs, missing facts, unsupported proof, scoring, legal/illegal transitions, suppression, telemetry and API fail-closed behaviour. The canonical-dedupe regression passed on 30 August 2026.
+`.github/workflows/upwork-os-qa.yml` compiles, runs unit tests and proves API submission fails closed on relevant pushes/PRs and daily at 06:05 UTC. Tests cover full job-token canonical identity, permanent duplicate blocking, terminal history, closed jobs, missing facts, unsupported proof, scoring, legal/illegal transitions, suppression, telemetry and API fail-closed behaviour. Final completion run passed on 30 August 2026.
 
 ## Files
 
