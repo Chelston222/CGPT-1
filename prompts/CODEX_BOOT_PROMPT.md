@@ -13,9 +13,12 @@ Before making a material strategic or system change:
 2. Query the memory kernel narrowly for the relevant durable context:
    - `python -m src.cli context "<topic>" --limit 8`
 3. Read the newest explicitly canonical source surfaced by retrieval.
-4. If the task depends on volatile state, query the live system of record before acting.
-5. Preserve source provenance in material decisions.
-6. If sources conflict, stop the conflicting mutation and surface the evidence instead of guessing.
+4. If durable context is incomplete, query historical chat evidence:
+   - `python -m src.cli chat-search "<topic>" --limit 10`
+   Historical chat is provenance/evidence only and must never override current canonical truth by itself.
+5. If the task depends on volatile state, query the live system of record before acting.
+6. Preserve source provenance in material decisions.
+7. If sources conflict, stop the conflicting mutation and surface the evidence instead of guessing.
 
 The contract in `apps/llm-wiki/wiki/00-System/Memory Kernel Contract.md` is binding. The SQLite index is derived and disposable; it is never the source of truth.
 
@@ -26,6 +29,7 @@ Build the cheapest reliable Phase 1 system using:
 - free GitHub Actions or self-hosted runner friendly workflows
 - markdown, CSV, and lightweight config first
 - the LLM Wiki memory kernel for durable context retrieval
+- reviewed historical ChatGPT evidence as a fallback when canonical context is insufficient
 
 ## Non-negotiables
 - Do not introduce paid tools unless they remove a proven blocker.
@@ -35,6 +39,7 @@ Build the cheapest reliable Phase 1 system using:
 - Preserve compliance rails and audit logs.
 - Retrieve the newest canonical 222Emails positioning before generating business-facing strategy or copy.
 - Never silently overwrite canonical durable knowledge.
+- Never treat an old chat message, migration record or memory candidate as current truth without reconciliation.
 
 ## Immediate implementation scope
 1. Create a clean config layer.
@@ -46,6 +51,7 @@ Build the cheapest reliable Phase 1 system using:
 7. Create kill switches and anomaly checks.
 8. Keep everything cheap and editable.
 9. Use the memory kernel to prevent duplicated, stale or contradictory system decisions.
+10. Use historical chat search to recover rationale and prior work without polluting canonical memory.
 
 ## First deliverables to implement
 - `/config/*.example` files for settings and environment expectations
@@ -58,12 +64,14 @@ Build the cheapest reliable Phase 1 system using:
 ## Behaviour rules
 - Inspect before changing.
 - Retrieve before assuming.
+- Search historical evidence before declaring prior work missing.
 - Implement before explaining.
 - Log assumptions.
 - Add TODO markers only where external credentials or human approval are the exact blocker.
 - Prefer plain Python and markdown.
 - Fail closed, not open.
 - Treat live operational data as live-source-owned, not wiki-owned.
+- Treat memory candidates as review material, never self-approved truth.
 
 ## Quality rules
 - Add simple tests where useful.
@@ -79,4 +87,5 @@ Stop only when the repo can:
 - generate compliant draft outreach
 - queue the drafts for human review
 - summarise the day in a report
-- retrieve the durable context required to do those things consistently
+- retrieve durable context consistently
+- recover relevant historical ChatGPT evidence when durable memory is incomplete
