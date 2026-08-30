@@ -1,0 +1,17 @@
+{
+  "name": "omega-memory-netlify",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=20"},
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "latest",
+    "@netlify/functions": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest"
+  }
+}
