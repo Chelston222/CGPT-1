@@ -47,9 +47,10 @@ jobs:
       - name: ChatGPT MCP contract smoke test
         run: |
           python - <<'PY'
+          from pathlib import Path
           from src.kernel import connect
           from src.mcp_server import dispatch
-          conn = connect('.data/wiki.db')
+          conn = connect(Path('.data/wiki.db'))
           init = dispatch(conn, {'jsonrpc':'2.0','id':1,'method':'initialize','params':{}})
           tools = dispatch(conn, {'jsonrpc':'2.0','id':2,'method':'tools/list','params':{}})
           names = {tool['name'] for tool in tools['result']['tools']}
