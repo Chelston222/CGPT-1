@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .chat_memory import candidate_stats, chat_search, ingest_events, ingest_export, list_candidates
 from .connectors import connector_search, connector_stats, ingest_snapshot_file
 from .governance import governance_issues
 from .hybrid import hybrid_search
@@ -32,6 +33,20 @@ def parser() -> argparse.ArgumentParser:
     ctx = sub.add_parser("context")
     ctx.add_argument("query")
     ctx.add_argument("--limit", type=int, default=8)
+
+    hist = sub.add_parser("chat-backfill")
+    hist.add_argument("export", type=Path, help="ChatGPT conversations.json export")
+
+    inc = sub.add_parser("chat-ingest")
+    inc.add_argument("events", type=Path, help="Incremental JSONL conversation events")
+
+    csea_hist = sub.add_parser("chat-search")
+    csea_hist.add_argument("query")
+    csea_hist.add_argument("--limit", type=int, default=10)
+
+    cand = sub.add_parser("memory-candidates")
+    cand.add_argument("--limit", type=int, default=50)
+    cand.add_argument("--status", default="review")
 
     con = sub.add_parser("connector-ingest")
     con.add_argument("snapshot", type=Path)
@@ -99,6 +114,18 @@ def main() -> int:
             }
             print_json(payload)
             return 0
+        if args.command == "chat-backfill":
+            print_json({"ok": True, **ingest_export(conn, args.export)})
+            return 0
+        if args.command == "chat-ingest":
+            print_json({"ok": True, **ingest_events(conn, args.events)})
+            return 0
+        if args.command == "chat-search":
+            print_json(chat_search(conn, args.query, args.limit))
+            return 0
+        if args.command == "memory-candidates":
+            print_json(list_candidates(conn, args.limit, args.status))
+            return 0
         if args.command == "connector-ingest":
             result = ingest_snapshot_file(conn, args.snapshot)
             print_json({"ok": True, **result})
@@ -113,7 +140,7 @@ def main() -> int:
                 return 2
             return 0
         if args.command == "stats":
-            print_json({**stats(conn), **connector_stats(conn), "governance_issues": len(governance_issues(conn))})
+            print_json({**stats(conn), **connector_stats(conn), **candidate_stats(conn), "governance_issues": len(governance_issues(conn))})
             return 0
         return 1
     finally:
