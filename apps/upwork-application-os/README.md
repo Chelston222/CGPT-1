@@ -4,7 +4,7 @@ Turnkey application-prep engine for Chelston / 222Emails.
 
 ## Status
 
-**GREEN: READY_TO_SUBMIT production mode.** Automated QA is passing. Final Upwork submission remains intentionally manual until official Upwork API access with proposal-submission permission is approved.
+**GREEN: READY_TO_SUBMIT production mode.** Final completion regression suite passes. Final Upwork submission remains intentionally manual until official Upwork API access with proposal-submission permission is approved.
 
 ## Operating mode
 
@@ -24,7 +24,7 @@ Implementation tools such as Klaviyo, Mailchimp, HubSpot, MailerLite and Make.co
 
 `DISCOVERED -> SCORED -> REJECTED | NEEDS_HUMAN_FACT | PROPOSAL_READY -> READY_TO_SUBMIT -> SUBMITTED -> REPLIED -> INTERVIEW -> WON | LOST | SUPPRESSED`
 
-`status.py` enforces legal state transitions and calculates submitted, reply, interview, win, Connect and revenue metrics.
+`status.py` enforces legal state transitions, permits suppression from any active pre-terminal state, and calculates submitted, reply, interview, win, Connect and revenue metrics.
 
 ## Scoring
 
@@ -65,7 +65,7 @@ Until then the correct state is READY_TO_SUBMIT, not a browser workaround.
 
 ## QA
 
-`.github/workflows/upwork-os-qa.yml` compiles the module, runs unit tests and proves API submission fails closed by default on relevant pushes/PRs and once daily at 06:05 UTC as an integrity check. Core tests cover duplicate blocking, closed jobs, missing facts, unsupported proof, scoring, state transitions, telemetry and API fail-closed behaviour. The production-mode and scheduled-QA commits both passed GitHub Actions on 30 August 2026.
+`.github/workflows/upwork-os-qa.yml` compiles the module, runs unit tests and proves API submission fails closed by default on relevant pushes/PRs and once daily at 06:05 UTC as an integrity check. Core tests cover duplicate blocking, closed jobs, missing facts, unsupported proof, scoring, legal/illegal state transitions, suppression, telemetry and API fail-closed behaviour. The final completion regression run passed on 30 August 2026.
 
 ## Files
 
