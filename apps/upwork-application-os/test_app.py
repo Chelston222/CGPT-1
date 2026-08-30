@@ -47,6 +47,13 @@ class UpworkOSTest(unittest.TestCase):
         q = [{"job_key": key, "state": "SUBMITTED"}]
         self.assertEqual(app.hard_gate(self.job, self.config, q), "DUPLICATE")
 
+    def test_terminal_history_still_blocks_reapply(self):
+        key = app.canonical_job_key(self.job["source_url"], self.job["external_id"])
+        for state_name in ("WON", "LOST", "SUPPRESSED"):
+            with self.subTest(state=state_name):
+                q = [{"job_key": key, "state": state_name}]
+                self.assertEqual(app.hard_gate(self.job, self.config, q), "DUPLICATE")
+
     def test_missing_fact_stops_submission(self):
         job = dict(self.job, missing_required_facts=["requested case-study metric"])
         r = app.prepare_record(job, self.parts, proposal="draft")
