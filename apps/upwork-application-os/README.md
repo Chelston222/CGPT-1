@@ -8,13 +8,11 @@ Turnkey application-prep engine for Chelston / 222Emails.
 
 ## Operating mode
 
-The system may discover from permitted public sources, score, deduplicate, draft, QA, queue, export and track Upwork applications. It must not scrape Upwork, replay credentials, use headless/browser auto-clicking, or submit through unapproved automation.
-
-`API_AUTO_SUBMIT` is fail-closed. `upwork_api.py` has no browser fallback and remains locked until official credentials and the live submission schema/scope are verified.
+The system may discover from permitted public sources, score, deduplicate, draft, QA, queue, export and track Upwork applications. It must not scrape Upwork, replay credentials, use headless/browser auto-clicking, or submit through unapproved automation. `API_AUTO_SUBMIT` is fail-closed and has no browser fallback.
 
 ## Positioning
 
-Headline outcome: Revenue Recovery / Client Return Systems. Primary problems: unconverted enquiries, weak lead follow-up, cancellations/no-shows, rebooking leakage, dormant-client reactivation, lifecycle gaps, and CRM/email/SMS automation. Implementation tools support the outcome rather than define the positioning. `profile-source-of-truth.md` is the proposal truth boundary.
+Headline outcome: Revenue Recovery / Client Return Systems. Primary problems: unconverted enquiries, weak lead follow-up, cancellations/no-shows, rebooking leakage, dormant-client reactivation, lifecycle gaps, and CRM/email/SMS automation. Implementation tools support the outcome rather than define it. `profile-source-of-truth.md` is the factual boundary.
 
 ## States and telemetry
 
@@ -26,9 +24,9 @@ Headline outcome: Revenue Recovery / Client Return Systems. Primary problems: un
 
 100 points: positioning fit 25, active pain/urgency 15, budget/effective rate 15, recurring/expansion 15, client quality 10, competitive timing 10, proof match 5, delivery feasibility 5. Thresholds: 85 APEX, 75 STRONG, 65 SELECTIVE, below 65 REJECT.
 
-## Hard gates
+## Hard gates and dedupe
 
-Stop when the job is closed, the canonical job has ever entered the ledger, required facts cannot be verified, proof would need fabrication, capability exceeds evidence, or the role is an obvious prohibited/deceptive/bad-fit case. Dedupe is deliberately state-agnostic, so WON, LOST, SUPPRESSED and other terminal history cannot silently re-enter the application pipeline.
+Stop when the job is closed, the canonical job has ever entered the ledger, required facts cannot be verified, proof would need fabrication, capability exceeds evidence, or the role is prohibited/deceptive/bad fit. Upwork `~job` tokens are canonicalised independently of query strings, trailing slashes and discovery-source external IDs. Dedupe is state-agnostic, so even rejected, won, lost or suppressed history cannot silently re-enter the pipeline.
 
 ## Live loop
 
@@ -39,19 +37,17 @@ Stop when the job is closed, the canonical job has ever entered the ledger, requ
 5. `export_ready.py` creates the minimal handoff with direct URL, bid, proposal and screening answers.
 6. Chelston verifies the job is still open and performs the final Upwork submit action.
 7. `status.py` tracks SUBMITTED, REPLIED, INTERVIEW, WON/LOST and commercial telemetry.
-8. Performance evidence can later tune scoring and templates without inventing causality.
+8. Performance evidence can later tune scoring/templates without inventing causality.
 
 Warm replies and existing commitments always outrank cold Upwork applications.
 
 ## API activation gate
 
-Before activation: official Upwork API access approved; credentials outside repo; Submit Proposal permission confirmed against current official documentation; exact live mutation/schema verified; duplicate and job-open checks rerun immediately before submission; no unresolved human facts/proof; explicit `UPWORK_API_AUTO_SUBMIT=true`.
-
-Until then READY_TO_SUBMIT is the correct production state, not a browser workaround.
+Before activation: official Upwork API access approved; credentials outside repo; Submit Proposal permission confirmed against current official documentation; exact live mutation/schema verified; duplicate and job-open checks rerun immediately before submission; no unresolved human facts/proof; explicit `UPWORK_API_AUTO_SUBMIT=true`. Until then READY_TO_SUBMIT is the correct production state.
 
 ## QA
 
-`.github/workflows/upwork-os-qa.yml` compiles, runs unit tests and proves API submission fails closed on relevant pushes/PRs and daily at 06:05 UTC. Tests cover permanent duplicate blocking, closed jobs, missing facts, unsupported proof, scoring, legal/illegal transitions, suppression, telemetry and API fail-closed behaviour. Final dedupe and completion runs passed on 30 August 2026.
+`.github/workflows/upwork-os-qa.yml` compiles, runs unit tests and proves API submission fails closed on relevant pushes/PRs and daily at 06:05 UTC. Tests cover canonical URL identity, permanent duplicate blocking, terminal history, closed jobs, missing facts, unsupported proof, scoring, legal/illegal transitions, suppression, telemetry and API fail-closed behaviour. The canonical-dedupe regression passed on 30 August 2026.
 
 ## Files
 
