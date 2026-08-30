@@ -85,6 +85,77 @@ const dependencyEval = evaluateState(dependencyState, config);
 assert.equal(dependencyEval.tasks.find(t => t.id === 'dep').status, 'OBSOLETE');
 assert.equal(dependencyEval.tasks.find(t => t.id === 'child').status, 'EXECUTE');
 
+// Recurring contracts must be able to retire, pause, reduce or explicitly continue after a due review.
+const recurrenceState = {
+  now: '2026-08-30T08:00:00Z', outcomes: [], hardCommitments: [], tasks: [
+    {
+      id: 'rec-retire', desiredOutcome: 'retire-outcome', recurrence: 'RRULE:FREQ=DAILY', recurrenceReviewAt: '2026-08-30T07:00:00Z',
+      recurrenceReviewDecision: 'RETIRE', recurrenceReviewDecidedAt: '2026-08-30T07:30:00Z', createdAt: '2026-08-29T08:00:00Z', status: 'ACTIVE'
+    },
+    {
+      id: 'rec-pause', desiredOutcome: 'pause-outcome', recurrence: 'RRULE:FREQ=DAILY', recurrenceReviewAt: '2026-08-30T07:00:00Z',
+      recurrenceReviewDecision: 'PAUSE', recurrenceReviewDecidedAt: '2026-08-30T07:30:00Z', nextRecurrenceReviewAt: '2026-09-06T08:00:00Z',
+      createdAt: '2026-08-29T08:00:00Z', status: 'ACTIVE'
+    },
+    {
+      id: 'rec-reduce', desiredOutcome: 'reduce-outcome', recurrence: 'RRULE:FREQ=DAILY', reducedRecurrence: 'RRULE:FREQ=WEEKLY;BYDAY=MO',
+      recurrenceReviewAt: '2026-08-30T07:00:00Z', recurrenceReviewDecision: 'REDUCE', recurrenceReviewDecidedAt: '2026-08-30T07:30:00Z',
+      nextRecurrenceReviewAt: '2026-09-30T08:00:00Z', createdAt: '2026-08-29T08:00:00Z', lastValidatedAt: '2026-08-30T07:30:00Z', durationMinutes: 30, status: 'ACTIVE'
+    },
+    {
+      id: 'rec-continue', desiredOutcome: 'continue-outcome', recurrence: 'RRULE:FREQ=WEEKLY;BYDAY=FR', recurrenceReviewAt: '2026-08-30T07:00:00Z',
+      recurrenceReviewDecision: 'CONTINUE', recurrenceReviewDecidedAt: '2026-08-30T07:30:00Z', nextRecurrenceReviewAt: '2026-09-30T08:00:00Z',
+      createdAt: '2026-08-29T08:00:00Z', lastValidatedAt: '2026-08-30T07:30:00Z', durationMinutes: 30, status: 'ACTIVE'
+    }
+  ]
+};
+const recurrenceEval = evaluateState(recurrenceState, config);
+const recurrenceById = id => recurrenceEval.tasks.find(t => t.id === id);
+assert.equal(recurrenceById('rec-retire').status, 'KILL');
+assert.equal(recurrenceById('rec-retire').recurrenceDisposition, 'RETIRE');
+assert.equal(recurrenceById('rec-pause').status, 'DEFER');
+assert.equal(recurrenceById('rec-pause').recurrenceDisposition, 'PAUSE');
+assert.equal(recurrenceById('rec-reduce').status, 'EXECUTE');
+assert.equal(recurrenceById('rec-reduce').recurrence, 'RRULE:FREQ=WEEKLY;BYDAY=MO');
+assert.equal(recurrenceById('rec-reduce').recurrenceDisposition, 'REDUCE');
+assert.equal(recurrenceById('rec-continue').status, 'EXECUTE');
+assert.equal(recurrenceById('rec-continue').recurrenceDisposition, 'CONTINUE');
+
+// Stale source/integration evidence must remove scheduling privilege instead of creating false completion.
+const staleSourceEval = evaluateState({
+  now: '2026-08-30T08:00:00Z', outcomes: [], hardCommitments: [], tasks: [
+    { id: 'stale-source', desiredOutcome: 'stale-source-outcome', sourceFresh: false, createdAt: '2026-08-30T07:00:00Z', durationMinutes: 30, status: 'ACTIVE' },
+    { id: 'stale-integration', desiredOutcome: 'stale-integration-outcome', integrationState: 'STALE', createdAt: '2026-08-30T07:00:00Z', durationMinutes: 30, status: 'ACTIVE' }
+  ]
+}, config);
+assert.equal(staleSourceEval.tasks.find(t => t.id === 'stale-source').status, 'DEFER');
+assert.equal(staleSourceEval.tasks.find(t => t.id === 'stale-integration').status, 'DEFER');
+assert.equal(staleSourceEval.ranked.length, 0, 'stale evidence must never enter execution ranking');
+
+// A materially warmer/higher-value opportunity must displace lower-value flexible work without touching a hard commitment.
+const displacementState = {
+  now: '2026-08-30T06:20:00Z', outcomes: [],
+  hardCommitments: [{ id: 'hard-meeting', start: '2026-08-30T07:00:00Z', end: '2026-08-30T08:00:00Z' }],
+  tasks: [
+    {
+      id: 'cold-work', desiredOutcome: 'cold-outcome', createdAt: '2026-08-30T06:00:00Z', lastValidatedAt: '2026-08-30T06:00:00Z',
+      durationMinutes: 60, strategicPriority: 45, expectedValue: 35, impactProbability: 45, urgency: 35, relevanceConfidence: 90, status: 'ACTIVE'
+    },
+    {
+      id: 'warm-opportunity', category: 'urgentCommercial', desiredOutcome: 'warm-outcome', createdAt: '2026-08-30T06:10:00Z', lastValidatedAt: '2026-08-30T06:10:00Z',
+      durationMinutes: 45, strategicPriority: 95, expectedValue: 95, impactProbability: 90, urgency: 98, dependencyUnlock: 75, relevanceConfidence: 98, status: 'ACTIVE'
+    }
+  ]
+};
+const displacementEval = evaluateState(displacementState, config);
+assert.equal(displacementEval.ranked[0].id, 'warm-opportunity');
+const displacementPlan = planCalendar(displacementState, displacementEval, config);
+assert.equal(displacementPlan.blocks[0].taskId, 'warm-opportunity');
+for (const block of displacementPlan.blocks) {
+  const overlap = new Date(block.start) < new Date(displacementState.hardCommitments[0].end) && new Date(displacementState.hardCommitments[0].start) < new Date(block.end);
+  assert.equal(overlap, false, 'dynamic displacement must never touch the hard commitment');
+}
+
 // Live reconciliation contract: manual events are invisible to mutation, movement is UPDATE not CREATE,
 // duplicate ownership fails closed, orphans outside the freeze window are removable, and near-term work is retained.
 const desiredLiveBlock = {
@@ -164,4 +235,4 @@ for (let day = 1; day <= 21; day++) {
   assert(live.length < 12, `live backlog must remain bounded on day ${day}; got ${live.length}`);
 }
 
-console.log(`Agentic OS acceptance suite PASS: ${evaluated.tasks.length} fixture tasks, ${plan.blocks.length} calendar blocks, DST-safe, stable IDs, ownership-safe reconciliation, live ICS filtering, terminal-canonical guard, dependency guard, bounded 21-day simulation.`);
+console.log(`Agentic OS acceptance suite PASS: ${evaluated.tasks.length} fixture tasks, ${plan.blocks.length} calendar blocks, DST-safe, stable IDs, lifecycle-safe recurrence, stale-source degradation, warm-opportunity displacement, ownership-safe reconciliation, live ICS filtering, terminal-canonical guard, dependency guard, bounded 21-day simulation.`);
