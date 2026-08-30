@@ -25,11 +25,12 @@ test('detects Hook OS opening mechanisms without declaring them winners', () => 
   const question = engine.inferTraits('What happens after a client leaves without rebooking?\n\nThe next step matters.');
   const condition = engine.inferTraits('If clients leave without their next appointment booked, what brings them back?');
   const contrast = engine.inferTraits('What usually happens vs. what should happen after the appointment.');
+  const explicitLoss = engine.inferTraits('A happy client can still disappear.');
   assert.ok(question.includes('hook_question'));
   assert.ok(question.includes('hook_diagnostic'));
-  assert.ok(question.includes('hook_problem_loss'));
   assert.ok(condition.includes('hook_condition'));
   assert.ok(contrast.includes('hook_contrast'));
+  assert.ok(explicitLoss.includes('hook_problem_loss'));
 });
 
 test('commercial signal hierarchy values deeper buyer progression more highly', () => {
