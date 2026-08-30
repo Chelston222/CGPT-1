@@ -34,7 +34,7 @@ Thresholds: 85-100 APEX, 75-84 STRONG, 65-74 SELECTIVE, below 65 REJECT.
 
 ## Hard gates
 
-Stop when the job is closed, a duplicate active/submitted job exists, required facts cannot be verified, proof would need fabrication, capability exceeds evidence, or the role is an obvious prohibited/deceptive/bad-fit case.
+Stop when the job is closed, a duplicate previously seen job exists in any active/submitted/won/lost/suppressed state, required facts cannot be verified, proof would need fabrication, capability exceeds evidence, or the role is an obvious prohibited/deceptive/bad-fit case. Terminal history therefore cannot accidentally trigger a re-application.
 
 ## Live manual-submission loop
 
@@ -65,7 +65,7 @@ Until then the correct state is READY_TO_SUBMIT, not a browser workaround.
 
 ## QA
 
-`.github/workflows/upwork-os-qa.yml` compiles the module, runs unit tests and proves API submission fails closed by default on relevant pushes/PRs and once daily at 06:05 UTC as an integrity check. Core tests cover duplicate blocking, closed jobs, missing facts, unsupported proof, scoring, legal/illegal state transitions, suppression, telemetry and API fail-closed behaviour. The final completion regression run passed on 30 August 2026.
+`.github/workflows/upwork-os-qa.yml` compiles the module, runs unit tests and proves API submission fails closed by default on relevant pushes/PRs and once daily at 06:05 UTC as an integrity check. Core tests cover duplicate blocking including terminal history, closed jobs, missing facts, unsupported proof, scoring, legal/illegal state transitions, suppression, telemetry and API fail-closed behaviour. The terminal-history duplicate regression passed on 30 August 2026.
 
 ## Files
 
