@@ -1,23 +1,6 @@
 {
   "mode": "READY_TO_SUBMIT",
-  "auto_submit_enabled": false,
-  "positioning": {
-    "headline": "Revenue Recovery / Client Return Systems",
-    "primary_markets": ["United Kingdom", "United States"],
-    "priority_problems": [
-      "unconverted enquiries",
-      "lead follow-up",
-      "cancellations",
-      "no-shows",
-      "rebooking",
-      "dormant-client reactivation",
-      "lifecycle automation",
-      "CRM automation",
-      "email automation",
-      "SMS automation",
-      "Klaviyo"
-    ]
-  },
+  "positioning": "Revenue Recovery / Client Return Systems",
   "weights": {
     "positioning_fit": 25,
     "active_pain_urgency": 15,
@@ -33,24 +16,35 @@
     "STRONG": 75,
     "SELECTIVE": 65
   },
-  "hard_reject_terms": [
-    "scrape thousands",
-    "mass spam",
-    "fake case study",
-    "fake results",
-    "guaranteed results"
-  ],
+  "daily": {
+    "max_ready_to_submit": 5,
+    "preferred_minimum_score": 75,
+    "uk_first": true,
+    "us_secondary": true
+  },
   "safety": {
     "require_open_job": true,
     "require_duplicate_check": true,
     "block_missing_required_facts": true,
     "block_unsupported_proof": true,
-    "block_unapproved_browser_automation": true,
-    "block_api_submit_without_approved_credentials": true
+    "manual_final_submit": true,
+    "browser_automation_allowed": false,
+    "scraping_allowed": false,
+    "api_auto_submit_enabled": false
   },
-  "daily": {
-    "max_ready_to_submit": 5,
-    "preferred_apex_strong": 3,
-    "morning_pack_time": "07:20 Europe/London"
-  }
+  "hard_reject_terms": [
+    "fake case study",
+    "fabricate results",
+    "scrape thousands",
+    "mass spam",
+    "bypass upwork"
+  ],
+  "outcomes": [
+    "SUBMITTED",
+    "REPLIED",
+    "INTERVIEW",
+    "WON",
+    "LOST",
+    "SUPPRESSED"
+  ]
 }
