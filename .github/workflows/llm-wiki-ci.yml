@@ -14,12 +14,15 @@ on:
       - 'context/**'
       - 'docs/**'
       - 'SYSTEMS_CONSTITUTION.md'
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  test-and-health:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,6 +38,9 @@ jobs:
         run: |
           python -m src.cli init
           python -m src.cli ingest --repo ../..
-          python -m src.cli stats
-      - name: Structural lint
+      - name: Hybrid retrieval smoke test
+        run: python -m src.cli context "222Emails revenue recovery" --limit 5
+      - name: Memory health stats
+        run: python -m src.cli stats
+      - name: Structural and governance lint
         run: python -m src.cli lint --fail-on-error
