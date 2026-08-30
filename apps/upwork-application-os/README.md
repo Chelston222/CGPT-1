@@ -14,70 +14,49 @@ The system may discover from permitted public sources, score, deduplicate, draft
 
 ## Positioning
 
-Headline outcome: Revenue Recovery / Client Return Systems.
+Headline outcome: Revenue Recovery / Client Return Systems. Primary problems: unconverted enquiries, weak lead follow-up, cancellations/no-shows, rebooking leakage, dormant-client reactivation, lifecycle gaps, and CRM/email/SMS automation. Implementation tools support the outcome rather than define the positioning. `profile-source-of-truth.md` is the proposal truth boundary.
 
-Primary problems: unconverted enquiries, weak lead follow-up, cancellations/no-shows, rebooking leakage, dormant-client reactivation, lifecycle gaps, and CRM/email/SMS automation.
-
-Implementation tools such as Klaviyo, Mailchimp, HubSpot, MailerLite and Make.com support the outcome rather than define the positioning. `profile-source-of-truth.md` is the proposal truth boundary.
-
-## States
+## States and telemetry
 
 `DISCOVERED -> SCORED -> REJECTED | NEEDS_HUMAN_FACT | PROPOSAL_READY -> READY_TO_SUBMIT -> SUBMITTED -> REPLIED -> INTERVIEW -> WON | LOST | SUPPRESSED`
 
-`status.py` enforces legal state transitions, permits suppression from any active pre-terminal state, and calculates submitted, reply, interview, win, Connect and revenue metrics.
+`status.py` enforces legal transitions, permits suppression from active states, and calculates submitted, reply, interview, win, Connect and revenue metrics.
 
 ## Scoring
 
-100 points total: positioning fit 25, active pain/urgency 15, budget/effective rate 15, recurring/expansion potential 15, client quality 10, competitive timing 10, proof match 5, delivery feasibility 5.
-
-Thresholds: 85-100 APEX, 75-84 STRONG, 65-74 SELECTIVE, below 65 REJECT.
+100 points: positioning fit 25, active pain/urgency 15, budget/effective rate 15, recurring/expansion 15, client quality 10, competitive timing 10, proof match 5, delivery feasibility 5. Thresholds: 85 APEX, 75 STRONG, 65 SELECTIVE, below 65 REJECT.
 
 ## Hard gates
 
-Stop when the job is closed, a duplicate previously seen job exists in any active/submitted/won/lost/suppressed state, required facts cannot be verified, proof would need fabrication, capability exceeds evidence, or the role is an obvious prohibited/deceptive/bad-fit case. Terminal history therefore cannot accidentally trigger a re-application.
+Stop when the job is closed, the canonical job has ever entered the ledger, required facts cannot be verified, proof would need fabrication, capability exceeds evidence, or the role is an obvious prohibited/deceptive/bad-fit case. Dedupe is deliberately state-agnostic, so WON, LOST, SUPPRESSED and other terminal history cannot silently re-enter the application pipeline.
 
-## Live manual-submission loop
+## Live loop
 
 1. The 07:20 TTE Morning Action Pack discovers current Upwork opportunities from permitted public sources.
-2. Candidate is normalised and scored against `config.json`.
-3. Hard gates and duplicate protection run.
-4. Proposal and visible screening answers are generated from verified facts only.
-5. APEX/STRONG records become `READY_TO_SUBMIT`.
-6. `export_ready.py` creates the minimal handoff: direct URL, bid, proposal and screening answers.
-7. Chelston opens the direct URL, verifies the job is still open and performs the final Upwork submit action.
-8. `status.py` advances the record through SUBMITTED, REPLIED, INTERVIEW, WON/LOST and captures commercial telemetry.
-9. Performance evidence informs later scoring/template changes. Do not infer causality from tiny samples.
+2. Candidate is normalised, scored and hard-gated.
+3. Proposal and visible screening answers use verified facts only.
+4. APEX/STRONG records become `READY_TO_SUBMIT`.
+5. `export_ready.py` creates the minimal handoff with direct URL, bid, proposal and screening answers.
+6. Chelston verifies the job is still open and performs the final Upwork submit action.
+7. `status.py` tracks SUBMITTED, REPLIED, INTERVIEW, WON/LOST and commercial telemetry.
+8. Performance evidence can later tune scoring and templates without inventing causality.
 
-Warm replies and existing commitments in the Morning Action Pack always outrank cold Upwork applications.
+Warm replies and existing commitments always outrank cold Upwork applications.
 
 ## API activation gate
 
-Before activation all must be true:
-- official Upwork API access approved
-- OAuth/access credentials stored outside repository
-- Submit Proposal permission confirmed against current official documentation
-- exact current GraphQL mutation/schema verified
-- duplicate and job-open checks rerun immediately before submission
-- no unresolved human facts or unsupported proof
-- explicit `UPWORK_API_AUTO_SUBMIT=true`
+Before activation: official Upwork API access approved; credentials outside repo; Submit Proposal permission confirmed against current official documentation; exact live mutation/schema verified; duplicate and job-open checks rerun immediately before submission; no unresolved human facts/proof; explicit `UPWORK_API_AUTO_SUBMIT=true`.
 
-Until then the correct state is READY_TO_SUBMIT, not a browser workaround.
+Until then READY_TO_SUBMIT is the correct production state, not a browser workaround.
 
 ## QA
 
-`.github/workflows/upwork-os-qa.yml` compiles the module, runs unit tests and proves API submission fails closed by default on relevant pushes/PRs and once daily at 06:05 UTC as an integrity check. Core tests cover duplicate blocking including terminal history, closed jobs, missing facts, unsupported proof, scoring, legal/illegal state transitions, suppression, telemetry and API fail-closed behaviour. The terminal-history duplicate regression passed on 30 August 2026.
+`.github/workflows/upwork-os-qa.yml` compiles, runs unit tests and proves API submission fails closed on relevant pushes/PRs and daily at 06:05 UTC. Tests cover permanent duplicate blocking, closed jobs, missing facts, unsupported proof, scoring, legal/illegal transitions, suppression, telemetry and API fail-closed behaviour. Final dedupe and completion runs passed on 30 August 2026.
 
 ## Files
 
-- `app.py`: scoring, gates, queue and dedupe
-- `config.json`: weights, thresholds and safety settings
-- `profile-source-of-truth.md`: positioning and factual claims boundary
-- `queue.json`: persistent application ledger
-- `export_ready.py`: manual-submit handoff
-- `status.py`: lifecycle state machine and telemetry
-- `upwork_api.py`: dormant official-API boundary
-- `test_app.py`: regression tests
+`app.py` scoring/gates/dedupe; `config.json` production controls; `profile-source-of-truth.md` factual boundary; `queue.json` ledger; `export_ready.py` handoff; `status.py` lifecycle/telemetry; `upwork_api.py` dormant official API boundary; `test_app.py` regression suite.
 
 ## Definition of green
 
-Green means discovery/preparation can operate daily, weak/unsafe/duplicate jobs fail closed, proposals cannot rely on invented proof, the manual submission packet is turnkey, outcomes are trackable, and no unapproved Upwork automation is used. Automatic final submission is not considered a defect while official API eligibility is unavailable.
+Discovery/preparation operates daily; weak, unsafe and duplicate jobs fail closed; proposals cannot rely on invented proof; manual submission packets are turnkey; outcomes are trackable; no unapproved Upwork automation is used. Automatic final submission is intentionally gated by official API eligibility and is not an outstanding implementation defect.
