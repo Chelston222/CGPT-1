@@ -4,7 +4,7 @@ Turnkey application-prep engine for Chelston / 222Emails.
 
 ## Status
 
-Operational in `READY_TO_SUBMIT` mode. Final Upwork submission remains intentionally manual until official Upwork API access with proposal-submission permission is approved.
+**GREEN: READY_TO_SUBMIT production mode.** Automated QA is passing. Final Upwork submission remains intentionally manual until official Upwork API access with proposal-submission permission is approved.
 
 ## Operating mode
 
@@ -65,7 +65,7 @@ Until then the correct state is READY_TO_SUBMIT, not a browser workaround.
 
 ## QA
 
-`.github/workflows/upwork-os-qa.yml` compiles the module, runs unit tests and proves API submission fails closed by default on relevant pushes/PRs and once daily at 06:05 UTC as an integrity check. Core tests cover duplicate blocking, closed jobs, missing facts, unsupported proof, scoring, state transitions, telemetry and API fail-closed behaviour.
+`.github/workflows/upwork-os-qa.yml` compiles the module, runs unit tests and proves API submission fails closed by default on relevant pushes/PRs and once daily at 06:05 UTC as an integrity check. Core tests cover duplicate blocking, closed jobs, missing facts, unsupported proof, scoring, state transitions, telemetry and API fail-closed behaviour. The production-mode and scheduled-QA commits both passed GitHub Actions on 30 August 2026.
 
 ## Files
 
