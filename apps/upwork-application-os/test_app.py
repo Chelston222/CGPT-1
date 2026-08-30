@@ -78,6 +78,14 @@ class UpworkOSTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     status.transition("x", "WON")
 
+    def test_suppression_can_stop_ready_job(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "queue.json"
+            p.write_text(json.dumps([{"job_key":"x","state":"READY_TO_SUBMIT"}]))
+            with patch.object(status, "QUEUE_PATH", p):
+                row = status.transition("x", "SUPPRESSED", suppression_reason="manual stop")
+        self.assertEqual(row["state"], "SUPPRESSED")
+
     def test_metrics(self):
         rows = [
             {"job_key":"a","state":"WON","submitted_at":"x","connects_spent":10,"revenue_won":1000},
