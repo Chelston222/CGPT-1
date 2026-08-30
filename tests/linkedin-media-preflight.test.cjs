@@ -6,6 +6,9 @@ const { createHash } = require('node:crypto');
 const {
   MAX_DOCUMENT_PAGES,
   MAX_IMAGE_BYTES,
+  REPO_MEDIA_BASE,
+  canonicalMediaUrl,
+  preflightMedia,
   preflightOne,
   validateDeclaredMetadata,
 } = require('../scripts/linkedin-media-preflight.cjs');
@@ -51,6 +54,44 @@ test('accepts raw GitHub PDF octet-stream only when URL and PDF signature are va
   }, async () => responseFor(bytes, 'application/octet-stream', 200, url));
   assert.equal(result.sha256, sha);
   assert.equal(result.contentType, 'application/octet-stream');
+});
+
+test('canonicalises only governed legacy review-desk media paths', () => {
+  assert.equal(
+    canonicalMediaUrl('https://222emails-review-desk.netlify.app/media/carousels/028/222-emails-carousel-028.pdf'),
+    `${REPO_MEDIA_BASE}/media/carousels/028/222-emails-carousel-028.pdf`,
+  );
+  assert.equal(
+    canonicalMediaUrl('https://example.com/media/a.pdf'),
+    'https://example.com/media/a.pdf',
+  );
+  assert.throws(
+    () => canonicalMediaUrl('https://222emails-review-desk.netlify.app/queue.json'),
+    /outside the governed media path/,
+  );
+});
+
+test('preflight mutates legacy transport to the exact canonical URL that passed integrity checks', async () => {
+  const pdf = Buffer.from('%PDF-1.7\nlocked test body');
+  const thumb = Buffer.from('thumbnail');
+  const sha = createHash('sha256').update(pdf).digest('hex');
+  const request = {
+    mediaUrl: 'https://222emails-review-desk.netlify.app/media/carousels/028/222-emails-carousel-028.pdf',
+    mediaKind: 'document',
+    documentThumbnailUrl: 'https://222emails-review-desk.netlify.app/media/carousels/028/thumbnail.jpg',
+    documentPageCount: 1,
+    mediaBytes: pdf.length,
+    mediaSha256: sha,
+  };
+  const fetchImpl = async (url) => {
+    if (String(url).endsWith('.pdf')) return responseFor(pdf, 'application/octet-stream', 200, String(url));
+    return responseFor(thumb, 'image/jpeg', 200, String(url));
+  };
+  const proof = await preflightMedia(request, fetchImpl);
+  assert.equal(request.mediaUrl, `${REPO_MEDIA_BASE}/media/carousels/028/222-emails-carousel-028.pdf`);
+  assert.equal(request.documentThumbnailUrl, `${REPO_MEDIA_BASE}/media/carousels/028/thumbnail.jpg`);
+  assert.equal(proof.media.url, request.mediaUrl);
+  assert.equal(proof.media.sha256, sha);
 });
 
 test('rejects octet-stream document without a PDF signature', async () => {
