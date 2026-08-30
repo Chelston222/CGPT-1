@@ -13,8 +13,12 @@ test('commercial outcome capture is owner-gated and publication-verified', () =>
   assert.match(workflow, /github-actions\[bot\]/);
 });
 
-test('commercial outcome capture only allows bounded outcome taxonomy and unambiguous revenue counts', () => {
-  for (const type of ['dm', 'reply', 'enquiry', 'fit_check', 'qualified', 'proposal', 'paid']) assert.match(workflow, new RegExp(`['\"]${type}['\"]`));
+test('commercial outcome capture allows current Hook OS outcomes while preserving bounded legacy taxonomy', () => {
+  for (const type of [
+    'dm', 'reply', 'enquiry', 'relevant_response', 'fit_check', 'qualified',
+    'revenue_recovery_check', 'rrc', 'growth_check', 'proposal',
+    'paid_progression', 'paid', 'buyer',
+  ]) assert.match(workflow, new RegExp(`['\"]${type}['\"]`));
   assert.match(workflow, /COUNT must be an integer from 1 to 100/);
   assert.match(workflow, /COUNT must be 1 when VALUE_GBP is supplied/);
 });
