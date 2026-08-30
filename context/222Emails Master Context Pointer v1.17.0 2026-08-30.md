@@ -23,11 +23,14 @@ https://docs.google.com/document/d/1AmqGFc7rDvOzI4LARDiTedwO5DNLjknVA8KmHjoD8XA/
 Google Drive machine context:
 https://docs.google.com/document/d/1BFQstGyn99Vvuyp1XrVfSL0jMF7VTH042sNtcpSINw0/edit
 
-Google Drive concrete context folder:
+Google Drive context folder:
 https://drive.google.com/drive/folders/1YrFDaj-vGVdN4-THlc87m1xEDS_GSbws
 
 Commercial Command Centre:
 https://docs.google.com/spreadsheets/d/1J1XwoAIVfC4v8Zcr-D4KEN0Q0ZGfKFfxeXoheDx3nc4/edit
+
+Repository current-context fail-safe contract:
+context/222Emails Current Context Contract v1.17.0 2026-08-30.json
 
 Hook OS machine contract:
 context/222Emails Hook OS v1.0 2026-08-30.json
@@ -35,9 +38,14 @@ context/222Emails Hook OS v1.0 2026-08-30.json
 Hook OS operating document:
 docs/222Emails Hook Operating System v1.0 2026-08-30.md
 
+Systems engineering constitution:
+SYSTEMS_CONSTITUTION.md
+
 ## Retrieval rule
 
 For durable 222Emails strategy, retrieve the newest CURRENT CANONICAL master version first. Older context files are preserved snapshots and must not outrank a newer canonical version.
+
+Within the repository, prefer the current-context fail-safe contract and newest pointer over v1.0/v1.1 snapshot files. Historical files remain for audit and provenance only.
 
 For live state, do not trust a static context file. Query the current system of record for pipeline, cash collected, sender health, outreach counts, scheduled/published content, Buffer/GitHub state, client implementation progress, hook performance and hook experiment state.
 
