@@ -24,18 +24,15 @@ def save_json(path: Path, value: Any) -> None:
 def canonical_source(source_url: str) -> str:
     parts = urlsplit(source_url.strip())
     path = parts.path.rstrip("/").lower()
-    # Prefer the stable Upwork ~job token when present, regardless of slug/query form.
-    match = re.search(r"~[A-Za-z0-9]+", path)
-    if match:
-        return f"upwork:{match.group(0).lower()}"
+    # Upwork job tokens begin with ~ and may contain letters, numbers, underscores
+    # or hyphens. Preserve the full token rather than truncating at punctuation.
+    match = re.search(r"~[A-Za-z0-9_-]+", path)
+    if match: return f"upwork:{match.group(0).lower()}"
     return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, "", ""))
 
 
 def canonical_job_key(source_url: str, external_id: str | None = None) -> str:
-    # URL token is the primary identity so the same job cannot evade dedupe merely
-    # because one discovery source supplied an external_id and another did not.
-    seed = canonical_source(source_url).encode("utf-8")
-    return hashlib.sha256(seed).hexdigest()[:20]
+    return hashlib.sha256(canonical_source(source_url).encode("utf-8")).hexdigest()[:20]
 
 
 def tier_for(score: int, thresholds: dict[str, int]) -> str:
@@ -46,9 +43,9 @@ def tier_for(score: int, thresholds: dict[str, int]) -> str:
 
 
 def score_job(parts: dict[str, int], config: dict[str, Any]) -> tuple[int, str]:
-    total = 0
+    total=0
     for key, maximum in config["weights"].items():
-        value = int(parts.get(key, 0))
+        value=int(parts.get(key,0))
         if value < 0 or value > maximum: raise ValueError(f"{key} must be between 0 and {maximum}")
         total += value
     return total, tier_for(total, config["thresholds"])
@@ -59,41 +56,37 @@ def duplicate_exists(queue: list[dict[str, Any]], job_key: str) -> bool:
 
 
 def hard_gate(job: dict[str, Any], config: dict[str, Any], queue: list[dict[str, Any]]) -> str | None:
-    if config["safety"]["require_open_job"] and not job.get("is_open", False): return "JOB_CLOSED"
-    job_key = canonical_job_key(job["source_url"], job.get("external_id"))
-    if config["safety"]["require_duplicate_check"] and duplicate_exists(queue, job_key): return "DUPLICATE"
+    if config["safety"]["require_open_job"] and not job.get("is_open",False): return "JOB_CLOSED"
+    key=canonical_job_key(job["source_url"],job.get("external_id"))
+    if config["safety"]["require_duplicate_check"] and duplicate_exists(queue,key): return "DUPLICATE"
     if config["safety"]["block_missing_required_facts"] and job.get("missing_required_facts"): return "MISSING_REQUIRED_FACT"
     if config["safety"]["block_unsupported_proof"] and job.get("unsupported_proof_required"): return "UNSUPPORTED_PROOF_REQUIRED"
-    haystack = " ".join([str(job.get("title", "")), str(job.get("description", "")), str(job.get("requirements", ""))]).lower()
-    for term in config.get("hard_reject_terms", []):
+    haystack=" ".join([str(job.get("title","")),str(job.get("description","")),str(job.get("requirements",""))]).lower()
+    for term in config.get("hard_reject_terms",[]):
         if term.lower() in haystack: return f"HARD_REJECT_TERM:{term}"
     return None
 
 
-def prepare_record(job: dict[str, Any], score_parts: dict[str, int], proposal: str = "", screening_answers: list[dict[str, str]] | None = None) -> dict[str, Any]:
-    config, queue = load_json(CONFIG_PATH, {}), load_json(QUEUE_PATH, [])
-    job_key = canonical_job_key(job["source_url"], job.get("external_id"))
-    gate = hard_gate(job, config, queue)
-    score_total, tier = score_job(score_parts, config)
-    if gate: state = "NEEDS_HUMAN_FACT" if gate == "MISSING_REQUIRED_FACT" else "REJECTED"
-    elif tier == "REJECT": state, gate = "REJECTED", "SCORE_BELOW_THRESHOLD"
-    elif not proposal.strip(): state = "PROPOSAL_READY"
-    else: state = "READY_TO_SUBMIT"
-    return {"job_key":job_key,"source_url":job["source_url"],"external_id":job.get("external_id"),"title":job.get("title"),"client":job.get("client"),"country":job.get("country"),"budget":job.get("budget"),"discovered_at":job.get("discovered_at"),"score_breakdown":score_parts,"score_total":score_total,"tier":tier,"state":state,"hard_gate_reason":gate,"recommended_bid":job.get("recommended_bid"),"proposal":proposal,"screening_answers":screening_answers or [],"missing_facts":job.get("missing_required_facts", []),"submitted_at":None,"outcome":None}
+def prepare_record(job: dict[str, Any], score_parts: dict[str,int], proposal: str="", screening_answers: list[dict[str,str]]|None=None) -> dict[str,Any]:
+    config,queue=load_json(CONFIG_PATH,{}),load_json(QUEUE_PATH,[]); key=canonical_job_key(job["source_url"],job.get("external_id")); gate=hard_gate(job,config,queue); total,tier=score_job(score_parts,config)
+    if gate: state="NEEDS_HUMAN_FACT" if gate=="MISSING_REQUIRED_FACT" else "REJECTED"
+    elif tier=="REJECT": state,gate="REJECTED","SCORE_BELOW_THRESHOLD"
+    elif not proposal.strip(): state="PROPOSAL_READY"
+    else: state="READY_TO_SUBMIT"
+    return {"job_key":key,"source_url":job["source_url"],"external_id":job.get("external_id"),"title":job.get("title"),"client":job.get("client"),"country":job.get("country"),"budget":job.get("budget"),"discovered_at":job.get("discovered_at"),"score_breakdown":score_parts,"score_total":total,"tier":tier,"state":state,"hard_gate_reason":gate,"recommended_bid":job.get("recommended_bid"),"proposal":proposal,"screening_answers":screening_answers or [],"missing_facts":job.get("missing_required_facts",[]),"submitted_at":None,"outcome":None}
 
 
-def enqueue(record: dict[str, Any]) -> None:
-    queue = load_json(QUEUE_PATH, [])
-    if duplicate_exists(queue, record["job_key"]): raise RuntimeError("Duplicate previously seen job blocked")
-    queue.append(record); save_json(QUEUE_PATH, queue)
+def enqueue(record: dict[str,Any]) -> None:
+    q=load_json(QUEUE_PATH,[])
+    if duplicate_exists(q,record["job_key"]): raise RuntimeError("Duplicate previously seen job blocked")
+    q.append(record); save_json(QUEUE_PATH,q)
 
 
-def ready_queue(limit: int | None = None) -> list[dict[str, Any]]:
-    config = load_json(CONFIG_PATH, {})
-    rows = [r for r in load_json(QUEUE_PATH, []) if r.get("state") == "READY_TO_SUBMIT"]
-    rows.sort(key=lambda r: (r.get("score_total", 0), r.get("discovered_at") or ""), reverse=True)
+def ready_queue(limit:int|None=None)->list[dict[str,Any]]:
+    config=load_json(CONFIG_PATH,{}); rows=[r for r in load_json(QUEUE_PATH,[]) if r.get("state")=="READY_TO_SUBMIT"]
+    rows.sort(key=lambda r:(r.get("score_total",0),r.get("discovered_at") or ""),reverse=True)
     return rows[: limit or config["daily"]["max_ready_to_submit"]]
 
 
-if __name__ == "__main__":
+if __name__=="__main__":
     for item in ready_queue(): print(f"{item['tier']} {item['score_total']}/100 | {item['title']} | {item['source_url']}")
