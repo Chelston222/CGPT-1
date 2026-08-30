@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { evaluateState, loadConfig } from './engine.mjs';
 import { freeWindows, planCalendar, renderIcs } from './calendar.mjs';
+import { parseOwnership, reconcileCalendar, renderOwnedEventsIcs } from './reconcile.mjs';
 
 const config = loadConfig();
 const state = JSON.parse(fs.readFileSync(new URL('./fixtures/simulation.json', import.meta.url), 'utf8'));
@@ -84,6 +85,57 @@ const dependencyEval = evaluateState(dependencyState, config);
 assert.equal(dependencyEval.tasks.find(t => t.id === 'dep').status, 'OBSOLETE');
 assert.equal(dependencyEval.tasks.find(t => t.id === 'child').status, 'EXECUTE');
 
+// Live reconciliation contract: manual events are invisible to mutation, movement is UPDATE not CREATE,
+// duplicate ownership fails closed, orphans outside the freeze window are removable, and near-term work is retained.
+const desiredLiveBlock = {
+  aosId: 'stable-block-1',
+  actionId: 'live-action',
+  taskId: 'live-action',
+  title: 'AOS | LIVE ACTION',
+  start: '2026-08-31T06:20:00.000Z',
+  end: '2026-08-31T06:50:00.000Z',
+  description: 'AOS_OWNER=agentic-os\nAOS_ACTION_ID=live-action\nAOS_BLOCK_ID=stable-block-1\nOutcome: live proof'
+};
+const manualEvent = {
+  id: 'manual-1', summary: 'Founder Story + Photo Capture', start: '2026-08-31T07:00:00.000Z', end: '2026-08-31T07:15:00.000Z', description: 'manual'
+};
+const ownedExisting = {
+  id: 'owned-1', summary: 'AOS | LIVE ACTION', start: '2026-08-31T06:30:00.000Z', end: '2026-08-31T07:00:00.000Z',
+  description: 'AOS_OWNER=agentic-os\nAOS_ACTION_ID=live-action\nAOS_BLOCK_ID=stable-block-1\nOutcome: old timing'
+};
+const liveDiff = reconcileCalendar({ existingEvents: [manualEvent, ownedExisting], desiredBlocks: [desiredLiveBlock], now: '2026-08-30T07:25:00.000Z' });
+assert.equal(liveDiff.creates.length, 0, 'movement of the same action must not create a duplicate');
+assert.equal(liveDiff.updates.length, 1, 'movement of the same action must update the existing event');
+assert.equal(liveDiff.updates[0].eventId, 'owned-1');
+assert.equal(liveDiff.ignoredManualCount, 1, 'manual event must be ignored by reconciliation');
+assert.equal(liveDiff.health.green, true);
+
+const duplicateDiff = reconcileCalendar({ existingEvents: [ownedExisting, { ...ownedExisting, id: 'owned-2' }], desiredBlocks: [desiredLiveBlock], now: '2026-08-30T07:25:00.000Z' });
+assert.equal(duplicateDiff.blockers[0].type, 'DUPLICATE_OWNED_EVENTS');
+assert.equal(duplicateDiff.deletes.length, 0, 'duplicate ambiguity must fail closed rather than deleting one');
+assert.equal(duplicateDiff.health.green, false);
+
+const orphanFuture = {
+  id: 'orphan-future', summary: 'AOS | OLD ACTION', start: '2026-08-31T12:00:00.000Z', end: '2026-08-31T12:30:00.000Z',
+  description: 'AOS_OWNER=agentic-os\nAOS_ACTION_ID=old-action\nAOS_BLOCK_ID=old-block'
+};
+const orphanNear = {
+  id: 'orphan-near', summary: 'AOS | NEAR ACTION', start: '2026-08-30T08:00:00.000Z', end: '2026-08-30T08:30:00.000Z',
+  description: 'AOS_OWNER=agentic-os\nAOS_ACTION_ID=near-action\nAOS_BLOCK_ID=near-block'
+};
+const orphanDiff = reconcileCalendar({ existingEvents: [orphanFuture, orphanNear], desiredBlocks: [], now: '2026-08-30T07:25:00.000Z', freezeWindowMinutes: 120 });
+assert.equal(orphanDiff.deletes.length, 1);
+assert.equal(orphanDiff.deletes[0].eventId, 'orphan-future');
+assert.equal(orphanDiff.retained.length, 1);
+assert.equal(orphanDiff.retained[0].eventId, 'orphan-near');
+assert.equal(parseOwnership(manualEvent).owned, false);
+assert.equal(parseOwnership(ownedExisting).owned, true);
+
+const liveIcs = renderOwnedEventsIcs([manualEvent, ownedExisting, orphanFuture], config, new Date('2026-08-30T07:25:00.000Z'));
+assert.equal((liveIcs.match(/BEGIN:VEVENT/g) || []).length, 2, 'live fallback ICS must contain owned events only');
+assert(!liveIcs.includes('Founder Story + Photo Capture'), 'manual events must never leak into AOS fallback ICS');
+assert(liveIcs.includes('X-AOS-ACTION-ID:live-action'));
+
 // Multi-cycle anti-backlog simulation: repeatedly miss flexible work while newer work supersedes it.
 let rolling = structuredClone(state);
 for (let day = 1; day <= 21; day++) {
@@ -112,4 +164,4 @@ for (let day = 1; day <= 21; day++) {
   assert(live.length < 12, `live backlog must remain bounded on day ${day}; got ${live.length}`);
 }
 
-console.log(`Agentic OS acceptance suite PASS: ${evaluated.tasks.length} fixture tasks, ${plan.blocks.length} calendar blocks, DST-safe, stable IDs, terminal-canonical guard, dependency guard, bounded 21-day simulation.`);
+console.log(`Agentic OS acceptance suite PASS: ${evaluated.tasks.length} fixture tasks, ${plan.blocks.length} calendar blocks, DST-safe, stable IDs, ownership-safe reconciliation, live ICS filtering, terminal-canonical guard, dependency guard, bounded 21-day simulation.`);
