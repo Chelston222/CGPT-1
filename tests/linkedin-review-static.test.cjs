@@ -11,6 +11,8 @@ const html = fs.readFileSync(path.join(root, 'apps/linkedin-review/index.html'),
 const app = fs.readFileSync(path.join(root, 'apps/linkedin-review/app.js'), 'utf8');
 const queue = JSON.parse(fs.readFileSync(path.join(root, 'apps/linkedin-review/queue.json'), 'utf8'));
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'apps/linkedin-review/ledger-manifest.json'), 'utf8'));
+const publicPosts = queue.posts.filter((post) => post.mode === 'schedule');
+const draftPosts = queue.posts.filter((post) => post.mode === 'draft');
 
 test('manual Next is labelled as a no-decision action', () => {
   assert.match(html, /id="manual-next"/);
@@ -48,10 +50,18 @@ test('a slow GitHub audit cannot block the review queue indefinitely', () => {
 test('Swiper is a checked projection of the Master LinkedIn Ledger', () => {
   assert.equal(queue.masterLedger.id, manifest.ledgerId);
   assert.equal(queue.masterLedger.projection, 'live_ready_human_review');
-  assert.equal(manifest.publicProjection.posts, queue.posts.length);
+  assert.equal(manifest.publicProjection.posts, publicPosts.length);
   assert.equal(manifest.rules.newContentEntersMasterFirst, true);
   assert.match(app, /queue\.masterLedger\.id !== ledger\.ledgerId/);
   assert.match(html, /id="master-total"/);
+});
+
+test('non-public drafts remain outside the public scheduling projection', () => {
+  for (const post of draftPosts) {
+    assert.equal(post.mode, 'draft');
+    assert.ok(!post.scheduledAt || Object.keys(post.scheduledAt).length === 0, `${post.id} unexpectedly has a public schedule`);
+  }
+  assert.equal(publicPosts.length + draftPosts.length, queue.posts.length);
 });
 
 test('UI distinguishes five daily posts per channel from Buffer Free queue capacity', () => {
@@ -61,7 +71,7 @@ test('UI distinguishes five daily posts per channel from Buffer Free queue capac
   assert.equal(queue.capacityPolicy.bufferFreeScheduledPerChannel, 10);
   const byTarget = Object.fromEntries(['personal', 'main', 'secondary'].map((target) => [
     target,
-    queue.posts.filter((post) => post.targets.includes(target)).length,
+    publicPosts.filter((post) => post.targets.includes(target)).length,
   ]));
   assert.deepEqual(byTarget, { personal: 10, main: 10, secondary: 10 });
   assert.match(html, /Buffer Free holds 10 scheduled posts per account/);
@@ -81,12 +91,12 @@ test('daily capacity display uses the full 15-placement ceiling', () => {
   assert.match(app, /Math\.min\(count, 15\) \/ 15/);
 });
 
-test('the review projection uses only the canonical scheduledAt field', () => {
-  const queue = JSON.parse(fs.readFileSync(path.join(root, 'apps/linkedin-review/queue.json'), 'utf8'));
+test('the public review projection uses only the canonical scheduledAt field', () => {
   assert.equal(queue.capacityPolicy.planningAnchorDate, '2026-08-09');
   assert.equal(queue.capacityPolicy.firstPublishDate, '2026-08-10');
-  for (const post of queue.posts) {
+  for (const post of publicPosts) {
     assert.equal('schedule' in post, false, `${post.id} has a shadow schedule field`);
+    assert.ok(post.scheduledAt && typeof post.scheduledAt === 'object', `${post.id} is scheduled but has no scheduledAt object`);
     for (const value of Object.values(post.scheduledAt)) {
       assert.match(value, /^2026-08-(10|11)T/);
     }
@@ -100,8 +110,8 @@ test('weekly hand-off has explicit send and read-only refresh controls', () => {
   assert.match(app, /complete week is then checked and released to Buffer/);
 });
 
-test('every live-ready carousel has a packaged PDF and public thumbnail', () => {
-  const carousels = queue.posts.filter((post) => post.format === 'carousel');
+test('every live-ready public carousel has a packaged PDF and public thumbnail', () => {
+  const carousels = publicPosts.filter((post) => post.format === 'carousel');
   assert.ok(carousels.length > 0);
   for (const post of carousels) {
     assert.equal(post.carousel.readiness, 'ready');
