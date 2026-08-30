@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .chat_memory import candidate_stats, chat_search, ingest_events, ingest_export, list_candidates
+from .chat_memory import candidate_stats, chat_search, ingest_events, ingest_export, ingest_migration_csv, list_candidates
 from .connectors import connector_search, connector_stats, ingest_snapshot_file
 from .governance import governance_issues
 from .hybrid import hybrid_search
@@ -36,6 +36,9 @@ def parser() -> argparse.ArgumentParser:
 
     hist = sub.add_parser("chat-backfill")
     hist.add_argument("export", type=Path, help="ChatGPT conversations.json export")
+
+    legacy = sub.add_parser("chat-migration-import")
+    legacy.add_argument("csv", type=Path, help="Reviewed OMEGA 75-chat migration CSV")
 
     inc = sub.add_parser("chat-ingest")
     inc.add_argument("events", type=Path, help="Incremental JSONL conversation events")
@@ -116,6 +119,9 @@ def main() -> int:
             return 0
         if args.command == "chat-backfill":
             print_json({"ok": True, **ingest_export(conn, args.export)})
+            return 0
+        if args.command == "chat-migration-import":
+            print_json({"ok": True, **ingest_migration_csv(conn, args.csv)})
             return 0
         if args.command == "chat-ingest":
             print_json({"ok": True, **ingest_events(conn, args.events)})
