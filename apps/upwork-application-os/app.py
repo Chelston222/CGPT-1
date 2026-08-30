@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any
 
@@ -10,9 +9,13 @@ ROOT = Path(__file__).resolve().parent
 CONFIG_PATH = ROOT / "config.json"
 QUEUE_PATH = ROOT / "queue.json"
 
-ACTIVE_STATES = {
+# A job already seen in any of these states must never be silently re-applied.
+# REJECTED is excluded so a previously rejected discovery can be reconsidered only
+# through an explicit new record after the operator intentionally removes/archives it.
+DUPLICATE_BLOCKING_STATES = {
     "DISCOVERED", "SCORED", "PROPOSAL_READY", "NEEDS_HUMAN_FACT",
-    "READY_TO_SUBMIT", "SUBMITTED", "REPLIED", "INTERVIEW", "WON"
+    "READY_TO_SUBMIT", "SUBMITTED", "REPLIED", "INTERVIEW", "WON",
+    "LOST", "SUPPRESSED"
 }
 
 
@@ -53,7 +56,7 @@ def score_job(parts: dict[str, int], config: dict[str, Any]) -> tuple[int, str]:
 
 
 def duplicate_exists(queue: list[dict[str, Any]], job_key: str) -> bool:
-    return any(r.get("job_key") == job_key and r.get("state") in ACTIVE_STATES for r in queue)
+    return any(r.get("job_key") == job_key and r.get("state") in DUPLICATE_BLOCKING_STATES for r in queue)
 
 
 def hard_gate(job: dict[str, Any], config: dict[str, Any], queue: list[dict[str, Any]]) -> str | None:
@@ -125,7 +128,7 @@ def prepare_record(job: dict[str, Any], score_parts: dict[str, int], proposal: s
 def enqueue(record: dict[str, Any]) -> None:
     queue = load_json(QUEUE_PATH, [])
     if duplicate_exists(queue, record["job_key"]):
-        raise RuntimeError("Duplicate active/submitted job blocked")
+        raise RuntimeError("Duplicate previously seen job blocked")
     queue.append(record)
     save_json(QUEUE_PATH, queue)
 
