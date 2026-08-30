@@ -8,3 +8,6 @@ lindahs-flight-finds/.env.local
 lindahs-flight-finds/.env*.local
 apps/llm-wiki/.data/
 apps/llm-wiki/**/__pycache__/
+apps/omega-memory-netlify/.netlify/
+apps/omega-memory-netlify/node_modules/
+apps/omega-memory-netlify/.env*

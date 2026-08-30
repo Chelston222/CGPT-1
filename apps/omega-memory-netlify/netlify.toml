@@ -1,0 +1,10 @@
+[build]
+  base = "apps/omega-memory-netlify"
+  command = "npm run check"
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
