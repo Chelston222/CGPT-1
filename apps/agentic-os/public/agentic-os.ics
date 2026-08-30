@@ -1,0 +1,18 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//222Emails//Agentic OS//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Agentic OS
+X-WR-TIMEZONE:Europe/London
+BEGIN:VEVENT
+UID:aos-ceo-start-2026-08-30@agentic-os
+DTSTAMP:20260830T020900Z
+DTSTART;TZID=Europe/London:20260830T072000
+DTEND;TZID=Europe/London:20260830T074000
+SUMMARY:AOS | CEO START
+DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-08-30\nReview the live ranked execution plan and begin with the highest-value currently valid action. This is a flexible Agentic OS block and may be replaced when a materially higher-priority commitment or opportunity appears.
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR
