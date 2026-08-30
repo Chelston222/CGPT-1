@@ -1,0 +1,111 @@
+{
+  "now": "2026-08-30T08:00:00Z",
+  "outcomes": [
+    {"id":"outcome-done","satisfied":true},
+    {"id":"outcome-sales","satisfied":false},
+    {"id":"outcome-content","satisfied":false}
+  ],
+  "hardCommitments": [
+    {"id":"manual-1","title":"Existing hard commitment","start":"2026-08-30T10:00:00Z","end":"2026-08-30T11:00:00Z","ownedByAos":false},
+    {"id":"manual-2","title":"Existing hard commitment 2","start":"2026-08-30T14:00:00Z","end":"2026-08-30T15:00:00Z","ownedByAos":false}
+  ],
+  "tasks": [
+    {
+      "id":"old-sales-route",
+      "title":"Old sales route",
+      "desiredOutcome":"outcome-sales",
+      "familyId":"sales-route",
+      "createdAt":"2026-08-20T08:00:00Z",
+      "lastValidatedAt":"2026-08-20T08:00:00Z",
+      "durationMinutes":90,
+      "strategicPriority":80,
+      "expectedValue":75,
+      "impactProbability":60,
+      "urgency":70,
+      "relevanceConfidence":70,
+      "status":"ACTIVE"
+    },
+    {
+      "id":"new-sales-route",
+      "title":"Warm reply follow-up",
+      "desiredOutcome":"outcome-sales",
+      "familyId":"sales-route",
+      "supersedesIds":["old-sales-route"],
+      "createdAt":"2026-08-30T07:50:00Z",
+      "lastValidatedAt":"2026-08-30T07:50:00Z",
+      "durationMinutes":45,
+      "strategicPriority":100,
+      "expectedValue":95,
+      "impactProbability":90,
+      "urgency":100,
+      "dependencyUnlock":90,
+      "relevanceConfidence":95,
+      "status":"ACTIVE"
+    },
+    {
+      "id":"completed-child",
+      "title":"Redundant child after completed outcome",
+      "desiredOutcome":"outcome-done",
+      "createdAt":"2026-08-29T08:00:00Z",
+      "lastValidatedAt":"2026-08-29T08:00:00Z",
+      "durationMinutes":60,
+      "status":"ACTIVE"
+    },
+    {
+      "id":"expired-task",
+      "title":"Expired deadline work",
+      "desiredOutcome":"expired-outcome",
+      "createdAt":"2026-08-25T08:00:00Z",
+      "lastValidatedAt":"2026-08-25T08:00:00Z",
+      "deadline":"2026-08-29T12:00:00Z",
+      "durationMinutes":60,
+      "status":"ACTIVE"
+    },
+    {
+      "id":"stale-recurring",
+      "title":"Recurring admin awaiting contract review",
+      "desiredOutcome":"admin-outcome",
+      "createdAt":"2026-08-01T08:00:00Z",
+      "lastValidatedAt":"2026-08-20T08:00:00Z",
+      "recurrence":"FREQ=DAILY",
+      "recurrenceReviewAt":"2026-08-29T08:00:00Z",
+      "durationMinutes":30,
+      "status":"ACTIVE"
+    },
+    {
+      "id":"content-1",
+      "title":"Create strongest current content asset",
+      "desiredOutcome":"outcome-content",
+      "familyId":"content-asset",
+      "createdAt":"2026-08-30T06:00:00Z",
+      "lastValidatedAt":"2026-08-30T06:00:00Z",
+      "durationMinutes":90,
+      "strategicPriority":70,
+      "expectedValue":60,
+      "impactProbability":70,
+      "urgency":55,
+      "relevanceConfidence":90,
+      "status":"ACTIVE"
+    },
+    {
+      "id":"blocked-task",
+      "title":"Dependent work",
+      "desiredOutcome":"dependent-outcome",
+      "dependencyIds":["missing-dependency"],
+      "createdAt":"2026-08-30T07:00:00Z",
+      "lastValidatedAt":"2026-08-30T07:00:00Z",
+      "durationMinutes":45,
+      "status":"ACTIVE"
+    },
+    {
+      "id":"missed-stale",
+      "title":"Missed stale action",
+      "desiredOutcome":"missed-outcome",
+      "createdAt":"2026-08-20T07:00:00Z",
+      "lastValidatedAt":"2026-08-20T07:00:00Z",
+      "missed":true,
+      "durationMinutes":30,
+      "status":"ACTIVE"
+    }
+  ]
+}
