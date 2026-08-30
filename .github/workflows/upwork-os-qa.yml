@@ -8,6 +8,8 @@ on:
   pull_request:
     paths:
       - 'apps/upwork-application-os/**'
+  schedule:
+    - cron: '5 6 * * *'
   workflow_dispatch:
 
 permissions:
