@@ -26,7 +26,8 @@ Every candidate resolves to one of:
 - `config.json` — operating policy, scoring weights and decay windows.
 - `engine.mjs` — deterministic relevance, supersession, recurrence and priority engine.
 - `calendar.mjs` — collision-safe, Europe/London-aware capacity planner and RFC5545 ICS renderer.
-- `run.mjs` — CLI orchestration entrypoint.
+- `reconcile.mjs` — ownership-safe live calendar diff: create, update, delete, no-op, retain or fail closed.
+- `run.mjs` — CLI orchestration entrypoint that emits task state, plan and reconciliation evidence.
 - `fixtures/simulation.json` — changing multi-day workload acceptance fixture.
 - `tests.mjs` — regression/acceptance suite.
 - `public/agentic-os.ics` — public read-only Apple Calendar fallback feed.
@@ -40,9 +41,13 @@ Every candidate resolves to one of:
   "now": "2026-08-30T08:00:00+01:00",
   "tasks": [],
   "hardCommitments": [],
-  "outcomes": []
+  "outcomes": [],
+  "existingCalendarEvents": [],
+  "freezeWindowMinutes": 120
 }
 ```
+
+`existingCalendarEvents` is optional. When supplied, the run emits an ownership-safe reconciliation diff against the desired AOS execution blocks. When omitted, the reconciliation layer correctly reports the desired owned blocks as creates without touching anything externally.
 
 Task fields are intentionally explicit. Important fields include:
 
@@ -82,18 +87,42 @@ The engine emits:
 - capacity-safe execution blocks
 - protected slack
 - health metrics
+- deterministic calendar reconciliation diff
 - a generated ICS feed
 
-Calendar blocks carry stable ownership metadata. A block keeps its Agentic OS identity when its time moves, so a live writer can update the existing event rather than create a duplicate.
+Files written under `apps/agentic-os/state/` are:
+
+- `latest.json`
+- `reconciliation.json`
+- `execution.ics`
+
+The Green Gate fails if either task-state health or calendar-reconciliation health is red.
+
+## Calendar ownership contract
+
+Calendar blocks carry stable ownership metadata. A block keeps its Agentic OS identity when its time moves, so a live writer updates the existing Google event rather than creating a duplicate.
 
 Required live event markers are:
 
 - title begins `AOS |`
 - `AOS_OWNER=agentic-os`
 - `AOS_ACTION_ID=<stable action id>`
-- `AOS_BLOCK_ID=<stable block id>`
+- `AOS_BLOCK_ID=<stable block id>` where available
 
 Manual/personal events are inputs to capacity planning and are never rewritten.
+
+`reconcile.mjs` enforces these rules:
+
+- one desired action + one owned live event -> UPDATE or NOOP
+- one desired action + no owned event -> CREATE
+- multiple owned events for one action -> BLOCK / fail closed
+- future owned event no longer desired and outside freeze window -> DELETE candidate
+- owned event inside the freeze window -> RETAIN
+- past owned event -> RETAIN for history
+- manual event -> IGNORE
+- `AOS |` event without unambiguous ownership markers -> BLOCK / fail closed
+
+For multi-segment actions, unique `AOS_BLOCK_ID` markers are required before any mutation is allowed.
 
 ## Current live calendar architecture
 
@@ -109,7 +138,7 @@ A dedicated secondary calendar remains a future isolation improvement if connect
 
 ## Runtime bridge
 
-The deterministic repo engine does not contain Google OAuth credentials and does not independently call Google Calendar. Live source ingestion and live calendar reconciliation are currently performed by the existing **Agentic OS Omega Supervisor**, which has access to the connected sources/tools.
+The deterministic repo engine does not contain Google OAuth credentials and does not independently call Google Calendar. Live source ingestion and live calendar reconciliation are performed by the existing **Agentic OS Omega Supervisor**, which uses the connected Calendar, GitHub and other authorised sources.
 
 That supervisor must:
 
@@ -117,11 +146,14 @@ That supervisor must:
 2. reconcile current task/outcome evidence
 3. evaluate relevance, duplicates and supersession
 4. rank only current executable work
-5. reconcile existing AOS-owned events by stable action/block ID
-6. fail closed on ambiguous ownership or unavailable connectors
-7. preserve audit lineage for retired work
+5. apply the `reconcile.mjs` ownership contract to existing AOS-owned events
+6. fail closed on duplicate or ambiguous ownership
+7. preserve the two-hour freeze window under normal conditions
+8. preserve audit lineage for retired work
+9. regenerate the public fallback ICS from current/future AOS-owned events only after a successful live reconciliation
+10. never manufacture completion when a connector or write is unavailable
 
-The repo engine remains the deterministic policy/test layer. The supervisor is the current live integration bridge. These roles must not be conflated.
+The repo engine remains the deterministic policy/test layer. The supervisor is the live integration bridge. These roles are deliberately separate but governed by the same ownership and reconciliation contract.
 
 ## Apple Calendar and ICS
 
@@ -133,7 +165,7 @@ Portable fallback:
 
 `public/agentic-os.ics -> Apple Calendar subscription`
 
-The ICS subscription is deliberately read-only and is **not** the canonical task store or authoritative execution writer. It must contain AOS-owned events only and must never leak unrelated personal/manual calendar events.
+The ICS subscription is deliberately read-only and is **not** the canonical task store or authoritative execution writer. It must contain current/future AOS-owned events only and must never leak unrelated personal/manual calendar events.
 
 If both Google sync and the ICS subscription are enabled, the same AOS event can appear twice in Apple Calendar. Google sync should therefore be the normal primary view, with ICS retained as fallback/portability unless duplicate display is acceptable.
 
@@ -147,6 +179,8 @@ Recurring does not mean immortal. A recurring action must have:
 - a next review date
 
 When its review becomes due, the recurrence loses scheduling privilege until revalidated.
+
+The live system prefers regenerating short-horizon one-off AOS blocks for adaptive work rather than creating permanent recurring calendar series. This preserves reprioritisation freedom and avoids immortal calendar debt.
 
 ## Missed work
 
@@ -169,7 +203,11 @@ Outputs are written beneath `apps/agentic-os/state/`.
 
 - Europe/London wall-clock handling is tested across BST and GMT
 - deterministic/idempotent ownership IDs survive calendar movement
+- real live update semantics have been verified against Google Calendar without duplicate creation
 - no mutation of events without Agentic OS ownership markers
+- duplicate owned live events fail closed instead of being guessed away
+- ambiguous AOS-prefixed events fail closed
+- the normal two-hour freeze window prevents thrashing of imminent work
 - every terminal/merged/superseded state requires a reason
 - terminal work cannot become the canonical merge target for live work
 - satisfied dependency outcomes do not leave downstream work falsely blocked
