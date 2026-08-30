@@ -8,6 +8,8 @@ const { createHash } = require('node:crypto');
 const MAX_IMAGE_BYTES = 10_000_000;
 const MAX_DOCUMENT_BYTES = 100_000_000;
 const MAX_DOCUMENT_PAGES = 300;
+const LEGACY_REVIEW_HOST = '222emails-review-desk.netlify.app';
+const REPO_MEDIA_BASE = 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review';
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
   'image/png',
@@ -30,6 +32,14 @@ function validateHttps(value, fieldName) {
   }
   if (parsed.protocol !== 'https:') throw new Error(`${fieldName} must use HTTPS.`);
   return parsed;
+}
+
+function canonicalMediaUrl(value, fieldName = 'MEDIA_URL') {
+  const parsed = validateHttps(value, fieldName);
+  if (parsed.hostname.toLowerCase() !== LEGACY_REVIEW_HOST) return parsed.toString();
+  if (!parsed.pathname.startsWith('/media/')) throw new Error(`${fieldName} uses the retired review host outside the governed media path.`);
+  if (parsed.search || parsed.hash) throw new Error(`${fieldName} uses the retired review host with an unsupported query or fragment.`);
+  return `${REPO_MEDIA_BASE}${parsed.pathname}`;
 }
 
 function expectedLimit(kind) {
@@ -136,6 +146,17 @@ async function preflightOne(media, fetchImpl = globalThis.fetch) {
 
 async function preflightMedia(request, fetchImpl = globalThis.fetch) {
   if (!request?.mediaUrl) return null;
+
+  // The original review desk was a manual upload and can drift from the locked
+  // repository assets. Canonicalise only its governed /media/ paths to the
+  // current main-branch repository bytes, then verify byte count/hash as usual.
+  // Mutating the request is intentional: downstream Buffer dispatch must use
+  // the exact transport URL that passed preflight, never the stale legacy host.
+  request.mediaUrl = canonicalMediaUrl(request.mediaUrl, 'MEDIA_URL');
+  if (request.documentThumbnailUrl) {
+    request.documentThumbnailUrl = canonicalMediaUrl(request.documentThumbnailUrl, 'DOCUMENT_THUMBNAIL_URL');
+  }
+
   const media = await preflightOne({
     url: request.mediaUrl,
     fieldName: 'MEDIA_URL',
@@ -159,9 +180,12 @@ async function preflightMedia(request, fetchImpl = globalThis.fetch) {
 
 module.exports = {
   ALLOWED_IMAGE_TYPES,
+  LEGACY_REVIEW_HOST,
   MAX_DOCUMENT_BYTES,
   MAX_DOCUMENT_PAGES,
   MAX_IMAGE_BYTES,
+  REPO_MEDIA_BASE,
+  canonicalMediaUrl,
   cleanContentType,
   preflightMedia,
   preflightOne,

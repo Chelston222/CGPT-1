@@ -38,7 +38,23 @@ jobs:
             const valueGbp = valueRaw === undefined || valueRaw === '' ? null : Number(valueRaw);
             const captureIssue = context.issue.number;
             const captureMarker = `<!-- LINKEDIN_OUTCOME_CAPTURE captureIssue=${captureIssue} -->`;
-            const allowed = new Set(['dm', 'reply', 'enquiry', 'fit_check', 'qualified', 'proposal', 'paid']);
+            // Keep legacy fit_check for historical data, while current-facing
+            // Hook OS outcomes use Revenue Recovery Check / paid-progression language.
+            const allowed = new Set([
+              'dm',
+              'reply',
+              'enquiry',
+              'relevant_response',
+              'fit_check',
+              'qualified',
+              'revenue_recovery_check',
+              'rrc',
+              'growth_check',
+              'proposal',
+              'paid_progression',
+              'paid',
+              'buyer',
+            ]);
 
             function fail(message) {
               throw new Error(message);

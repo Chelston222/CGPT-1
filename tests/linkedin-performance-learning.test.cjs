@@ -21,6 +21,24 @@ test('detects founder, contrarian and diagnostic traits', () => {
   assert.ok(traits.includes('story'));
 });
 
+test('detects Hook OS opening mechanisms without declaring them winners', () => {
+  const question = engine.inferTraits('What happens after a client leaves without rebooking?\n\nThe next step matters.');
+  const condition = engine.inferTraits('If clients leave without their next appointment booked, what brings them back?');
+  const contrast = engine.inferTraits('What usually happens vs. what should happen after the appointment.');
+  const explicitLoss = engine.inferTraits('A happy client can still disappear.');
+  assert.ok(question.includes('hook_question'));
+  assert.ok(question.includes('hook_diagnostic'));
+  assert.ok(condition.includes('hook_condition'));
+  assert.ok(contrast.includes('hook_contrast'));
+  assert.ok(explicitLoss.includes('hook_problem_loss'));
+});
+
+test('commercial signal hierarchy values deeper buyer progression more highly', () => {
+  assert.ok(engine.commercialSignalValue([{ type: 'rrc' }]) > engine.commercialSignalValue([{ type: 'reply' }]));
+  assert.ok(engine.commercialSignalValue([{ type: 'paid_progression' }]) > engine.commercialSignalValue([{ type: 'rrc' }]));
+  assert.ok(engine.commercialSignalValue([{ type: 'buyer', valueGbp: 997 }]) > engine.commercialSignalValue([{ type: 'paid' }]));
+});
+
 test('shrinks small samples twice so tiny viral-looking posts do not dominate', () => {
   const records = [
     { id: 'winner', category: 'founder', format: 'text', traits: ['founder_voice'], metrics: { reactions: 4, comments: 0, engagementRate: 5.41, impressions: 74, reach: 40 } },
