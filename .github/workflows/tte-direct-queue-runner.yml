@@ -34,7 +34,7 @@ jobs:
       TTE_SMTP_PORT: '465'
       TTE_IMAP_HOST: mail.privateemail.com
       TTE_IMAP_PORT: '993'
-      TTE_DIRECT_RAMP_CAP: '5'
+      TTE_DIRECT_RAMP_CAP: '2'
       TTE_DIRECT_DAILY_CAP: '20'
     steps:
       - name: Checkout
