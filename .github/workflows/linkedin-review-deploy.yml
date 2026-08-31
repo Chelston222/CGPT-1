@@ -71,8 +71,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/linkedin-review-release /tmp/linkedin-review-static
-          mkdir -p /tmp/linkedin-review-release /tmp/linkedin-review-static
+          rm -rf /tmp/linkedin-review-release /tmp/linkedin-review-static /tmp/linkedin-review-bundle
+          mkdir -p /tmp/linkedin-review-release /tmp/linkedin-review-static /tmp/linkedin-review-bundle/static /tmp/linkedin-review-bundle/functions
           git archive --format=tar HEAD apps/linkedin-review | tar -xf - -C /tmp/linkedin-review-release --strip-components=2
           npm install --prefix /tmp/linkedin-review-release --ignore-scripts --no-audit --no-fund
           rsync -a \
@@ -87,6 +87,16 @@ jobs:
           test -f /tmp/linkedin-review-static/queue-overlay.js
           test -f /tmp/linkedin-review-release/netlify/functions/review-decisions.mjs
           grep -q "post.mode === 'schedule'" /tmp/linkedin-review-static/queue-overlay.js
+          rsync -a /tmp/linkedin-review-static/ /tmp/linkedin-review-bundle/static/
+          rsync -a /tmp/linkedin-review-release/netlify/functions/ /tmp/linkedin-review-bundle/functions/
+          printf '%s\n' "$GITHUB_SHA" > /tmp/linkedin-review-bundle/SOURCE_SHA
+      - name: Upload verified release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: linkedin-review-production-bundle-${{ github.sha }}
+          path: /tmp/linkedin-review-bundle
+          if-no-files-found: error
+          retention-days: 1
       - name: Deploy existing review desk project
         working-directory: apps/linkedin-review
         shell: bash
