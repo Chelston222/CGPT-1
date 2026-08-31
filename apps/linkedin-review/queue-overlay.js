@@ -7,6 +7,16 @@
     'qa-replenishment-2026-08-17.json',
   ];
 
+  function isPublicScheduledPost(post) {
+    return Boolean(
+      post
+      && post.mode === 'schedule'
+      && post.scheduledAt
+      && typeof post.scheduledAt === 'object'
+      && Object.keys(post.scheduledAt).length > 0
+    );
+  }
+
   window.fetch = async (input, init) => {
     const url = typeof input === 'string' ? input : input?.url || '';
     const response = await originalFetch(input, init);
@@ -42,12 +52,15 @@
         });
       }
 
+      const allReviewRecords = [...(queue.posts || []), ...additions];
+      const publicPosts = allReviewRecords.filter(isPublicScheduledPost);
       const merged = {
         ...queue,
-        posts: [...(queue.posts || []), ...additions],
+        posts: publicPosts,
         qaReplenishment: {
           sources,
-          added: additions.length,
+          added: additions.filter(isPublicScheduledPost).length,
+          excludedNonPublic: allReviewRecords.length - publicPosts.length,
           approvalRule: 'QA replenishment is review-only. Explicit owner approval is still required before Buffer receives any item.',
         },
       };
