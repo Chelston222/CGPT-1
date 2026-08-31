@@ -4,10 +4,11 @@ Production-shaped HTTPS bridge for the OMEGA LLM Wiki.
 
 ## Security
 
-The service fails closed unless both secrets exist in the Netlify production runtime:
+The service fails closed unless `OMEGA_MCP_TOKEN` exists in the Netlify production runtime.
 
 - `OMEGA_MCP_TOKEN` protects `/mcp`
-- `OMEGA_IMPORT_TOKEN` protects `/admin/memory/import`
+- `OMEGA_IMPORT_TOKEN` should protect `/admin/memory/import` when available
+- if the platform cannot provision the dedicated import secret, the import endpoint securely falls back to `OMEGA_MCP_TOKEN` rather than opening access
 
 The MCP surface is read-only. The import surface is separate and write-only. Do not commit either secret.
 
@@ -36,7 +37,7 @@ Historical chat records must use `source_class: historical_evidence` and `canoni
 
 ## Import
 
-POST JSON to `/admin/memory/import` with the import bearer token:
+POST JSON to `/admin/memory/import` with the import bearer token. If `OMEGA_IMPORT_TOKEN` is unavailable, use the MCP token fallback.
 
 ```json
 {
@@ -74,4 +75,4 @@ For Netlify-native local testing use `netlify dev` from this directory.
 
 Netlify project: `omega-memory`
 
-The site must remain unseeded and fail-closed until production secrets are configured. After deployment and seeding, verify `health`, `search`, and `fetch` through the exact HTTPS MCP URL before attaching it as a private ChatGPT app.
+The site must remain unseeded and fail-closed until production authentication is configured. After deployment and seeding, verify `health`, `search`, and `fetch` through the exact HTTPS MCP URL before attaching it as a private ChatGPT app.
