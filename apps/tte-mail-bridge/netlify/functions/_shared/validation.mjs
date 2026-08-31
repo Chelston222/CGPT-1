@@ -1,4 +1,5 @@
 import { CORPORATE_TYPES, INDIVIDUALISH_TYPES, PROVIDER_PERMISSION_BASES, REQUIRED_OPT_OUT } from './constants.mjs';
+import { validateEmailRevenueOs } from './email-revenue-os.mjs';
 import { normalizeEmail, safeText } from './util.mjs';
 
 const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
@@ -51,22 +52,33 @@ export function validateOutbound(input, opts = {}) {
   if (firstTouch && opts.requireFirstTouchReview !== false && !reviewed) errors.push('first_touch_human_approval_required');
   if (!firstTouch && opts.requireSequenceApproval !== false && !reviewed && input?.sequenceApproved !== true) errors.push('follow_up_sequence_approval_required');
 
+  // Email Revenue OS validation is opt-in at payload level so existing/manual sends
+  // retain their current contract. Generated or explicitly tagged Email Revenue OS
+  // payloads receive the additional copy, metadata, evidence and cold-outbound gates.
+  const emailRevenueOs = validateEmailRevenueOs(input, opts.emailRevenueOs || {});
+  errors.push(...emailRevenueOs.errors);
+
+  const normalized = {
+    ...input,
+    to: to ? [to] : [],
+    subject,
+    text,
+    compliance: {
+      ...compliance,
+      companyType,
+      legalBasis,
+      recipientPermission,
+      permissionEvidence,
+      permissionRecordedAt: Number.isFinite(permissionRecordedAtMs) ? new Date(permissionRecordedAtMs).toISOString() : permissionRecordedAtRaw,
+    },
+  };
+
+  if (emailRevenueOs.applied) normalized.emailRevenueOs = emailRevenueOs.normalized;
+
   return {
     ok: errors.length === 0,
     errors,
-    normalized: {
-      ...input,
-      to: to ? [to] : [],
-      subject,
-      text,
-      compliance: {
-        ...compliance,
-        companyType,
-        legalBasis,
-        recipientPermission,
-        permissionEvidence,
-        permissionRecordedAt: Number.isFinite(permissionRecordedAtMs) ? new Date(permissionRecordedAtMs).toISOString() : permissionRecordedAtRaw,
-      },
-    },
+    warnings: emailRevenueOs.warnings,
+    normalized,
   };
 }
