@@ -54,6 +54,7 @@ jobs:
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       NETLIFY_SITE_ID: cc76ea65-7a7e-48a2-9ab2-b35ae9af11b9
+      RELAY_SITE_ID: e531326d-60b8-4def-85b9-727a7f708547
       REVIEW_DESK_URL: https://222emails-review-desk.netlify.app
     steps:
       - uses: actions/checkout@v4
@@ -97,16 +98,28 @@ jobs:
           path: /tmp/linkedin-review-bundle
           if-no-files-found: error
           retention-days: 1
-      - name: Deploy existing review desk project
+      - name: Retrieve account-authorised Netlify handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROXY_PATH="$(npx --yes netlify-cli@latest env:get TTE_REVIEW_DEPLOY_PROXY --context production --site "$RELAY_SITE_ID")"
+          test -n "$PROXY_PATH" || { echo 'Authorised Netlify handoff is missing.'; exit 2; }
+          case "$PROXY_PATH" in
+            https://netlify-mcp.netlify.app/proxy/*) ;;
+            *) echo 'Authorised Netlify handoff has an unexpected format.'; exit 3 ;;
+          esac
+          echo "::add-mask::$PROXY_PATH"
+          printf '%s' "$PROXY_PATH" > /tmp/linkedin-review-deploy-proxy
+      - name: Deploy existing review desk project through authorised handoff
         working-directory: apps/linkedin-review
         shell: bash
         run: |
           set -euo pipefail
-          npx --yes netlify-cli@latest deploy \
-            --prod \
-            --dir=/tmp/linkedin-review-static \
-            --functions=/tmp/linkedin-review-release/netlify/functions \
-            --site="$NETLIFY_SITE_ID"
+          PROXY_PATH="$(cat /tmp/linkedin-review-deploy-proxy)"
+          echo "::add-mask::$PROXY_PATH"
+          npx -y @netlify/mcp@latest \
+            --site-id "$NETLIFY_SITE_ID" \
+            --proxy-path "$PROXY_PATH"
       - name: Verify production review desk
         shell: bash
         run: |
@@ -117,3 +130,8 @@ jobs:
           grep -q "post.mode === 'schedule'" /tmp/review-overlay.js
           node -e "const q=require('/tmp/review-queue.json'); if(!Array.isArray(q.posts)||!q.posts.length) process.exit(1); console.log('live durable queue records:',q.posts.length)"
           echo "LinkedIn review desk production verification passed."
+      - name: Remove short-lived relay handoff
+        if: always()
+        shell: bash
+        run: |
+          npx --yes netlify-cli@latest env:unset TTE_REVIEW_DEPLOY_PROXY --context production --site "$RELAY_SITE_ID" --force >/dev/null 2>&1 || true
