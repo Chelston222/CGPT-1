@@ -10,8 +10,8 @@ function reply(value: unknown, status = 200) {
 }
 
 export default async (req: Request, context: Context) => {
-  const token = Netlify.env.get('OMEGA_IMPORT_TOKEN');
-  if (!token) return reply({ error: 'OMEGA_IMPORT_TOKEN is not configured; import is fail-closed.' }, 503);
+  const token = Netlify.env.get('OMEGA_IMPORT_TOKEN') || Netlify.env.get('OMEGA_MCP_TOKEN');
+  if (!token) return reply({ error: 'OMEGA_IMPORT_TOKEN/OMEGA_MCP_TOKEN is not configured; import is fail-closed.' }, 503);
   if ((req.headers.get('authorization') || '') !== `Bearer ${token}`) return reply({ error: 'unauthorised' }, 401);
   if (req.method !== 'POST') return reply({ error: 'method_not_allowed' }, 405);
 
