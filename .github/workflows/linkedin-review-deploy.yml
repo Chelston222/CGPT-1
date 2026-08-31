@@ -1,0 +1,109 @@
+name: LinkedIn Review Production Deploy
+
+on:
+  pull_request:
+    paths:
+      - 'apps/linkedin-review/**'
+      - 'scripts/linkedin-media-preflight.cjs'
+      - 'tests/linkedin-*.test.cjs'
+      - '.github/workflows/linkedin-review-deploy.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/linkedin-review/**'
+      - '.github/workflows/linkedin-review-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linkedin-review-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install review desk dependency
+        run: npm install --prefix apps/linkedin-review --ignore-scripts --no-audit --no-fund
+      - name: Run review desk release gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/linkedin-review-static.test.cjs tests/linkedin-hardening-static.test.cjs tests/linkedin-media-preflight.test.cjs tests/linkedin-decision-sync.test.cjs
+          node --check apps/linkedin-review/app.js
+          node --check apps/linkedin-review/queue-overlay.js
+          node --check apps/linkedin-review/sync.js
+          node --check apps/linkedin-review/netlify/functions/review-decisions.mjs
+          node -e "import('./apps/linkedin-review/netlify/functions/review-decisions.mjs').then(() => console.log('review decision function imports'))"
+          node -e "const q=require('./apps/linkedin-review/queue.json'); const publicPosts=q.posts.filter(p=>p.mode==='schedule'); if(!publicPosts.length) process.exit(1); for(const p of publicPosts){if(!p.scheduledAt || typeof p.scheduledAt!=='object' || !Object.keys(p.scheduledAt).length) process.exit(2)}; console.log('public scheduled queue records:',publicPosts.length)"
+
+  deploy:
+    needs: verify
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: cc76ea65-7a7e-48a2-9ab2-b35ae9af11b9
+      REVIEW_DESK_URL: https://222emails-review-desk.netlify.app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify deployment credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$NETLIFY_AUTH_TOKEN" || { echo 'NETLIFY_AUTH_TOKEN is missing'; exit 2; }
+      - name: Build immutable tracked release package
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/linkedin-review-release /tmp/linkedin-review-static
+          mkdir -p /tmp/linkedin-review-release /tmp/linkedin-review-static
+          git archive --format=tar HEAD apps/linkedin-review | tar -xf - -C /tmp/linkedin-review-release --strip-components=2
+          npm install --prefix /tmp/linkedin-review-release --ignore-scripts --no-audit --no-fund
+          rsync -a \
+            --exclude='node_modules/' \
+            --exclude='netlify/' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='netlify.toml' \
+            /tmp/linkedin-review-release/ /tmp/linkedin-review-static/
+          test -f /tmp/linkedin-review-static/index.html
+          test -f /tmp/linkedin-review-static/app.js
+          test -f /tmp/linkedin-review-static/queue-overlay.js
+          test -f /tmp/linkedin-review-release/netlify/functions/review-decisions.mjs
+          grep -q "post.mode === 'schedule'" /tmp/linkedin-review-static/queue-overlay.js
+      - name: Deploy existing review desk project
+        working-directory: apps/linkedin-review
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes netlify-cli@latest deploy \
+            --prod \
+            --dir=/tmp/linkedin-review-static \
+            --functions=/tmp/linkedin-review-release/netlify/functions \
+            --site="$NETLIFY_SITE_ID"
+      - name: Verify production review desk
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 6 --retry-delay 3 "$REVIEW_DESK_URL/" -o /tmp/review-index.html
+          curl --fail --silent --show-error --retry 6 --retry-delay 3 "$REVIEW_DESK_URL/queue-overlay.js" -o /tmp/review-overlay.js
+          curl --fail --silent --show-error --retry 6 --retry-delay 3 "$REVIEW_DESK_URL/queue.json" -o /tmp/review-queue.json
+          grep -q "post.mode === 'schedule'" /tmp/review-overlay.js
+          node -e "const q=require('/tmp/review-queue.json'); if(!Array.isArray(q.posts)||!q.posts.length) process.exit(1); console.log('live durable queue records:',q.posts.length)"
+          echo "LinkedIn review desk production verification passed."
