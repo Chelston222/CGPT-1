@@ -11,6 +11,8 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 const autopost = read('.github/workflows/linkedin-buffer-autopost.yml');
 const verifier = read('.github/workflows/linkedin-publication-verifier.yml');
 const backfill = read('.github/workflows/linkedin-publication-backfill.yml');
+const pdfShareNow = read('.github/workflows/linkedin-pdf-share-now.yml');
+const queueOverlay = read('apps/linkedin-review/queue-overlay.js');
 const strategy = read('docs/LINKEDIN_CONTENT_STRATEGY_2026.md');
 
 test('all approved media is preflighted before the first Buffer createPost mutation', () => {
@@ -65,6 +67,24 @@ test('non-public draft canaries terminate as verified drafts, fail closed on une
   assert.match(verifier, /Buffer draft canary entered an unexpected state/);
   assert.match(verifier, /Treat this canary as failed-safe and investigate before using the image path/);
   assert.match(verifier, /LINKEDIN_PUBLICATION_FAILED/);
+});
+
+test('public review UI filters non-public drafts before app.js consumes scheduledAt', () => {
+  assert.match(queueOverlay, /post\.mode === 'schedule'/);
+  assert.match(queueOverlay, /Object\.keys\(post\.scheduledAt\)\.length > 0/);
+  assert.match(queueOverlay, /posts: publicPosts/);
+  assert.match(queueOverlay, /excludedNonPublic/);
+});
+
+test('immediate PDF dispatch uses the canonical URLs mutated by media preflight', () => {
+  const preflightIndex = pdfShareNow.indexOf('const proof = await preflightMedia(request, fetch)');
+  const mutationIndex = pdfShareNow.indexOf('const mutation = `mutation ShareNow');
+  assert.ok(preflightIndex >= 0, 'immediate PDF media preflight is missing');
+  assert.ok(mutationIndex > preflightIndex, 'immediate PDF mutation can occur before media preflight');
+  assert.match(pdfShareNow, /url: \$\{JSON\.stringify\(request\.mediaUrl\)\}/);
+  assert.match(pdfShareNow, /thumbnailUrl: \$\{JSON\.stringify\(request\.documentThumbnailUrl\)\}/);
+  assert.doesNotMatch(pdfShareNow, /url: \$\{JSON\.stringify\(post\.mediaUrl\)\}/);
+  assert.doesNotMatch(pdfShareNow, /thumbnailUrl: \$\{JSON\.stringify\(post\.documentThumbnailUrl\)\}/);
 });
 
 test('analytics loop retains a native LinkedIn route for document posts', () => {
