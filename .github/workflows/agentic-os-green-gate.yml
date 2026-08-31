@@ -25,20 +25,25 @@ jobs:
           node-version: '20'
       - name: Run autonomous relevance and anti-backlog acceptance suite
         run: node apps/agentic-os/tests.mjs
-      - name: Generate deterministic execution plan, reconciliation diff and ICS
+      - name: Run asset and project governance acceptance suite
+        run: node apps/agentic-os/asset-governance-tests.mjs
+      - name: Generate deterministic execution plan, governance state, reconciliation diff and ICS
         run: node apps/agentic-os/run.mjs apps/agentic-os/fixtures/simulation.json
       - name: Assert generated state exists
         run: |
           test -s apps/agentic-os/state/latest.json
+          test -s apps/agentic-os/state/asset-governance.json
           test -s apps/agentic-os/state/reconciliation.json
           test -s apps/agentic-os/state/execution.ics
           node -e "const r=require('./apps/agentic-os/state/reconciliation.json'); if(!r.health?.green) process.exit(1)"
+          node -e "const a=require('./apps/agentic-os/state/asset-governance.json'); if(!a.health?.green) process.exit(1)"
       - name: Upload green-gate evidence
         uses: actions/upload-artifact@v4
         with:
           name: agentic-os-green-gate
           path: |
             apps/agentic-os/state/latest.json
+            apps/agentic-os/state/asset-governance.json
             apps/agentic-os/state/reconciliation.json
             apps/agentic-os/state/execution.ics
           retention-days: 14
