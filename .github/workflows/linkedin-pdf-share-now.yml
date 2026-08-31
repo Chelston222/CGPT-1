@@ -81,7 +81,7 @@ jobs:
 
             const text = String(post.copy?.personal || post.copy?.default || '').trim();
             if (!text || text.length > 3000) throw new Error('Locked LinkedIn caption is empty or over 3,000 characters.');
-            const mutation = `mutation ShareNow { createPost(input: { text: ${JSON.stringify(text)}, channelId: ${JSON.stringify(process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID)}, schedulingType: automatic, mode: shareNow, assets: [{ document: { url: ${JSON.stringify(post.mediaUrl)}, title: ${JSON.stringify(post.documentTitle)}, thumbnailUrl: ${JSON.stringify(post.documentThumbnailUrl)} } }] }) { ... on PostActionSuccess { post { id status dueAt sentAt externalLink channelId assets { id mimeType } } } ... on MutationError { message } } }`;
+            const mutation = `mutation ShareNow { createPost(input: { text: ${JSON.stringify(text)}, channelId: ${JSON.stringify(process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID)}, schedulingType: automatic, mode: shareNow, assets: [{ document: { url: ${JSON.stringify(request.mediaUrl)}, title: ${JSON.stringify(post.documentTitle)}, thumbnailUrl: ${JSON.stringify(request.documentThumbnailUrl)} } }] }) { ... on PostActionSuccess { post { id status dueAt sentAt externalLink channelId assets { id mimeType } } } ... on MutationError { message } } }`;
             const data = await buffer(mutation);
             const created = data.createPost?.post;
             if (!created?.id) throw new Error('Buffer did not return a post ID for shareNow.');
