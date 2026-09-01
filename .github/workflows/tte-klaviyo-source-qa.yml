@@ -1,24 +1,28 @@
-name: TTE Klaviyo Source APEX QA
+name: TTE Klaviyo Source QA
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/tte-klaviyo/**'
+      - '.github/workflows/tte-klaviyo-*.yml'
   push:
     paths:
-      - 'apps/tte-klaviyo/templates/**'
-      - 'apps/tte-klaviyo/source_audit.py'
-      - 'apps/tte-klaviyo/deploy_templates.py'
+      - 'apps/tte-klaviyo/**'
       - '.github/workflows/tte-klaviyo-source-qa.yml'
 
 permissions:
   contents: read
 
 jobs:
-  source-apex-qa:
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
+  source-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run static APEX source audit
+      - uses: actions/checkout@v6
+      - name: Static template and positioning QA
         run: python apps/tte-klaviyo/source_audit.py
+      - name: Capture and attribution source QA
+        run: python apps/tte-klaviyo/integration_source_audit.py
+      - name: Python syntax gate
+        run: python -m compileall -q apps/tte-klaviyo

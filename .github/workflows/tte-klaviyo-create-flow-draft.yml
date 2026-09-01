@@ -1,26 +1,22 @@
-name: TTE Klaviyo Create APEX V2 Pre-Live Flow
+name: TTE Klaviyo Create Pre-Live Draft Flow
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/tte-klaviyo-create-flow-draft.yml'
 
 permissions:
   contents: read
 
 jobs:
   create-draft-flow:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run source APEX QA
-        run: python apps/tte-klaviyo/source_audit.py
-
-      - name: Create APEX V2 pre-live five-email flow in draft only
+      - uses: actions/checkout@v6
+      - name: Run source QA
+        run: |
+          python apps/tte-klaviyo/source_audit.py
+          python apps/tte-klaviyo/integration_source_audit.py
+      - name: Create pre-live five-email flow in Draft only
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
           TTE_FLOW_NAME: TTE Flagship Welcome Series | APEX V2 | PRE-LIVE
