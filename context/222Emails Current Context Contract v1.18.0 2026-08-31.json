@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.1",
+  "context_version": "1.18.0",
+  "effective_date": "2026-08-31",
+  "status": "CURRENT_CANONICAL_REPOSITORY_CONTRACT",
+  "purpose": "Fail-safe repository pointer and non-regression contract. The full Google Drive master and current machine mirror remain higher-fidelity canonical sources.",
+  "canonical_sources": {
+    "drive_master_document_id": "1AmqGFc7rDvOzI4LARDiTedwO5DNLjknVA8KmHjoD8XA",
+    "drive_machine_document_id": "1BFQstGyn99Vvuyp1XrVfSL0jMF7VTH042sNtcpSINw0",
+    "notion_page_id": "3c6e72eb-8587-81b5-a5ee-c4cfc969597d",
+    "commercial_command_centre_spreadsheet_id": "1J1XwoAIVfC4v8Zcr-D4KEN0Q0ZGfKFfxeXoheDx3nc4",
+    "hook_os_contract": "context/222Emails Hook OS v1.0 2026-08-30.json",
+    "email_revenue_os_contract": "context/222Emails Email Revenue OS v1.0 2026-08-31.json"
+  },
+  "authority_order": ["newer_explicit_user_instruction","current_law_platform_deliverability_fact","canonical_drive_master","newer_current_canonical_approved_live_source","operational_event_state","recent_working_doc","legacy_archive"],
+  "brand": {"written_name":"222Emails","shorthand":"TTE","language":"en-GB","no_em_dash":true,"logo_rule":"Use only exact canonical TTE V3 assets; if unavailable omit rather than recreate"},
+  "positioning": {"formal_system_name":"Client Return System","preferred_public_phrase":"Turnkey Client Return System","category":"Turnkey Client Return Systems for appointment-led businesses","primary_market":"United Kingdom","primary_proving_ground":"Lancashire salons and barbers, then suitable appointment-led UK SMEs","revenue_recovery_role":"commercial outcome and diagnostic language, not a competing formal system name"},
+  "offers": [
+    {"name":"Free Revenue Recovery Check","price_gbp":0},
+    {"name":"Client Return Growth Check","price_gbp":197},
+    {"name":"7-Day Client Return System Sprint","price_gbp":997},
+    {"name":"Client Return Accelerator","price_gbp":1297},
+    {"name":"Optimisation","price_gbp_monthly":595},
+    {"name":"Growth Partner","price_gbp_monthly":1495}
+  ],
+  "current_tally_routes": {"free_revenue_recovery_check":"https://tally.so/r/44057b","growth_check":"https://tally.so/r/xXbKDG","client_onboarding":"https://tally.so/r/NpNkXG","evidence_intake":"https://tally.so/r/9q0V7G","results_case_study":"https://tally.so/r/aQJV29","client_information_update":"https://tally.so/r/kdjqN6"},
+  "hard_gates": {"lead_identification_gate_required":true,"proof_and_truth_required":true,"dedupe_and_suppression_required":true,"sender_and_deliverability_gate_required":true,"human_authority_required":true,"configured_not_equal_working":true},
+  "human_authority_required_for": ["sends","publishing","pricing","public_claims","scope_changes","spend","dns_changes","pivots","legal_or_contact_route_changes","client_promises"],
+  "permanent_dnc_names": ["Chris","Lynn"],
+  "hook_os": {"version":"1.0","status":"CURRENT_CANONICAL_ATTENTION_LAYER","additive_only":true,"no_volume_increase_merely_for_testing":true},
+  "email_revenue_os": {"version":"1.0","status":"CURRENT_CANONICAL_CHANNEL_SYSTEM","additive_only":true,"does_not_authorise_live_sends":true,"sequence":["hook","leak","mechanism","value","recovery","next_step"],"generated_draft_min_score":90,"flagship_min_score":95,"zero_hard_fails_required":true},
+  "retrieval_rule": "Retrieve the newest CURRENT CANONICAL source first. Older repository context files are historical snapshots and must never silently outrank this contract or the newer Drive master.",
+  "live_state_rule": "For pipeline, cash, sender health, outreach counts, scheduled/published content, provider state, client progress and content performance, query the live system of record before action."
+}
