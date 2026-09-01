@@ -12,7 +12,7 @@ Current durable pointers:
 - Google Drive machine mirror: `222Emails Machine Context v1.18.0 2026-08-31`
 - Repository pointer: `context/222Emails Master Context Pointer v1.18.0 2026-08-31.md`
 - Current repository contract: `context/222Emails Current Context Contract v1.18.0 2026-08-31.json`
-- Hook OS machine contract: `context/222Emails Hook OS v1.0 2026-08-30.json`
+- Hook OS machine contract: `context/222Emails Hook OS v1.0.1 2026-08-31.json`
 - Hook OS operating doctrine: `docs/222Emails Hook Operating System v1.0 2026-08-30.md`
 - Email Revenue OS contract: `context/222Emails Email Revenue OS v1.0 2026-08-31.json`
 

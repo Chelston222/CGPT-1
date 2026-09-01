@@ -1,8 +1,7 @@
-"""Read-only production readiness gate for the 222 Emails APEX V2 flow.
+"""Read-only production readiness gate for the canonical 222Emails candidate.
 
-This script never sends or activates anything. It deliberately fails while a
-critical exit/suppression profile filter is absent, even if all content/structure
-checks pass.
+This script never sends or activates anything. It fails closed while critical
+exit/suppression, attribution or account-state requirements are absent.
 """
 import json
 import os
@@ -16,24 +15,21 @@ FLOW_ID = os.environ.get("TTE_FLAGSHIP_FLOW_ID", "VbBAhU")
 LIST_ID = "SjerhA"
 EXPECTED_FLOW_NAME = "TTE Flagship Welcome Series | APEX V2 | PRE-LIVE"
 EXPECTED_SUBJECTS = [
-    "Welcome to 222 Emails",
-    "5 places revenue quietly disappears",
-    "What we’d fix first in your email system",
-    "We built this instead of telling you we could",
-    "Want us to find the leaks?",
+    "Welcome to 222Emails",
+    "You already paid to acquire them",
+    "The appointment cliff",
+    "What a Client Return System actually does",
+    "Where are your bookings slipping away?",
 ]
 EXPECTED_SMART_SENDING = [False, True, True, True, True]
 
 
 def get(path):
-    req = urllib.request.Request(
-        BASE + path,
-        headers={
-            "Authorization": f"Klaviyo-API-Key {KEY}",
-            "accept": "application/vnd.api+json",
-            "revision": REVISION,
-        },
-    )
+    req = urllib.request.Request(BASE + path, headers={
+        "Authorization": f"Klaviyo-API-Key {KEY}",
+        "accept": "application/vnd.api+json",
+        "revision": REVISION,
+    })
     with urllib.request.urlopen(req, timeout=30) as res:
         return json.loads(res.read())
 
@@ -68,13 +64,13 @@ checks = {
     "all_messages_draft": set(message_statuses) == {"draft"},
     "sender_exact": all(a["data"]["message"]["from_email"] == "hello@222emails.com" for a in sends),
     "reply_to_exact": all(a["data"]["message"]["reply_to_email"] == "hello@222emails.com" for a in sends),
-    "from_label_exact": all(a["data"]["message"]["from_label"] == "Triple Two Emails" for a in sends),
+    "from_label_exact": all(a["data"]["message"]["from_label"] == "222Emails" for a in sends),
     "smart_sending_policy": smart_sending == EXPECTED_SMART_SENDING,
     "exit_or_suppression_profile_filter_present": bool(profile_filter),
 }
-failed = [k for k, v in checks.items() if not v]
+failed = [key for key, value in checks.items() if not value]
 result = {
-    "system": "222 Lifecycle Revenue Engine",
+    "system": "222Emails Lifecycle Revenue Engine",
     "candidate": "APEX V2",
     "flow_id": FLOW_ID,
     "flow_name": attrs.get("name"),
@@ -87,13 +83,15 @@ result = {
     "checks": checks,
     "automated_gate": "PASS" if not failed else "FAIL",
     "human_or_external_gates_required": [
-        "public_capture_path_to_email_list",
-        "fit_check_event_bridge",
+        "public_double_opt_in_capture_path",
+        "free_revenue_recovery_check_event_bridge",
         "client_or_qualified_opportunity_exit",
         "visual_rendering_desktop_mobile_dark_mode",
         "seed_inbox_links_and_reply_test",
-        "sending_domain_health",
-        "fit_check_end_to_end_submission",
+        "spf_dkim_dmarc_alignment",
+        "provider_compatible_one_click_unsubscribe",
+        "complaint_and_bounce_monitoring",
+        "tally_free_revenue_recovery_check_end_to_end_submission",
         "explicit_go_live_approval",
     ],
 }

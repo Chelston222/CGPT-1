@@ -1,8 +1,6 @@
-"""Explicitly activate the canonical 222 Emails APEX V2 Klaviyo flow.
+"""Explicit activation controller for canonical 222Emails Klaviyo candidate.
 
-This script is intentionally difficult to trigger accidentally. It requires all
-human/external QA gates to pass plus an exact activation phrase. It must only be
-called from the manual go-live workflow after automated gates pass.
+Only the manual go-live workflow should call this after automated verification.
 """
 import json
 import os
@@ -17,14 +15,16 @@ required = {
     "VISUAL_QA": "PASS",
     "SEED_QA": "PASS",
     "DOMAIN_QA": "PASS",
-    "FIT_CHECK_QA": "PASS",
+    "DIAGNOSTIC_QA": "PASS",
     "CAPTURE_QA": "PASS",
     "EXIT_QA": "PASS",
+    "ONE_CLICK_QA": "PASS",
+    "MONITORING_QA": "PASS",
     "ACTIVATION_CONFIRMATION": f"GO-LIVE-{FLOW_ID}",
 }
 failed = [name for name, expected in required.items() if os.environ.get(name) != expected]
 if failed:
-    raise SystemExit("ACTIVATION BLOCKED. Missing/incorrect gates: " + ", ".join(failed))
+    raise SystemExit("ACTIVATION BLOCKED. Missing or incorrect gates: " + ", ".join(failed))
 
 payload = {"data": {"type": "flow", "id": FLOW_ID, "attributes": {"status": "live"}}}
 req = urllib.request.Request(

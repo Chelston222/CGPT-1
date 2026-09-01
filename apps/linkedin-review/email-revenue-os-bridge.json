@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "system": "222Emails LinkedIn <-> Email Revenue OS Bridge",
+  "status": "CURRENT_INTEGRATION_CONTRACT",
+  "emailRevenueOsContract": "context/222Emails Email Revenue OS v1.0 2026-08-31.json",
+  "hookOsContract": "context/222Emails Hook OS v1.0.1 2026-08-31.json",
+  "rolesAndCadenceUnchanged": true,
+  "inboundFromLinkedIn": {
+    "rule": "A LinkedIn winner or promising concept becomes an email candidate, never automatic email proof.",
+    "required": ["parent_content_or_hook_id", "fresh_email_channel_qa", "email_variant_lineage", "email_experiment_id", "evidence_state"],
+    "exactCopyReuseRequired": false
+  },
+  "outboundFromEmail": {
+    "rule": "An email winner or promising concept becomes a LinkedIn candidate, never automatic LinkedIn proof.",
+    "required": ["parent_email_or_hook_id", "fresh_linkedin_channel_qa", "linkedin_variant_lineage", "linkedin_experiment_id", "evidence_state"],
+    "exactCopyReuseRequired": false
+  },
+  "measurementPriority": [
+    "attributable_revenue_or_buyer_progression",
+    "paid_progression",
+    "qualified_free_revenue_recovery_check",
+    "qualified_commercial_conversation",
+    "relevant_positive_action",
+    "attention_signal"
+  ],
+  "guardrails": [
+    "Never auto-publish or auto-send because another channel scored well.",
+    "Never label a cross-channel adaptation WINNER without evidence from that channel.",
+    "Preserve existing LinkedIn approval and publication-verification rails.",
+    "Preserve Email Revenue OS QA and email human-authority rails.",
+    "Configured is not working and scheduled is not published."
+  ]
+}

@@ -1,11 +1,14 @@
 import { CORPORATE_TYPES, INDIVIDUALISH_TYPES, PROVIDER_PERMISSION_BASES, REQUIRED_OPT_OUT } from './constants.mjs';
+import { validateEmailRevenueOs } from './email-revenue-os.mjs';
 import { normalizeEmail, safeText } from './util.mjs';
 
 const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+
 export function validateEmail(value) {
   const email = normalizeEmail(value);
   return email.length <= 254 && EMAIL_RE.test(email) ? email : null;
 }
+
 export function validateOutbound(input, opts = {}) {
   const errors = [];
   const toRaw = Array.isArray(input?.to) ? input.to : [input?.to].filter(Boolean);
@@ -41,8 +44,6 @@ export function validateOutbound(input, opts = {}) {
     errors.push('unsupported_company_type');
   }
 
-  // Provider-policy permission is intentionally stricter than legal-basis classification.
-  // A lawful-basis record alone must never turn Gmail/SMTP into an unsolicited-email quota pool.
   if (!PROVIDER_PERMISSION_BASES.has(recipientPermission)) errors.push('provider_permission_required');
   if (!permissionEvidence || permissionEvidence.length < 3) errors.push('permission_evidence_required');
   if (!Number.isFinite(permissionRecordedAtMs)) errors.push('permission_recorded_at_required');
@@ -51,22 +52,35 @@ export function validateOutbound(input, opts = {}) {
   if (firstTouch && opts.requireFirstTouchReview !== false && !reviewed) errors.push('first_touch_human_approval_required');
   if (!firstTouch && opts.requireSequenceApproval !== false && !reviewed && input?.sequenceApproved !== true) errors.push('follow_up_sequence_approval_required');
 
+  const emailRevenueOs = validateEmailRevenueOs(input, {
+    ...(opts.emailRevenueOs || {}),
+    requireHumanReview: opts.requireFirstTouchReview !== false || opts.requireSequenceApproval !== false,
+  });
+  errors.push(...emailRevenueOs.errors);
+
+  const normalized = {
+    ...input,
+    to: to ? [to] : [],
+    subject,
+    text,
+    compliance: {
+      ...compliance,
+      companyType,
+      legalBasis,
+      recipientPermission,
+      permissionEvidence,
+      permissionRecordedAt: Number.isFinite(permissionRecordedAtMs)
+        ? new Date(permissionRecordedAtMs).toISOString()
+        : permissionRecordedAtRaw,
+    },
+  };
+
+  if (emailRevenueOs.applied) normalized.emailRevenueOs = emailRevenueOs.normalized;
+
   return {
     ok: errors.length === 0,
     errors,
-    normalized: {
-      ...input,
-      to: to ? [to] : [],
-      subject,
-      text,
-      compliance: {
-        ...compliance,
-        companyType,
-        legalBasis,
-        recipientPermission,
-        permissionEvidence,
-        permissionRecordedAt: Number.isFinite(permissionRecordedAtMs) ? new Date(permissionRecordedAtMs).toISOString() : permissionRecordedAtRaw,
-      },
-    },
+    warnings: emailRevenueOs.warnings,
+    normalized,
   };
 }
