@@ -2,10 +2,12 @@
 
 Version: v1.17.0
 Effective date: 2026-08-30
-Status: CURRENT CANONICAL
+Status: SUPERSEDED SNAPSHOT
+Superseded by: `context/222Emails Master Context Pointer v1.18.0 2026-08-31.md`
 
-## Canonical strategic hierarchy
+This file is preserved for audit and provenance only. It must not outrank the v1.18 Drive master, machine mirror or repository contract.
 
+## Canonical strategic hierarchy at release
 222Emails builds Turnkey Client Return Systems for appointment-led businesses.
 
 - Primary market: UK.
@@ -15,58 +17,32 @@ Status: CURRENT CANONICAL
 - Secondary market experiments remain subordinate to current UK priority and current evidence gates.
 - Retention School remains the education-first media/learning layer, not a replacement for 222Emails.
 
-## Current canonical source locations
+## Source locations retained for lineage
+Google Drive master operating context ID:
+`1AmqGFc7rDvOzI4LARDiTedwO5DNLjknVA8KmHjoD8XA`
 
-Google Drive master operating context:
-https://docs.google.com/document/d/1AmqGFc7rDvOzI4LARDiTedwO5DNLjknVA8KmHjoD8XA/edit
+Google Drive machine context ID:
+`1BFQstGyn99Vvuyp1XrVfSL0jMF7VTH042sNtcpSINw0`
 
-Google Drive machine context:
-https://docs.google.com/document/d/1BFQstGyn99Vvuyp1XrVfSL0jMF7VTH042sNtcpSINw0/edit
+Commercial Command Centre ID:
+`1J1XwoAIVfC4v8Zcr-D4KEN0Q0ZGfKFfxeXoheDx3nc4`
 
-Google Drive context folder:
-https://drive.google.com/drive/folders/1YrFDaj-vGVdN4-THlc87m1xEDS_GSbws
+v1.17 repository contract:
+`context/222Emails Current Context Contract v1.17.0 2026-08-30.json`
 
-Commercial Command Centre:
-https://docs.google.com/spreadsheets/d/1J1XwoAIVfC4v8Zcr-D4KEN0Q0ZGfKFfxeXoheDx3nc4/edit
-
-Repository current-context fail-safe contract:
-context/222Emails Current Context Contract v1.17.0 2026-08-30.json
-
-Hook OS machine contract:
-context/222Emails Hook OS v1.0 2026-08-30.json
-
-Hook OS operating document:
-docs/222Emails Hook Operating System v1.0 2026-08-30.md
-
-Systems engineering constitution:
-SYSTEMS_CONSTITUTION.md
+Hook OS contract:
+`context/222Emails Hook OS v1.0 2026-08-30.json`
 
 ## Retrieval rule
+Historical snapshot only. Retrieve `context/222Emails Master Context Pointer v1.18.0 2026-08-31.md` and the current Drive master before any strategic action.
 
-For durable 222Emails strategy, retrieve the newest CURRENT CANONICAL master version first. Older context files are preserved snapshots and must not outrank a newer canonical version.
+For live state, query the live system of record. Configured is not working. Planned is not executed. Scheduled is not published. Only event evidence upgrades operational state.
 
-Within the repository, prefer the current-context fail-safe contract and newest pointer over v1.0/v1.1 snapshot files. Historical files remain for audit and provenance only.
+## Hook Operating System at release
+v1.17 added Hook OS as an additive attention, experimentation and learning layer. It did not replace positioning, the Lead Identification Gate, proof rules, human authority, sender controls, Visual OS, Retention School architecture, Tally routes, pricing or commercial hierarchy.
 
-For live state, do not trust a static context file. Query the current system of record for pipeline, cash collected, sender health, outreach counts, scheduled/published content, Buffer/GitHub state, client implementation progress, hook performance and hook experiment state.
-
-Configured is not the same as working. Planned is not the same as executed. Scheduled is not the same as published. Only event evidence can upgrade operational state.
-
-## Commercial line
-
-Diagnose the return/revenue leak, show the mechanism and defensible value, install the Client Return System, then optimise from evidence.
-
-## Hook Operating System
-
-v1.17.0 adds Hook OS as an additive attention, experimentation and learning layer. It does not replace positioning, the Lead Identification Gate, proof rules, human authority, sender controls, Visual OS, Retention School architecture, Tally routes, pricing or commercial hierarchy.
-
-The governing sequence is:
-
-ATTENTION -> RECOGNITION -> RELEVANCE -> USEFUL VALUE -> TRUST -> DIAGNOSIS -> NEXT STEP -> PAID PROGRESSION -> PROOF
-
-Use the deepest defensible commercial signal to rank hook performance. Raw reach, opens and clicks are diagnostic signals, not the final winner criterion.
+The governing sequence was:
+`ATTENTION -> RECOGNITION -> RELEVANCE -> USEFUL VALUE -> TRUST -> DIAGNOSIS -> NEXT STEP -> PAID PROGRESSION -> PROOF`
 
 ## Operating principle
-
 Create -> qualify -> ship through approved capacity -> observe -> record -> rank -> permute -> retest -> scale winners.
-
-Use the business already built as the launchpad, not the ceiling. Preserve truth, human authority and safety while increasing learning velocity.
