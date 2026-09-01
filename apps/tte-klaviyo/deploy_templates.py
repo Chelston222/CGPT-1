@@ -1,9 +1,9 @@
-"""Idempotently deploy approved 222 Emails APEX V2 templates to Klaviyo.
+"""Idempotently deploy approved 222Emails APEX V2 templates to Klaviyo.
 
 Required environment variable:
   KLAVIYO_PRIVATE_API_KEY
 Optional environment variables:
-  FREE_AUDIT_URL (defaults to https://222emails.com for draft templates)
+  FREE_AUDIT_URL (defaults to the canonical Free Revenue Recovery Check Tally route)
   TTE_LOGO_URL (required whenever a source template contains __TTE_LOGO_URL__)
 
 The deployer updates an exact-name APEX V2 template when it already exists and
@@ -24,7 +24,7 @@ from html.parser import HTMLParser
 BASE = "https://a.klaviyo.com/api"
 REVISION = "2026-07-15"
 ROOT = pathlib.Path(__file__).parent
-AUDIT_URL = os.environ.get("FREE_AUDIT_URL", "https://222emails.com").rstrip("/")
+AUDIT_URL = os.environ.get("FREE_AUDIT_URL", "https://tally.so/r/44057b").rstrip("/")
 LOGO_URL = os.environ.get("TTE_LOGO_URL", "").strip()
 KEY = os.environ.get("KLAVIYO_PRIVATE_API_KEY")
 if not KEY:
