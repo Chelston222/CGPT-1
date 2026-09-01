@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "system": "222Emails Email Revenue OS",
+  "version": "1.0",
+  "effective_date": "2026-08-31",
+  "status": "CURRENT_CANONICAL_CHANNEL_SYSTEM",
+  "canonical_drive_document_id": "1Y8K639QiBlnNKtAP1rZHbbPEzKHSyt5ap_o7rEg0UYg",
+  "parent_master_version": "1.18.0",
+  "parent_master_document_id": "1AmqGFc7rDvOzI4LARDiTedwO5DNLjknVA8KmHjoD8XA",
+  "role": "Subordinate email reasoning, drafting and QA system. It does not authorise live sends or replace sender, suppression, proof, legal, Lead Identification Gate or human-authority controls.",
+  "sequence": ["hook","leak","mechanism","value","recovery","next_step"],
+  "return_framework": ["recognition","economic_tension","truth_or_mechanism","useful_action","recovery_path","next_step"],
+  "channel_contexts": ["owned","cold_b2b","client_lifecycle","repurpose"],
+  "qa": {
+    "generated_draft_min_score": 90,
+    "flagship_min_score": 95,
+    "zero_hard_fails_required": true,
+    "fresh_channel_qa_required_on_repurpose": true
+  },
+  "cross_channel_rule": "A winner in one channel is a candidate, not proof, in another channel and requires fresh channel QA.",
+  "does_not_replace": ["Hook OS","Client Return System positioning","Free Revenue Recovery Check","Lead Identification Gate","proof rules","sender and suppression controls","human authority","LinkedIn cadence","Retention School role"],
+  "does_not_authorise_live_sends": true
+}
