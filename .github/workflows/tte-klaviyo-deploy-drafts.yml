@@ -1,4 +1,4 @@
-name: TTE Klaviyo Deploy APEX V2 Draft Templates
+name: TTE Klaviyo Deploy Email Revenue OS Draft Templates
 
 on:
   workflow_dispatch:
@@ -16,13 +16,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Run source APEX QA before account write
+      - name: Run Email Revenue OS source QA before account write
         run: python apps/tte-klaviyo/source_audit.py
-
-      - name: Deploy or update five APEX V2 reusable draft templates
+      - name: Deploy or update five reusable draft templates
         env:
           KLAVIYO_PRIVATE_API_KEY: ${{ secrets.KLAVIYO_PRIVATE_API_KEY }}
-          FREE_AUDIT_URL: https://form.jotform.com/262067771632056
+          FREE_AUDIT_URL: https://tally.so/r/44057b
           TTE_LOGO_URL: https://d3k81ch9hvuctc.cloudfront.net/company/Ra4Qrb/images/8dbcf118-be91-4a94-9a23-b8b2526209c9.png
         run: python apps/tte-klaviyo/deploy_templates.py
