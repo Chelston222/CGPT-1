@@ -1,17 +1,20 @@
 # 222Emails Systems Constitution
 
 Status: CURRENT ENGINEERING CONSTITUTION
-Commercial context release: v1.17.0
-Effective date: 2026-08-30
+Commercial context release: v1.18.0
+Effective date: 2026-08-31
 
 ## Authority
 This repository is an implementation and automation layer beneath the current 222Emails Master Operating Context.
 
 Current durable pointers:
-- Google Drive master: `222Emails Master Operating Context v1.17.0 2026-08-30`
-- Repository pointer: `context/222Emails Master Context Pointer v1.17.0 2026-08-30.md`
-- Hook OS machine contract: `context/222Emails Hook OS v1.0 2026-08-30.json`
+- Google Drive master: `222Emails Master Operating Context v1.18.0 2026-08-31`
+- Google Drive machine mirror: `222Emails Machine Context v1.18.0 2026-08-31`
+- Repository pointer: `context/222Emails Master Context Pointer v1.18.0 2026-08-31.md`
+- Current repository contract: `context/222Emails Current Context Contract v1.18.0 2026-08-31.json`
+- Hook OS machine contract: `context/222Emails Hook OS v1.0.1 2026-08-31.json`
 - Hook OS operating doctrine: `docs/222Emails Hook Operating System v1.0 2026-08-30.md`
+- Email Revenue OS contract: `context/222Emails Email Revenue OS v1.0 2026-08-31.json`
 
 Older context files are preserved snapshots. They must not outrank a newer CURRENT CANONICAL context merely because they are present in the repository.
 
@@ -106,6 +109,24 @@ Testing rules:
 - once evidence exists, roughly 70% proven/close variants, 20% winner permutations and 10% new challengers may be used as a heuristic;
 - a winner in one channel is only a candidate in another and requires fresh QA;
 - live sends and publishing remain owner-approved.
+
+## Email Revenue Operating System
+Email Revenue OS is a subordinate email reasoning, drafting and QA layer introduced under the v1.18 master.
+
+Sequence:
+`HOOK -> LEAK -> MECHANISM -> VALUE -> RECOVERY -> NEXT STEP`
+
+RETURN framework:
+`RECOGNITION -> ECONOMIC TENSION -> TRUTH OR MECHANISM -> USEFUL ACTION -> RECOVERY PATH -> NEXT STEP`
+
+Quality gates:
+- generated draft minimum score 90;
+- flagship minimum score 95;
+- zero hard fails required;
+- repurposed ideas require fresh channel QA;
+- a winner in another channel is a candidate, not proof, in email.
+
+Email Revenue OS does not authorise live sends and does not replace Hook OS, Client Return System positioning, the Free Revenue Recovery Check, Lead Identification Gate, proof rules, sender or suppression controls, human authority, LinkedIn cadence or Retention School.
 
 ## Visual and brand authority
 Use only the actual supplied TTE V3 logo assets from the canonical pack. Never redraw, generate, approximate or substitute the logo.
