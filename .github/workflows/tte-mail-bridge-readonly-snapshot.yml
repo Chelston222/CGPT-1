@@ -1,0 +1,55 @@
+name: TTE Mail Bridge Read-Only Safety Snapshot
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tte-mail-bridge-readonly-snapshot.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      TTE_BRIDGE_TOKEN: ${{ secrets.TTE_BRIDGE_TOKEN }}
+    steps:
+      - name: Verify read-only credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${TTE_BRIDGE_TOKEN:-}" || { echo 'TTE_BRIDGE_TOKEN is missing'; exit 2; }
+      - name: Read production health and queue metrics
+        shell: bash
+        run: |
+          set -euo pipefail
+          health="$(curl --fail --silent --show-error --retry 3 https://222emails-mail-bridge.netlify.app/api/tte/health)"
+          metrics="$(curl --fail --silent --show-error --retry 3 -H "Authorization: Bearer ${TTE_BRIDGE_TOKEN}" https://222emails-mail-bridge.netlify.app/api/tte/metrics)"
+          HEALTH="$health" METRICS="$metrics" node <<'NODE'
+          const h = JSON.parse(process.env.HEALTH);
+          const m = JSON.parse(process.env.METRICS);
+          const q = m.queue || {};
+          const safe = {
+            health: { service: h.service || null, status: h.status || null, version: h.version || null },
+            queue: {
+              PENDING_REVIEW: Number(q.PENDING_REVIEW || 0),
+              READY: Number(q.READY || 0),
+              IN_FLIGHT: Number(q.IN_FLIGHT || 0),
+              DELIVERY_UNKNOWN: Number(q.DELIVERY_UNKNOWN || 0),
+              BLOCKED: Number(q.BLOCKED || 0)
+            },
+            emergencyStop: Boolean(m.emergencyStop),
+            connectedAccounts: Number(m.connectedAccounts || 0),
+            activeAccounts: Number(m.activeAccounts || 0),
+            sentToday: Number(m.sentToday || 0),
+            deliveryWindowOpen: Boolean(m.deliveryWindow && m.deliveryWindow.open)
+          };
+          console.log(JSON.stringify(safe, null, 2));
+          if (safe.queue.READY || safe.queue.IN_FLIGHT) {
+            console.error('Unsafe to redeploy with scheduled dispatch until READY/IN_FLIGHT queue is reconciled.');
+            process.exit(4);
+          }
+NODE
