@@ -1,42 +1,43 @@
 {
-  "now": "2026-08-31T17:10:00Z",
+  "now": "2026-09-02T14:35:00Z",
   "assets": [
+    {
+      "id": "master-v118",
+      "title": "222Emails Master Operating Context v1.18.0 2026-08-31",
+      "familyId": "tte-master-context",
+      "version": "1.18.0",
+      "authorityLevel": "CURRENT_CANONICAL",
+      "status": "CURRENT_CANONICAL",
+      "lastVerifiedAt": "2026-09-01T16:00:00Z",
+      "source": "Google Drive"
+    },
     {
       "id": "master-v117",
       "title": "222Emails Master Operating Context v1.17.0 2026-08-30",
       "familyId": "tte-master-context",
       "version": "1.17.0",
-      "authorityLevel": "CURRENT_CANONICAL",
-      "status": "CURRENT_CANONICAL",
-      "lastVerifiedAt": "2026-08-31T16:55:00Z",
-      "source": "Google Drive"
-    },
-    {
-      "id": "master-v116",
-      "title": "222Emails Master Operating Context v1.16.1 2026-08-27",
-      "familyId": "tte-master-context",
-      "version": "1.16.1",
       "status": "SUPERSEDED",
-      "supersededBy": "master-v117",
+      "supersededBy": "master-v118",
       "source": "Google Drive"
     },
     {
-      "id": "follow-sun-new",
-      "title": "222Emails Follow the Sun Outbound Engine",
+      "id": "follow-sun-live",
+      "title": "Follow the Sun Outbound Engine — LIVE",
       "familyId": "tte-follow-the-sun",
       "version": "2.0.0",
-      "authorityLevel": "CURRENT_CANONICAL",
-      "status": "CURRENT_CANONICAL",
-      "lastVerifiedAt": "2026-08-31T16:50:00Z",
+      "authorityLevel": "LIVE_OPERATOR",
+      "status": "LIVE_OPERATOR",
+      "lastVerifiedAt": "2026-09-01T16:00:00Z",
       "source": "Google Drive"
     },
     {
       "id": "follow-sun-old",
-      "title": "222Emails Follow the Sun Outbound Engine",
+      "title": "Follow the Sun Outbound Engine — SUPERSEDED",
       "familyId": "tte-follow-the-sun",
       "version": "1.0.0",
-      "status": "SUPPORTING",
-      "lastVerifiedAt": "2026-08-30T01:50:00Z",
+      "status": "SUPERSEDED",
+      "supersededBy": "follow-sun-live",
+      "lastVerifiedAt": "2026-09-01T16:00:00Z",
       "source": "Google Drive"
     },
     {
@@ -45,21 +46,15 @@
       "familyId": "chelsi-delivery",
       "authorityLevel": "LIVE_OPERATOR",
       "status": "LIVE_OPERATOR",
-      "lastVerifiedAt": "2026-08-31T16:45:00Z",
-      "driftSignals": [
-        "front page still calls Chelsi a live prospect",
-        "old 222 Emails spelling remains",
-        "old Jotform stage remains"
-      ],
+      "lastVerifiedAt": "2026-09-01T16:00:00Z",
       "source": "Google Drive"
     },
     {
       "id": "agency-crm",
-      "title": "222Emails Agency Partner CRM",
+      "title": "DORMANT — 222Emails Agency Partner CRM — historical partner outreach reference",
       "familyId": "tte-agency-partner-crm",
-      "authorityLevel": "LIVE_OPERATOR",
-      "status": "LIVE_OPERATOR",
-      "lastVerifiedAt": "2026-08-20T09:00:00Z",
+      "status": "DORMANT",
+      "lastVerifiedAt": "2026-09-02T14:20:00Z",
       "source": "Google Drive"
     },
     {
@@ -69,7 +64,7 @@
       "version": "3.1.0",
       "authorityLevel": "CURRENT_CANONICAL",
       "status": "CURRENT_CANONICAL",
-      "lastVerifiedAt": "2026-08-31T16:40:00Z",
+      "lastVerifiedAt": "2026-09-01T16:00:00Z",
       "source": "Google Drive"
     },
     {
