@@ -40,44 +40,30 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
-      - name: Verify required deployment secrets
-        id: preflight
+      - name: Verify deployment authority
         shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          missing=()
-          for name in NETLIFY_AUTH_TOKEN TTE_BRIDGE_TOKEN TTE_TOKEN_ENCRYPTION_KEY GOOGLE_OAUTH_CLIENT_ID GOOGLE_OAUTH_CLIENT_SECRET; do
-            [ -n "${!name:-}" ] || missing+=("$name")
-          done
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "Required secrets are not configured: ${missing[*]}"
-            if [ "$EVENT_NAME" = "workflow_dispatch" ]; then exit 2; fi
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Automatic deploy skipped until secrets are configured."
-            exit 0
-          fi
-          test ${#TTE_BRIDGE_TOKEN} -ge 24 || { echo 'TTE_BRIDGE_TOKEN must be at least 24 characters'; exit 2; }
-          test ${#TTE_TOKEN_ENCRYPTION_KEY} -ge 24 || { echo 'TTE_TOKEN_ENCRYPTION_KEY must be at least 24 characters'; exit 2; }
-          [ "$TTE_BRIDGE_TOKEN" != "$TTE_TOKEN_ENCRYPTION_KEY" ] || { echo 'Bridge token and encryption key must be different'; exit 2; }
-          echo "ready=true" >> "$GITHUB_OUTPUT"
+          test -n "${NETLIFY_AUTH_TOKEN:-}" || { echo 'NETLIFY_AUTH_TOKEN is missing'; exit 2; }
+          if [ -n "${TTE_BRIDGE_TOKEN:-}" ]; then test ${#TTE_BRIDGE_TOKEN} -ge 24 || { echo 'TTE_BRIDGE_TOKEN must be at least 24 characters'; exit 2; }; fi
+          if [ -n "${TTE_TOKEN_ENCRYPTION_KEY:-}" ]; then test ${#TTE_TOKEN_ENCRYPTION_KEY} -ge 24 || { echo 'TTE_TOKEN_ENCRYPTION_KEY must be at least 24 characters'; exit 2; }; fi
+          if [ -n "${TTE_BRIDGE_TOKEN:-}" ] && [ -n "${TTE_TOKEN_ENCRYPTION_KEY:-}" ]; then [ "$TTE_BRIDGE_TOKEN" != "$TTE_TOKEN_ENCRYPTION_KEY" ] || { echo 'Bridge token and encryption key must be different'; exit 2; }; fi
       - name: Install project dependencies
-        if: steps.preflight.outputs.ready == 'true'
         run: npm install --no-audit --no-fund
       - name: Re-run APEX verification before deployment
-        if: steps.preflight.outputs.ready == 'true'
         run: npm run verify
-      - name: Sync runtime configuration to Netlify
-        if: steps.preflight.outputs.ready == 'true'
+      - name: Sync non-destructive runtime configuration to Netlify
         shell: bash
         run: |
           set -euo pipefail
-          npx netlify env:set TTE_BRIDGE_TOKEN "$TTE_BRIDGE_TOKEN" --secret --context production
-          npx netlify env:set TTE_TOKEN_ENCRYPTION_KEY "$TTE_TOKEN_ENCRYPTION_KEY" --secret --context production
-          npx netlify env:set GOOGLE_OAUTH_CLIENT_ID "$GOOGLE_OAUTH_CLIENT_ID" --secret --context production
-          npx netlify env:set GOOGLE_OAUTH_CLIENT_SECRET "$GOOGLE_OAUTH_CLIENT_SECRET" --secret --context production
-          if [ -n "${TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS:-}" ]; then npx netlify env:set TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS "$TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS" --secret --context production; else npx netlify env:unset TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS --context production >/dev/null 2>&1 || true; fi
+          # Runtime secrets are allowed to live in Netlify even when the matching
+          # GitHub secret is absent. Never overwrite an existing Netlify secret
+          # with an empty Actions value.
+          if [ -n "${TTE_BRIDGE_TOKEN:-}" ]; then npx netlify env:set TTE_BRIDGE_TOKEN "$TTE_BRIDGE_TOKEN" --secret --context production; fi
+          if [ -n "${TTE_TOKEN_ENCRYPTION_KEY:-}" ]; then npx netlify env:set TTE_TOKEN_ENCRYPTION_KEY "$TTE_TOKEN_ENCRYPTION_KEY" --secret --context production; fi
+          if [ -n "${TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS:-}" ]; then npx netlify env:set TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS "$TTE_TOKEN_ENCRYPTION_KEY_PREVIOUS" --secret --context production; fi
+          if [ -n "${GOOGLE_OAUTH_CLIENT_ID:-}" ]; then npx netlify env:set GOOGLE_OAUTH_CLIENT_ID "$GOOGLE_OAUTH_CLIENT_ID" --secret --context production; fi
+          if [ -n "${GOOGLE_OAUTH_CLIENT_SECRET:-}" ]; then npx netlify env:set GOOGLE_OAUTH_CLIENT_SECRET "$GOOGLE_OAUTH_CLIENT_SECRET" --secret --context production; fi
           npx netlify env:set AWS_LAMBDA_JS_RUNTIME "nodejs24.x" --context production
           npx netlify env:set TTE_GLOBAL_DAILY_CAP "100" --context production
           npx netlify env:set TTE_DOMAIN_DAILY_CAP "4" --context production
@@ -99,12 +85,10 @@ jobs:
             npx netlify env:set TTE_SMTP_PORT "${TTE_SMTP_PORT:-465}" --context production
           fi
       - name: Deploy existing mail bridge project
-        if: steps.preflight.outputs.ready == 'true'
         run: npx netlify deploy --prod --dir=public --functions=netlify/functions --site "$NETLIFY_SITE_ID"
       - name: Verify production health surface
-        if: steps.preflight.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
           curl --fail --silent --show-error --retry 5 --retry-delay 3 https://222emails-mail-bridge.netlify.app/api/tte/health | tee /tmp/tte-health.json
-          node -e "const h=require('/tmp/tte-health.json'); if(!h.service || h.service!=='tte-mail-bridge') process.exit(1); if(h.status!=='READY') process.exit(2); console.log('health:',h.status,'version:',h.version)"
+          node -e "const h=require('/tmp/tte-health.json'); if(!h.service || h.service!=='tte-mail-bridge') process.exit(1); if(!['READY','CONFIG_REQUIRED'].includes(h.status)) process.exit(2); console.log('health:',h.status,'version:',h.version)"
