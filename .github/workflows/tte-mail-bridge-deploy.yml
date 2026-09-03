@@ -115,8 +115,11 @@ jobs:
           fi
 
           echo 'Standard deployment denied. Using the one-time owner-authorised recovery path.'
-          PROXY_PATH=$(npx netlify env:get TTE_DEPLOY_PROXY_ONCE --context production)
-          test -n "$PROXY_PATH" || { echo 'One-time recovery path is unavailable'; exit 3; }
+          PROXY_PATH=$(npx netlify env:get TTE_DEPLOY_PROXY_ONCE)
+          if [ -z "$PROXY_PATH" ] || ! printf '%s' "$PROXY_PATH" | grep -Eq '^https://'; then
+            echo 'One-time recovery path is unavailable or invalid.'
+            exit 3
+          fi
 
           SNAPSHOT=$(mktemp -d)
           cp -a . "$SNAPSHOT/app"
@@ -129,7 +132,7 @@ jobs:
           npx -y @netlify/mcp@latest --site-id "$NETLIFY_SITE_ID" --proxy-path "$PROXY_PATH"
 
           cd - >/dev/null
-          npx netlify env:unset TTE_DEPLOY_PROXY_ONCE --context production || true
+          npx netlify env:unset TTE_DEPLOY_PROXY_ONCE || true
       - name: Verify production health surface
         shell: bash
         run: |
