@@ -1,0 +1,4 @@
+TTE mail bridge controlled production redeploy marker
+2026-09-03
+Purpose: force the current main mail-bridge build through the Apex deployment pipeline after stale-production health drift was confirmed.
+No sender caps or recipient permissions are changed by this marker.
