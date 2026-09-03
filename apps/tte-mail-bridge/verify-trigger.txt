@@ -1,2 +1,3 @@
 Trigger current multi-Gmail sender control-plane deployment and verification.
-Timestamp: 2026-08-25T06:47:00+01:00
+Timestamp: 2026-09-03T15:58:00+01:00
+Purpose: fixed internal SMTP canary only. No prospect recipient.
