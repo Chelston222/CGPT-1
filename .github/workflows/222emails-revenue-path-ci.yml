@@ -1,0 +1,56 @@
+name: 222Emails Revenue Path CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/222emails-omega-max/**'
+      - '.github/workflows/222emails-revenue-path-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install and build
+        working-directory: apps/222emails-omega-max
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Verify build outputs
+        working-directory: apps/222emails-omega-max
+        run: |
+          set -euo pipefail
+          test -f dist/index.html
+          test -f dist/_headers
+          test -f dist/_redirects
+          test -f dist/robots.txt
+          test -f dist/sitemap.xml
+          test -f dist/privacy/index.html
+          test -f dist/terms/index.html
+          test -f dist/cookies/index.html
+          test -f dist/accessibility/index.html
+          grep -R -q 'Recover more from the enquiries and clients you already have' dist/assets
+          grep -R -q 'Free Revenue Recovery Check' dist/assets
+          grep -R -q 'Client Return System' dist/assets
+          ! grep -R -q 'RecoveryDashboard' dist/assets
+          ! grep -R -q 'Start your free Fit Check' dist/assets
+          ! grep -R -q 'client-return-fit-check' dist/index.html
+          grep -q '/fit-check /revenue-recovery-check 301' dist/_redirects
+          grep -q 'https://222emails.com/sitemap.xml' dist/robots.txt
+      - name: Verify public source truthfulness gates
+        working-directory: apps/222emails-omega-max
+        run: |
+          set -euo pipefail
+          ! grep -R -q '61/100' src index.html
+          ! grep -R -q 'guarantee.*revenue' src index.html
+          ! grep -R -q 'stores the client' src index.html
+          grep -R -q 'Existing tools first' src
+          grep -R -q 'No mandatory discovery call' src
