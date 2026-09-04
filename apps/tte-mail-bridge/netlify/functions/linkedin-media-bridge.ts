@@ -128,6 +128,7 @@ export default async (request: Request) => {
   return json(405, { error: 'method_not_allowed' });
 };
 
+// This bridge is transport only. Buffer release authority remains in the governed GitHub queue and approval workflow.
 export const config: Config = {
   path: '/api/tte/linkedin-media-bridge',
   method: ['GET', 'PUT', 'POST', 'DELETE'],
