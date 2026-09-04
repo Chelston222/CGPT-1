@@ -2,6 +2,7 @@
 
 const crypto = require('node:crypto');
 const fs = require('node:fs');
+const net = require('node:net');
 const path = require('node:path');
 const childProcess = require('node:child_process');
 
@@ -19,6 +20,50 @@ function safeId(value) {
   return id;
 }
 
+function isPrivateAddress(hostname) {
+  const host = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+  if (!host || host === 'localhost' || host.endsWith('.local')) return true;
+  const family = net.isIP(host);
+  if (family === 4) {
+    const parts = host.split('.').map(Number);
+    const [a, b] = parts;
+    return a === 0
+      || a === 10
+      || a === 127
+      || (a === 100 && b >= 64 && b <= 127)
+      || (a === 169 && b === 254)
+      || (a === 172 && b >= 16 && b <= 31)
+      || (a === 192 && b === 168)
+      || (a === 198 && (b === 18 || b === 19));
+  }
+  if (family === 6) {
+    return host === '::1'
+      || host === '::'
+      || host.startsWith('fc')
+      || host.startsWith('fd')
+      || host.startsWith('fe8')
+      || host.startsWith('fe9')
+      || host.startsWith('fea')
+      || host.startsWith('feb');
+  }
+  return false;
+}
+
+function validateDownloadUrl(value) {
+  const raw = String(value || '').trim();
+  assert(raw, 'manifest.downloadUrl must be a non-empty HTTPS URL.');
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error('manifest.downloadUrl must be a valid HTTPS URL.');
+  }
+  assert(parsed.protocol === 'https:', 'manifest.downloadUrl must use HTTPS.');
+  assert(!parsed.username && !parsed.password, 'manifest.downloadUrl must not contain URL credentials.');
+  assert(!isPrivateAddress(parsed.hostname), 'manifest.downloadUrl must not target a local or private address.');
+  return parsed.toString();
+}
+
 function loadManifest(filePath) {
   const manifest = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   assert(manifest.schemaVersion === 1, 'Unsupported PDF intake manifest schemaVersion.');
@@ -28,8 +73,17 @@ function loadManifest(filePath) {
   assert(String(manifest.copy?.default || '').trim(), 'manifest.copy.default is required.');
   assert(Array.isArray(manifest.targets) && manifest.targets.length, 'manifest.targets must contain at least one destination.');
   assert(manifest.targets.every((target) => ALLOWED_TARGETS.has(target)), 'manifest.targets contains an unsupported destination.');
-  assert(Array.isArray(manifest.chunks) && manifest.chunks.length, 'manifest.chunks must list at least one base64 part.');
-  assert(manifest.chunks.every((chunk) => typeof chunk === 'string' && chunk.endsWith('.b64')), 'Every manifest chunk must be a .b64 repository path.');
+
+  const hasChunks = Array.isArray(manifest.chunks) && manifest.chunks.length > 0;
+  const hasDownloadUrl = Boolean(String(manifest.downloadUrl || '').trim());
+  assert(hasChunks !== hasDownloadUrl, 'manifest must provide exactly one PDF transport: chunks or downloadUrl.');
+  if (hasChunks) {
+    assert(manifest.chunks.every((chunk) => typeof chunk === 'string' && chunk.endsWith('.b64')), 'Every manifest chunk must be a .b64 repository path.');
+  } else {
+    manifest.downloadUrl = validateDownloadUrl(manifest.downloadUrl);
+    assert(manifest.expectedSha256, 'manifest.expectedSha256 is required when downloadUrl is used.');
+  }
+
   if (manifest.expectedSha256) assert(/^[a-f0-9]{64}$/i.test(manifest.expectedSha256), 'manifest.expectedSha256 must be a SHA-256 hex digest.');
   if (manifest.mode && !['draft', 'schedule'].includes(manifest.mode)) throw new Error('manifest.mode must be draft or schedule.');
   if ((manifest.mode || 'draft') === 'schedule') {
@@ -42,10 +96,21 @@ function loadManifest(filePath) {
   return manifest;
 }
 
+function verifyPdfFile(pdfPath, expectedSha256) {
+  const stat = fs.statSync(pdfPath);
+  assert(stat.size > 0, 'PDF transport produced an empty file.');
+  assert(stat.size <= MAX_DOCUMENT_BYTES, `PDF exceeds ${MAX_DOCUMENT_BYTES} bytes.`);
+  const bytes = stat.size;
+  const sha256 = crypto.createHash('sha256').update(fs.readFileSync(pdfPath)).digest('hex');
+  if (expectedSha256) assert(sha256 === String(expectedSha256).toLowerCase(), `PDF SHA-256 mismatch: expected ${expectedSha256}, got ${sha256}.`);
+  const signature = fs.readFileSync(pdfPath).subarray(0, 5).toString('ascii');
+  assert(signature === '%PDF-', 'Transported file is not a PDF.');
+  return { bytes, sha256 };
+}
+
 function decodeChunks(root, manifest, outputPdf) {
-  const hash = crypto.createHash('sha256');
-  let bytes = 0;
   const fd = fs.openSync(outputPdf, 'w');
+  let bytes = 0;
   try {
     for (const relative of manifest.chunks) {
       const abs = path.resolve(root, relative);
@@ -56,18 +121,31 @@ function decodeChunks(root, manifest, outputPdf) {
       const buf = Buffer.from(text, 'base64');
       assert(buf.length, `Decoded chunk is empty: ${relative}`);
       fs.writeSync(fd, buf);
-      hash.update(buf);
       bytes += buf.length;
       assert(bytes <= MAX_DOCUMENT_BYTES, `PDF exceeds ${MAX_DOCUMENT_BYTES} bytes.`);
     }
   } finally {
     fs.closeSync(fd);
   }
-  const sha256 = hash.digest('hex');
-  if (manifest.expectedSha256) assert(sha256 === manifest.expectedSha256.toLowerCase(), `PDF SHA-256 mismatch: expected ${manifest.expectedSha256}, got ${sha256}.`);
-  const signature = fs.readFileSync(outputPdf).subarray(0, 5).toString('ascii');
-  assert(signature === '%PDF-', 'Decoded file is not a PDF.');
-  return { bytes, sha256 };
+  return verifyPdfFile(outputPdf, manifest.expectedSha256);
+}
+
+function downloadPdf(manifest, outputPdf) {
+  const url = validateDownloadUrl(manifest.downloadUrl);
+  childProcess.execFileSync('curl', [
+    '--fail',
+    '--location',
+    '--silent',
+    '--show-error',
+    '--retry', '3',
+    '--retry-delay', '1',
+    '--proto', '=https',
+    '--proto-redir', '=https',
+    '--max-filesize', String(MAX_DOCUMENT_BYTES),
+    '--output', outputPdf,
+    url,
+  ], { stdio: 'inherit' });
+  return verifyPdfFile(outputPdf, manifest.expectedSha256);
 }
 
 function inspectPdf(pdfPath) {
@@ -91,6 +169,7 @@ function rawUrl(owner, repo, branch, relativePath) {
 
 function buildQueuePost(manifest, metadata, urls, nowIso) {
   const mode = manifest.mode || 'draft';
+  const transport = manifest.downloadUrl ? 'approved HTTPS binary bridge' : 'locked base64 chunks';
   const post = {
     id: manifest.id,
     revision: Number(manifest.revision || 1),
@@ -122,7 +201,7 @@ function buildQueuePost(manifest, metadata, urls, nowIso) {
       state: 'media_ready',
       at: nowIso,
       actor: 'github-actions[bot]',
-      note: 'PDF reconstructed from locked base64 chunks, verified, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied.',
+      note: `PDF reconstructed from ${transport}, verified against its locked SHA-256, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied.`,
     }],
   };
   if (mode === 'schedule') post.scheduledAt = manifest.scheduledAt;
@@ -153,7 +232,7 @@ function run({ root = process.cwd(), manifestPath, owner, repo, branch = 'main' 
   fs.mkdirSync(intakeDir, { recursive: true });
   const pdfPath = path.join(intakeDir, `${manifest.id}.pdf`);
   const jpgPath = path.join(intakeDir, 'thumbnail.jpg');
-  const measured = decodeChunks(root, manifest, pdfPath);
+  const measured = manifest.downloadUrl ? downloadPdf(manifest, pdfPath) : decodeChunks(root, manifest, pdfPath);
   const inspected = inspectPdf(pdfPath);
   renderThumbnail(pdfPath, jpgPath);
   const metadata = { ...measured, ...inspected };
@@ -167,7 +246,9 @@ function run({ root = process.cwd(), manifestPath, owner, repo, branch = 'main' 
   const queuePath = path.join(root, 'apps', 'linkedin-review', 'queue.json');
   const post = buildQueuePost(manifest, metadata, urls, nowIso);
   upsertQueue(queuePath, post, nowIso);
-  return { manifest, metadata, urls, post, pdfRelative, jpgRelative, queuePath };
+  const manifestAudit = { ...manifest };
+  if (manifestAudit.downloadUrl) manifestAudit.downloadUrl = '[redacted]';
+  return { manifest: manifestAudit, metadata, urls, post, pdfRelative, jpgRelative, queuePath };
 }
 
 if (require.main === module) {
@@ -187,9 +268,12 @@ module.exports = {
   MAX_DOCUMENT_PAGES,
   buildQueuePost,
   decodeChunks,
+  downloadPdf,
   loadManifest,
   rawUrl,
   run,
   safeId,
   upsertQueue,
+  validateDownloadUrl,
+  verifyPdfFile,
 };
