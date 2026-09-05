@@ -56,6 +56,13 @@ function addCount(map, key) {
   map.set(key, (map.get(key) || 0) + 1);
 }
 
+function mediaIntegrity(locked = {}) {
+  return {
+    sha256: locked.mediaSha256 || locked.carousel?.pdfSha256 || '',
+    bytes: locked.mediaBytes ?? locked.carousel?.pdfBytes ?? null,
+  };
+}
+
 function buildIntegrityReport({
   livePosts = [],
   queuePosts = [],
@@ -147,9 +154,10 @@ function buildIntegrityReport({
       seenPlacementKeys.set(key, bufferId);
 
       if (locked.mediaUrl) {
+        const integrity = mediaIntegrity(locked);
         if (!isHttpsUrl(locked.mediaUrl)) failures.push(`${queueKey(locked.id, locked.revision)} mediaUrl is not HTTPS.`);
-        if (!/^[a-f0-9]{64}$/i.test(String(locked.mediaSha256 || ''))) failures.push(`${queueKey(locked.id, locked.revision)} is missing a valid media SHA-256.`);
-        if (!Number.isFinite(Number(locked.mediaBytes)) || Number(locked.mediaBytes) <= 0) failures.push(`${queueKey(locked.id, locked.revision)} is missing a valid media byte count.`);
+        if (!/^[a-f0-9]{64}$/i.test(String(integrity.sha256 || ''))) failures.push(`${queueKey(locked.id, locked.revision)} is missing a valid media SHA-256.`);
+        if (!Number.isFinite(Number(integrity.bytes)) || Number(integrity.bytes) <= 0) failures.push(`${queueKey(locked.id, locked.revision)} is missing a valid media byte count.`);
       }
     }
 
@@ -218,6 +226,7 @@ module.exports = {
   PAST_DUE_GRACE_MS,
   buildIntegrityReport,
   limitsFromPolicy,
+  mediaIntegrity,
   placementKey,
   queueKey,
 };
