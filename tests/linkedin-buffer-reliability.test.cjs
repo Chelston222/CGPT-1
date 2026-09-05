@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildIntegrityReport } = require('../scripts/linkedin-buffer-reliability.cjs');
+const { buildIntegrityReport, mediaIntegrity } = require('../scripts/linkedin-buffer-reliability.cjs');
 
 const channelIds = {
   personal: 'chan-personal',
@@ -34,8 +34,11 @@ function baseQueue() {
     mode: 'schedule',
     scheduledAt: { secondary: '2026-09-09T08:45:00+01:00' },
     mediaUrl: 'https://raw.githubusercontent.com/example/repo/main/test.pdf',
-    mediaSha256: 'a'.repeat(64),
-    mediaBytes: 12345,
+    carousel: {
+      readiness: 'ready',
+      pdfSha256: 'a'.repeat(64),
+      pdfBytes: 12345,
+    },
   }];
 }
 
@@ -53,6 +56,18 @@ function baseLive() {
 function baseLedger() {
   return [{ bufferId: 'buffer-001', queueId: 'rs-test-001', revision: '1', approvalIssue: 10 }];
 }
+
+test('resolves canonical nested carousel PDF integrity metadata', () => {
+  const integrity = mediaIntegrity(baseQueue()[0]);
+  assert.equal(integrity.sha256, 'a'.repeat(64));
+  assert.equal(integrity.bytes, 12345);
+});
+
+test('keeps compatibility with top-level media integrity metadata', () => {
+  const integrity = mediaIntegrity({ mediaSha256: 'b'.repeat(64), mediaBytes: 54321 });
+  assert.equal(integrity.sha256, 'b'.repeat(64));
+  assert.equal(integrity.bytes, 54321);
+});
 
 test('passes an exact locked, mapped, fixed-time placement', () => {
   const report = buildIntegrityReport({
