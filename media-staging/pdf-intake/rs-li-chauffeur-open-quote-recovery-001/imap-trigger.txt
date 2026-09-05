@@ -1,4 +1,0 @@
-owner-trigger 2026-09-05T21:55:00Z
-expected-sha256 33e8e51221053334ff7c830dfe06421d4854026ee162da21898c9d2ef20a97a1
-expected-bytes 20593546
-expected-pages 10
