@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-29T14:53:53.690Z",
+  "generatedAt": "2026-09-05T21:50:18.292Z",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -990,6 +990,49 @@
           "note": "PDF reconstructed from locked base64 chunks, verified, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied."
         }
       ]
+    },
+    {
+      "id": "rs-li-chauffeur-open-quote-recovery-001",
+      "revision": 1,
+      "title": "Stop losing bookings after the quote.",
+      "category": "buyer_diagnostics",
+      "funnelStage": "mof",
+      "format": "carousel",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "copy": {
+        "default": "You sent the quote.\nThen... silence.\n\nThat is not always a no.\n\nFor chauffeur businesses, an open quote is often an operations problem before it is a lead problem.\n\nA simple recovery process:\n- track every open quote\n- review them daily\n- follow up with purpose\n- record what happened\n\nThe aim is not pressure. It is clarity, good timing and making the next step easy.\n\nThis carousel shows the system.\n\nRetention School is building practical Client Return Systems for appointment-led businesses.\n\nSave this and run the 10-minute review on your current quote list."
+      },
+      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-chauffeur-open-quote-recovery-001/thumbnail.jpg",
+      "mediaAlt": "Retention School carousel showing a chauffeur open quote recovery system for tracking, reviewing, following up and closing open quotes.",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-chauffeur-open-quote-recovery-001/rs-li-chauffeur-open-quote-recovery-001.pdf",
+      "documentTitle": "Chauffeur Open Quote Recovery System",
+      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-chauffeur-open-quote-recovery-001/thumbnail.jpg",
+      "carousel": {
+        "libraryId": "rs-li-chauffeur-open-quote-recovery-001",
+        "slideCount": 10,
+        "readiness": "ready",
+        "pdfBytes": 20593546,
+        "pdfSha256": "33e8e51221053334ff7c830dfe06421d4854026ee162da21898c9d2ef20a97a1",
+        "verifiedAt": "2026-09-05T21:50:18.292Z",
+        "sourceFolder": "ChatGPT PDF intake rs-li-chauffeur-open-quote-recovery-001"
+      },
+      "sourceUrl": "https://app.notion.com/p/3d1e72eb858781b18a19e6cb1c0b15aa",
+      "sourceType": "chatgpt_pdf_intake",
+      "status": "review",
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-05T21:50:18.292Z",
+          "actor": "github-actions[bot]",
+          "note": "PDF reconstructed from locked base64 chunks, verified against its locked SHA-256, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied."
+        }
+      ],
+      "scheduledAt": {
+        "secondary": "2026-09-09T08:45:00+01:00"
+      }
     }
   ]
 }
