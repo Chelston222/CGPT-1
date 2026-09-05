@@ -6,6 +6,11 @@ on:
     paths:
       - 'apps/n30/**'
       - '.github/workflows/n30-live-qa.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/n30/**'
+      - '.github/workflows/n30-live-qa.yml'
   workflow_dispatch:
 
 permissions:
