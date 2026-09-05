@@ -1,0 +1,95 @@
+name: LinkedIn Queue Reconcile Live Buffer
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: linkedin-queue-reconcile-live-buffer
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.event.issue.user.login == github.repository_owner && github.event.issue.title == '[RECONCILE LINKEDIN QUEUE] live Buffer placements 2026-09-05'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore exact locked source records for already accepted Buffer placements
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const queuePath = 'apps/linkedin-review/queue.json';
+          const sourcePath = 'apps/linkedin-review/qa-replenishment-2026-09-07-learning-v2.json';
+          const queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
+          const source = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
+          const required = new Map([
+            ['tte-learning-v2-secondary-01', { revision: 1, target: 'secondary', scheduledAt: '2026-09-07T12:45:00+01:00' }],
+            ['tte-learning-v2-personal-02', { revision: 1, target: 'personal', scheduledAt: '2026-09-08T16:15:00+01:00' }],
+            ['tte-learning-v2-main-02', { revision: 1, target: 'main', scheduledAt: '2026-09-08T16:30:00+01:00' }],
+            ['tte-learning-v2-main-03', { revision: 1, target: 'main', scheduledAt: '2026-09-09T08:30:00+01:00' }],
+            ['tte-learning-v2-secondary-04', { revision: 1, target: 'secondary', scheduledAt: '2026-09-10T14:45:00+01:00' }],
+          ]);
+          const sourceById = new Map((source.posts || []).map(p => [p.id, p]));
+          const existing = new Map((queue.posts || []).map(p => [`${p.id}@${p.revision}`, p]));
+          let added = 0;
+          for (const [id, expected] of required) {
+            const src = sourceById.get(id);
+            if (!src) throw new Error(`Missing source record ${id}`);
+            if (src.revision !== expected.revision) throw new Error(`Revision mismatch for ${id}`);
+            if (!Array.isArray(src.targets) || src.targets.length !== 1 || src.targets[0] !== expected.target) throw new Error(`Target mismatch for ${id}`);
+            if (src.scheduledAt?.[expected.target] !== expected.scheduledAt) throw new Error(`Schedule mismatch for ${id}`);
+            const key = `${id}@${expected.revision}`;
+            const prior = existing.get(key);
+            if (prior) {
+              if (JSON.stringify(prior) !== JSON.stringify(src)) throw new Error(`Conflicting queue record ${key}; fail closed`);
+              continue;
+            }
+            queue.posts.push(src);
+            existing.set(key, src);
+            added++;
+          }
+          fs.writeFileSync(queuePath, `${JSON.stringify(queue, null, 2)}\n`);
+          console.log(JSON.stringify({ ok: true, added, required: [...required.keys()] }, null, 2));
+          NODE
+
+      - name: Validate queue JSON and exact restored records
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "const q=require('./apps/linkedin-review/queue.json'); const ids=['tte-learning-v2-secondary-01','tte-learning-v2-personal-02','tte-learning-v2-main-02','tte-learning-v2-main-03','tte-learning-v2-secondary-04']; for(const id of ids){const hits=q.posts.filter(p=>p.id===id&&p.revision===1); if(hits.length!==1) throw new Error(id+' count='+hits.length)} console.log('five live Buffer queue records restored exactly once')"
+
+      - name: Commit reconciliation only if needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/linkedin-review/queue.json
+          if git diff --cached --quiet; then
+            echo 'Queue already reconciled.'
+          else
+            git commit -m 'Reconcile locked queue records for live Buffer placements'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Record proof and close trigger
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '✅ Restored the five exact locked Performance Learning V2 queue revisions that were already accepted by Buffer. No Buffer post, destination, due time or content was changed. Re-run the read-only Buffer snapshot to prove 6/6 mapping.'
+            });
+            await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
