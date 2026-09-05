@@ -1,0 +1,26 @@
+{
+  "as_of": "2026-09-05",
+  "status_note": "All 20 received connection requests. #1-7 also received InMail. #8-12 connection request only. #13-20 connection request with note except #11-12, which were sent blank.",
+  "prospects": [
+    {"name":"Jen Maudsley","linkedin_url":"https://www.linkedin.com/in/jen-maudsley-baa9853a2/"},
+    {"name":"Jessica Shaw","linkedin_url":"https://www.linkedin.com/in/jessica-shaw-78991b1a9/"},
+    {"name":"Carla Chatburn","linkedin_url":"https://www.linkedin.com/in/carla-chatburn-88640a75/"},
+    {"name":"Paul Palmer","linkedin_url":"https://www.linkedin.com/in/paul-palmer-35568a178/"},
+    {"name":"Harvey McNally","linkedin_url":"https://www.linkedin.com/in/harvey-mcnally-b4848114a/"},
+    {"name":"Louise Counsell","linkedin_url":"https://www.linkedin.com/in/louise-counsell-a049a59b/"},
+    {"name":"Jenni Orsini","linkedin_url":"https://www.linkedin.com/in/jenni-orsini-926b7920/"},
+    {"name":"Jacqui Faulds","linkedin_url":"https://www.linkedin.com/in/jacqui-faulds-20901486/"},
+    {"name":"Lindsey Leeming","linkedin_url":"https://www.linkedin.com/in/lindsey-leeming-2a8271b8/"},
+    {"name":"Cameron Stananought","linkedin_url":"https://www.linkedin.com/in/cameron-stananought-00a562163/"},
+    {"name":"Andrea Bird","linkedin_url":"https://www.linkedin.com/in/andrea-bird-251b6a101/"},
+    {"name":"Sheldon Ward","linkedin_url":"https://www.linkedin.com/in/sheldonward/"},
+    {"name":"Jonathan Burrill","linkedin_url":"https://www.linkedin.com/in/jonathan-burrill-mcips-0a6ab444/"},
+    {"name":"Angeline McBride","linkedin_url":"https://www.linkedin.com/in/angeline-mcbride-176105172/"},
+    {"name":"Kersti Cawtherley","linkedin_url":"https://www.linkedin.com/in/kersti-cawtherley-6a5a50108/"},
+    {"name":"Daniela Laterza","linkedin_url":"https://www.linkedin.com/in/daniela-laterza-657585285/"},
+    {"name":"Elizabeth Bernasconi","linkedin_url":"https://www.linkedin.com/in/elizabeth-bernasconi-a4aa38354/"},
+    {"name":"John Monks","linkedin_url":"https://www.linkedin.com/in/john-monks-91849b45/"},
+    {"name":"Ross Webb","linkedin_url":"https://www.linkedin.com/in/ross-webb-mc-s-s-r-b-89990323/"},
+    {"name":"Karen Norris","linkedin_url":"https://www.linkedin.com/in/hairdresser-karen-norris-02249b54/"}
+  ]
+}
