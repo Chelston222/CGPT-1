@@ -1,0 +1,42 @@
+name: N30 Live QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/n30/**'
+      - '.github/workflows/n30-live-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Run N30 integrity and live browser QA
+        run: node apps/n30/live-qa.mjs
+
+      - name: Upload N30 QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: n30-live-qa-${{ github.run_number }}
+          path: apps/n30/qa-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
