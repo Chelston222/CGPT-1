@@ -22,16 +22,51 @@ function loadJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
+function promotionContract(post = {}) {
+  return {
+    id: post.id ?? null,
+    revision: post.revision ?? null,
+    title: post.title ?? null,
+    category: post.category ?? null,
+    contentRole: post.contentRole ?? null,
+    funnelStage: post.funnelStage ?? null,
+    format: post.format ?? null,
+    targets: post.targets ?? null,
+    mode: post.mode ?? null,
+    scheduledAt: post.scheduledAt ?? null,
+    taxonomy: post.taxonomy ?? null,
+    copy: post.copy ?? null,
+    sourceType: post.sourceType ?? null,
+    status: post.status ?? null,
+    qa: post.qa ?? null,
+  };
+}
+
+function promotionMatchesQueue(qaPost, queuePost) {
+  return JSON.stringify(promotionContract(qaPost)) === JSON.stringify(promotionContract(queuePost));
+}
+
 function auditQaBanks() {
   const errors = [];
   const warnings = [];
   const legacyDebt = [];
+  const exactPromotions = [];
   const queue = loadJson(QUEUE_PATH);
   const distribution = loadJson(DISTRIBUTION_PATH);
   const files = fs.readdirSync(REVIEW_DIR).filter((name) => /^qa-replenishment-.*\.json$/.test(name)).sort();
-  const globalIds = new Map((queue.posts || []).map((post) => [post.id, 'queue.json']));
+  const queueById = new Map();
+  const qaIds = new Map();
   const currentCopies = [];
   const fileSummaries = [];
+
+  for (const post of queue.posts || []) {
+    if (!post?.id) continue;
+    if (queueById.has(post.id)) {
+      errors.push(`queue.json/${post.id}: duplicate post id already exists in queue.json.`);
+      continue;
+    }
+    queueById.set(post.id, post);
+  }
 
   for (const name of files) {
     const fullPath = path.join(REVIEW_DIR, name);
@@ -71,8 +106,20 @@ function auditQaBanks() {
       const copy = post.copy?.default || '';
       if (!String(copy).trim()) errors.push(`${prefix}: copy.default is required.`);
 
-      if (globalIds.has(post.id)) errors.push(`${prefix}: duplicate post id already defined in ${globalIds.get(post.id)}.`);
-      else globalIds.set(post.id, name);
+      // A QA record may exist in queue.json only after promotion. That is healthy only when the
+      // complete governed release contract is byte-for-byte equivalent at the structured-field level.
+      // Any drift remains a hard failure so reconciliation cannot hide a changed revision, target,
+      // schedule, copy or QA state. Duplicate IDs across separate QA banks remain prohibited.
+      if (qaIds.has(post.id)) {
+        errors.push(`${prefix}: duplicate QA post id already defined in ${qaIds.get(post.id)}.`);
+      } else {
+        qaIds.set(post.id, name);
+      }
+      const queued = queueById.get(post.id);
+      if (queued) {
+        if (promotionMatchesQueue(post, queued)) exactPromotions.push(`${prefix}: exact promoted queue record.`);
+        else errors.push(`${prefix}: post id exists in queue.json but the promoted release contract has drifted.`);
+      }
 
       // Current-policy content rules. Historical content is preserved as historical evidence.
       if (postIsCurrent) {
@@ -157,6 +204,7 @@ function auditQaBanks() {
     errors,
     warnings,
     legacyDebt,
+    exactPromotions,
     totalQaFiles: fileSummaries.length,
     totalQaPosts: fileSummaries.reduce((sum, row) => sum + row.posts, 0),
     currentPolicyFiles: fileSummaries.filter((row) => row.currentPolicy).length,
@@ -169,11 +217,11 @@ if (require.main === module) {
   if (process.argv.includes('--json')) console.log(JSON.stringify(result, null, 2));
   else {
     console.log(`LinkedIn QA bank audit: ${result.ok ? 'PASS' : 'FAIL'}`);
-    console.log(`QA files: ${result.totalQaFiles}; QA posts: ${result.totalQaPosts}; current-policy posts: ${result.currentPolicyPosts}; legacy debt: ${result.legacyDebt.length}`);
+    console.log(`QA files: ${result.totalQaFiles}; QA posts: ${result.totalQaPosts}; current-policy posts: ${result.currentPolicyPosts}; exact promotions: ${result.exactPromotions.length}; legacy debt: ${result.legacyDebt.length}`);
     for (const warning of result.warnings) console.log(`WARN: ${warning}`);
     for (const error of result.errors) console.error(`ERROR: ${error}`);
   }
   if (!result.ok) process.exitCode = 1;
 }
 
-module.exports = { auditQaBanks };
+module.exports = { auditQaBanks, promotionContract, promotionMatchesQueue };
