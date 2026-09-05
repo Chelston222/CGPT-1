@@ -1033,6 +1033,151 @@
       "scheduledAt": {
         "secondary": "2026-09-09T08:45:00+01:00"
       }
+    },
+    {
+      "id": "tte-learning-v2-secondary-01",
+      "revision": 1,
+      "title": "Lesson: event vs customer state",
+      "category": "customer_state",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-07T12:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Lifecycle Foundations",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 07"
+      },
+      "copy": {
+        "default": "Retention School: Event vs state\n\nAn event is something that happened.\n\nA state is what is true now.\n\nExamples:\n\nEvent: appointment cancelled.\nState: cancelled, not yet rebooked.\n\nEvent: first visit completed.\nState: first-time client, not yet returned.\n\nEvent: enquiry submitted.\nState: interested, not yet booked.\n\nWhy does this matter?\n\nBecause good lifecycle automation should usually respond to the current state, not blindly react to an old event.\n\nThe event tells you where the customer came from.\n\nThe state tells you what job exists now."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false
+      }
+    },
+    {
+      "id": "tte-learning-v2-personal-02",
+      "revision": 1,
+      "title": "I would rather leave the slot empty",
+      "category": "founder_operating_principle",
+      "contentRole": "founder_story",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-08T16:15:00+01:00"
+      },
+      "copy": {
+        "default": "I have changed one rule in how I think about content:\n\nAn empty slot is better than a weak post.\n\nFor a while, the tempting goal was simple.\n\nKeep Buffer full.\nKeep publishing.\nKeep the machine moving.\n\nBut volume can hide a quality problem.\n\nIf the only reason a post exists is because there was space on the calendar, the calendar has started making the strategy.\n\nI would rather the system say:\n\n“We have room, but nothing here is strong enough yet.”\n\nThen create something better.\n\nThat is the same principle I increasingly like in client work too.\n\nAutomation should remove avoidable effort.\n\nIt should not remove judgement."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false
+      }
+    },
+    {
+      "id": "tte-learning-v2-main-02",
+      "revision": 1,
+      "title": "The six parts of a return system",
+      "category": "customer_return_system",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-08T16:30:00+01:00"
+      },
+      "copy": {
+        "default": "A useful client return system needs more than a reminder.\n\nSix parts matter:\n\n1. State\nWhat just happened?\n\n2. Timing\nWhen does the next action become useful?\n\n3. Message\nWhat uncertainty or friction should be reduced?\n\n4. Route\nWhat is the easiest appropriate next step?\n\n5. Stop rule\nWhat event means the system should stop?\n\n6. Measurement\nHow will the business know whether the journey improved?\n\nSkip the first two and automation becomes noise.\n\nSkip the stop rule and it becomes annoying.\n\nSkip measurement and nobody knows whether it worked."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false
+      }
+    },
+    {
+      "id": "tte-learning-v2-main-03",
+      "revision": 1,
+      "title": "Follow-up needs ownership, not just automation",
+      "category": "system_ownership",
+      "contentRole": "authority",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-09T08:30:00+01:00"
+      },
+      "copy": {
+        "default": "A follow-up process can be automated and still be operationally weak.\n\nThe missing piece is often ownership.\n\nWho notices when the booking journey changes?\nWho checks that the right people still enter the workflow?\nWho owns a conversation once a staff member steps in?\nWho updates the route when an offer or service changes?\nWho reviews whether the system is producing the intended outcome?\n\nAutomation should reduce repetitive work.\n\nIt should not create a process that everybody assumes somebody else is watching."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false
+      }
+    },
+    {
+      "id": "tte-learning-v2-secondary-04",
+      "revision": 1,
+      "title": "Lesson: measure after the message has had time to work",
+      "category": "measurement",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-10T14:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Measurement",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 09"
+      },
+      "copy": {
+        "default": "Retention School: Measurement needs a maturity window\n\nDo not judge a lifecycle message before the customer has had a fair chance to act.\n\nA reminder sent five minutes ago has not failed because it has zero bookings.\n\nA rebooking journey should be measured against the decision window it was designed for.\n\nThat means defining:\n\nWhen the message is sent.\nHow long a reasonable response can take.\nWhat outcome counts.\nWhat comparison period is fair.\n\nFast dashboards make data visible quickly.\n\nThey do not make customer behaviour happen faster."
+      },
+      "sourceType": "performance_learning_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false
+      }
     }
   ]
 }
