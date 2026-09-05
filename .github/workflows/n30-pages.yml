@@ -1,0 +1,58 @@
+name: Deploy N30 to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/n30/**'
+      - '.github/workflows/n30-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: n30-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Build clean N30 Pages artifact
+        run: |
+          mkdir -p _site
+          cp apps/n30/index.html _site/index.html
+          cp apps/n30/c00.txt _site/c00.txt
+          cp apps/n30/p01.txt _site/p01.txt
+          cp apps/n30/q02.txt _site/q02.txt
+          cp apps/n30/q05.txt _site/q05.txt
+          cp apps/n30/c08a.txt _site/c08a.txt
+          cp apps/n30/c08b.txt _site/c08b.txt
+          cp apps/n30/c08c.txt _site/c08c.txt
+          cp apps/n30/q11.txt _site/q11.txt
+          cp apps/n30/q14.txt _site/q14.txt
+          cp apps/n30/q17.txt _site/q17.txt
+          touch _site/.nojekyll
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
