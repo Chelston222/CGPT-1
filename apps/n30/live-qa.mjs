@@ -4,7 +4,7 @@ import zlib from 'node:zlib';
 import { chromium } from 'playwright';
 
 const EXPECTED_SHA = '27502d6d020f72635bad9afbec3c9dd9c36aef649747a18ed956be1def682225';
-const RELEASE_COMMIT = '04a1763879526ceaafaace99825adb1c39e9544d';
+const RELEASE_COMMIT = '8491b2fc2b21e7b732b865dc1915ac03e34d5eb3';
 const PUBLIC_URL = `https://rawcdn.githack.com/Chelston222/CGPT-1/${RELEASE_COMMIT}/apps/n30/index.html`;
 const chunks = ['c00.txt','p01.txt','q02.txt','q05.txt','c08a.txt','c08b.txt','c08c.txt','q11.txt','q14.txt','q17.txt'];
 
