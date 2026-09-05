@@ -1,0 +1,152 @@
+name: LinkedIn Content OS Nightly Regression
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+  schedule:
+    - cron: '47 4 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/linkedin-*.cjs'
+      - 'tests/linkedin-*.test.cjs'
+      - '.github/workflows/linkedin-*.yml'
+      - 'apps/linkedin-review/**'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-content-os-nightly-regression
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[LINKEDIN REGRESSION CHECK]') && github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run deterministic Content OS regression suite
+        id: regression
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          exec > >(tee /tmp/linkedin-regression.log) 2>&1
+          : > /tmp/linkedin-regression-failures.log
+          status=0
+
+          for script in \
+            scripts/linkedin-buffer-capacity.cjs \
+            scripts/linkedin-buffer-reliability.cjs \
+            scripts/linkedin-performance-learning.cjs \
+            scripts/linkedin-performance-learning-v2.cjs \
+            scripts/linkedin-content-traits-v2.cjs \
+            scripts/linkedin-qa-bank-audit.cjs \
+            scripts/linkedin-week-batch.cjs \
+            scripts/linkedin-content-supply.cjs
+          do
+            echo "=== SYNTAX $script ==="
+            if node --check "$script"; then
+              echo "PASS_SYNTAX $script"
+            else
+              echo "FAIL_SYNTAX $script" | tee -a /tmp/linkedin-regression-failures.log
+              status=1
+            fi
+          done
+
+          for testfile in \
+            tests/linkedin-buffer-capacity.test.cjs \
+            tests/linkedin-buffer-reliability.test.cjs \
+            tests/linkedin-week-batch.test.cjs \
+            tests/linkedin-green-gate-cutoff.test.cjs \
+            tests/linkedin-performance-learning.test.cjs \
+            tests/linkedin-performance-learning-v2.test.cjs \
+            tests/linkedin-content-traits-v2.test.cjs \
+            tests/linkedin-performance-policy.test.cjs \
+            tests/linkedin-performance-workflow-static.test.cjs \
+            tests/linkedin-commercial-outcome-capture.test.cjs \
+            tests/linkedin-content-supply.test.cjs
+          do
+            echo "=== TEST $testfile ==="
+            tmpfile="$(mktemp)"
+            if node --test "$testfile" >"$tmpfile" 2>&1; then
+              cat "$tmpfile"
+              echo "PASS_FILE $testfile"
+            else
+              cat "$tmpfile"
+              {
+                echo "===== FAIL_FILE $testfile ====="
+                cat "$tmpfile"
+                echo
+              } >> /tmp/linkedin-regression-failures.log
+              status=1
+            fi
+            rm -f "$tmpfile"
+          done
+
+          echo "=== QA BANK AUDIT ==="
+          if ! node scripts/linkedin-qa-bank-audit.cjs; then
+            echo "FAIL_QA_BANK_AUDIT" >> /tmp/linkedin-regression-failures.log
+            status=1
+          fi
+
+          exit "$status"
+
+      - name: Maintain regression incident state
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          REGRESSION_OUTCOME: ${{ steps.regression.outcome }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const INCIDENT_TITLE = '[LINKEDIN RELIABILITY INCIDENT] Regression suite';
+            const pass = process.env.REGRESSION_OUTCOME === 'success';
+            let failures = '';
+            try { failures = fs.readFileSync('/tmp/linkedin-regression-failures.log', 'utf8').trim(); } catch {}
+            const body = [
+              '# LinkedIn Content OS recurring regression', '',
+              pass ? '🟢 **PASS**' : '🔴 **FAIL**', '',
+              `- Checked at: **${new Date().toISOString()}**`,
+              '- Syntax checked for the release, capacity, reliability, learning, QA and supply scripts.',
+              '- Core LinkedIn regression files executed individually.',
+              '- Full QA-bank audit executed.', '',
+              pass ? 'The deterministic Content OS regression contract passes on the current main branch.' : 'At least one invariant failed. No failure is silently promoted as healthy.',
+              !pass && failures ? '' : null,
+              !pass && failures ? '```text' : null,
+              !pass && failures ? failures.slice(-20000) : null,
+              !pass && failures ? '```' : null,
+            ].filter((value) => value !== null).join('\n');
+
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
+            const incident = openIssues.find((issue) => !issue.pull_request && issue.title === INCIDENT_TITLE);
+            if (pass) {
+              if (incident) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: incident.number, body: `✅ Regression recovered.\n\n${body}` });
+                await github.rest.issues.update({ owner, repo, issue_number: incident.number, state: 'closed', state_reason: 'completed' });
+              }
+            } else if (incident) {
+              await github.rest.issues.update({ owner, repo, issue_number: incident.number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title: INCIDENT_TITLE, body });
+            }
+
+            if (context.eventName === 'issues') {
+              await github.rest.issues.createComment({ owner, repo, issue_number: context.issue.number, body });
+              await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed', state_reason: pass ? 'completed' : 'not_planned' });
+            }
+            core.summary.addHeading('LinkedIn Content OS Nightly Regression').addRaw(body).write();
+            if (!pass) core.setFailed('LinkedIn Content OS regression failed.');
+
+      - name: Fail job when regression suite failed
+        if: steps.regression.outcome != 'success'
+        run: exit 1
