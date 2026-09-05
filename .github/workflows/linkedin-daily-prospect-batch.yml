@@ -1,0 +1,89 @@
+name: 222Emails LinkedIn Daily Prospect Batch
+
+on:
+  schedule:
+    - cron: '35 7 * * 1-5'
+      timezone: 'Europe/London'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Primary prospects to prepare'
+        required: false
+        default: '10'
+      backups:
+        description: 'Backup prospects to prepare'
+        required: false
+        default: '2'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-daily-prospect-batch
+  cancel-in-progress: false
+
+jobs:
+  prepare-batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BATCH_TARGET: ${{ inputs.target || '10' }}
+      BATCH_BACKUPS: ${{ inputs.backups || '2' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Privacy fail-closed gate
+        shell: bash
+        run: |
+          if ! jq -e '.delivery.public_output_acknowledged == true' apps/linkedin-outreach-batch/config.json >/dev/null; then
+            echo 'BLOCKED: this repository is public and public_output_acknowledged is false.'
+            echo 'The engine will not publish daily target lists or outreach copy until the owner explicitly accepts public exposure or delivery moves to a private destination.'
+            exit 2
+          fi
+
+      - name: API key preflight
+        shell: bash
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo 'OPENAI_API_KEY is missing. Add it as a GitHub Actions repository secret before enabling the schedule.'
+            exit 3
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install OpenAI SDK
+        run: python -m pip install --upgrade openai
+
+      - name: Generate and independently verify prospect batch
+        run: python apps/linkedin-outreach-batch/generate.py
+
+      - name: Assert outputs exist
+        run: |
+          test -s apps/linkedin-outreach-batch/out/batch.md
+          test -s apps/linkedin-outreach-batch/out/batch.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('apps/linkedin-outreach-batch/out/batch.json').read_text())
+          assert len(p['prospects']) >= int('${{ inputs.target || '10' }}')
+          assert all(x['score'] >= 95 for x in p['prospects'])
+          assert all(x['linkedin_url'].startswith('https://www.linkedin.com/in/') for x in p['prospects'])
+          print('QA gate passed')
+          PY
+
+      - name: Publish prepared batch as GitHub issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TODAY=$(TZ=Europe/London date +%F)
+          gh issue create \
+            --title "LinkedIn Prospect Batch | ${TODAY}" \
+            --body-file apps/linkedin-outreach-batch/out/batch.md
