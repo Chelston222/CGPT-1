@@ -3,6 +3,10 @@ name: LinkedIn IMAP PDF Intake
 on:
   issues:
     types: [opened]
+  push:
+    branches: [main]
+    paths:
+      - 'media-staging/pdf-intake/rs-li-chauffeur-open-quote-recovery-001/imap-trigger.txt'
 
 permissions:
   contents: write
@@ -14,7 +18,9 @@ concurrency:
 
 jobs:
   chauffeur-intake:
-    if: github.event.issue.user.login == github.repository_owner && github.event.issue.title == '[IMAP PDF INTAKE] rs-li-chauffeur-open-quote-recovery-001'
+    if: >-
+      (github.event_name == 'issues' && github.event.issue.user.login == github.repository_owner && github.event.issue.title == '[IMAP PDF INTAKE] rs-li-chauffeur-open-quote-recovery-001') ||
+      (github.event_name == 'push' && github.actor == github.repository_owner)
     runs-on: ubuntu-latest
     env:
       TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
@@ -155,7 +161,7 @@ jobs:
             else await github.rest.issues.create({ owner, repo, title, body });
 
       - name: Close transport trigger with proof
-        if: success()
+        if: success() && github.event_name == 'issues'
         uses: actions/github-script@v7
         with:
           script: |
