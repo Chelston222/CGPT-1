@@ -4,7 +4,7 @@ import zlib from 'node:zlib';
 import { chromium } from 'playwright';
 
 const EXPECTED_SHA = '27502d6d020f72635bad9afbec3c9dd9c36aef649747a18ed956be1def682225';
-const RELEASE_COMMIT = '8491b2fc2b21e7b732b865dc1915ac03e34d5eb3';
+const RELEASE_COMMIT = '04a1763879526ceaafaace99825adb1c39e9544d';
 const PUBLIC_URL = `https://rawcdn.githack.com/Chelston222/CGPT-1/${RELEASE_COMMIT}/apps/n30/index.html`;
 const chunks = ['c00.txt','p01.txt','q02.txt','q05.txt','c08a.txt','c08b.txt','c08c.txt','q11.txt','q14.txt','q17.txt'];
 
@@ -27,12 +27,17 @@ const results = [];
 
 async function runViewport(label, viewport, isMobile = false) {
   const context = await browser.newContext({ viewport, isMobile, deviceScaleFactor: 1 });
-  await context.addCookies([{ name: '__Http-phish', value: '1', domain: '.githack.com', path: '/' }]);
+  await context.addCookies([{
+    name: '__Http-phish', value: '1', url: 'https://rawcdn.githack.com/',
+    secure: true, httpOnly: true, sameSite: 'Lax'
+  }]);
   const page = await context.newPage();
   const consoleErrors = [];
   const pageErrors = [];
+  const failedRequests = [];
   page.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
   page.on('pageerror', err => pageErrors.push(String(err)));
+  page.on('requestfailed', req => failedRequests.push(`${req.url()} :: ${req.failure()?.errorText || 'failed'}`));
   const response = await page.goto(PUBLIC_URL, { waitUntil: 'domcontentloaded', timeout: 90000 });
   assert(response && response.ok(), `${label}: HTTP load failed`);
   await page.waitForFunction(() => {
@@ -63,7 +68,8 @@ async function runViewport(label, viewport, isMobile = false) {
   assert(pageErrors.length === 0, `${label}: page errors: ${pageErrors.join(' | ')}`);
   const seriousConsole = consoleErrors.filter(x => !/favicon|Failed to load resource.*404/i.test(x));
   assert(seriousConsole.length === 0, `${label}: console errors: ${seriousConsole.join(' | ')}`);
-  results.push({ label, viewport, navOutcomes, bodyLength: body.length, consoleErrors: seriousConsole.length, pageErrors: pageErrors.length });
+  assert(failedRequests.length === 0, `${label}: failed requests: ${failedRequests.join(' | ')}`);
+  results.push({ label, viewport, navOutcomes, bodyLength: body.length, consoleErrors: seriousConsole.length, pageErrors: pageErrors.length, failedRequests: failedRequests.length });
   await context.close();
 }
 
