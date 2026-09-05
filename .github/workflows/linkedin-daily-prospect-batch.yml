@@ -37,6 +37,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Static integrity gate
+        shell: bash
+        run: |
+          python -m py_compile apps/linkedin-outreach-batch/generate.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('apps/linkedin-outreach-batch')
+          cfg = json.loads((root / 'config.json').read_text())
+          seed = json.loads((root / 'seed-contacted.json').read_text())
+          urls = [p['linkedin_url'] for p in seed['prospects']]
+
+          assert cfg['schedule']['daily_primary_target'] == 10
+          assert cfg['schedule']['daily_backups'] == 2
+          assert cfg['quality']['minimum_first_touch_score'] == 95
+          assert cfg['safety']['human_send_only'] is True
+          assert cfg['safety']['never_automate_linkedin_actions'] is True
+          assert len(urls) == 20
+          assert len(set(urls)) == 20
+          assert all(u.startswith('https://www.linkedin.com/in/') and '?' not in u for u in urls)
+          print('Static integrity gate passed')
+          PY
+
       - name: Privacy fail-closed gate
         shell: bash
         run: |
@@ -54,11 +83,6 @@ jobs:
             exit 3
           fi
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
       - name: Install OpenAI SDK
         run: python -m pip install --upgrade openai
 
@@ -66,6 +90,7 @@ jobs:
         run: python apps/linkedin-outreach-batch/generate.py
 
       - name: Assert outputs exist
+        shell: bash
         run: |
           test -s apps/linkedin-outreach-batch/out/batch.md
           test -s apps/linkedin-outreach-batch/out/batch.json
@@ -76,7 +101,8 @@ jobs:
           assert len(p['prospects']) >= int('${{ inputs.target || '10' }}')
           assert all(x['score'] >= 95 for x in p['prospects'])
           assert all(x['linkedin_url'].startswith('https://www.linkedin.com/in/') for x in p['prospects'])
-          print('QA gate passed')
+          assert all('?' not in x['linkedin_url'] for x in p['prospects'])
+          print('Generated-output QA gate passed')
           PY
 
       - name: Publish prepared batch as GitHub issue
