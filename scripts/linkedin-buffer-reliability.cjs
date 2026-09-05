@@ -76,6 +76,10 @@ function buildIntegrityReport({
   const failures = [];
   const warnings = [];
   const limits = limitsFromPolicy(policy);
+  const configuredIds = TARGETS.map((target) => channelIds[target]).filter(Boolean);
+  if (new Set(configuredIds).size !== configuredIds.length) {
+    failures.push('Configured Buffer channel IDs must be unique across personal, main and secondary.');
+  }
   const targetByChannel = Object.fromEntries(Object.entries(channelIds).map(([target, id]) => [id, target]));
   const { ledger, duplicates: duplicateLedgerBufferIds } = normaliseLedger(ledgerEntries);
   const queueByKey = new Map();
@@ -123,6 +127,10 @@ function buildIntegrityReport({
     if (seenBufferIds.has(bufferId)) failures.push(`Duplicate live Buffer post ID ${bufferId}.`);
     seenBufferIds.add(bufferId);
 
+    if (live.status !== 'scheduled') {
+      failures.push(`Buffer post ${bufferId} was returned by the scheduled-post query with unexpected status ${live.status || '(missing)'}.`);
+    }
+
     const target = targetByChannel[live.channelId] || 'UNKNOWN';
     if (target === 'UNKNOWN') failures.push(`Buffer post ${bufferId} belongs to an unknown channel ${live.channelId || '(missing)'}.`);
     else counts[target] += 1;
@@ -141,10 +149,20 @@ function buildIntegrityReport({
       const expectedDue = locked.scheduledAt?.[target];
       const expectedMs = Date.parse(expectedDue || '');
       const liveMs = Date.parse(live.dueAt || '');
+      const acceptedMs = Date.parse(ledgerEntry?.acceptedDueAt || '');
       if (!Number.isFinite(expectedMs)) failures.push(`${queueKey(locked.id, locked.revision)} has no valid locked schedule for ${target}.`);
       if (!Number.isFinite(liveMs)) failures.push(`Buffer post ${bufferId} has no valid due time.`);
       if (Number.isFinite(expectedMs) && Number.isFinite(liveMs) && expectedMs !== liveMs) {
         failures.push(`${queueKey(locked.id, locked.revision)} / ${target} due-time drift: queue ${expectedDue}, Buffer ${live.dueAt}.`);
+      }
+      if (ledgerEntry?.acceptedDueAt && !Number.isFinite(acceptedMs)) {
+        failures.push(`Buffer post ${bufferId} has an invalid acceptance-ledger due time ${ledgerEntry.acceptedDueAt}.`);
+      }
+      if (Number.isFinite(expectedMs) && Number.isFinite(acceptedMs) && expectedMs !== acceptedMs) {
+        failures.push(`${queueKey(locked.id, locked.revision)} / ${target} acceptance-ledger due-time drift: queue ${expectedDue}, accepted ${ledgerEntry.acceptedDueAt}.`);
+      }
+      if (Number.isFinite(liveMs) && Number.isFinite(acceptedMs) && liveMs !== acceptedMs) {
+        failures.push(`${queueKey(locked.id, locked.revision)} / ${target} Buffer due time no longer matches trusted acceptance evidence.`);
       }
 
       const key = placementKey(locked.id, locked.revision, target);
