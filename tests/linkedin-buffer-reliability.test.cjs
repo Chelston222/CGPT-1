@@ -54,7 +54,13 @@ function baseLive() {
 }
 
 function baseLedger() {
-  return [{ bufferId: 'buffer-001', queueId: 'rs-test-001', revision: '1', approvalIssue: 10 }];
+  return [{
+    bufferId: 'buffer-001',
+    queueId: 'rs-test-001',
+    revision: '1',
+    approvalIssue: 10,
+    acceptedDueAt: '2026-09-09T07:45:00.000Z',
+  }];
 }
 
 test('resolves canonical nested carousel PDF integrity metadata', () => {
@@ -83,6 +89,21 @@ test('passes an exact locked, mapped, fixed-time placement', () => {
   assert.equal(report.mappedCount, 1);
   assert.equal(report.totalCount, 1);
   assert.deepEqual(report.failures, []);
+});
+
+test('fails closed when configured Buffer channel IDs are not unique', () => {
+  const duplicateIds = { ...channelIds, main: channelIds.secondary };
+  const report = buildIntegrityReport({
+    livePosts: baseLive(),
+    queuePosts: baseQueue(),
+    ledgerEntries: baseLedger(),
+    channelIds: duplicateIds,
+    policy,
+    providerStates: providers,
+    now: Date.parse('2026-09-08T12:00:00Z'),
+  });
+  assert.equal(report.ok, false);
+  assert.match(report.failures.join('\n'), /channel IDs must be unique/);
 });
 
 test('fails closed when a live Buffer placement has no trusted ledger mapping', () => {
@@ -115,11 +136,43 @@ test('detects due-time drift between Buffer and the locked queue revision', () =
   assert.match(report.failures.join('\n'), /due-time drift/);
 });
 
+test('detects acceptance-ledger due-time drift', () => {
+  const ledger = baseLedger();
+  ledger[0].acceptedDueAt = '2026-09-09T08:15:00.000Z';
+  const report = buildIntegrityReport({
+    livePosts: baseLive(),
+    queuePosts: baseQueue(),
+    ledgerEntries: ledger,
+    channelIds,
+    policy,
+    providerStates: providers,
+    now: Date.parse('2026-09-08T12:00:00Z'),
+  });
+  assert.equal(report.ok, false);
+  assert.match(report.failures.join('\n'), /acceptance-ledger due-time drift/);
+});
+
+test('detects unexpected live status', () => {
+  const live = baseLive();
+  live[0].status = 'sent';
+  const report = buildIntegrityReport({
+    livePosts: live,
+    queuePosts: baseQueue(),
+    ledgerEntries: baseLedger(),
+    channelIds,
+    policy,
+    providerStates: providers,
+    now: Date.parse('2026-09-08T12:00:00Z'),
+  });
+  assert.equal(report.ok, false);
+  assert.match(report.failures.join('\n'), /unexpected status sent/);
+});
+
 test('detects duplicate live destinations for the same locked revision and target', () => {
   const live = baseLive();
   live.push({ ...live[0], id: 'buffer-002' });
   const ledger = baseLedger();
-  ledger.push({ bufferId: 'buffer-002', queueId: 'rs-test-001', revision: '1', approvalIssue: 10 });
+  ledger.push({ ...ledger[0], bufferId: 'buffer-002' });
   const report = buildIntegrityReport({
     livePosts: live,
     queuePosts: baseQueue(),
