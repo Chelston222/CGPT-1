@@ -1,0 +1,3 @@
+N30 immutable release live QA gate.
+Release commit: 04a1763879526ceaafaace99825adb1c39e9544d
+Canonical SHA-256: 27502d6d020f72635bad9afbec3c9dd9c36aef649747a18ed956be1def682225
