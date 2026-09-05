@@ -1,0 +1,191 @@
+name: LinkedIn Buffer Reliability Sentinel
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+  schedule:
+    - cron: '23 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/linkedin-review/**'
+      - 'scripts/linkedin-buffer-*.cjs'
+      - 'scripts/linkedin-week-batch.cjs'
+      - '.github/workflows/linkedin-buffer-autopost.yml'
+      - '.github/workflows/linkedin-buffer-reliability-sentinel.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-buffer-reliability-sentinel
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[LINKEDIN RELIABILITY CHECK]') && github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify live Buffer against the governed Content OS
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
+          BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
+          BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const { withQaReplenishment } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
+            const { buildIntegrityReport } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-reliability.cjs'));
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const INCIDENT_TITLE = '[LINKEDIN RELIABILITY INCIDENT] Content OS / Buffer';
+            const baseQueue = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/queue.json'), 'utf8'));
+            const effectiveQueue = withQaReplenishment(baseQueue);
+            const policy = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/distribution-policy.json'), 'utf8'));
+            const channelIds = {
+              personal: process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID,
+              main: process.env.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID,
+              secondary: process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID,
+            };
+            const hardFailures = [];
+            const providerStates = {};
+            let livePosts = [];
+            let paginationIncomplete = false;
+
+            async function buffer(query) {
+              if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured.');
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.BUFFER_API_KEY}` },
+                body: JSON.stringify({ query }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              const messages = (payload.errors || []).map((error) => error.message).filter(Boolean);
+              if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
+              return payload.data;
+            }
+
+            const ledgerEntries = [];
+            try {
+              const issues = await github.paginate(github.rest.issues.listForRepo, {
+                owner, repo, state: 'all', creator: owner, per_page: 100,
+              });
+              const approvals = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+              const rowPattern = /^-\s+([^@\n:]+)@([^\s·]+)\s+·\s+([^:]+):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
+              for (const issue of approvals) {
+                const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+                for (const comment of comments) {
+                  if (comment.user?.login !== 'github-actions[bot]') continue;
+                  let match;
+                  while ((match = rowPattern.exec(String(comment.body || '')))) {
+                    ledgerEntries.push({
+                      bufferId: match[4],
+                      queueId: match[1].trim(),
+                      revision: String(match[2]).trim(),
+                      approvalIssue: issue.number,
+                      acceptedDueAt: match[5] || null,
+                    });
+                  }
+                  rowPattern.lastIndex = 0;
+                }
+              }
+            } catch (error) {
+              hardFailures.push(`Approval ledger read failed: ${error.message}`);
+            }
+
+            try {
+              if (Object.values(channelIds).some((id) => !id)) throw new Error('One or more LinkedIn Buffer channel IDs are missing.');
+              for (const [target, id] of Object.entries(channelIds)) {
+                const data = await buffer(`query ReliabilityChannel { channel(input: { id: ${JSON.stringify(id)} }) { id name displayName isDisconnected isLocked isQueuePaused timezone postingSchedule { day paused times } } }`);
+                const channel = data?.channel;
+                if (!channel) throw new Error(`Buffer returned no configured ${target} channel.`);
+                const recurringSlots = (channel.postingSchedule || [])
+                  .filter((day) => !day.paused)
+                  .reduce((count, day) => count + (day.times || []).length, 0);
+                providerStates[target] = {
+                  id: channel.id,
+                  name: channel.displayName || channel.name || '',
+                  connected: !channel.isDisconnected && !channel.isLocked && !channel.isQueuePaused,
+                  timezonePass: channel.timezone === (policy.timezone || 'Europe/London'),
+                  identityPass: target !== 'secondary' || /retention school/i.test(String(channel.displayName || channel.name || '')),
+                  recurringSlots,
+                };
+              }
+
+              const account = await buffer('query ReliabilityAccount { account { organizations { id } } }');
+              const organizationId = account?.account?.organizations?.[0]?.id;
+              if (!organizationId) throw new Error('Buffer returned no organisation ID.');
+              const scheduled = await buffer(`query ReliabilityScheduled { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(Object.values(channelIds))} } }) { edges { node { id channelId dueAt status isCustomScheduled shareMode } } pageInfo { hasNextPage } } }`);
+              livePosts = (scheduled?.posts?.edges || []).map((edge) => edge.node);
+              paginationIncomplete = scheduled?.posts?.pageInfo?.hasNextPage === true;
+              if (paginationIncomplete) hardFailures.push('Buffer returned more than 100 scheduled LinkedIn posts; sentinel refuses an incomplete view.');
+            } catch (error) {
+              hardFailures.push(`Live Buffer read failed: ${error.message}`);
+            }
+
+            const report = buildIntegrityReport({
+              livePosts,
+              queuePosts: effectiveQueue.posts || [],
+              ledgerEntries,
+              channelIds,
+              policy,
+              providerStates,
+              timeZone: policy.timezone || 'Europe/London',
+              now: Date.now(),
+            });
+            report.failures.unshift(...hardFailures);
+            report.ok = report.failures.length === 0;
+
+            const providerLines = ['personal', 'main', 'secondary'].map((target) => {
+              const state = providerStates[target];
+              if (!state) return `- ${target}: **UNRESOLVED**`;
+              return `- ${target}: **${state.name || '(unnamed)'}** · connected ${state.connected ? 'YES' : 'NO'} · timezone ${state.timezonePass ? 'PASS' : 'FAIL'} · identity ${state.identityPass ? 'PASS' : 'FAIL'} · recurring slots ${state.recurringSlots}`;
+            });
+            const table = report.rows.map((row) => `| ${row.target} | ${row.dueAt || ''} | ${row.queueId ? `${row.queueId}@${row.revision}` : 'UNMAPPED'} | #${row.approvalIssue || '-'} | ${row.bufferId} |`).join('\n');
+            const body = [
+              '# LinkedIn / Buffer permanent reliability sentinel', '',
+              report.ok ? '🟢 **GREEN**' : '🔴 **INCIDENT OPEN**', '',
+              `- Checked at: **${new Date().toISOString()}**`,
+              `- Live scheduled placements: **${report.totalCount}**`,
+              `- Trusted approval/queue mapping: **${report.mappedCount}/${report.totalCount}**`,
+              `- Queue fingerprint: \`${report.fingerprint}\``,
+              `- Buffer pagination complete: **${paginationIncomplete ? 'NO' : 'YES'}**`, '',
+              '## Provider state', ...providerLines, '',
+              '## Hard invariants',
+              ...(report.failures.length ? report.failures.map((failure) => `- ❌ ${failure}`) : ['- ✅ All hard invariants pass.']), '',
+              '## Runway warnings',
+              ...(report.warnings.length ? report.warnings.map((warning) => `- ⚠️ ${warning}`) : ['- None.']), '',
+              '| Target | Due | Locked queue record | Approval | Buffer ID |',
+              '|---|---|---|---|---|',
+              table || '| - | - | - | - | - |', '',
+              'The sentinel is read-only against Buffer. It may open, update or close this GitHub incident record, but it never edits copy, deletes posts, changes destinations, changes due times or bypasses the approval gate.',
+            ].join('\n');
+
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
+            const incident = openIssues.find((issue) => !issue.pull_request && issue.title === INCIDENT_TITLE);
+            if (report.ok) {
+              if (incident) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: incident.number, body: `✅ Recovered automatically at ${new Date().toISOString()}. All sentinel invariants now pass.\n\n${body}` });
+                await github.rest.issues.update({ owner, repo, issue_number: incident.number, state: 'closed', state_reason: 'completed' });
+              }
+            } else if (incident) {
+              await github.rest.issues.update({ owner, repo, issue_number: incident.number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title: INCIDENT_TITLE, body });
+            }
+
+            if (context.eventName === 'issues') {
+              await github.rest.issues.createComment({ owner, repo, issue_number: context.issue.number, body });
+              await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed', state_reason: report.ok ? 'completed' : 'not_planned' });
+            }
+
+            core.summary.addHeading('LinkedIn Buffer Reliability Sentinel').addRaw(body).write();
+            if (!report.ok) core.setFailed('LinkedIn / Buffer reliability sentinel found a hard invariant failure.');
