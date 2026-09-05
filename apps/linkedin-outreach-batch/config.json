@@ -1,0 +1,54 @@
+{
+  "version": "1.0.0",
+  "timezone": "Europe/London",
+  "schedule": {
+    "weekdays": ["MO", "TU", "WE", "TH", "FR"],
+    "generation_time_local": "07:35",
+    "human_execution_start_local": "08:15",
+    "human_execution_end_local": "08:50",
+    "daily_primary_target": 10,
+    "daily_backups": 2,
+    "review_after_business_days": 10
+  },
+  "market": {
+    "primary": "Lancashire and North West England",
+    "secondary": "United Kingdom",
+    "primary_icp": [
+      "hair salons",
+      "barbers",
+      "beauty salons",
+      "aesthetics clinics",
+      "dental practices",
+      "beauty training academies with clear owner authority"
+    ],
+    "exclude_categories": ["hospitals"]
+  },
+  "quality": {
+    "minimum_first_touch_score": 95,
+    "connection_note_max_chars": 280,
+    "post_accept_message_max_chars": 650,
+    "require_named_decision_maker": true,
+    "require_canonical_linkedin_profile_url": true,
+    "require_current_public_evidence": true,
+    "require_second_verification_pass": true,
+    "require_red_team_disqualification_pass": true
+  },
+  "safety": {
+    "human_send_only": true,
+    "never_automate_linkedin_actions": true,
+    "never_claim_unverified_revenue_leak": true,
+    "never_invent_metrics_or_social_proof": true,
+    "blocked_organisation_terms": ["CVS"],
+    "blocked_first_names_fail_safe": ["Chris", "Lynn"]
+  },
+  "delivery": {
+    "mode": "github_issue",
+    "public_output_acknowledged": false,
+    "reason_blocked_by_default": "Chelston222/CGPT-1 is public. Daily target lists and outreach copy must not be published until the owner explicitly accepts that exposure or moves delivery to a private destination."
+  },
+  "model": {
+    "candidate_model": "gpt-5.6-terra",
+    "verification_model": "gpt-5.6-terra",
+    "tool": "web_search"
+  }
+}
