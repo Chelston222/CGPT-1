@@ -17,7 +17,7 @@ html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,-apple-system
 (async()=>{
   try{
     if(!('DecompressionStream' in window)) throw new Error('This browser needs an update before N30 can start.');
-    const files=['p00.txt','p01.txt','q02.txt','q05.txt','r08a.txt','r08b.txt','q11.txt','q14.txt','q17.txt'];
+    const files=['p00.txt','p01.txt','q02.txt','q05.txt','s08a1.txt','s08a2.txt','r08b.txt','q11.txt','q14.txt','q17.txt'];
     const responses=await Promise.all(files.map(f=>fetch(f,{cache:'no-store'})));
     if(responses.some(r=>!r.ok)) throw new Error('One of N30’s application files could not be loaded.');
     const parts=await Promise.all(responses.map(r=>r.text()));
