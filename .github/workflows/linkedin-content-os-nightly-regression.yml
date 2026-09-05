@@ -64,6 +64,7 @@ jobs:
           for testfile in \
             tests/linkedin-buffer-capacity.test.cjs \
             tests/linkedin-buffer-reliability.test.cjs \
+            tests/linkedin-qa-bank-audit.test.cjs \
             tests/linkedin-week-batch.test.cjs \
             tests/linkedin-green-gate-cutoff.test.cjs \
             tests/linkedin-performance-learning.test.cjs \
@@ -92,10 +93,20 @@ jobs:
           done
 
           echo "=== QA BANK AUDIT ==="
-          if ! node scripts/linkedin-qa-bank-audit.cjs; then
-            echo "FAIL_QA_BANK_AUDIT" >> /tmp/linkedin-regression-failures.log
+          qa_tmp="$(mktemp)"
+          if node scripts/linkedin-qa-bank-audit.cjs >"$qa_tmp" 2>&1; then
+            cat "$qa_tmp"
+            echo "PASS_QA_BANK_AUDIT"
+          else
+            cat "$qa_tmp"
+            {
+              echo "===== FAIL_QA_BANK_AUDIT ====="
+              cat "$qa_tmp"
+              echo
+            } >> /tmp/linkedin-regression-failures.log
             status=1
           fi
+          rm -f "$qa_tmp"
 
           exit "$status"
 
