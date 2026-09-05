@@ -73,6 +73,14 @@ jobs:
               return payload.data;
             }
 
+            function identityMatches(target, name) {
+              const value = String(name || '').trim();
+              if (target === 'personal') return /chelston/i.test(value);
+              if (target === 'main') return /222\s*emails?/i.test(value) && !/retention school/i.test(value);
+              if (target === 'secondary') return /retention school/i.test(value);
+              return false;
+            }
+
             const ledgerEntries = [];
             try {
               const issues = await github.paginate(github.rest.issues.listForRepo, {
@@ -103,6 +111,7 @@ jobs:
 
             try {
               if (Object.values(channelIds).some((id) => !id)) throw new Error('One or more LinkedIn Buffer channel IDs are missing.');
+              if (new Set(Object.values(channelIds)).size !== Object.values(channelIds).length) throw new Error('LinkedIn Buffer channel IDs are not unique.');
               for (const [target, id] of Object.entries(channelIds)) {
                 const data = await buffer(`query ReliabilityChannel { channel(input: { id: ${JSON.stringify(id)} }) { id name displayName isDisconnected isLocked isQueuePaused timezone postingSchedule { day paused times } } }`);
                 const channel = data?.channel;
@@ -110,12 +119,13 @@ jobs:
                 const recurringSlots = (channel.postingSchedule || [])
                   .filter((day) => !day.paused)
                   .reduce((count, day) => count + (day.times || []).length, 0);
+                const providerName = channel.displayName || channel.name || '';
                 providerStates[target] = {
                   id: channel.id,
-                  name: channel.displayName || channel.name || '',
+                  name: providerName,
                   connected: !channel.isDisconnected && !channel.isLocked && !channel.isQueuePaused,
                   timezonePass: channel.timezone === (policy.timezone || 'Europe/London'),
-                  identityPass: target !== 'secondary' || /retention school/i.test(String(channel.displayName || channel.name || '')),
+                  identityPass: identityMatches(target, providerName),
                   recurringSlots,
                 };
               }
