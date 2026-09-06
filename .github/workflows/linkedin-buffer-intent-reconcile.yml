@@ -41,6 +41,7 @@ jobs:
               unresolvedIntentKeys,
             } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
             const { validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
+            const { canonicalMediaUrl } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-media-preflight.cjs'));
             const { validateWeeklyBatch } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
 
             const owner = context.repo.owner;
@@ -78,6 +79,12 @@ jobs:
 
             function textDigest(value) {
               return crypto.createHash('sha256').update(String(value || ''), 'utf8').digest('hex');
+            }
+
+            function mediaSourceMatches(post, expectedMediaUrl) {
+              const sources = (post?.assets || []).map((asset) => String(asset?.source || '')).filter(Boolean);
+              if (!expectedMediaUrl) return sources.length === 0;
+              return sources.length === 1 && sources[0] === expectedMediaUrl;
             }
 
             const ledgerUniverse = await github.paginate(github.rest.issues.listForRepo, {
@@ -144,16 +151,17 @@ jobs:
                   if (!job) throw new Error('locked weekly job no longer resolves');
                   const channel = job.request.channels.find((item) => item.target === parts.target);
                   if (!channel) throw new Error('locked weekly target no longer resolves');
-                  request = { mode: job.request.mode, channel };
+                  request = { mode: job.request.mode, channel, mediaUrl: job.request.mediaUrl || null };
                 } else {
                   const approved = validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
                   if (approved.postId !== parts.postId || String(approved.revision) !== parts.revision) throw new Error('approval identity does not match intent key');
                   const channel = approved.channels.find((item) => item.target === parts.target);
                   if (!channel) throw new Error('approval target does not match intent key');
-                  request = { mode: approved.mode, channel };
+                  request = { mode: approved.mode, channel, mediaUrl: approved.mediaUrl || null };
                 }
                 if (request.mode !== 'schedule' || !request.channel.dueAt) throw new Error('automatic reconciliation is limited to fixed-time scheduled placements');
-                expected.push({ key, issue, ...parts, channel: request.channel, textSha256: textDigest(request.channel.text) });
+                const expectedMediaUrl = request.mediaUrl ? canonicalMediaUrl(request.mediaUrl, 'MEDIA_URL') : null;
+                expected.push({ key, issue, ...parts, channel: request.channel, textSha256: textDigest(request.channel.text), expectedMediaUrl });
               } catch (error) {
                 blocked.push(`${key}: ${error.message}`);
               }
@@ -174,13 +182,15 @@ jobs:
                 .map((post) => post.id);
               const exact = [];
               for (const postId of candidateIds) {
-                const data = await buffer(`query ReconcilePost { post(input: { id: ${JSON.stringify(postId)} }) { id channelId dueAt status text } }`);
+                const data = await buffer(`query ReconcilePost { post(input: { id: ${JSON.stringify(postId)} }) { id channelId dueAt status text assets { source mimeType } } }`);
                 const post = data?.post;
                 if (!post || post.status !== 'scheduled') continue;
-                if (textDigest(post.text) === item.textSha256) exact.push(post);
+                if (textDigest(post.text) !== item.textSha256) continue;
+                if (!mediaSourceMatches(post, item.expectedMediaUrl)) continue;
+                exact.push(post);
               }
               if (exact.length !== 1) {
-                blocked.push(`${item.key}: expected one exact scheduled Buffer match, found ${exact.length}`);
+                blocked.push(`${item.key}: expected one exact scheduled Buffer match across channel, due time, caption and media source, found ${exact.length}`);
                 continue;
               }
 
