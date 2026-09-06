@@ -11,6 +11,7 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 const autopost = read('.github/workflows/linkedin-buffer-autopost.yml');
 const verifier = read('.github/workflows/linkedin-publication-verifier.yml');
 const intake = read('.github/workflows/linkedin-imap-pdf-intake.yml');
+const reconcile = read('.github/workflows/linkedin-buffer-intent-reconcile.yml');
 const retiredPdfIntake = read('.github/workflows/linkedin-pdf-intake.yml');
 const retiredPdfShareNow = read('.github/workflows/linkedin-pdf-share-now.yml');
 const backfill = read('.github/workflows/linkedin-publication-backfill.yml');
@@ -120,6 +121,17 @@ test('production release fails closed without live Notion and uses durable accep
   assert.match(autopost, /commentWithRetry\(issue\.number, acceptedBody\)/);
   assert.match(autopost, /dispatchIntentComment/);
   assert.match(autopost, /unresolvedIntentKeys/);
+});
+
+test('dispatch-intent reconciliation is owner-gated, shares the release lock and never mutates Buffer', () => {
+  assert.match(reconcile, /github\.event\.issue\.user\.login == github\.repository_owner/);
+  assert.match(reconcile, /group: linkedin-buffer-capacity-release/);
+  assert.match(reconcile, /unresolvedIntentKeys/);
+  assert.match(reconcile, /dispatchIntentMarker/);
+  assert.match(reconcile, /expected one exact scheduled Buffer match/);
+  assert.match(reconcile, /textDigest/);
+  assert.doesNotMatch(reconcile, /createPost\s*\(|editPost\s*\(|deletePost\s*\(|mutation\s+/i);
+  assert.match(reconcile, /Buffer mutation performed: \*\*NO\*\*/);
 });
 
 test('IMAP intake explicitly checks public raw-hosting compatibility and revision-scoped evidence', () => {
