@@ -102,7 +102,7 @@ jobs:
                 owner,
                 repo,
                 issue_number: triggerIssue,
-                body: '✅ No unresolved governed LinkedIn Buffer dispatch intents exist. Buffer mutation performed: **NO**.',
+                body: '✅ No unresolved governed LinkedIn Buffer dispatch intents exist. Buffer write performed: **NO**.',
               });
               await github.rest.issues.update({ owner, repo, issue_number: triggerIssue, state: 'closed' });
               return;
@@ -196,7 +196,7 @@ jobs:
             const summary = [
               recovered.length ? '✅ Buffer dispatch-intent reconciliation found exact positive matches.' : '⚠️ No unresolved dispatch intent could be safely auto-reconciled.',
               '',
-              '- Buffer mutation performed: **NO**',
+              '- Buffer write performed: **NO**',
               `- Recovered: **${recovered.length}**`,
               `- Still blocked: **${blocked.length}**`,
               ...recovered.map((line) => `- Recovered: ${line}`),
