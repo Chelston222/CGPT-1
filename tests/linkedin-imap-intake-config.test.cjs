@@ -77,10 +77,14 @@ test('requires explicit acknowledgement that governed media becomes publicly rea
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, { publicMediaApproved: false }), now), /publicMediaApproved/);
 });
 
-test('rejects duplicate targets', () => {
+test('canonical IMAP intake requires exactly one target', () => {
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    targets: ['secondary', 'main'],
+    scheduledAt: { secondary: future, main: '2026-09-11T09:45:00+01:00' },
+  }), now), /exactly one target/);
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
     targets: ['secondary', 'secondary'],
-  }), now), /duplicate destinations/);
+  }), now), /exactly one target/);
 });
 
 test('requires an explicit timezone offset or Z', () => {
