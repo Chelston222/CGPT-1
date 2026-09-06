@@ -1,127 +1,19 @@
-name: LinkedIn PDF Share Now
+name: RETIRED - LinkedIn PDF Share Now
 
 on:
-  issues:
-    types: [opened]
+  workflow_dispatch:
 
 permissions:
   contents: read
-  issues: write
-
-concurrency:
-  group: linkedin-pdf-share-now
-  cancel-in-progress: false
 
 jobs:
-  share:
-    if: startsWith(github.event.issue.title, '[APPROVED PDF LINKEDIN NOW]') && github.event.issue.user.login == github.repository_owner
+  retired:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Validate locked PDF and publish now
-        uses: actions/github-script@v7
-        env:
-          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
-          BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
-        with:
-          script: |
-            const fs = require('node:fs');
-            const path = require('node:path');
-            const { preflightMedia } = require('./scripts/linkedin-media-preflight.cjs');
-
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const issueNumber = context.issue.number;
-            const body = String(context.payload.issue.body || '');
-            const headers = Object.fromEntries(body.split(/\r?\n/).map(line => line.match(/^([A-Z][A-Z0-9_]+):\s*(.*)$/)).filter(Boolean).map(m => [m[1], m[2].trim()]));
-            if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured.');
-            if (!process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID) throw new Error('BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID is not configured.');
-            if (headers.CONFIRM !== 'POST_NOW') throw new Error('CONFIRM: POST_NOW is required.');
-            if (!headers.POST_ID || !headers.REVISION) throw new Error('POST_ID and REVISION are required.');
-
-            const queue = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/queue.json'), 'utf8'));
-            const post = (queue.posts || []).find(p => p.id === headers.POST_ID && String(p.revision) === String(headers.REVISION));
-            if (!post) throw new Error(`${headers.POST_ID}@${headers.REVISION} is not the current locked queue revision.`);
-            if (post.format !== 'carousel' || !post.mediaUrl || !post.documentTitle || !post.documentThumbnailUrl) throw new Error('Locked queue item is not a ready PDF carousel.');
-            if (!Array.isArray(post.targets) || post.targets.length !== 1 || post.targets[0] !== 'personal') throw new Error('Immediate PDF lane currently requires the locked target to be personal only.');
-            if (post.carousel?.readiness !== 'ready') throw new Error('PDF carousel is not marked ready.');
-
-            const request = {
-              mediaUrl: post.mediaUrl,
-              mediaKind: 'document',
-              mediaBytes: post.carousel.pdfBytes,
-              mediaSha256: post.carousel.pdfSha256,
-              documentPageCount: post.carousel.slideCount,
-              documentThumbnailUrl: post.documentThumbnailUrl,
-            };
-            const proof = await preflightMedia(request, fetch);
-
-            async function buffer(query) {
-              const response = await fetch('https://api.buffer.com', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.BUFFER_API_KEY}` },
-                body: JSON.stringify({ query }),
-              });
-              const payload = await response.json().catch(() => ({}));
-              const messages = [...(payload.errors || []).map(e => e.message), payload.data?.createPost?.message].filter(Boolean);
-              if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
-              return payload.data;
-            }
-
-            const account = await buffer('query ShareNowAccount { account { organizations { id } } }');
-            const organizationId = account.account?.organizations?.[0]?.id;
-            if (!organizationId) throw new Error('Buffer returned no organisation ID.');
-            const capacity = await buffer(`query ShareNowCapacity { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: [${JSON.stringify(process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID)}] } }) { edges { node { id dueAt status } } pageInfo { hasNextPage } } }`);
-            if (capacity.posts?.pageInfo?.hasNextPage) throw new Error('Buffer scheduled-post preflight exceeded 100 rows.');
-            const londonDate = value => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
-            const today = londonDate(Date.now());
-            const todayScheduled = (capacity.posts?.edges || []).filter(e => londonDate(e.node.dueAt) === today).length;
-            if (todayScheduled >= 2) throw new Error(`Personal LinkedIn already has ${todayScheduled} scheduled placements today; refusing to exceed the 2/day contract.`);
-
-            const text = String(post.copy?.personal || post.copy?.default || '').trim();
-            if (!text || text.length > 3000) throw new Error('Locked LinkedIn caption is empty or over 3,000 characters.');
-            const mutation = `mutation ShareNow { createPost(input: { text: ${JSON.stringify(text)}, channelId: ${JSON.stringify(process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID)}, schedulingType: automatic, mode: shareNow, assets: [{ document: { url: ${JSON.stringify(request.mediaUrl)}, title: ${JSON.stringify(post.documentTitle)}, thumbnailUrl: ${JSON.stringify(request.documentThumbnailUrl)} } }] }) { ... on PostActionSuccess { post { id status dueAt sentAt externalLink channelId assets { id mimeType } } } ... on MutationError { message } } }`;
-            const data = await buffer(mutation);
-            const created = data.createPost?.post;
-            if (!created?.id) throw new Error('Buffer did not return a post ID for shareNow.');
-
-            let verified = created;
-            for (let i = 0; i < 18 && verified.status !== 'sent' && verified.status !== 'error'; i += 1) {
-              await new Promise(resolve => setTimeout(resolve, 5000));
-              const check = await buffer(`query VerifyShareNow { post(input: { id: ${JSON.stringify(created.id)} }) { id status dueAt sentAt externalLink channelId error { message supportUrl } } }`);
-              if (check.post) verified = check.post;
-            }
-
-            const common = [
-              `- Queue revision: **${post.id}@${post.revision}**`,
-              `- Buffer post ID: \`${created.id}\``,
-              `- PDF: ${proof.media.bytes} bytes / SHA-256 \`${proof.media.sha256}\``,
-            ];
-            if (verified.status === 'sent' && verified.sentAt) {
-              await github.rest.issues.createComment({ owner, repo, issue_number: issueNumber, body: [
-                '✅ LinkedIn PDF published and independently read back from Buffer.', '', ...common,
-                '- Buffer state: **sent**',
-                `- Published at: **${verified.sentAt}**`,
-                `- LinkedIn post: ${verified.externalLink || 'Buffer returned no external link.'}`, '',
-                `<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=${created.id} sentAt=${verified.sentAt} -->`,
-              ].join('\n') });
-              await github.rest.issues.update({ owner, repo, issue_number: issueNumber, state: 'closed' });
-              return;
-            }
-            if (verified.status === 'error') {
-              await github.rest.issues.createComment({ owner, repo, issue_number: issueNumber, body: [
-                '❌ Buffer accepted the immediate PDF request but LinkedIn publication failed.', '', ...common,
-                `- Error: ${verified.error?.message || 'No error message returned.'}`, '',
-                `<!-- LINKEDIN_PUBLICATION_FAILED bufferId=${created.id} -->`,
-              ].join('\n') });
-              core.setFailed(verified.error?.message || 'LinkedIn publication failed.');
-              return;
-            }
-            await github.rest.issues.createComment({ owner, repo, issue_number: issueNumber, body: [
-              '⚠️ Buffer accepted the immediate PDF request, but publication is not yet terminal.', '', ...common,
-              `- Current state: **${verified.status || 'unknown'}**`,
-              '- Treat as pending, not published, until sent is observed.', '',
-              `<!-- LINKEDIN_PUBLICATION_PENDING bufferId=${created.id} -->`,
-            ].join('\n') });
-            core.setFailed('Immediate LinkedIn post was not confirmed sent within 90 seconds.');
+      - name: Stop retired parallel publishing route
+        shell: bash
+        run: |
+          echo 'RETIRED: Do not publish LinkedIn PDFs through the former share-now lane.' >&2
+          echo 'Use the canonical governed route: authorised Gmail -> PrivateEmail IMAP -> exact GitHub PDF intake -> Notion live quality gate -> repository-owner [APPROVED LINKEDIN] -> Buffer -> independent publication verifier.' >&2
+          echo 'If an immediate post is genuinely required, create a new locked queue revision with a safe near-term schedule and use the canonical approval lane. Do not bypass its gates.' >&2
+          exit 1
