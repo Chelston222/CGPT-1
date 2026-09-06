@@ -7,7 +7,7 @@ const { CONFIG_START, CONFIG_END, parseIntakeIssue } = require('../scripts/linke
 const future = '2026-09-11T08:45:00+01:00';
 const now = Date.parse('2026-09-06T08:00:00Z');
 
-function fixture(overrides = {}) {
+function fixture(overrides = {}, manifestOverrides = {}) {
   const config = {
     id: 'rs-li-retention-school-part-1',
     expectedSubject: 'TTE LINKEDIN PDF INTAKE rs-li-retention-school-part-1',
@@ -31,6 +31,8 @@ function fixture(overrides = {}) {
       mediaAlt: 'Ten-slide Retention School carousel.',
       expectedSha256: 'a'.repeat(64),
       sourceUrl: 'https://app.notion.com/p/1234567890abcdef1234567890abcdef',
+      publicMediaApproved: true,
+      ...manifestOverrides,
     },
     ...overrides,
   };
@@ -48,8 +50,17 @@ test('rejects title/config ID mismatch', () => {
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] wrong-id', fixture(), now), /must exactly match/);
 });
 
+test('requires the canonical subject derived from the intake ID', () => {
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({ expectedSubject: 'something else' }), now), /expectedSubject must be exactly/);
+});
+
 test('rejects a different sender', () => {
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({ expectedSender: 'attacker@example.com' }), now), /expectedSender/);
+});
+
+test('rejects path-like or control-character filenames', () => {
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({ expectedFilename: '../secret.pdf' }), now), /plain filename/);
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({ expectedFilename: 'bad\nname.pdf' }), now), /plain filename/);
 });
 
 test('rejects SHA drift between transport and manifest', () => {
@@ -57,16 +68,38 @@ test('rejects SHA drift between transport and manifest', () => {
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', body, now), /manifest.expectedSha256/);
 });
 
+test('requires explicit schema version and positive integer revision', () => {
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, { schemaVersion: undefined }), now), /schemaVersion/);
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, { revision: '1' }), now), /revision/);
+});
+
+test('requires explicit acknowledgement that governed media becomes publicly reachable', () => {
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, { publicMediaApproved: false }), now), /publicMediaApproved/);
+});
+
+test('rejects duplicate targets', () => {
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    targets: ['secondary', 'secondary'],
+  }), now), /duplicate destinations/);
+});
+
+test('requires an explicit timezone offset or Z', () => {
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    scheduledAt: { secondary: '2026-09-11T08:45:00' },
+  }), now), /explicit Z or UTC offset/);
+});
+
 test('rejects stale or near-term schedules', () => {
-  const config = JSON.parse(fixture().split(CONFIG_START)[1].split(CONFIG_END)[0]);
-  config.manifest.scheduledAt.secondary = '2026-09-06T08:05:00Z';
-  const body = `${CONFIG_START}\n${JSON.stringify(config)}\n${CONFIG_END}`;
+  const body = fixture({}, { scheduledAt: { secondary: '2026-09-06T08:05:00Z' } });
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', body, now), /more than 10 minutes/);
 });
 
 test('rejects em dashes in approved copy', () => {
-  const config = JSON.parse(fixture().split(CONFIG_START)[1].split(CONFIG_END)[0]);
-  config.manifest.copy.default = 'Bad — copy';
-  const body = `${CONFIG_START}\n${JSON.stringify(config)}\n${CONFIG_END}`;
+  const body = fixture({}, { copy: { default: 'Bad — copy' } });
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', body, now), /em dashes/);
+});
+
+test('requires exactly one locked config block', () => {
+  const body = `${fixture()}\n${fixture()}`;
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', body, now), /exactly one intake config start marker/);
 });
