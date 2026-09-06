@@ -32,6 +32,7 @@ function fixture(overrides = {}, manifestOverrides = {}) {
       expectedSha256: 'a'.repeat(64),
       sourceUrl: 'https://app.notion.com/p/1234567890abcdef1234567890abcdef',
       publicMediaApproved: true,
+      publicReleaseMaterialApproved: true,
       ...manifestOverrides,
     },
     ...overrides,
@@ -73,8 +74,9 @@ test('requires explicit schema version and positive integer revision', () => {
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, { revision: '1' }), now), /revision/);
 });
 
-test('requires explicit acknowledgement that governed media becomes publicly reachable', () => {
+test('requires explicit acknowledgement that media and release metadata become public before publication', () => {
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, { publicMediaApproved: false }), now), /publicMediaApproved/);
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, { publicReleaseMaterialApproved: false }), now), /publicReleaseMaterialApproved/);
 });
 
 test('canonical IMAP intake requires exactly one target', () => {
@@ -96,6 +98,13 @@ test('requires an explicit timezone offset or Z', () => {
 test('rejects stale or near-term schedules', () => {
   const body = fixture({}, { scheduledAt: { secondary: '2026-09-06T08:05:00Z' } });
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', body, now), /more than 10 minutes/);
+});
+
+test('keeps canonical schedules inside the publication-verifier horizon', () => {
+  const tooFar = new Date(now + 91 * 24 * 60 * 60 * 1000).toISOString();
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    scheduledAt: { secondary: tooFar },
+  }), now), /within 90 days/);
 });
 
 test('rejects em dashes in approved copy', () => {
