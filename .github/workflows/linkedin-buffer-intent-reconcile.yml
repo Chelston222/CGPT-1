@@ -170,27 +170,38 @@ jobs:
             const account = await buffer('query ReconcileAccount { account { organizations { id } } }');
             const organizationId = account.account?.organizations?.[0]?.id;
             if (!organizationId) throw new Error('Buffer returned no organisation ID.');
-            const channelIds = [...new Set(Object.values(channels))];
-            const inventory = await buffer(`query ReconcileScheduled { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(channelIds)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`);
-            if (inventory.posts?.pageInfo?.hasNextPage) throw new Error('Scheduled Buffer inventory exceeds 100 rows; refusing incomplete reconciliation.');
-
-            const scheduled = (inventory.posts?.edges || []).map((edge) => edge.node);
+            const recoverableStatuses = new Set(['scheduled', 'sent', 'error']);
             const recovered = [];
+
             for (const item of expected) {
-              const candidateIds = scheduled
-                .filter((post) => post.channelId === channels[item.target] && new Date(post.dueAt).getTime() === new Date(item.channel.dueAt).getTime())
+              const dueMs = Date.parse(item.channel.dueAt);
+              if (!Number.isFinite(dueMs)) {
+                blocked.push(`${item.key}: locked due time is invalid`);
+                continue;
+              }
+              const startDate = new Date(dueMs - 24 * 60 * 60 * 1000).toISOString();
+              const endDate = new Date(dueMs + 24 * 60 * 60 * 1000).toISOString();
+              const inventory = await buffer(`query ReconcilePlacement { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled, sent, error], channelIds: [${JSON.stringify(channels[item.target])}], startDate: ${JSON.stringify(startDate)}, endDate: ${JSON.stringify(endDate)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`);
+              if (inventory.posts?.pageInfo?.hasNextPage) {
+                blocked.push(`${item.key}: provider inventory exceeds 100 rows inside the reconciliation window`);
+                continue;
+              }
+
+              const candidateIds = (inventory.posts?.edges || [])
+                .map((edge) => edge.node)
+                .filter((post) => post.channelId === channels[item.target] && new Date(post.dueAt).getTime() === dueMs)
                 .map((post) => post.id);
               const exact = [];
               for (const postId of candidateIds) {
                 const data = await buffer(`query ReconcilePost { post(input: { id: ${JSON.stringify(postId)} }) { id channelId dueAt status text assets { source mimeType } } }`);
                 const post = data?.post;
-                if (!post || post.status !== 'scheduled') continue;
+                if (!post || !recoverableStatuses.has(post.status)) continue;
                 if (textDigest(post.text) !== item.textSha256) continue;
                 if (!mediaSourceMatches(post, item.expectedMediaUrl)) continue;
                 exact.push(post);
               }
               if (exact.length !== 1) {
-                blocked.push(`${item.key}: expected one exact scheduled Buffer match across channel, due time, caption and media source, found ${exact.length}`);
+                blocked.push(`${item.key}: expected one exact Buffer match across channel, due time, caption and media source in scheduled/sent/error state, found ${exact.length}`);
                 continue;
               }
 
@@ -206,7 +217,7 @@ jobs:
               });
               await github.rest.issues.createComment({ owner, repo, issue_number: ledger.number, body });
               await github.rest.issues.createComment({ owner, repo, issue_number: item.issue.number, body });
-              recovered.push(`${item.key} -> ${post.id}`);
+              recovered.push(`${item.key} -> ${post.id} (${post.status})`);
             }
 
             const summary = [
