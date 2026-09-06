@@ -217,8 +217,18 @@ jobs:
 
                 for (const { job, channel, key } of plan.dispatch) {
                   if (channel.dueAt && new Date(channel.dueAt).getTime() <= Date.now() + 5 * 60_000) throw new Error(`${job.post.id} / ${channel.name}: approved time is too close or has passed; revise the schedule and approve the new revision.`);
-                  const media = job.request.mediaUrl ? { url: job.request.mediaUrl, kind: job.request.mediaKind, title: job.request.documentTitle, thumbnailUrl: job.request.documentThumbnailUrl, altText: job.request.mediaAltText } : null;
 
+                  // Close the Notion time-of-check/time-of-use gap. A source row can be
+                  // revoked while capacity/media preflight runs, so every non-QA placement
+                  // is checked again immediately before any durable dispatch intent or
+                  // provider write is allowed.
+                  const liveQueuePost = (queue.posts || []).find((post) => post.id === job.post.id && String(post.revision) === String(job.post.revision));
+                  if (!liveQueuePost) throw new Error(`${job.post.id}@${job.post.revision} disappeared from the current governed queue before provider write.`);
+                  if (liveQueuePost.sourceType !== 'qa_replenishment' && liveQueuePost.sourceType !== 'qa_weekly_replenishment') {
+                    await assertLiveNotionQualityGate(liveQueuePost, process.env.NOTION_API_KEY, fetch);
+                  }
+
+                  const media = job.request.mediaUrl ? { url: job.request.mediaUrl, kind: job.request.mediaKind, title: job.request.documentTitle, thumbnailUrl: job.request.documentThumbnailUrl, altText: job.request.mediaAltText } : null;
                   const intentBody = dispatchIntentComment({ key, queueId: job.post.id, revision: job.post.revision, targetName: channel.name, target: channel.target });
                   await commentWithRetry(ledgerIssueNumber, intentBody);
                   await commentWithRetry(issue.number, intentBody);
