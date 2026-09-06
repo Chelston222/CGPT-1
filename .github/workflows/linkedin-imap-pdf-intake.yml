@@ -1,0 +1,154 @@
+name: LinkedIn IMAP PDF Intake
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: linkedin-imap-pdf-intake
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    if: github.event.issue.user.login == github.repository_owner && startsWith(github.event.issue.title, '[IMAP PDF INTAKE] ')
+    runs-on: ubuntu-latest
+    env:
+      TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
+      TTE_SMTP_USER: hello@222emails.com
+      TTE_IMAP_HOST: mail.privateemail.com
+      TTE_IMAP_PORT: '993'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify existing PrivateEmail credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$TTE_SMTP_PASS" || { echo 'TTE_SMTP_PASS is missing'; exit 2; }
+
+      - name: Install IMAP and PDF tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund --prefix apps/tte-mail-bridge
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Parse owner-locked intake and retrieve exact attachment
+        id: bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/linkedin-imap-intake-from-issue.mjs
+
+      - name: Reconstruct, verify and queue PDF
+        id: intake
+        env:
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: main
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/linkedin-pdf-intake.cjs "${{ steps.bridge.outputs.manifest_path }}" > /tmp/pdf-intake-result.json
+          cat /tmp/pdf-intake-result.json
+          node -e "const r=require('/tmp/pdf-intake-result.json'); console.log('pdf_url='+r.urls.pdfUrl); console.log('thumbnail_url='+r.urls.thumbnailUrl); console.log('post_id='+r.post.id); console.log('revision='+r.post.revision); console.log('pages='+r.metadata.pageCount); console.log('bytes='+r.metadata.bytes); console.log('sha256='+r.metadata.sha256);" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce exact media proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          test '${{ steps.intake.outputs.revision }}' = '${{ steps.bridge.outputs.revision }}'
+          test '${{ steps.intake.outputs.pages }}' = '${{ steps.bridge.outputs.expected_pages }}'
+          test '${{ steps.intake.outputs.bytes }}' = '${{ steps.bridge.outputs.bytes }}'
+          test '${{ steps.intake.outputs.sha256 }}' = '${{ steps.bridge.outputs.sha256 }}'
+
+      - name: Run governed media regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/linkedin-imap-intake-config.test.cjs
+          node --test tests/linkedin-pdf-intake.test.cjs
+          node --test tests/linkedin-media-preflight.test.cjs
+
+      - name: Commit governed media package and locked queue revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          post_id='${{ steps.intake.outputs.post_id }}'
+          revision='${{ steps.intake.outputs.revision }}'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/linkedin-review/queue.json "apps/linkedin-review/media/intake/${post_id}"
+          git diff --cached --quiet && { echo 'Expected governed media/queue changes are missing.' >&2; exit 1; }
+          git commit -m "Promote LinkedIn PDF ${post_id}@${revision}"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Verify public raw media reachability and digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          sleep 4
+          pdf='${{ steps.intake.outputs.pdf_url }}'
+          thumb='${{ steps.intake.outputs.thumbnail_url }}'
+          curl --fail --location --silent --show-error --retry 5 --retry-delay 2 "$pdf" -o /tmp/public.pdf
+          curl --fail --location --silent --show-error --retry 5 --retry-delay 2 "$thumb" -o /tmp/public.jpg
+          test "$(stat -c%s /tmp/public.pdf)" = '${{ steps.intake.outputs.bytes }}'
+          test "$(sha256sum /tmp/public.pdf | awk '{print $1}')" = '${{ steps.intake.outputs.sha256 }}'
+          test "$(pdfinfo /tmp/public.pdf | awk '/^Pages:/ {print $2}')" = '${{ steps.intake.outputs.pages }}'
+          file /tmp/public.pdf | grep -qi 'PDF document'
+          file /tmp/public.jpg | grep -Eqi 'JPEG|image'
+
+      - name: Record governed intake proof
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = `[PDF INTAKE READY] ${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}`;
+            const body = [
+              '✅ Governed LinkedIn PDF intake completed through the permanent PrivateEmail IMAP bridge.',
+              '',
+              `- Queue item: **${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}**`,
+              `- Pages: **${{ steps.intake.outputs.pages }}**`,
+              `- Bytes: **${{ steps.intake.outputs.bytes }}**`,
+              `- SHA-256: \`${{ steps.intake.outputs.sha256 }}\``,
+              `- PDF: ${{ steps.intake.outputs.pdf_url }}`,
+              `- Thumbnail: ${{ steps.intake.outputs.thumbnail_url }}`,
+              `- Source mailbox: ${{ steps.bridge.outputs.source_mailbox }}`,
+              `- Source UID: ${{ steps.bridge.outputs.source_uid }}`,
+              '',
+              'This proves exact media and queue readiness only. It is not permission to publish.',
+              'Publishing still requires the repository-owner `[APPROVED LINKEDIN]` gate.',
+            ].join('\n');
+            const existing = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
+            const match = existing.find((issue) => issue.title === title);
+            if (match) await github.rest.issues.update({ owner, repo, issue_number: match.number, body });
+            else await github.rest.issues.create({ owner, repo, title, body });
+
+      - name: Close transport trigger with proof
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed raw GitHub media and locked into the LinkedIn queue.',
+                '',
+                `Queue item: **${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}**`,
+                'Owner publication approval remains a separate gate.',
+              ].join('\n'),
+            });
+            await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed' });
