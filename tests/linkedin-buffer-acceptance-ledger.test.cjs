@@ -7,16 +7,17 @@ const {
   acceptanceKey,
   acceptanceMarker,
   acceptedKeys,
+  dispatchIntentComment,
+  dispatchIntentMarker,
   parseAcceptanceEntries,
+  unresolvedIntentKeys,
 } = require('../scripts/linkedin-buffer-acceptance-ledger.cjs');
 
 test('builds stable placement keys and durable acceptance markers', () => {
   const key = acceptanceKey('rs-li-demo', 2, 'secondary');
   assert.equal(key, 'rs-li-demo@2:secondary');
-  assert.equal(
-    acceptanceMarker({ key, bufferId: 'buf-123', dueAt: '2026-09-16T07:45:00.000Z' }),
-    '<!-- BUFFER_ACCEPTED rs-li-demo@2:secondary bufferId=buf-123 dueAt=2026-09-16T07:45:00.000Z -->',
-  );
+  assert.equal(acceptanceMarker({ key, bufferId: 'buf-123', dueAt: '2026-09-16T07:45:00.000Z' }), '<!-- BUFFER_ACCEPTED rs-li-demo@2:secondary bufferId=buf-123 dueAt=2026-09-16T07:45:00.000Z -->');
+  assert.equal(dispatchIntentMarker(key), '<!-- BUFFER_DISPATCH_INTENT rs-li-demo@2:secondary -->');
 });
 
 test('parses only trusted bot ledger comments', () => {
@@ -35,6 +36,22 @@ test('rejects conflicting Buffer IDs for one accepted placement key', () => {
     '<!-- BUFFER_ACCEPTED rs-li-demo@2:secondary bufferId=buf-456 -->',
   ];
   assert.throws(() => parseAcceptanceEntries(comments), /Acceptance ledger conflict/);
+});
+
+test('an intent without acceptance blocks automatic recreation', () => {
+  const comments = [{ user: { login: 'github-actions[bot]' }, body: dispatchIntentMarker('rs-li-demo@2:secondary') }];
+  assert.deepEqual([...unresolvedIntentKeys(comments)], ['rs-li-demo@2:secondary']);
+});
+
+test('matching acceptance resolves a dispatch intent', () => {
+  const comments = [{ user: { login: 'github-actions[bot]' }, body: `${dispatchIntentMarker('rs-li-demo@2:secondary')}\n${acceptanceMarker({ key: 'rs-li-demo@2:secondary', bufferId: 'buf-123' })}` }];
+  assert.deepEqual([...unresolvedIntentKeys(comments)], []);
+});
+
+test('dispatch intent comment explains the fail-safe recovery boundary', () => {
+  const body = dispatchIntentComment({ key: 'rs-li-demo@2:secondary', queueId: 'rs-li-demo', revision: 2, targetName: 'Retention School', target: 'secondary' });
+  assert.match(body, /automatic recreation must stop/i);
+  assert.match(body, /BUFFER_DISPATCH_INTENT/);
 });
 
 test('acceptance comment carries exact queue, target and media audit evidence', () => {
