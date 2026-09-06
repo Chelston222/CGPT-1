@@ -60,7 +60,10 @@ try {
       const subject = String(message.envelope?.subject || '');
       if (from !== expectedSender || subject !== expectedSubject) continue;
       const parsed = await simpleParser(message.source, { skipTextToHtml: true, maxHtmlLengthToParse: 150000 });
-      const attachments = (parsed.attachments || []).filter((item) => item.filename === expectedFilename && item.contentType === 'application/pdf' && item.content?.length);
+      // MIME labels vary across mail clients. Filename + exact bytes + %PDF- signature +
+      // locked SHA-256 are the authoritative identity, so do not reject an otherwise exact
+      // PDF merely because a client labelled it application/octet-stream.
+      const attachments = (parsed.attachments || []).filter((item) => item.filename === expectedFilename && item.content?.length);
       for (const attachment of attachments) {
         metadataMatches += 1;
         const candidate = Buffer.from(attachment.content);
