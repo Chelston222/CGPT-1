@@ -39,7 +39,7 @@ function acceptanceComment({ key, queueId, revision, targetName, target, bufferI
   return [
     '✅ Buffer destination accepted and durably recorded.',
     '',
-    `- ${queueId}@${revision} · ${targetName}: Buffer post ID \`${bufferId}\`${dueAt ? ` · ${dueAt}` : ''}${mediaProof ? ` · media ${mediaProof.bytes} bytes / SHA-256 ${mediaProof.sha256}` : ''}`,
+    `- ${queueId}@${revision} · ${targetName}: Buffer post ID \`${bufferId}\`${dueAt ? ` — ${dueAt}` : ''}${mediaProof ? ` — media ${mediaProof.bytes} bytes / SHA-256 ${mediaProof.sha256}` : ''}`,
     `- Placement key: \`${key}\``,
     `- Target: **${target}**`,
     '',
