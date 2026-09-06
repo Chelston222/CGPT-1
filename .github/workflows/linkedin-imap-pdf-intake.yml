@@ -23,10 +23,18 @@ jobs:
       TTE_IMAP_PORT: '993'
 
     steps:
-      - name: Check out repository
+      - name: Check out latest main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
+
+      - name: Refresh to latest main after concurrency wait
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout -B main origin/main
 
       - name: Verify existing PrivateEmail credential
         shell: bash
@@ -80,18 +88,46 @@ jobs:
           node --test tests/linkedin-media-preflight.test.cjs
 
       - name: Commit governed media package and locked queue revision
+        env:
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: main
+          EXPECTED_PAGES: ${{ steps.intake.outputs.pages }}
+          EXPECTED_BYTES: ${{ steps.intake.outputs.bytes }}
+          EXPECTED_SHA: ${{ steps.intake.outputs.sha256 }}
+          POST_ID: ${{ steps.intake.outputs.post_id }}
+          REVISION: ${{ steps.intake.outputs.revision }}
         shell: bash
         run: |
           set -euo pipefail
-          post_id='${{ steps.intake.outputs.post_id }}'
-          revision='${{ steps.intake.outputs.revision }}'
+          post_id="$POST_ID"
+          revision="$REVISION"
+          manifest='${{ steps.bridge.outputs.manifest_path }}'
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add apps/linkedin-review/queue.json "apps/linkedin-review/media/intake/${post_id}"
-          git diff --cached --quiet && { echo 'Expected governed media/queue changes are missing.' >&2; exit 1; }
-          git commit -m "Promote LinkedIn PDF ${post_id}@${revision}"
-          git pull --rebase origin main
-          git push origin HEAD:main
+
+          # Rebuild from latest main immediately before each push. This makes queue updates
+          # resilient to several owner intake issues being opened together and to unrelated
+          # governed queue writes that happen while the job is running.
+          for attempt in 1 2 3; do
+            echo "Queue commit attempt ${attempt}/3"
+            git fetch origin main
+            git reset --hard origin/main
+
+            node scripts/linkedin-pdf-intake.cjs "$manifest" > /tmp/pdf-intake-retry.json
+            node -e "const r=require('/tmp/pdf-intake-retry.json'); if(String(r.metadata.pageCount)!==process.env.EXPECTED_PAGES) throw new Error('Retry page-count drift'); if(String(r.metadata.bytes)!==process.env.EXPECTED_BYTES) throw new Error('Retry byte-count drift'); if(String(r.metadata.sha256)!==process.env.EXPECTED_SHA) throw new Error('Retry SHA drift'); if(String(r.post.id)!==process.env.POST_ID) throw new Error('Retry post ID drift'); if(String(r.post.revision)!==process.env.REVISION) throw new Error('Retry revision drift');"
+
+            git add apps/linkedin-review/queue.json "apps/linkedin-review/media/intake/${post_id}"
+            git diff --cached --quiet && { echo 'Expected governed media/queue changes are missing.' >&2; exit 1; }
+            git commit -m "Promote LinkedIn PDF ${post_id}@${revision}"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo 'Main advanced before push; rebuilding against the latest governed queue.' >&2
+            sleep $((attempt * 2))
+          done
+          echo 'Unable to commit governed media after three latest-main rebuild attempts.' >&2
+          exit 1
 
       - name: Verify public raw media reachability and digest
         shell: bash
