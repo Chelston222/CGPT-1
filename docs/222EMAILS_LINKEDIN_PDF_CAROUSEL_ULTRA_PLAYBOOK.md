@@ -94,6 +94,7 @@ Before a governed PDF may reach Buffer, the live Notion page must still satisfy 
 - `Content Decision = Keep`
 - `Approval = Approved`
 - `Anti-DNA | Pass = checked`
+- exactly one governed target and one locked target schedule
 - `Asset Ready = checked`
 - `Automation Ready = checked`
 - `Automation Status` must be automation-capable for this governed PDF lane, not `Manual`
@@ -203,7 +204,7 @@ The queue update is replay-safe:
 
 The intake workflow rebuilds against the latest `main` before each push and retries if another governed writer advances `main`.
 
-After the media commit succeeds, a second stage pins the queue media and thumbnail URLs to a full 40-character Git commit SHA that already contains the promoted files. The public verification step then downloads those commit-pinned URLs and re-checks bytes, SHA-256, page count and file type.
+After the media commit succeeds, a second stage pins the queue PDF and thumbnail URLs to the same full 40-character Git commit SHA that already contains the promoted files. The public verification step then downloads those commit-pinned URLs and re-checks the PDF byte count, SHA-256, page count and file type. It also verifies the public thumbnail has the exact byte count and SHA-256 of the promoted local thumbnail.
 
 A successful intake creates or refreshes:
 
@@ -250,17 +251,28 @@ This issue is the human publication-authority gate.
 
 Before the first Buffer `createPost` call, the release workflow validates current queue state, live Notion state, schedule/cadence, Buffer capacity and exact remote media integrity.
 
-Immediately before each provider write it records a trusted bot `BUFFER_DISPATCH_INTENT` marker in the durable ledger. Once Buffer returns a post ID, it immediately records `BUFFER_ACCEPTED` in both the durable ledger and the source approval issue.
+Immediately before each provider write it records a trusted bot `BUFFER_DISPATCH_INTENT` marker in the durable ledger and source approval issue. Once Buffer returns a post ID, it immediately records `BUFFER_ACCEPTED` in the durable ledger and then the source approval issue.
 
-This closes the normal retry/idempotency path across issue replacement and partial batch failures.
+The durable ledger can be created by the repository owner or `github-actions[bot]`. Discovery accepts those trusted creators only. More than one trusted ledger is treated as split-brain state and release fails closed rather than choosing one arbitrarily.
 
-If a process fails in the narrow interval after the dispatch intent but before durable acceptance evidence exists, automatic recreation is blocked. The owner-gated `[RECONCILE LINKEDIN BUFFER INTENTS]` workflow is read-only toward Buffer. It may convert an unresolved intent to accepted only when it finds exactly one scheduled provider record matching the locked channel, due instant and caption digest. Zero matches or multiple matches remain blocked for explicit review.
+If a process fails in the narrow interval after the dispatch intent but before durable acceptance evidence exists, automatic recreation is blocked. The owner-gated `[RECONCILE LINKEDIN BUFFER INTENTS]` workflow is read-only toward Buffer.
+
+It may convert an unresolved intent to accepted only when it finds exactly one scheduled provider record matching all available locked release identity:
+
+- target channel
+- exact due instant
+- exact caption digest
+- exact Buffer asset `source` URL for media posts, or no media asset for text-only posts
+
+Zero matches or multiple matches remain blocked for explicit review. This prevents an unrelated post with the same time and caption but different media from being adopted as the intended placement.
 
 Buffer acceptance means `accepted/scheduled by Buffer`, not published.
 
 ## Publication verification
 
 The publication verifier is separate and read-only toward Buffer. It scans the supported recent approval horizon and queries the exact accepted Buffer post IDs.
+
+Normally the Buffer ID is read from trusted bot evidence on the approval issue. If the durable ledger acceptance exists but the approval-issue acceptance comment was lost after a partial writeback failure, the verifier uses the trusted `BUFFER_DISPATCH_INTENT` marker to map that durable ledger entry back to exactly one approval issue and continues from the durable Buffer ID. Ambiguous intent ownership fails closed.
 
 Only:
 
@@ -283,9 +295,12 @@ PDF analytics remain subject to native LinkedIn checking when Buffer does not pr
 - no silent media mutation after revision lock
 - exact SHA-256, bytes and pages remain authoritative
 - future canonical media URLs are commit-pinned, not mutable `main` URLs
+- PDF and thumbnail pins must resolve to the same immutable commit and verified promoted bytes
 - never bypass the live Notion gate for governed PDF intake
 - `Automation Status = Manual` blocks automated governed PDF release
 - unresolved Buffer dispatch intents block recreation until positively reconciled
+- trusted durable-ledger split-brain state fails closed
+- publication verification can recover from durable ledger acceptance without guessing
 - changed media, caption, destination or schedule requires a new revision
 - preserve audit history
 - never equate Gmail sent, IMAP found, GitHub queued or Buffer accepted with LinkedIn published
@@ -330,9 +345,11 @@ At the time of this playbook hardening, all three due times are still in the fut
 Use the canonical 222Emails LinkedIn PDF Carousel Publishing Workflow.
 Take this LinkedIn PDF through the governed IMAP route.
 Do not invent a parallel upload or immediate-publish path.
-Preserve exact-media verification, immutable commit-pinned media,
+Preserve exact-media verification, immutable commit-pinned PDF and thumbnail media,
 Notion live quality gating, repository-owner approval,
-Buffer dispatch-intent and acceptance proof, and separate publication verification.
+durable Buffer dispatch-intent and acceptance proof,
+read-only exact-match intent reconciliation,
+and separate publication verification with durable-ledger fallback.
 Diagnose and repair a failed stage rather than skipping it.
 Return only verified status.
 ```
