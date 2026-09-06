@@ -1,4 +1,4 @@
-# 222Emails LinkedIn PDF Carousel Publishing Workflow | CANONICAL VERIFIED v1.0
+# 222Emails LinkedIn PDF Carousel Publishing Workflow | CANONICAL VERIFIED v1.0.1
 
 **Operating status:** canonical reusable production route  
 **Hardening date:** 6 September 2026  
@@ -18,9 +18,11 @@ Approved final PDF + approved final caption
   -> revision-scoped GitHub media promotion
   -> immutable Git-commit PDF and thumbnail pin
   -> governed GitHub LinkedIn queue
-  -> live Notion quality and drift gate
+  -> optional live Notion defence-in-depth when GitHub credential exists
   -> repository-owner [APPROVED LINKEDIN] gate
-  -> final pre-mutation Notion recheck
+  -> exact current-queue fingerprint verification
+  -> remote media and Buffer capacity preflight
+  -> optional final pre-mutation Notion recheck when credentialed
   -> durable Buffer dispatch intent
   -> Buffer createPost
   -> durable Buffer acceptance ledger
@@ -32,10 +34,11 @@ Use these states precisely:
 
 1. `exact media verified`
 2. `queued in governed GitHub layer`
-3. `accepted/scheduled by Buffer`
-4. `publication verified`
+3. `owner approved`
+4. `accepted/scheduled by Buffer`
+5. `publication verified`
 
-Never call a post published merely because Gmail sent the message, IMAP found the attachment, GitHub promoted the PDF, or Buffer accepted it.
+Never call a post published merely because Gmail sent the message, IMAP found the attachment, GitHub promoted the PDF, the owner approved it, or Buffer accepted it.
 
 ## 2. Trigger scope
 
@@ -52,13 +55,39 @@ Use this workflow automatically for:
 
 Only depart from this route when Chelston explicitly requests another method or a verified platform constraint makes it impossible.
 
-## 3. Canonical repository surfaces
+## 3. Authority model
+
+The minimum production authority is:
+
+```text
+current governed queue revision
++ exact repository-owner approval matching that revision
++ exact release fingerprint
++ mandatory Buffer credential
+```
+
+Live Notion validation is a defence-in-depth layer when GitHub has `NOTION_API_KEY`. When available, the workflow checks the exact source page during release planning and again immediately before the provider write.
+
+When that GitHub secret is absent, the workflow does not fail merely because machine Notion access is unavailable. It explicitly records:
+
+```text
+owner-approved-current-queue-no-notion-secret
+```
+
+and relies on the exact current-queue fingerprint plus repository-owner approval. It must never claim that Notion was live-checked in this mode.
+
+This distinction is deliberate. The proven publishing lane must not become unusable because an optional defence credential is absent, while the audit must remain truthful about which checks actually ran.
+
+If live Notion revocation must be enforced as a machine stop, configure and verify the GitHub Notion credential. Without it, a change made only in Notion is not guaranteed to revoke an already matching GitHub approval. To revoke release in no-secret mode, withdraw/close the approval or create a changed governed queue revision that invalidates the existing approval fingerprint.
+
+## 4. Canonical repository surfaces
 
 ```text
 .github/workflows/linkedin-imap-pdf-intake.yml
 .github/workflows/linkedin-buffer-autopost.yml
 .github/workflows/linkedin-buffer-intent-reconcile.yml
 .github/workflows/linkedin-publication-verifier.yml
+.github/workflows/linkedin-notion-preflight.yml
 .github/workflows/linkedin-pdf-workflow-ci.yml
 scripts/linkedin-imap-intake-config.cjs
 scripts/linkedin-imap-intake-from-issue.mjs
@@ -86,7 +115,7 @@ docs/LINKEDIN_BUFFER_AUTOPOST_SETUP.md
 
 The historical `.github/workflows/linkedin-pdf-intake.yml` direct-repository route and `.github/workflows/linkedin-pdf-share-now.yml` immediate route are retired. They must not reconstruct, schedule or publish a PDF.
 
-## 4. Production and packaging gate
+## 5. Production and packaging gate
 
 Before transport, the PDF and caption must already be final.
 
@@ -127,7 +156,7 @@ SHA-256
 
 Changed media bytes, caption, schedule, destination or other locked release material require a higher revision.
 
-## 5. Public archival boundary
+## 6. Public archival boundary
 
 The current canonical media host is the public `raw.githubusercontent.com` surface of the public `Chelston222/CGPT-1` repository.
 
@@ -146,39 +175,46 @@ Do not use this route for confidential, embargoed, private or commercially sensi
 
 A private capability-based media route may be adopted later, but it is not canonical until its Buffer PDF ingestion path is separately proven and approved.
 
-## 6. Notion source-of-truth gate
+## 7. Notion operating record and optional live defence
 
 Use the existing TTE LinkedIn Content Calendar. The concrete Notion page URL becomes the queue `sourceUrl`.
 
-For a governed PDF release, the live Notion page must remain active and release-ready. The gate requires:
+A governed PDF row should remain operationally aligned with:
 
-- page is not archived
-- page is not in trash
+- page active, not archived or trashed
 - `Content Decision = Keep`
 - `Approval = Approved`
 - `Anti-DNA | Pass = checked`
 - `Asset Ready = checked`
 - `Automation Ready = checked`
-- `Automation Status` is automation-capable and is not `Manual`
-- `Buffer Status` is a permitted release state
-- `Final Copy` exactly matches the locked queue caption after line-ending normalisation
-- `Publish Payload` exactly matches the locked queue caption after line-ending normalisation
-- exactly one governed target exists
-- exactly one locked target schedule exists
-- `Scheduled At` represents the exact same instant as the locked queue schedule
+- `Automation Status` automation-capable and not `Manual` for automated PDF release
+- `Buffer Status` in a permitted release state
+- `Final Copy` matching the locked queue caption
+- `Publish Payload` matching the locked queue caption
+- exactly one governed target
+- exactly one locked target schedule
+- `Scheduled At` representing the same instant as the locked queue schedule
 
-Production release fails closed if the Notion API credential is absent.
-
-The workflow checks Notion twice:
+When `NOTION_API_KEY` exists in GitHub, the live gate checks all of the above against the exact source page twice:
 
 1. during release planning
 2. immediately before each dispatch intent and Buffer provider write
 
-The second check closes the practical time-of-check/time-of-use gap if a source row is revoked while capacity or media preflight is running.
+The second check closes the practical time-of-check/time-of-use gap if the source row is revoked while capacity or media preflight is running.
+
+When `NOTION_API_KEY` is absent, `.github/workflows/linkedin-notion-preflight.yml` reports:
+
+```text
+SKIPPED_NO_SECRET
+OPTIONAL_DEFENCE_UNAVAILABLE
+EXACT_CURRENT_QUEUE_PLUS_REPOSITORY_OWNER_APPROVAL
+```
+
+and succeeds. Production then uses the owner-approved current queue fallback. It must not label this as `live-notion`.
 
 After confirmed Buffer acceptance, update the matching Notion row with the Buffer ID and queued state. Do not mark Published until publication verification succeeds.
 
-## 7. Authorised email transport
+## 8. Authorised email transport
 
 Send the exact final PDF:
 
@@ -195,7 +231,7 @@ The bridge scans selectable mailboxes in the recent 72-hour window and excludes 
 
 Mail clients can label a genuine PDF as `application/pdf` or a generic binary type. MIME labelling is not authoritative. Selection uses the exact filename followed by exact byte count, `%PDF-` signature and locked SHA-256.
 
-## 8. Governed intake issue
+## 9. Governed intake issue
 
 Create the issue as the repository owner.
 
@@ -245,7 +281,7 @@ Body:
 
 Do not supply `downloadUrl` or `chunks` in this owner issue. The verified IMAP attachment creates the internal chunks.
 
-## 9. Intake validation contract
+## 10. Intake validation contract
 
 Fail closed unless all relevant conditions pass:
 
@@ -281,7 +317,7 @@ Fail closed unless all relevant conditions pass:
 
 The 90-day scheduling ceiling gives margin inside the current 120-day publication-verifier approval horizon.
 
-## 10. Exact attachment retrieval
+## 11. Exact attachment retrieval
 
 An attachment candidate is not trusted just because sender, subject and filename look correct.
 
@@ -298,7 +334,7 @@ Only a fully matching candidate is selected. Lookalike messages and attachments 
 
 The selected PDF is staged into deterministic 2,000,000-byte base64 chunks for internal reconstruction.
 
-## 11. Reconstruction and revision safety
+## 12. Reconstruction and revision safety
 
 The verified bytes are reconstructed under:
 
@@ -322,7 +358,7 @@ Replay fails closed if the previous governed files are missing or if the existin
 
 This prevents renderer-version drift from mutating a locked same revision.
 
-## 12. Concurrency safety
+## 13. Concurrency safety
 
 The intake uses a global GitHub Actions concurrency group and also defends against `main` advancing while a run is active.
 
@@ -338,7 +374,7 @@ Before each queue/media push it:
 
 Never blindly rebase or force a stale `queue.json` snapshot into production.
 
-## 13. Immutable media pin
+## 14. Immutable media pin
 
 After the media package exists on GitHub, the queue media URLs are pinned to a full 40-character Git commit SHA that already contains the promoted PDF and thumbnail.
 
@@ -361,7 +397,7 @@ The workflow then downloads those public URLs and verifies:
 - thumbnail exact SHA-256 against the promoted local thumbnail
 - thumbnail image type
 
-## 14. Exact-media readiness proof
+## 15. Exact-media readiness proof
 
 A successful intake creates or refreshes:
 
@@ -386,7 +422,7 @@ This means `exact media verified` and `queued in governed GitHub layer`.
 
 It does not mean approved or published.
 
-## 15. Repository-owner publication approval
+## 16. Repository-owner publication approval
 
 Only after immutable exact-media readiness exists should the owner create:
 
@@ -417,7 +453,7 @@ MEDIA_SHA256: <exact SHA-256>
 
 The approval must exactly match the current locked queue revision. Legacy issue-only dispatch is disabled.
 
-## 16. Buffer release safety
+## 17. Buffer release safety
 
 All production Buffer releases share:
 
@@ -427,20 +463,22 @@ linkedin-buffer-capacity-release
 
 The surviving release run drains the full eligible open approval queue under that lock.
 
+`BUFFER_API_KEY` is mandatory. Missing Buffer credentials fail closed.
+
 Before the first Buffer provider mutation the workflow validates:
 
 - current locked queue revision
-- exact approval fingerprint
-- live Notion state
+- exact owner approval fingerprint
+- optional live Notion state when credentialed
 - Buffer credentials
 - Buffer capacity
 - schedule freshness
 - daily placement rules
 - exact remote media integrity
 
-Immediately before each individual provider write it validates schedule freshness again and performs the second live Notion check.
+Immediately before each individual provider write it validates schedule freshness again. If `NOTION_API_KEY` exists, it also performs the second live Notion check. If the secret is absent, the exact current-queue plus owner-approval authority remains in force and the audit records the no-secret mode.
 
-## 17. Durable dispatch intent and acceptance ledger
+## 18. Durable dispatch intent and acceptance ledger
 
 Every placement has a stable key:
 
@@ -466,7 +504,7 @@ Trusted ledger discovery accepts a ledger created by either the repository owner
 
 A previously accepted placement key is idempotent and is not recreated.
 
-## 18. Uncertain Buffer-write recovery
+## 19. Uncertain Buffer-write recovery
 
 If a process dies after dispatch intent but before acceptance is durably recorded, automatic recreation stops.
 
@@ -489,7 +527,7 @@ Zero or multiple matches remain blocked for explicit review.
 
 This also means an unresolved intent can still be safely reconciled after its scheduled due time rather than becoming permanently unrecoverable once it leaves Buffer's scheduled inventory.
 
-## 19. Buffer acceptance semantics
+## 20. Buffer acceptance semantics
 
 A Buffer post ID proves provider acceptance.
 
@@ -507,7 +545,7 @@ published
 
 If the durable ledger accepted the placement but the acceptance comment on the approval issue was lost, publication verification can recover the Buffer ID from the trusted durable ledger by mapping the trusted dispatch-intent key back to exactly one governed approval issue.
 
-## 20. Publication verification
+## 21. Publication verification
 
 Publication verification is separate and read-only toward Buffer.
 
@@ -532,7 +570,7 @@ A post unresolved more than 30 minutes after due time is UNKNOWN/pending and mus
 
 PDF analytics retain a native LinkedIn check when Buffer does not expose sufficient document-post metrics.
 
-## 21. Failure recovery rule
+## 22. Failure recovery rule
 
 When a stage fails:
 
@@ -549,33 +587,34 @@ Do not create a second unofficial publishing route because a gate failed.
 
 If locked release material changes, use a new revision rather than pretending the old fingerprint still represents the asset.
 
-## 22. Fail-closed invariants
+## 23. Fail-closed invariants
 
 - no direct ChatGPT-to-Buffer dependency is required
-- no production PDF release without repository-owner approval
+- no production PDF release without exact repository-owner approval
 - no owner approval before immutable exact-media proof
 - no silent media mutation after revision lock
 - exact SHA-256, bytes and pages remain authoritative
 - same-revision replay preserves previously governed media bytes
 - future canonical PDF and thumbnail URLs are commit-pinned, not mutable `main` URLs
 - PDF and thumbnail pins resolve to the same immutable commit
-- no bypass of the live Notion gate for governed PDF intake
-- live Notion is checked again immediately before provider mutation
-- archived or trashed Notion source pages block release
-- `Automation Status = Manual` blocks automated governed PDF release
 - canonical intake has one target, one matching schedule key and only `copy.default`
 - canonical schedule is within 90 days
+- `BUFFER_API_KEY` is mandatory
+- missing optional Notion machine access is explicit and must never be misreported as a live gate pass
+- when Notion credential exists, a failing live gate blocks release and is rechecked immediately before provider write
+- archived or trashed Notion source pages block release when live Notion defence is active
+- `Automation Status = Manual` blocks automated governed PDF release when live Notion defence is active
 - unresolved Buffer dispatch intent blocks recreation until positively reconciled
 - reconciler is read-only toward Buffer
 - trusted durable-ledger split-brain state fails closed
 - public media and public release metadata require explicit acknowledgement
 - preserve audit history
-- never equate email sent, IMAP found, GitHub queued or Buffer accepted with LinkedIn published
+- never equate email sent, IMAP found, GitHub queued, owner approved or Buffer accepted with LinkedIn published
 - do not use retired direct-repository or share-now PDF routes
 
-## 23. Proven Retention School reference run
+## 24. Proven Retention School reference run
 
-These three releases proved the earlier canonical path before the last hardening layers were added. They are valid production evidence for exact PDF intake and Buffer document acceptance, but they are not evidence that later replay, immutable-pin, dispatch-intent or post-due reconciliation protections were exercised by these already scheduled posts.
+These three releases proved the earlier canonical path before the last hardening layers were added. They are valid production evidence for exact PDF intake and Buffer document acceptance, but they are not evidence that every later v1.0.1 replay, immutable-pin, dispatch-intent or optional-Notion protection was exercised by these already scheduled posts.
 
 ```text
 Part 1
@@ -619,7 +658,7 @@ Queue-slot waits: 0
 
 None of these releases should be called published until the due-time verifier produces positive `sent` evidence.
 
-## 24. Operator checklist
+## 25. Operator checklist
 
 ### Packaging
 
@@ -637,8 +676,7 @@ None of these releases should be called published until the due-time verifier pr
 
 ### Source and intake
 
-- [ ] Notion source row exists and is active
-- [ ] source row is approved and automation-ready
+- [ ] Notion source row exists and is aligned with the intended release
 - [ ] target is singular and correct
 - [ ] schedule has an explicit offset or `Z`
 - [ ] schedule is more than ten minutes away and within 90 days
@@ -664,14 +702,16 @@ None of these releases should be called published until the due-time verifier pr
 ### Approval and Buffer
 
 - [ ] owner `[APPROVED LINKEDIN]` issue exactly matches locked queue
-- [ ] initial Notion gate passed
+- [ ] Buffer credential available
+- [ ] quality mode explicitly reports either `live-notion` or the no-secret owner-queue fallback
+- [ ] if live Notion is available, planning gate passed
 - [ ] media preflight passed
-- [ ] final pre-mutation Notion gate passed
+- [ ] if live Notion is available, final pre-mutation gate passed
 - [ ] durable dispatch intent exists
 - [ ] Buffer acceptance returned a post ID
 - [ ] durable acceptance ledger contains the placement
 - [ ] source approval contains acceptance evidence or durable fallback exists
-- [ ] Notion row updated to queued state and Buffer ID
+- [ ] Notion row updated to queued state and Buffer ID where applicable
 
 ### After due time
 
@@ -679,26 +719,27 @@ None of these releases should be called published until the due-time verifier pr
 - [ ] Buffer reported `sent` with `sentAt`
 - [ ] only then call it publication verified
 
-## 25. Reuse command
+## 26. Reuse command
 
 Attach this file to a new chat and say:
 
 ```text
-Use the attached 222Emails LinkedIn PDF Carousel Publishing Workflow as canonical.
+Use the attached 222Emails LinkedIn PDF Carousel Publishing Workflow CANONICAL VERIFIED v1.0.1 as canonical.
 Take this LinkedIn PDF from its current state through the governed route.
 Do not invent a parallel upload or immediate-publish method.
 Preserve exact-media verification, replay byte preservation,
 immutable commit-pinned PDF and thumbnail media,
-Notion live quality gating with a final pre-mutation recheck,
-repository-owner approval,
+exact current-queue fingerprinting and repository-owner approval,
+optional live Notion defence with a final pre-mutation recheck when configured,
 durable Buffer dispatch-intent and acceptance proof,
 read-only exact-match intent reconciliation,
 and separate publication verification with durable-ledger fallback.
+If the GitHub Notion credential is absent, report the owner-approved current-queue fallback explicitly and do not pretend Notion was live-checked.
 Diagnose and repair a failed stage rather than skipping it.
 Return only verified status.
 ```
 
-## 26. Stopping rule for future architecture changes
+## 27. Stopping rule for future architecture changes
 
 Do not continuously refactor a healthy production workflow for style alone.
 

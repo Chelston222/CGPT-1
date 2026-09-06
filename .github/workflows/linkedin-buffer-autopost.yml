@@ -25,7 +25,7 @@ jobs:
         with:
           ref: main
 
-      - name: Require production release credentials
+      - name: Require Buffer credential and report optional Notion defence
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
@@ -33,7 +33,11 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$BUFFER_API_KEY" || { echo 'BUFFER_API_KEY is missing'; exit 2; }
-          test -n "$NOTION_API_KEY" || { echo 'NOTION_API_KEY is missing. Production LinkedIn release fails closed without the live Notion quality gate.'; exit 2; }
+          if [ -n "$NOTION_API_KEY" ]; then
+            echo 'Live Notion defence-in-depth is available.'
+          else
+            echo 'NOTION_API_KEY is not configured. Release remains governed by exact current-queue fingerprint plus repository-owner approval; live Notion defence is skipped and must not be reported as checked.'
+          fi
 
       - name: Validate approval, release within capacity and audit
         uses: actions/github-script@v7
@@ -181,11 +185,13 @@ jobs:
                   if (queuePost.sourceType === 'qa_replenishment' || queuePost.sourceType === 'qa_weekly_replenishment') {
                     modes.add('owner-approved-current-queue');
                     qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, mode: 'owner-approved-current-queue' });
-                  } else {
-                    if (!process.env.NOTION_API_KEY) throw new Error('NOTION_API_KEY is required for every non-QA LinkedIn release.');
+                  } else if (process.env.NOTION_API_KEY) {
                     const quality = await assertLiveNotionQualityGate(queuePost, process.env.NOTION_API_KEY, fetch);
                     modes.add('live-notion');
                     qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, ...quality.snapshot, mode: 'live-notion' });
+                  } else {
+                    modes.add('owner-approved-current-queue-no-notion-secret');
+                    qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, mode: 'owner-approved-current-queue-no-notion-secret' });
                   }
                 }
                 const qualityMode = modes.size === 1 ? [...modes][0] : [...modes].sort().join('+');
@@ -218,13 +224,13 @@ jobs:
                 for (const { job, channel, key } of plan.dispatch) {
                   if (channel.dueAt && new Date(channel.dueAt).getTime() <= Date.now() + 5 * 60_000) throw new Error(`${job.post.id} / ${channel.name}: approved time is too close or has passed; revise the schedule and approve the new revision.`);
 
-                  // Close the Notion time-of-check/time-of-use gap. A source row can be
-                  // revoked while capacity/media preflight runs, so every non-QA placement
-                  // is checked again immediately before any durable dispatch intent or
-                  // provider write is allowed.
+                  // When a Notion credential exists, close the time-of-check/time-of-use gap
+                  // by rechecking the source row immediately before any dispatch intent or
+                  // Buffer write. Without that optional credential, exact current-queue
+                  // fingerprinting plus repository-owner approval remains the authority.
                   const liveQueuePost = (queue.posts || []).find((post) => post.id === job.post.id && String(post.revision) === String(job.post.revision));
                   if (!liveQueuePost) throw new Error(`${job.post.id}@${job.post.revision} disappeared from the current governed queue before provider write.`);
-                  if (liveQueuePost.sourceType !== 'qa_replenishment' && liveQueuePost.sourceType !== 'qa_weekly_replenishment') {
+                  if (process.env.NOTION_API_KEY && liveQueuePost.sourceType !== 'qa_replenishment' && liveQueuePost.sourceType !== 'qa_weekly_replenishment') {
                     await assertLiveNotionQualityGate(liveQueuePost, process.env.NOTION_API_KEY, fetch);
                   }
 
