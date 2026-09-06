@@ -1,0 +1,69 @@
+name: LinkedIn PDF Workflow CI
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/linkedin-imap-pdf-intake.yml'
+      - '.github/workflows/linkedin-buffer-autopost.yml'
+      - '.github/workflows/linkedin-publication-verifier.yml'
+      - 'scripts/linkedin-imap-*.mjs'
+      - 'scripts/linkedin-imap-*.cjs'
+      - 'scripts/linkedin-pdf-intake.cjs'
+      - 'scripts/linkedin-review-core.cjs'
+      - 'scripts/linkedin-media-preflight.cjs'
+      - 'scripts/linkedin-notion-quality-gate.cjs'
+      - 'scripts/linkedin-buffer-*.cjs'
+      - 'tests/linkedin-*.test.cjs'
+      - 'docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/linkedin-imap-pdf-intake.yml'
+      - '.github/workflows/linkedin-buffer-autopost.yml'
+      - '.github/workflows/linkedin-publication-verifier.yml'
+      - 'scripts/linkedin-imap-*.mjs'
+      - 'scripts/linkedin-imap-*.cjs'
+      - 'scripts/linkedin-pdf-intake.cjs'
+      - 'scripts/linkedin-review-core.cjs'
+      - 'scripts/linkedin-media-preflight.cjs'
+      - 'scripts/linkedin-notion-quality-gate.cjs'
+      - 'scripts/linkedin-buffer-*.cjs'
+      - 'tests/linkedin-*.test.cjs'
+      - 'docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/linkedin-imap-intake-config.cjs
+          node --check scripts/linkedin-imap-intake-from-issue.mjs
+          node --check scripts/linkedin-imap-pdf-intake.mjs
+          node --check scripts/linkedin-pdf-intake.cjs
+          node --check scripts/linkedin-review-core.cjs
+          node --check scripts/linkedin-media-preflight.cjs
+          node --check scripts/linkedin-notion-quality-gate.cjs
+          node --check scripts/linkedin-buffer-capacity.cjs
+          node --check scripts/linkedin-buffer-acceptance-ledger.cjs
+      - name: Deterministic workflow contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/linkedin-imap-intake-config.test.cjs
+          node --test tests/linkedin-pdf-intake.test.cjs
+          node --test tests/linkedin-review-core.test.cjs
+          node --test tests/linkedin-media-preflight.test.cjs
+          node --test tests/linkedin-notion-quality-gate.test.cjs
+          node --test tests/linkedin-buffer-capacity.test.cjs
+          node --test tests/linkedin-buffer-acceptance-ledger.test.cjs
