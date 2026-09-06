@@ -10,6 +10,7 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
 const autopost = read('.github/workflows/linkedin-buffer-autopost.yml');
 const verifier = read('.github/workflows/linkedin-publication-verifier.yml');
+const intake = read('.github/workflows/linkedin-imap-pdf-intake.yml');
 const backfill = read('.github/workflows/linkedin-publication-backfill.yml');
 const pdfShareNow = read('.github/workflows/linkedin-pdf-share-now.yml');
 const queueOverlay = read('apps/linkedin-review/queue-overlay.js');
@@ -37,6 +38,7 @@ test('publication verifier is read-only towards Buffer and distinguishes sent, e
   assert.match(verifier, /LINKEDIN_PUBLICATION_PENDING/);
   assert.match(verifier, /externalLink/);
   assert.match(verifier, /sentAt/);
+  assert.match(verifier, /120 \* 24 \* 60 \* 60 \* 1000/);
 });
 
 test('publication backfill is read-only and uses cursor pagination', () => {
@@ -60,10 +62,7 @@ test('publication verification cannot label Buffer acceptance as publication', (
 test('non-public draft canaries terminate as verified drafts, fail closed on unexpected state, and stay out of analytics', () => {
   assert.match(verifier, /LINKEDIN_DRAFT_CANARY_VERIFIED/);
   assert.match(verifier, /post\.status === 'draft'/);
-  assert.ok(
-    verifier.includes("if (/^MODE:\\s*draft\\s*$/mi.test(String(issue.body || ''))) continue;"),
-    'analytics job must skip MODE: draft issues',
-  );
+  assert.ok(verifier.includes("if (/^MODE:\\s*draft\\s*$/mi.test(String(issue.body || ''))) continue;"), 'analytics job must skip MODE: draft issues');
   assert.match(verifier, /Buffer draft canary entered an unexpected state/);
   assert.match(verifier, /Treat this canary as failed-safe and investigate before using the image path/);
   assert.match(verifier, /LINKEDIN_PUBLICATION_FAILED/);
@@ -103,7 +102,7 @@ test('a surviving concurrency run drains every open approval rather than only it
   assert.match(autopost, /state: 'open', creator: owner, per_page: 100/);
   assert.match(autopost, /sort\(\(a, b\) => a\.number - b\.number\)/);
   assert.doesNotMatch(autopost, /context\.eventName === 'issues'\s*\?\s*\[context\.payload\.issue\]/);
-  assert.match(autopost, /full open approval queue|drain all/i);
+  assert.match(autopost, /full open approval queue|drain(?:s)? all/i);
 });
 
 test('one-shot approvals must exactly match a current locked queue revision', () => {
@@ -112,4 +111,17 @@ test('one-shot approvals must exactly match a current locked queue revision', ()
   assert.match(autopost, /approval body does not exactly match the locked queue copy, schedule, targets or media/);
   assert.match(autopost, /Legacy issue-only dispatch is disabled/);
   assert.doesNotMatch(autopost, /repository-owner-approved-legacy/);
+});
+
+test('production release fails closed without live Notion and uses durable acceptance idempotency', () => {
+  assert.match(autopost, /NOTION_API_KEY is missing\. Production LinkedIn release fails closed/);
+  assert.match(autopost, /BUFFER ACCEPTANCE LEDGER/);
+  assert.match(autopost, /commentWithRetry\(ledgerIssueNumber, acceptedBody\)/);
+  assert.match(autopost, /commentWithRetry\(issue\.number, acceptedBody\)/);
+});
+
+test('IMAP intake explicitly checks public raw-hosting compatibility and revision-scoped evidence', () => {
+  assert.match(intake, /visibility.*public/s);
+  assert.match(intake, /revision-scoped media/);
+  assert.match(intake, /Idempotent replay/);
 });
