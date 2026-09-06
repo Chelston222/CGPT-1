@@ -134,8 +134,14 @@ test('dispatch-intent reconciliation is owner-gated, shares the release lock and
   assert.match(reconcile, /Buffer mutation performed: \*\*NO\*\*/);
 });
 
-test('IMAP intake explicitly checks public raw-hosting compatibility and revision-scoped evidence', () => {
+test('IMAP intake checks public hosting, pins revision media to a commit and verifies the pinned URL', () => {
   assert.match(intake, /visibility.*public/s);
   assert.match(intake, /revision-scoped media/);
-  assert.match(intake, /Idempotent replay/);
+  assert.match(intake, /id: pin/);
+  assert.match(intake, /pinQueueMediaUrls/);
+  assert.match(intake, /git rev-parse HEAD/);
+  assert.match(intake, /Pinned media ref is not an immutable commit SHA/);
+  assert.match(intake, /steps\.pin\.outputs\.pdf_url/);
+  assert.match(intake, /steps\.pin\.outputs\.media_ref/);
+  assert.match(intake, /Immutable media commit/);
 });
