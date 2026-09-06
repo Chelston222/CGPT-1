@@ -11,9 +11,6 @@ permissions:
   issues: write
   contents: read
 
-# One global release lock protects Buffer capacity calculations. GitHub keeps at
-# most one pending run per concurrency group, so every surviving run drains the
-# full open approval queue rather than processing only its triggering issue.
 concurrency:
   group: linkedin-buffer-capacity-release
   cancel-in-progress: false
@@ -25,6 +22,18 @@ jobs:
     steps:
       - name: Check out approval checks
         uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Require production release credentials
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$BUFFER_API_KEY" || { echo 'BUFFER_API_KEY is missing'; exit 2; }
+          test -n "$NOTION_API_KEY" || { echo 'NOTION_API_KEY is missing. Production LinkedIn release fails closed without the live Notion quality gate.'; exit 2; }
 
       - name: Validate approval, release within capacity and audit
         uses: actions/github-script@v7
@@ -41,8 +50,16 @@ jobs:
             const { buildCreatePostMutation, validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
             const { preflightMedia } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-media-preflight.cjs'));
             const { postBody, validateWeeklyBatch, withQaReplenishment } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
-            const { acceptedMarker, classifyBufferFailure, localDate, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
+            const { classifyBufferFailure, localDate, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
             const { assertLiveNotionQualityGate } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-quality-gate.cjs'));
+            const {
+              LEDGER_TITLE,
+              acceptanceComment,
+              acceptedKeys: ledgerAcceptedKeys,
+              dispatchIntentComment,
+              selectTrustedLedgerIssue,
+              unresolvedIntentKeys,
+            } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -67,13 +84,14 @@ jobs:
             }
 
             async function queueOccupancy(channelIds) {
+              const uniqueChannelIds = [...new Set(channelIds.filter(Boolean))];
               const account = await buffer('query CapacityAccount { account { organizations { id } } }');
               const organizationId = account.account?.organizations?.[0]?.id;
               if (!organizationId) throw new Error('Buffer returned no organisation ID for capacity preflight.');
-              const query = `query ScheduledCapacity { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(channelIds)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`;
+              const query = `query ScheduledCapacity { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(uniqueChannelIds)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`;
               const data = await buffer(query);
               if (data.posts?.pageInfo?.hasNextPage) throw new Error('Buffer capacity preflight returned more than 100 scheduled posts; refusing an incomplete count.');
-              const counts = Object.fromEntries(channelIds.map((id) => [id, 0]));
+              const counts = Object.fromEntries(uniqueChannelIds.map((id) => [id, 0]));
               const scheduled = [];
               for (const edge of data.posts?.edges || []) {
                 counts[edge.node.channelId] = (counts[edge.node.channelId] || 0) + 1;
@@ -96,21 +114,43 @@ jobs:
                 documentTitle: request.documentTitle || '',
                 documentThumbnailUrl: request.documentThumbnailUrl || null,
                 documentPageCount: request.documentPageCount || null,
-                channels: request.channels.map((channel) => ({
-                  target: channel.target,
-                  id: channel.id,
-                  text: channel.text,
-                  dueAt: channel.dueAt || null,
-                })),
+                channels: request.channels.map((channel) => ({ target: channel.target, id: channel.id, text: channel.text, dueAt: channel.dueAt || null })),
               });
             }
 
-            // Never process only the triggering issue. GitHub concurrency may replace an
-            // older pending run with a newer one, so the surviving run must drain all
-            // current approvals under the same global capacity lock.
-            const issues = (await github.paginate(github.rest.issues.listForRepo, {
-              owner, repo, state: 'open', creator: owner, per_page: 100,
-            }))
+            async function getOrCreateLedgerIssue() {
+              const all = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 });
+              const existing = selectTrustedLedgerIssue(all, owner);
+              if (existing) {
+                if (existing.state !== 'open') await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'open' });
+                return existing.number;
+              }
+              const created = await github.rest.issues.create({ owner, repo, title: LEDGER_TITLE, body: 'Durable machine ledger of Buffer dispatch intent and placement acceptance. Bot comments are authoritative for idempotency. Do not delete or manually edit machine markers.' });
+              return created.data.number;
+            }
+
+            async function commentWithRetry(issueNumber, body, attempts = 3) {
+              let lastError;
+              for (let attempt = 1; attempt <= attempts; attempt += 1) {
+                try {
+                  await github.rest.issues.createComment({ owner, repo, issue_number: issueNumber, body });
+                  return;
+                } catch (error) {
+                  lastError = error;
+                  if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+                }
+              }
+              throw lastError;
+            }
+
+            const ledgerIssueNumber = await getOrCreateLedgerIssue();
+            const ledgerComments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: ledgerIssueNumber, per_page: 100 });
+            const durableAccepted = ledgerAcceptedKeys(ledgerComments);
+            const unresolvedIntents = unresolvedIntentKeys(ledgerComments);
+
+            // Never process only the triggering issue. The surviving concurrency run must
+            // drain all current open approvals under the same global capacity lock.
+            const issues = (await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', creator: owner, per_page: 100 }))
               .filter((issue) => !issue.pull_request && (issue.title.startsWith('[APPROVED LINKEDIN WEEK]') || issue.title.startsWith('[APPROVED LINKEDIN]')))
               .sort((a, b) => a.number - b.number);
 
@@ -118,21 +158,18 @@ jobs:
               const results = [];
               try {
                 const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
-                const accepted = parseAcceptedMarkers(comments);
+                const accepted = new Set([...durableAccepted, ...parseAcceptedMarkers(comments)]);
                 const isWeekly = issue.title.startsWith('[APPROVED LINKEDIN WEEK]');
                 const batch = isWeekly ? validateWeeklyBatch(issue.body || '', baseQueue, process.env, Date.parse(issue.created_at), { allowGeneratedAtDrift: accepted.size > 0 }) : null;
 
                 let jobs;
-                if (isWeekly) {
-                  jobs = batch.jobs;
-                } else {
+                if (isWeekly) jobs = batch.jobs;
+                else {
                   const approvedRequest = validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
                   const queuePost = (queue.posts || []).find((post) => post.id === approvedRequest.postId && String(post.revision) === String(approvedRequest.revision));
                   if (!queuePost) throw new Error(`${approvedRequest.postId}@${approvedRequest.revision} is not the current locked queue revision. Legacy issue-only dispatch is disabled.`);
                   const lockedRequest = validateRequest(postBody(queuePost), process.env, Date.parse(issue.created_at));
-                  if (requestFingerprint(approvedRequest) !== requestFingerprint(lockedRequest)) {
-                    throw new Error(`${approvedRequest.postId}@${approvedRequest.revision} approval body does not exactly match the locked queue copy, schedule, targets or media.`);
-                  }
+                  if (requestFingerprint(approvedRequest) !== requestFingerprint(lockedRequest)) throw new Error(`${approvedRequest.postId}@${approvedRequest.revision} approval body does not exactly match the locked queue copy, schedule, targets or media.`);
                   jobs = [{ post: queuePost, request: lockedRequest }];
                 }
 
@@ -141,13 +178,14 @@ jobs:
                 for (const job of jobs) {
                   const queuePost = (queue.posts || []).find((post) => post.id === job.post.id && String(post.revision) === String(job.post.revision));
                   if (!queuePost) throw new Error(`${job.post.id}@${job.post.revision} is not the current locked queue revision.`);
-                  if (process.env.NOTION_API_KEY && queuePost.sourceType !== 'qa_replenishment' && queuePost.sourceType !== 'qa_weekly_replenishment') {
+                  if (queuePost.sourceType === 'qa_replenishment' || queuePost.sourceType === 'qa_weekly_replenishment') {
+                    modes.add('owner-approved-current-queue');
+                    qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, mode: 'owner-approved-current-queue' });
+                  } else {
+                    if (!process.env.NOTION_API_KEY) throw new Error('NOTION_API_KEY is required for every non-QA LinkedIn release.');
                     const quality = await assertLiveNotionQualityGate(queuePost, process.env.NOTION_API_KEY, fetch);
                     modes.add('live-notion');
                     qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, ...quality.snapshot, mode: 'live-notion' });
-                  } else {
-                    modes.add('owner-approved-current-queue');
-                    qualitySnapshots.push({ id: queuePost.id, revision: queuePost.revision, mode: 'owner-approved-current-queue' });
                   }
                 }
                 const qualityMode = modes.size === 1 ? [...modes][0] : [...modes].sort().join('+');
@@ -157,18 +195,17 @@ jobs:
                 const occupancy = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [target, capacity.counts[id] || 0]));
                 const plan = planCapacityWindow(jobs, occupancy, accepted);
 
+                const unresolvedForThisIssue = plan.dispatch.filter(({ key }) => unresolvedIntents.has(key));
+                if (unresolvedForThisIssue.length) {
+                  throw new Error(`Unresolved prior Buffer dispatch intent for ${unresolvedForThisIssue.map((item) => item.key).join(', ')}. Automatic recreation is blocked until Buffer is reconciled and the ledger is repaired.`);
+                }
+
                 const targetByChannelId = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [id, target]));
-                const proposedJobs = plan.dispatch.map(({ job, channel }) => ({
-                  post: job.post,
-                  request: { mode: job.request.mode, channels: [channel] },
-                }));
+                const proposedJobs = plan.dispatch.map(({ job, channel }) => ({ post: job.post, request: { mode: job.request.mode, channels: [channel] } }));
                 const proposedDates = new Set(plan.dispatch.map(({ channel }) => localDate(channel.dueAt, queue.timezone || 'Europe/London')).filter(Boolean));
                 const occupiedJobs = capacity.scheduled
                   .filter((entry) => proposedDates.has(localDate(entry.dueAt, queue.timezone || 'Europe/London')))
-                  .map((entry, index) => ({
-                    post: { id: `buffer-existing-${index}`, revision: 1 },
-                    request: { mode: 'schedule', channels: [{ target: targetByChannelId[entry.channelId], dueAt: entry.dueAt }] },
-                  }));
+                  .map((entry, index) => ({ post: { id: `buffer-existing-${index}`, revision: 1 }, request: { mode: 'schedule', channels: [{ target: targetByChannelId[entry.channelId], dueAt: entry.dueAt }] } }));
                 validateDailyPlacementLimit([...occupiedJobs, ...proposedJobs], 15, 5, queue.timezone || 'Europe/London');
 
                 const mediaProofs = new Map();
@@ -179,24 +216,39 @@ jobs:
                 }
 
                 for (const { job, channel, key } of plan.dispatch) {
-                  if (channel.dueAt && new Date(channel.dueAt).getTime() <= Date.now() + 5 * 60_000) {
-                    throw new Error(`${job.post.id} / ${channel.name}: approved time is too close or has passed; revise the schedule and approve the new revision.`);
+                  if (channel.dueAt && new Date(channel.dueAt).getTime() <= Date.now() + 5 * 60_000) throw new Error(`${job.post.id} / ${channel.name}: approved time is too close or has passed; revise the schedule and approve the new revision.`);
+
+                  // Close the Notion time-of-check/time-of-use gap. A source row can be
+                  // revoked while capacity/media preflight runs, so every non-QA placement
+                  // is checked again immediately before any durable dispatch intent or
+                  // provider write is allowed.
+                  const liveQueuePost = (queue.posts || []).find((post) => post.id === job.post.id && String(post.revision) === String(job.post.revision));
+                  if (!liveQueuePost) throw new Error(`${job.post.id}@${job.post.revision} disappeared from the current governed queue before provider write.`);
+                  if (liveQueuePost.sourceType !== 'qa_replenishment' && liveQueuePost.sourceType !== 'qa_weekly_replenishment') {
+                    await assertLiveNotionQualityGate(liveQueuePost, process.env.NOTION_API_KEY, fetch);
                   }
-                  const media = job.request.mediaUrl ? {
-                    url: job.request.mediaUrl,
-                    kind: job.request.mediaKind,
-                    title: job.request.documentTitle,
-                    thumbnailUrl: job.request.documentThumbnailUrl,
-                    altText: job.request.mediaAltText,
-                  } : null;
+
+                  const media = job.request.mediaUrl ? { url: job.request.mediaUrl, kind: job.request.mediaKind, title: job.request.documentTitle, thumbnailUrl: job.request.documentThumbnailUrl, altText: job.request.mediaAltText } : null;
+                  const intentBody = dispatchIntentComment({ key, queueId: job.post.id, revision: job.post.revision, targetName: channel.name, target: channel.target });
+                  await commentWithRetry(ledgerIssueNumber, intentBody);
+                  await commentWithRetry(issue.number, intentBody);
+                  unresolvedIntents.add(key);
+
                   const data = await buffer(buildCreatePostMutation(channel, job.request.mode, media));
                   const result = data.createPost;
                   if (!result?.post?.id) throw new Error(`${job.post.id} / ${channel.name}: Buffer did not return a post ID.`);
                   const proof = mediaProofs.get(`${job.post.id}@${job.post.revision}`)?.media || null;
+                  const acceptedBody = acceptanceComment({ key, queueId: job.post.id, revision: job.post.revision, targetName: channel.name, target: channel.target, bufferId: result.post.id, dueAt: channel.dueAt, mediaProof: proof });
+
+                  await commentWithRetry(ledgerIssueNumber, acceptedBody);
+                  await commentWithRetry(issue.number, acceptedBody);
+                  unresolvedIntents.delete(key);
+                  durableAccepted.add(key);
+                  accepted.add(key);
                   results.push({ key, queueId: job.post.id, revision: job.post.revision, name: channel.name, postId: result.post.id, dueAt: channel.dueAt, mediaProof: proof });
                 }
 
-                const resultLines = results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` — ${result.dueAt}` : ''}${result.mediaProof ? ` — media ${result.mediaProof.bytes} bytes / SHA-256 ${result.mediaProof.sha256}` : ''}\n  ${acceptedMarker(result.key)}`);
+                const resultLines = results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`${result.dueAt ? ` | ${result.dueAt}` : ''}${result.mediaProof ? ` | media ${result.mediaProof.bytes} bytes / SHA-256 ${result.mediaProof.sha256}` : ''}`);
                 const qualityLines = qualitySnapshots.map((snapshot) => snapshot.mode === 'live-notion'
                   ? `- ${snapshot.id}@${snapshot.revision}: ${snapshot.decision} · ${snapshot.approval} · Anti-DNA ${snapshot.antiDnaPass ? 'PASS' : 'FAIL'} · ${snapshot.automationStatus}`
                   : `- ${snapshot.id}@${snapshot.revision}: ${snapshot.mode}`);
@@ -205,42 +257,34 @@ jobs:
                 const alreadyReportedSameWait = comments.some((comment) => comment.user?.login === 'github-actions[bot]' && String(comment.body || '').includes(waitingMarker));
                 if (results.length || !waiting || !alreadyReportedSameWait) await github.rest.issues.createComment({
                   owner, repo, issue_number: issue.number, body: [
-                    waiting ? '🕒 Buffer capacity window processed.' : '✅ Buffer accepted every remaining requested destination.',
-                    '',
-                    `- Quality gate mode: **${qualityMode}**`,
-                    ...qualityLines,
-                    `- Audit status: **${waiting ? 'approved — waiting for Buffer capacity' : 'scheduled'}**`,
+                    waiting ? '🕒 Buffer capacity window processed.' : '✅ Buffer accepted every remaining requested destination.', '',
+                    `- Quality gate mode: **${qualityMode}**`, ...qualityLines,
+                    `- Audit status: **${waiting ? 'approved, waiting for Buffer capacity' : 'scheduled'}**`,
                     batch ? `- Approved week: **${batch.weekStart} to ${batch.weekEnd}**` : `- Queue post: **${jobs[0].post.id}**`,
                     `- Already accepted before this run: **${plan.alreadyAccepted.length}**`,
                     `- Accepted in this run: **${results.length}**`,
                     `- Waiting for a free queue slot: **${waiting}**`,
-                    ...(resultLines.length ? resultLines : ['- No new Buffer placements were created in this capacity check.']),
-                    '',
+                    ...(resultLines.length ? resultLines : ['- No new Buffer placements were created in this capacity check.']), '',
                     waiting ? 'The exact owner approval remains locked. The next automatic capacity check will resume without recreating accepted destinations.' : 'This records Buffer acceptance, not proof of LinkedIn publication. Publication verification is handled separately after the due time.',
                     waiting ? waitingMarker : '',
                   ].join('\n'),
                 });
                 if (!waiting) await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed' });
               } catch (error) {
-                const retryable = error.failure?.retryable === true;
-                const partial = results.length
-                  ? results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\`\n  ${acceptedMarker(result.key)}`).join('\n')
-                  : '- None';
+                const retryable = error.failure?.retryable === true && !/Unresolved prior Buffer dispatch intent/.test(error.message);
+                const partial = results.length ? results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\` (already durably recorded)`).join('\n') : '- None';
                 await github.rest.issues.createComment({
                   owner, repo, issue_number: issue.number,
                   body: [
                     '❌ LinkedIn Buffer dispatch failed closed.', '',
                     `- Error: ${error.message}`,
-                    `- Failure class: **${error.failure?.code || (error.qualityGate ? 'live_quality_gate' : 'preflight_failure')}**`,
+                    `- Failure class: **${/Unresolved prior Buffer dispatch intent/.test(error.message) ? 'unresolved_dispatch_intent' : error.failure?.code || (error.qualityGate ? 'live_quality_gate' : 'preflight_failure')}**`,
                     '- Destinations created before the failure:', partial, '',
-                    retryable ? 'The next capacity check will retry and skip every destination recorded above.' : 'This needs correction and a new revision before scheduling can continue.',
+                    retryable ? 'The next capacity check will retry and skip every destination already recorded in the durable acceptance ledger.' : 'This needs correction before scheduling can continue. Any unresolved dispatch intent must be reconciled against Buffer before automatic recreation. Any destination already accepted remains protected from duplicate creation.',
                     'Nothing should be assumed published.',
                   ].join('\n'),
                 });
-                if (!retryable) await github.rest.issues.update({
-                  owner, repo, issue_number: issue.number,
-                  title: issue.title.replace('[APPROVED LINKEDIN WEEK]', '[FAILED LINKEDIN WEEK]').replace('[APPROVED LINKEDIN]', '[FAILED LINKEDIN]'),
-                });
+                if (!retryable) await github.rest.issues.update({ owner, repo, issue_number: issue.number, title: issue.title.replace('[APPROVED LINKEDIN WEEK]', '[FAILED LINKEDIN WEEK]').replace('[APPROVED LINKEDIN]', '[FAILED LINKEDIN]') });
                 if (context.eventName === 'issues') core.setFailed(error.message);
               }
             }

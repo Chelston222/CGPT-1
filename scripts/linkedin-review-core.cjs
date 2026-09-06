@@ -31,6 +31,8 @@ const TRIPLE_TWO_LINKEDIN_PAGE = {
   localizedName: 'Triple Two Emails',
 };
 
+const EXPLICIT_ZONE_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+
 function parseIssueBody(body = '') {
   const lines = String(body).split(/\r?\n/);
   const header = {};
@@ -114,8 +116,9 @@ function validateStableMediaUrl(rawUrl, fieldName = 'MEDIA_URL') {
 function resolveSchedule(header, target, mode, now = Date.now()) {
   if (mode !== 'schedule') return null;
   const field = `SCHEDULE_AT_${target.toUpperCase()}`;
-  const raw = header[field] || header.SCHEDULE_AT;
+  const raw = String(header[field] || header.SCHEDULE_AT || '').trim();
   if (!raw) throw new Error(`${field} or SCHEDULE_AT is required in schedule mode.`);
+  if (!EXPLICIT_ZONE_ISO.test(raw)) throw new Error(`${field} must use ISO 8601 with an explicit Z or UTC offset.`);
   const dueAt = new Date(raw);
   if (Number.isNaN(dueAt.getTime())) throw new Error(`${field} is not a valid ISO date/time.`);
   if (dueAt.getTime() <= now + 60_000) throw new Error(`${field} must be at least one minute in the future.`);
@@ -265,6 +268,7 @@ function buildCreatePostMutation(channel, mode, media = null) {
 }
 
 module.exports = {
+  EXPLICIT_ZONE_ISO,
   TARGET_LABELS,
   TARGET_SECRET_NAMES,
   TRIPLE_TWO_LINKEDIN_PAGE,

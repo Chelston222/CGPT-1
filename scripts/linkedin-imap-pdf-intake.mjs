@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,18 +38,21 @@ mkdirSync(stagingDir, { recursive: true });
 
 const client = new ImapFlow({ host, port, secure: true, auth: { user, pass }, logger: false });
 let selected = null;
+let metadataMatches = 0;
+let rejectedCandidates = 0;
 try {
   await client.connect();
   const mailboxes = await client.list();
   const selectable = mailboxes.filter((mb) => !mb.flags?.has('\\Noselect'));
   const since = new Date(Date.now() - 72 * 60 * 60 * 1000);
 
+  mailboxLoop:
   for (const mailbox of selectable) {
     const special = String(mailbox.specialUse || '').toLowerCase();
     if (['\\sent', '\\drafts', '\\trash', '\\junk'].includes(special)) continue;
     await client.mailboxOpen(mailbox.path, { readOnly: true });
     const recent = await client.search({ since }, { uid: true });
-    const uids = recent.slice(-200);
+    const uids = recent.slice(-200).reverse();
     if (!uids.length) continue;
     const messages = await client.fetchAll(uids, { uid: true, envelope: true, source: true }, { uid: true });
     for (const message of messages) {
@@ -57,22 +60,37 @@ try {
       const subject = String(message.envelope?.subject || '');
       if (from !== expectedSender || subject !== expectedSubject) continue;
       const parsed = await simpleParser(message.source, { skipTextToHtml: true, maxHtmlLengthToParse: 150000 });
-      const attachment = (parsed.attachments || []).find((item) => item.filename === expectedFilename && item.contentType === 'application/pdf');
-      if (!attachment?.content?.length) continue;
-      selected = { mailbox: mailbox.path, uid: message.uid, attachment };
+      // MIME labels vary across mail clients. Filename + exact bytes + %PDF- signature +
+      // locked SHA-256 are the authoritative identity, so do not reject an otherwise exact
+      // PDF merely because a client labelled it application/octet-stream.
+      const attachments = (parsed.attachments || []).filter((item) => item.filename === expectedFilename && item.content?.length);
+      for (const attachment of attachments) {
+        metadataMatches += 1;
+        const candidate = Buffer.from(attachment.content);
+        if (candidate.length !== expectedBytes || candidate.subarray(0, 5).toString('ascii') !== '%PDF-') {
+          rejectedCandidates += 1;
+          continue;
+        }
+        const candidateSha256 = createHash('sha256').update(candidate).digest('hex');
+        if (candidateSha256 !== expectedSha256) {
+          rejectedCandidates += 1;
+          continue;
+        }
+        selected = { mailbox: mailbox.path, uid: message.uid, pdf: candidate, sha256: candidateSha256 };
+        break mailboxLoop;
+      }
     }
   }
 } finally {
   try { await client.logout(); } catch {}
 }
 
-if (!selected) throw new Error(`Exact intake email/attachment not found: sender=${expectedSender} subject=${expectedSubject} filename=${expectedFilename}`);
+if (!selected) {
+  throw new Error(`Exact intake email/attachment not found or did not match locked bytes/SHA: sender=${expectedSender} subject=${expectedSubject} filename=${expectedFilename} metadataMatches=${metadataMatches} rejectedCandidates=${rejectedCandidates}`);
+}
 
-const pdf = Buffer.from(selected.attachment.content);
-if (pdf.length !== expectedBytes) throw new Error(`Byte mismatch: expected ${expectedBytes}, got ${pdf.length}`);
-if (pdf.subarray(0, 5).toString('ascii') !== '%PDF-') throw new Error('Attachment is not a PDF');
-const sha256 = createHash('sha256').update(pdf).digest('hex');
-if (sha256 !== expectedSha256) throw new Error(`SHA-256 mismatch: expected ${expectedSha256}, got ${sha256}`);
+const pdf = selected.pdf;
+const sha256 = selected.sha256;
 
 const chunkPaths = [];
 const chunkBytes = 2_000_000;
@@ -98,4 +116,15 @@ if (outputPath) {
   writeFileSync(outputPath, `manifest_path=${relative(repoRoot, manifestPath).split('\\').join('/')}\nsource_mailbox=${selected.mailbox}\nsource_uid=${selected.uid}\nbytes=${pdf.length}\nsha256=${sha256}\nchunks=${chunkPaths.length}\n`, { flag: 'a' });
 }
 
-console.log(JSON.stringify({ ok: true, id, mailbox: selected.mailbox, uid: selected.uid, bytes: pdf.length, sha256, chunks: chunkPaths.length, manifestPath: relative(repoRoot, manifestPath) }, null, 2));
+console.log(JSON.stringify({
+  ok: true,
+  id,
+  mailbox: selected.mailbox,
+  uid: selected.uid,
+  bytes: pdf.length,
+  sha256,
+  chunks: chunkPaths.length,
+  metadataMatches,
+  rejectedCandidates,
+  manifestPath: relative(repoRoot, manifestPath),
+}, null, 2));

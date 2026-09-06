@@ -9,6 +9,8 @@ const childProcess = require('node:child_process');
 const MAX_DOCUMENT_BYTES = 100_000_000;
 const MAX_DOCUMENT_PAGES = 300;
 const ALLOWED_TARGETS = new Set(['personal', 'main', 'secondary']);
+const EXPLICIT_ZONE_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+const COMMIT_SHA = /^[a-f0-9]{40}$/i;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -68,11 +70,15 @@ function loadManifest(filePath) {
   const manifest = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   assert(manifest.schemaVersion === 1, 'Unsupported PDF intake manifest schemaVersion.');
   manifest.id = safeId(manifest.id);
+  assert(Number.isSafeInteger(manifest.revision) && manifest.revision >= 1, 'manifest.revision must be an explicit positive integer.');
   assert(String(manifest.title || '').trim(), 'manifest.title is required.');
   assert(String(manifest.documentTitle || '').trim(), 'manifest.documentTitle is required.');
   assert(String(manifest.copy?.default || '').trim(), 'manifest.copy.default is required.');
+  assert(!String(manifest.copy.default).includes('\u2014'), 'manifest.copy.default must not contain em dashes.');
   assert(Array.isArray(manifest.targets) && manifest.targets.length, 'manifest.targets must contain at least one destination.');
   assert(manifest.targets.every((target) => ALLOWED_TARGETS.has(target)), 'manifest.targets contains an unsupported destination.');
+  assert(new Set(manifest.targets).size === manifest.targets.length, 'manifest.targets must not contain duplicate destinations.');
+  assert(manifest.publicMediaApproved === true, 'manifest.publicMediaApproved must be true because promoted media is publicly reachable before publication.');
 
   const hasChunks = Array.isArray(manifest.chunks) && manifest.chunks.length > 0;
   const hasDownloadUrl = Boolean(String(manifest.downloadUrl || '').trim());
@@ -87,10 +93,11 @@ function loadManifest(filePath) {
   if (manifest.expectedSha256) assert(/^[a-f0-9]{64}$/i.test(manifest.expectedSha256), 'manifest.expectedSha256 must be a SHA-256 hex digest.');
   if (manifest.mode && !['draft', 'schedule'].includes(manifest.mode)) throw new Error('manifest.mode must be draft or schedule.');
   if ((manifest.mode || 'draft') === 'schedule') {
-    assert(manifest.scheduledAt && typeof manifest.scheduledAt === 'object', 'scheduledAt is required in schedule mode.');
+    assert(manifest.scheduledAt && typeof manifest.scheduledAt === 'object' && !Array.isArray(manifest.scheduledAt), 'scheduledAt is required in schedule mode.');
     for (const target of manifest.targets) {
-      const raw = manifest.scheduledAt[target];
-      assert(raw && !Number.isNaN(Date.parse(raw)), `scheduledAt.${target} must be a valid ISO date/time.`);
+      const raw = String(manifest.scheduledAt[target] || '').trim();
+      assert(EXPLICIT_ZONE_ISO.test(raw), `scheduledAt.${target} must use ISO 8601 with an explicit Z or UTC offset.`);
+      assert(!Number.isNaN(Date.parse(raw)), `scheduledAt.${target} must be a valid ISO date/time.`);
     }
   }
   return manifest;
@@ -163,8 +170,31 @@ function renderThumbnail(pdfPath, jpgPath) {
   assert(fs.existsSync(jpgPath) && fs.statSync(jpgPath).size > 0, 'Failed to create PDF thumbnail.');
 }
 
-function rawUrl(owner, repo, branch, relativePath) {
-  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${relativePath.split(path.sep).map(encodeURIComponent).join('/')}`;
+function rawUrl(owner, repo, ref, relativePath) {
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${relativePath.split(path.sep).map(encodeURIComponent).join('/')}`;
+}
+
+function rawGitHubRef(value) {
+  try {
+    const parsed = new URL(String(value || ''));
+    if (parsed.hostname.toLowerCase() !== 'raw.githubusercontent.com') return null;
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    return parts.length >= 4 ? parts[2] : null;
+  } catch {
+    return null;
+  }
+}
+
+function stableMediaIdentity(value) {
+  try {
+    const parsed = new URL(String(value || ''));
+    if (parsed.hostname.toLowerCase() !== 'raw.githubusercontent.com') return parsed.toString();
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    if (parts.length < 4) return parsed.toString();
+    return `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/<immutable-ref>/${parts.slice(3).join('/')}`;
+  } catch {
+    return String(value || '');
+  }
 }
 
 function buildQueuePost(manifest, metadata, urls, nowIso) {
@@ -172,7 +202,7 @@ function buildQueuePost(manifest, metadata, urls, nowIso) {
   const transport = manifest.downloadUrl ? 'approved HTTPS binary bridge' : 'locked base64 chunks';
   const post = {
     id: manifest.id,
-    revision: Number(manifest.revision || 1),
+    revision: manifest.revision,
     title: String(manifest.title).trim(),
     category: manifest.category || 'buyer_diagnostics',
     funnelStage: manifest.funnelStage || 'mof',
@@ -193,6 +223,7 @@ function buildQueuePost(manifest, metadata, urls, nowIso) {
       pdfSha256: metadata.sha256,
       verifiedAt: nowIso,
       sourceFolder: manifest.sourceFolder || `ChatGPT PDF intake ${manifest.id}`,
+      publicMediaApproved: true,
     },
     sourceUrl: manifest.sourceUrl || 'https://github.com/Chelston222/CGPT-1/issues/514',
     sourceType: 'chatgpt_pdf_intake',
@@ -208,19 +239,109 @@ function buildQueuePost(manifest, metadata, urls, nowIso) {
   return post;
 }
 
+function stablePostFingerprint(post) {
+  return JSON.stringify({
+    id: post.id,
+    revision: Number(post.revision),
+    title: post.title,
+    category: post.category,
+    funnelStage: post.funnelStage,
+    format: post.format,
+    targets: post.targets,
+    mode: post.mode,
+    scheduledAt: post.scheduledAt || null,
+    copy: post.copy,
+    mediaAlt: post.mediaAlt,
+    mediaUrl: stableMediaIdentity(post.mediaUrl),
+    documentTitle: post.documentTitle,
+    documentThumbnailUrl: stableMediaIdentity(post.documentThumbnailUrl),
+    slideCount: post.carousel?.slideCount || null,
+    pdfBytes: post.carousel?.pdfBytes || null,
+    pdfSha256: post.carousel?.pdfSha256 || null,
+    sourceUrl: post.sourceUrl,
+    sourceType: post.sourceType,
+  });
+}
+
 function upsertQueue(queuePath, post, nowIso) {
   const queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
   assert(Array.isArray(queue.posts), 'queue.json posts array is missing.');
   const index = queue.posts.findIndex((item) => item.id === post.id);
   if (index >= 0) {
     const current = queue.posts[index];
-    assert(Number(post.revision) > Number(current.revision), `Existing ${post.id}@${current.revision} requires a strictly higher revision.`);
+    const currentRevision = Number(current.revision);
+    const nextRevision = Number(post.revision);
+    if (nextRevision === currentRevision) {
+      assert(stablePostFingerprint(current) === stablePostFingerprint(post), `Existing ${post.id}@${current.revision} conflicts with the requested same revision. Use a higher revision for any changed copy, schedule or media.`);
+      return { changed: false, replay: true };
+    }
+    assert(nextRevision > currentRevision, `Existing ${post.id}@${current.revision} requires a strictly higher revision.`);
     queue.posts[index] = post;
   } else {
     queue.posts.push(post);
   }
   queue.generatedAt = nowIso;
   fs.writeFileSync(queuePath, `${JSON.stringify(queue, null, 2)}\n`);
+  return { changed: true, replay: false };
+}
+
+function snapshotFile(filePath) {
+  return fs.existsSync(filePath) ? fs.readFileSync(filePath) : null;
+}
+
+function restoreGovernedMediaOnReplay({ queueResult, pdfPath, jpgPath, existingPdf, existingJpg, metadata }) {
+  if (!queueResult?.replay) return false;
+  assert(Buffer.isBuffer(existingPdf) && existingPdf.length > 0, 'Idempotent replay requires the previously governed PDF bytes to exist.');
+  assert(Buffer.isBuffer(existingJpg) && existingJpg.length > 0, 'Idempotent replay requires the previously governed thumbnail bytes to exist.');
+  const governedSha256 = crypto.createHash('sha256').update(existingPdf).digest('hex');
+  assert(existingPdf.length === metadata.bytes, `Existing governed replay PDF byte count drifted: expected ${metadata.bytes}, found ${existingPdf.length}.`);
+  assert(governedSha256 === metadata.sha256, `Existing governed replay PDF SHA-256 drifted: expected ${metadata.sha256}, found ${governedSha256}.`);
+  fs.writeFileSync(pdfPath, existingPdf);
+  fs.writeFileSync(jpgPath, existingJpg);
+  return true;
+}
+
+function pinQueueMediaUrls(queuePath, { id, revision, owner, repo, ref, nowIso = new Date().toISOString() }) {
+  assert(owner && repo, 'owner and repo are required for media URL pinning.');
+  assert(COMMIT_SHA.test(String(ref || '')), 'media URL pinning requires a full 40-character Git commit SHA.');
+  const postId = safeId(id);
+  const rev = Number(revision);
+  assert(Number.isSafeInteger(rev) && rev >= 1, 'revision must be a positive integer for media URL pinning.');
+
+  const queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
+  assert(Array.isArray(queue.posts), 'queue.json posts array is missing.');
+  const post = queue.posts.find((item) => item.id === postId && Number(item.revision) === rev);
+  assert(post, `Cannot pin media URL because ${postId}@${rev} is not in the governed queue.`);
+  assert(post.sourceType === 'chatgpt_pdf_intake', `Cannot pin non-intake queue item ${postId}@${rev}.`);
+  assert(post.carousel?.pdfSha256 && post.carousel?.pdfBytes, `Cannot pin ${postId}@${rev} without locked PDF integrity metadata.`);
+
+  const existingRef = rawGitHubRef(post.mediaUrl);
+  if (existingRef && COMMIT_SHA.test(existingRef)) {
+    return {
+      changed: false,
+      replay: true,
+      ref: existingRef,
+      pdfUrl: post.mediaUrl,
+      thumbnailUrl: post.documentThumbnailUrl,
+    };
+  }
+
+  const base = path.join('apps', 'linkedin-review', 'media', 'intake', postId, `r${rev}`);
+  const pdfUrl = rawUrl(owner, repo, ref, path.join(base, `${postId}.pdf`));
+  const thumbnailUrl = rawUrl(owner, repo, ref, path.join(base, 'thumbnail.jpg'));
+  post.mediaUrl = pdfUrl;
+  post.mediaPreviewUrl = thumbnailUrl;
+  post.documentThumbnailUrl = thumbnailUrl;
+  post.history = Array.isArray(post.history) ? post.history : [];
+  post.history.push({
+    state: 'media_urls_pinned',
+    at: nowIso,
+    actor: 'github-actions[bot]',
+    note: `Governed PDF and thumbnail URLs pinned to immutable Git commit ${ref}.`,
+  });
+  queue.generatedAt = nowIso;
+  fs.writeFileSync(queuePath, `${JSON.stringify(queue, null, 2)}\n`);
+  return { changed: true, replay: false, ref, pdfUrl, thumbnailUrl };
 }
 
 function run({ root = process.cwd(), manifestPath, owner, repo, branch = 'main' }) {
@@ -228,10 +349,13 @@ function run({ root = process.cwd(), manifestPath, owner, repo, branch = 'main' 
   assert(owner && repo, 'owner and repo are required.');
   const manifestAbs = path.resolve(root, manifestPath);
   const manifest = loadManifest(manifestAbs);
-  const intakeDir = path.join(root, 'apps', 'linkedin-review', 'media', 'intake', manifest.id);
+  const revisionDir = `r${manifest.revision}`;
+  const intakeDir = path.join(root, 'apps', 'linkedin-review', 'media', 'intake', manifest.id, revisionDir);
   fs.mkdirSync(intakeDir, { recursive: true });
   const pdfPath = path.join(intakeDir, `${manifest.id}.pdf`);
   const jpgPath = path.join(intakeDir, 'thumbnail.jpg');
+  const existingPdf = snapshotFile(pdfPath);
+  const existingJpg = snapshotFile(jpgPath);
   const measured = manifest.downloadUrl ? downloadPdf(manifest, pdfPath) : decodeChunks(root, manifest, pdfPath);
   const inspected = inspectPdf(pdfPath);
   renderThumbnail(pdfPath, jpgPath);
@@ -245,10 +369,11 @@ function run({ root = process.cwd(), manifestPath, owner, repo, branch = 'main' 
   const nowIso = new Date().toISOString();
   const queuePath = path.join(root, 'apps', 'linkedin-review', 'queue.json');
   const post = buildQueuePost(manifest, metadata, urls, nowIso);
-  upsertQueue(queuePath, post, nowIso);
+  const queueResult = upsertQueue(queuePath, post, nowIso);
+  const replayMediaRestored = restoreGovernedMediaOnReplay({ queueResult, pdfPath, jpgPath, existingPdf, existingJpg, metadata });
   const manifestAudit = { ...manifest };
   if (manifestAudit.downloadUrl) manifestAudit.downloadUrl = '[redacted]';
-  return { manifest: manifestAudit, metadata, urls, post, pdfRelative, jpgRelative, queuePath };
+  return { manifest: manifestAudit, metadata, urls, post, queueResult, replayMediaRestored, pdfRelative, jpgRelative, queuePath };
 }
 
 if (require.main === module) {
@@ -264,15 +389,23 @@ if (require.main === module) {
 }
 
 module.exports = {
+  COMMIT_SHA,
+  EXPLICIT_ZONE_ISO,
   MAX_DOCUMENT_BYTES,
   MAX_DOCUMENT_PAGES,
   buildQueuePost,
   decodeChunks,
   downloadPdf,
   loadManifest,
+  pinQueueMediaUrls,
+  rawGitHubRef,
   rawUrl,
+  restoreGovernedMediaOnReplay,
   run,
   safeId,
+  snapshotFile,
+  stableMediaIdentity,
+  stablePostFingerprint,
   upsertQueue,
   validateDownloadUrl,
   verifyPdfFile,

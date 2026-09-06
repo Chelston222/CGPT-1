@@ -36,6 +36,21 @@ jobs:
           git fetch origin main
           git checkout -B main origin/main
 
+      - name: Verify public media-hosting contract
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          visibility="$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY" | jq -r '.visibility')"
+          test "$visibility" = 'public' || {
+            echo 'This lane uses raw.githubusercontent.com as Buffer media hosting. The repository is not public, so the media URL would not be fetchable by Buffer.' >&2
+            exit 2
+          }
+
       - name: Verify existing PrivateEmail credential
         shell: bash
         run: |
@@ -68,7 +83,7 @@ jobs:
           set -euo pipefail
           node scripts/linkedin-pdf-intake.cjs "${{ steps.bridge.outputs.manifest_path }}" > /tmp/pdf-intake-result.json
           cat /tmp/pdf-intake-result.json
-          node -e "const r=require('/tmp/pdf-intake-result.json'); console.log('pdf_url='+r.urls.pdfUrl); console.log('thumbnail_url='+r.urls.thumbnailUrl); console.log('post_id='+r.post.id); console.log('revision='+r.post.revision); console.log('pages='+r.metadata.pageCount); console.log('bytes='+r.metadata.bytes); console.log('sha256='+r.metadata.sha256);" >> "$GITHUB_OUTPUT"
+          node -e "const r=require('/tmp/pdf-intake-result.json'); console.log('post_id='+r.post.id); console.log('revision='+r.post.revision); console.log('pages='+r.metadata.pageCount); console.log('bytes='+r.metadata.bytes); console.log('sha256='+r.metadata.sha256); console.log('replay='+(r.queueResult?.replay===true?'true':'false'));" >> "$GITHUB_OUTPUT"
 
       - name: Enforce exact media proof
         shell: bash
@@ -86,6 +101,7 @@ jobs:
           node --test tests/linkedin-imap-intake-config.test.cjs
           node --test tests/linkedin-pdf-intake.test.cjs
           node --test tests/linkedin-media-preflight.test.cjs
+          node --test tests/linkedin-notion-quality-gate.test.cjs
 
       - name: Commit governed media package and locked queue revision
         env:
@@ -106,9 +122,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-          # Rebuild from latest main immediately before each push. This makes queue updates
-          # resilient to several owner intake issues being opened together and to unrelated
-          # governed queue writes that happen while the job is running.
           for attempt in 1 2 3; do
             echo "Queue commit attempt ${attempt}/3"
             git fetch origin main
@@ -118,7 +131,10 @@ jobs:
             node -e "const r=require('/tmp/pdf-intake-retry.json'); if(String(r.metadata.pageCount)!==process.env.EXPECTED_PAGES) throw new Error('Retry page-count drift'); if(String(r.metadata.bytes)!==process.env.EXPECTED_BYTES) throw new Error('Retry byte-count drift'); if(String(r.metadata.sha256)!==process.env.EXPECTED_SHA) throw new Error('Retry SHA drift'); if(String(r.post.id)!==process.env.POST_ID) throw new Error('Retry post ID drift'); if(String(r.post.revision)!==process.env.REVISION) throw new Error('Retry revision drift');"
 
             git add apps/linkedin-review/queue.json "apps/linkedin-review/media/intake/${post_id}"
-            git diff --cached --quiet && { echo 'Expected governed media/queue changes are missing.' >&2; exit 1; }
+            if git diff --cached --quiet; then
+              echo "${post_id}@${revision} is already promoted with the exact locked state. Treating this trigger as an idempotent replay."
+              exit 0
+            fi
             git commit -m "Promote LinkedIn PDF ${post_id}@${revision}"
             if git push origin HEAD:main; then
               exit 0
@@ -129,18 +145,81 @@ jobs:
           echo 'Unable to commit governed media after three latest-main rebuild attempts.' >&2
           exit 1
 
-      - name: Verify public raw media reachability and digest
+      - name: Pin governed media URLs to immutable promotion commit
+        id: pin
+        env:
+          POST_ID: ${{ steps.intake.outputs.post_id }}
+          REVISION: ${{ steps.intake.outputs.revision }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
         shell: bash
         run: |
           set -euo pipefail
-          sleep 4
-          pdf='${{ steps.intake.outputs.pdf_url }}'
-          thumb='${{ steps.intake.outputs.thumbnail_url }}'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          emit_outputs() {
+            node -e "const r=require('/tmp/pdf-pin-result.json'); if(!/^[a-f0-9]{40}$/i.test(String(r.ref||''))) throw new Error('Pinned media ref is not an immutable commit SHA'); console.log('pdf_url='+r.pdfUrl); console.log('thumbnail_url='+r.thumbnailUrl); console.log('media_ref='+r.ref); console.log('pin_replay='+(r.replay===true?'true':'false'));" >> "$GITHUB_OUTPUT"
+          }
+
+          for attempt in 1 2 3; do
+            echo "Immutable media pin attempt ${attempt}/3"
+            git fetch origin main
+            git reset --hard origin/main
+            media_ref="$(git rev-parse HEAD)"
+
+            MEDIA_REF="$media_ref" node <<'NODE' > /tmp/pdf-pin-result.json
+          const { pinQueueMediaUrls } = require('./scripts/linkedin-pdf-intake.cjs');
+          const result = pinQueueMediaUrls('apps/linkedin-review/queue.json', {
+            id: process.env.POST_ID,
+            revision: Number(process.env.REVISION),
+            owner: process.env.REPO_OWNER,
+            repo: process.env.REPO_NAME,
+            ref: process.env.MEDIA_REF,
+          });
+          process.stdout.write(JSON.stringify(result, null, 2));
+          NODE
+
+            if git diff --quiet -- apps/linkedin-review/queue.json; then
+              emit_outputs
+              exit 0
+            fi
+
+            git add apps/linkedin-review/queue.json
+            git commit -m "Pin LinkedIn PDF ${POST_ID}@${REVISION} media to immutable commit"
+            if git push origin HEAD:main; then
+              emit_outputs
+              exit 0
+            fi
+            echo 'Main advanced before immutable media pin push; rebuilding pin against latest main.' >&2
+            sleep $((attempt * 2))
+          done
+          echo 'Unable to pin governed media URLs after three latest-main rebuild attempts.' >&2
+          exit 1
+
+      - name: Verify immutable public raw media reachability and digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          pdf='${{ steps.pin.outputs.pdf_url }}'
+          thumb='${{ steps.pin.outputs.thumbnail_url }}'
+          ref='${{ steps.pin.outputs.media_ref }}'
+          post_id='${{ steps.intake.outputs.post_id }}'
+          revision='${{ steps.intake.outputs.revision }}'
+          local_thumb="apps/linkedin-review/media/intake/${post_id}/r${revision}/thumbnail.jpg"
+          test -n "$pdf" -a -n "$thumb"
+          echo "$ref" | grep -Eq '^[a-f0-9]{40}$'
+          echo "$pdf" | grep -F "/$ref/apps/linkedin-review/media/intake/${post_id}/r${revision}/${post_id}.pdf" >/dev/null
+          echo "$thumb" | grep -F "/$ref/apps/linkedin-review/media/intake/${post_id}/r${revision}/thumbnail.jpg" >/dev/null
+          test -s "$local_thumb"
+          sleep 3
           curl --fail --location --silent --show-error --retry 5 --retry-delay 2 "$pdf" -o /tmp/public.pdf
           curl --fail --location --silent --show-error --retry 5 --retry-delay 2 "$thumb" -o /tmp/public.jpg
           test "$(stat -c%s /tmp/public.pdf)" = '${{ steps.intake.outputs.bytes }}'
           test "$(sha256sum /tmp/public.pdf | awk '{print $1}')" = '${{ steps.intake.outputs.sha256 }}'
           test "$(pdfinfo /tmp/public.pdf | awk '/^Pages:/ {print $2}')" = '${{ steps.intake.outputs.pages }}'
+          test "$(stat -c%s /tmp/public.jpg)" = "$(stat -c%s "$local_thumb")"
+          test "$(sha256sum /tmp/public.jpg | awk '{print $1}')" = "$(sha256sum "$local_thumb" | awk '{print $1}')"
           file /tmp/public.pdf | grep -qi 'PDF document'
           file /tmp/public.jpg | grep -Eqi 'JPEG|image'
 
@@ -158,17 +237,21 @@ jobs:
               `- Pages: **${{ steps.intake.outputs.pages }}**`,
               `- Bytes: **${{ steps.intake.outputs.bytes }}**`,
               `- SHA-256: \`${{ steps.intake.outputs.sha256 }}\``,
-              `- PDF: ${{ steps.intake.outputs.pdf_url }}`,
-              `- Thumbnail: ${{ steps.intake.outputs.thumbnail_url }}`,
+              `- Immutable media commit: \`${{ steps.pin.outputs.media_ref }}\``,
+              `- PDF: ${{ steps.pin.outputs.pdf_url }}`,
+              `- Thumbnail: ${{ steps.pin.outputs.thumbnail_url }}`,
               `- Source mailbox: ${{ steps.bridge.outputs.source_mailbox }}`,
               `- Source UID: ${{ steps.bridge.outputs.source_uid }}`,
+              `- Intake replay: **${{ steps.intake.outputs.replay }}**`,
+              `- Immutable pin replay: **${{ steps.pin.outputs.pin_replay }}**`,
+              '- Visibility: **publicly reachable governed media**. The owner intake contract explicitly acknowledged this before promotion.',
               '',
               'This proves exact media and queue readiness only. It is not permission to publish.',
               'Publishing still requires the repository-owner `[APPROVED LINKEDIN]` gate.',
             ].join('\n');
-            const existing = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
-            const match = existing.find((issue) => issue.title === title);
-            if (match) await github.rest.issues.update({ owner, repo, issue_number: match.number, body });
+            const existing = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 });
+            const match = existing.find((issue) => !issue.pull_request && issue.title === title);
+            if (match) await github.rest.issues.update({ owner, repo, issue_number: match.number, body, state: 'open' });
             else await github.rest.issues.create({ owner, repo, title, body });
 
       - name: Close transport trigger with proof
@@ -181,9 +264,10 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: [
-                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed raw GitHub media and locked into the LinkedIn queue.',
+                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed revision-scoped media, pinned to an immutable Git commit and locked into the LinkedIn queue.',
                 '',
                 `Queue item: **${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}**`,
+                `Immutable media commit: \`${{ steps.pin.outputs.media_ref }}\``,
                 'Owner publication approval remains a separate gate.',
               ].join('\n'),
             });

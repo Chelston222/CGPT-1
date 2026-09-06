@@ -1,124 +1,19 @@
-name: LinkedIn PDF Intake
+name: RETIRED - LinkedIn PDF Intake
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'media-staging/pdf-intake/**/manifest.json'
   workflow_dispatch:
-    inputs:
-      manifest_path:
-        description: Repository path to PDF intake manifest
-        required: true
-        type: string
 
 permissions:
-  contents: write
-  issues: write
-
-concurrency:
-  group: linkedin-pdf-intake
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  intake:
-    if: github.actor == github.repository_owner || github.actor == 'github-actions[bot]'
+  retired:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install PDF tooling
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y poppler-utils
-
-      - name: Resolve manifest path
-        id: manifest
+      - name: Stop retired parallel PDF intake route
         shell: bash
         run: |
-          set -euo pipefail
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            manifest='${{ inputs.manifest_path }}'
-          else
-            manifest="$(git diff-tree --no-commit-id --name-only -r "${GITHUB_SHA}" | grep -E '^media-staging/pdf-intake/.+/manifest\.json$' | tail -n 1 || true)"
-          fi
-          if [[ -z "$manifest" || ! -f "$manifest" ]]; then
-            echo "No valid PDF intake manifest found." >&2
-            exit 1
-          fi
-          echo "path=$manifest" >> "$GITHUB_OUTPUT"
-
-      - name: Reconstruct, verify and queue PDF
-        id: intake
-        env:
-          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_REF_NAME: main
-        run: |
-          set -euo pipefail
-          node scripts/linkedin-pdf-intake.cjs "${{ steps.manifest.outputs.path }}" > /tmp/pdf-intake-result.json
-          cat /tmp/pdf-intake-result.json
-          node -e "const r=require('/tmp/pdf-intake-result.json'); console.log('pdf_url='+r.urls.pdfUrl); console.log('thumbnail_url='+r.urls.thumbnailUrl); console.log('post_id='+r.post.id); console.log('revision='+r.post.revision); console.log('pages='+r.metadata.pageCount); console.log('bytes='+r.metadata.bytes); console.log('sha256='+r.metadata.sha256);" >> "$GITHUB_OUTPUT"
-
-      - name: Run PDF intake and LinkedIn media tests
-        run: |
-          node --test tests/linkedin-pdf-intake.test.cjs
-          node --test tests/linkedin-media-preflight.test.cjs
-
-      - name: Commit governed media package and queue revision
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add apps/linkedin-review/queue.json apps/linkedin-review/media/intake
-          if git diff --cached --quiet; then
-            echo 'No generated media or queue changes to commit.'
-            exit 0
-          fi
-          git commit -m "Promote LinkedIn PDF ${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}"
-          git push origin HEAD:main
-
-      - name: Verify public raw media reachability
-        shell: bash
-        run: |
-          set -euo pipefail
-          sleep 3
-          pdf='${{ steps.intake.outputs.pdf_url }}'
-          thumb='${{ steps.intake.outputs.thumbnail_url }}'
-          curl --fail --location --silent --show-error --retry 5 --retry-delay 2 "$pdf" -o /tmp/public.pdf
-          curl --fail --location --silent --show-error --retry 5 --retry-delay 2 "$thumb" -o /tmp/public.jpg
-          test "$(sha256sum /tmp/public.pdf | awk '{print $1}')" = '${{ steps.intake.outputs.sha256 }}'
-          file /tmp/public.pdf | grep -qi 'PDF document'
-          file /tmp/public.jpg | grep -Eqi 'JPEG|image'
-
-      - name: Record intake audit issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const title = `[PDF INTAKE READY] ${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}`;
-            const body = [
-              '✅ Governed LinkedIn PDF intake completed.',
-              '',
-              `- Queue item: **${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}**`,
-              `- Pages: **${{ steps.intake.outputs.pages }}**`,
-              `- Bytes: **${{ steps.intake.outputs.bytes }}**`,
-              `- SHA-256: \`${{ steps.intake.outputs.sha256 }}\``,
-              `- PDF: ${{ steps.intake.outputs.pdf_url }}`,
-              `- Thumbnail: ${{ steps.intake.outputs.thumbnail_url }}`,
-              '',
-              'This is media/queue readiness only. It is **not** permission to publish.',
-              'Publishing still requires the existing repository-owner `[APPROVED LINKEDIN]` or `[APPROVED LINKEDIN WEEK]` gate.',
-            ].join('\n');
-            const existing = await github.rest.issues.listForRepo({ owner, repo, state: 'open', per_page: 100 });
-            const match = existing.data.find((issue) => issue.title === title);
-            if (match) {
-              await github.rest.issues.update({ owner, repo, issue_number: match.number, body });
-            } else {
-              await github.rest.issues.create({ owner, repo, title, body });
-            }
+          echo 'RETIRED: Repository-manifest PDF intake is no longer a production ingress lane.' >&2
+          echo 'Use the canonical governed route: authorised Gmail -> PrivateEmail IMAP -> exact attachment verification -> governed GitHub queue.' >&2
+          echo 'The canonical workflow is .github/workflows/linkedin-imap-pdf-intake.yml and it preserves exact sender, subject, filename, bytes, SHA-256, page count, revision, schedule and source controls.' >&2
+          exit 1

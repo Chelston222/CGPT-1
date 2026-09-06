@@ -1,0 +1,241 @@
+name: LinkedIn Buffer Intent Reconciler
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: linkedin-buffer-capacity-release
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: startsWith(github.event.issue.title, '[RECONCILE LINKEDIN BUFFER INTENTS]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out current production state
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Reconcile unresolved dispatch intents without Buffer writes
+        uses: actions/github-script@v7
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
+          BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
+          BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const crypto = require('node:crypto');
+            const {
+              acceptanceComment,
+              dispatchIntentMarker,
+              selectTrustedLedgerIssue,
+              unresolvedIntentKeys,
+            } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
+            const { validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
+            const { canonicalMediaUrl } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-media-preflight.cjs'));
+            const { validateWeeklyBatch } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const triggerIssue = context.issue.number;
+            const channels = {
+              personal: process.env.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID,
+              main: process.env.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID,
+              secondary: process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID,
+            };
+            if (!process.env.BUFFER_API_KEY || Object.values(channels).some((id) => !id)) {
+              throw new Error('Buffer API key and all three LinkedIn channel IDs are required for reconciliation.');
+            }
+
+            async function buffer(query) {
+              const response = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: {
+                  'content-type': 'application/json',
+                  authorization: `Bearer ${process.env.BUFFER_API_KEY}`,
+                },
+                body: JSON.stringify({ query }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              const messages = (payload.errors || []).map((error) => error.message).filter(Boolean);
+              if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
+              return payload.data;
+            }
+
+            function parsePlacementKey(key) {
+              const match = /^(.+)@(\d+):(personal|main|secondary)$/.exec(String(key));
+              if (!match) throw new Error(`Malformed placement key in durable ledger: ${key}`);
+              return { postId: match[1], revision: match[2], target: match[3] };
+            }
+
+            function textDigest(value) {
+              return crypto.createHash('sha256').update(String(value || ''), 'utf8').digest('hex');
+            }
+
+            function mediaSourceMatches(post, expectedMediaUrl) {
+              const sources = (post?.assets || []).map((asset) => String(asset?.source || '')).filter(Boolean);
+              if (!expectedMediaUrl) return sources.length === 0;
+              return sources.length === 1 && sources[0] === expectedMediaUrl;
+            }
+
+            const ledgerUniverse = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'all',
+              per_page: 100,
+            });
+            const ledger = selectTrustedLedgerIssue(ledgerUniverse, owner);
+            if (!ledger) throw new Error('Durable Buffer acceptance ledger does not exist.');
+            const ledgerComments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: ledger.number,
+              per_page: 100,
+            });
+            const unresolved = [...unresolvedIntentKeys(ledgerComments)];
+            if (!unresolved.length) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: triggerIssue,
+                body: '✅ No unresolved governed LinkedIn Buffer dispatch intents exist. Buffer write performed: **NO**.',
+              });
+              await github.rest.issues.update({ owner, repo, issue_number: triggerIssue, state: 'closed' });
+              return;
+            }
+
+            const approvalIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'all',
+              creator: owner,
+              since: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+              per_page: 100,
+            });
+            const governedApprovals = approvalIssues.filter((issue) => !issue.pull_request && /^\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+            const sourceByKey = new Map();
+            for (const issue of governedApprovals) {
+              const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+              const botBodies = comments.filter((comment) => comment.user?.login === 'github-actions[bot]').map((comment) => String(comment.body || ''));
+              for (const key of unresolved) {
+                if (!botBodies.some((body) => body.includes(dispatchIntentMarker(key)))) continue;
+                if (sourceByKey.has(key)) throw new Error(`Dispatch intent ${key} appears on more than one approval issue.`);
+                sourceByKey.set(key, issue);
+              }
+            }
+
+            const baseQueue = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/queue.json'), 'utf8'));
+            const expected = [];
+            const blocked = [];
+            for (const key of unresolved) {
+              const parts = parsePlacementKey(key);
+              const issue = sourceByKey.get(key);
+              if (!issue) {
+                blocked.push(`${key}: source approval issue not found`);
+                continue;
+              }
+              try {
+                let request;
+                if (issue.title.includes(' LINKEDIN WEEK]')) {
+                  const batch = validateWeeklyBatch(issue.body || '', baseQueue, process.env, Date.parse(issue.created_at), { allowGeneratedAtDrift: true });
+                  const job = batch.jobs.find((item) => item.post.id === parts.postId && String(item.post.revision) === parts.revision);
+                  if (!job) throw new Error('locked weekly job no longer resolves');
+                  const channel = job.request.channels.find((item) => item.target === parts.target);
+                  if (!channel) throw new Error('locked weekly target no longer resolves');
+                  request = { mode: job.request.mode, channel, mediaUrl: job.request.mediaUrl || null };
+                } else {
+                  const approved = validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
+                  if (approved.postId !== parts.postId || String(approved.revision) !== parts.revision) throw new Error('approval identity does not match intent key');
+                  const channel = approved.channels.find((item) => item.target === parts.target);
+                  if (!channel) throw new Error('approval target does not match intent key');
+                  request = { mode: approved.mode, channel, mediaUrl: approved.mediaUrl || null };
+                }
+                if (request.mode !== 'schedule' || !request.channel.dueAt) throw new Error('automatic reconciliation is limited to fixed-time scheduled placements');
+                const expectedMediaUrl = request.mediaUrl ? canonicalMediaUrl(request.mediaUrl, 'MEDIA_URL') : null;
+                expected.push({ key, issue, ...parts, channel: request.channel, textSha256: textDigest(request.channel.text), expectedMediaUrl });
+              } catch (error) {
+                blocked.push(`${key}: ${error.message}`);
+              }
+            }
+
+            const account = await buffer('query ReconcileAccount { account { organizations { id } } }');
+            const organizationId = account.account?.organizations?.[0]?.id;
+            if (!organizationId) throw new Error('Buffer returned no organisation ID.');
+            const recoverableStatuses = new Set(['scheduled', 'sent', 'error']);
+            const recovered = [];
+
+            for (const item of expected) {
+              const dueMs = Date.parse(item.channel.dueAt);
+              if (!Number.isFinite(dueMs)) {
+                blocked.push(`${item.key}: locked due time is invalid`);
+                continue;
+              }
+              const startDate = new Date(dueMs - 24 * 60 * 60 * 1000).toISOString();
+              const endDate = new Date(dueMs + 24 * 60 * 60 * 1000).toISOString();
+              const inventory = await buffer(`query ReconcilePlacement { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled, sent, error], channelIds: [${JSON.stringify(channels[item.target])}], startDate: ${JSON.stringify(startDate)}, endDate: ${JSON.stringify(endDate)} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`);
+              if (inventory.posts?.pageInfo?.hasNextPage) {
+                blocked.push(`${item.key}: provider inventory exceeds 100 rows inside the reconciliation window`);
+                continue;
+              }
+
+              const candidateIds = (inventory.posts?.edges || [])
+                .map((edge) => edge.node)
+                .filter((post) => post.channelId === channels[item.target] && new Date(post.dueAt).getTime() === dueMs)
+                .map((post) => post.id);
+              const exact = [];
+              for (const postId of candidateIds) {
+                const data = await buffer(`query ReconcilePost { post(input: { id: ${JSON.stringify(postId)} }) { id channelId dueAt status text assets { source mimeType } } }`);
+                const post = data?.post;
+                if (!post || !recoverableStatuses.has(post.status)) continue;
+                if (textDigest(post.text) !== item.textSha256) continue;
+                if (!mediaSourceMatches(post, item.expectedMediaUrl)) continue;
+                exact.push(post);
+              }
+              if (exact.length !== 1) {
+                blocked.push(`${item.key}: expected one exact Buffer match across channel, due time, caption and media source in scheduled/sent/error state, found ${exact.length}`);
+                continue;
+              }
+
+              const post = exact[0];
+              const body = acceptanceComment({
+                key: item.key,
+                queueId: item.postId,
+                revision: item.revision,
+                targetName: item.channel.name,
+                target: item.target,
+                bufferId: post.id,
+                dueAt: item.channel.dueAt,
+              });
+              await github.rest.issues.createComment({ owner, repo, issue_number: ledger.number, body });
+              await github.rest.issues.createComment({ owner, repo, issue_number: item.issue.number, body });
+              recovered.push(`${item.key} -> ${post.id} (${post.status})`);
+            }
+
+            const summary = [
+              recovered.length ? '✅ Buffer dispatch-intent reconciliation found exact positive matches.' : '⚠️ No unresolved dispatch intent could be safely auto-reconciled.',
+              '',
+              '- Buffer write performed: **NO**',
+              `- Recovered: **${recovered.length}**`,
+              `- Still blocked: **${blocked.length}**`,
+              ...recovered.map((line) => `- Recovered: ${line}`),
+              ...blocked.map((line) => `- Blocked: ${line}`),
+              '',
+              blocked.length
+                ? 'Any blocked intent remains fail-closed. Do not recreate that Buffer destination until a positive provider match or an explicitly reviewed manual recovery proves what happened.'
+                : 'Every unresolved intent in this run now has a durable BUFFER_ACCEPTED record. Publication still requires the separate due-time verifier.',
+            ].join('\n');
+            await github.rest.issues.createComment({ owner, repo, issue_number: triggerIssue, body: summary });
+            if (blocked.length) {
+              core.setFailed('One or more Buffer dispatch intents remain unresolved.');
+            } else {
+              await github.rest.issues.update({ owner, repo, issue_number: triggerIssue, state: 'closed' });
+            }

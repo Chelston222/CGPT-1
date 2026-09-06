@@ -3,6 +3,7 @@
 const REQUIRED_DECISION = 'Keep';
 const REQUIRED_APPROVAL = 'Approved';
 const REQUIRED_AUTOMATION = new Set(['Ready to Sync', 'Synced', 'Manual']);
+const ALLOWED_BUFFER = new Set(['Ready for Buffer', 'Queued in Buffer']);
 const BLOCKED_BUFFER = new Set(['Manual Only']);
 
 function extractNotionPageId(sourceUrl = '') {
@@ -24,7 +25,34 @@ function readCheckbox(page, name) {
   return page?.properties?.[name]?.checkbox === true;
 }
 
-function evaluateNotionQualityGate(page, expectedPageId = null) {
+function richTextPlainText(items = []) {
+  return (items || []).map((item) => item?.plain_text ?? item?.text?.content ?? '').join('');
+}
+
+function readText(page, name) {
+  const property = page?.properties?.[name];
+  if (!property) return null;
+  if (Array.isArray(property.rich_text)) return richTextPlainText(property.rich_text);
+  if (Array.isArray(property.title)) return richTextPlainText(property.title);
+  if (typeof property.url === 'string') return property.url;
+  return null;
+}
+
+function readDateStart(page, name) {
+  return page?.properties?.[name]?.date?.start || null;
+}
+
+function normaliseText(value) {
+  return String(value ?? '').replace(/\r\n/g, '\n').trim();
+}
+
+function sameInstant(a, b) {
+  const aa = Date.parse(String(a || ''));
+  const bb = Date.parse(String(b || ''));
+  return Number.isFinite(aa) && Number.isFinite(bb) && aa === bb;
+}
+
+function evaluateNotionQualityGate(page, expectedPageId = null, queuePost = null) {
   if (!page || page.object !== 'page') throw new Error('Notion quality lookup did not return a page.');
   if (expectedPageId && normaliseNotionPageId(page.id) !== normaliseNotionPageId(expectedPageId)) {
     throw new Error('Notion quality lookup returned the wrong source page.');
@@ -35,18 +63,57 @@ function evaluateNotionQualityGate(page, expectedPageId = null) {
   const antiDnaPass = readCheckbox(page, 'Anti-DNA | Pass');
   const automationStatus = readSelect(page, 'Automation Status');
   const bufferStatus = readSelect(page, 'Buffer Status');
+  const assetReady = readCheckbox(page, 'Asset Ready');
+  const automationReady = readCheckbox(page, 'Automation Ready');
+  const finalCopy = readText(page, 'Final Copy');
+  const publishPayload = readText(page, 'Publish Payload');
+  const notionScheduledAt = readDateStart(page, 'Scheduled At');
 
   const reasons = [];
+  if (page.archived === true) reasons.push('Notion source page is archived');
+  if (page.in_trash === true) reasons.push('Notion source page is in trash');
   if (decision !== REQUIRED_DECISION) reasons.push(`Content Decision is ${decision || 'unset'}, not ${REQUIRED_DECISION}`);
   if (approval !== REQUIRED_APPROVAL) reasons.push(`Approval is ${approval || 'unset'}, not ${REQUIRED_APPROVAL}`);
   if (!antiDnaPass) reasons.push('Anti-DNA | Pass is not checked');
   if (!REQUIRED_AUTOMATION.has(automationStatus)) reasons.push(`Automation Status is ${automationStatus || 'unset'}`);
   if (BLOCKED_BUFFER.has(bufferStatus)) reasons.push(`Buffer Status is ${bufferStatus}`);
+  if (!ALLOWED_BUFFER.has(bufferStatus)) reasons.push(`Buffer Status is ${bufferStatus || 'unset'}, not Ready for Buffer or Queued in Buffer`);
+
+  if (queuePost?.sourceType === 'chatgpt_pdf_intake') {
+    if (automationStatus === 'Manual') reasons.push('Automation Status is Manual for governed PDF release');
+    if (!assetReady) reasons.push('Asset Ready is not checked');
+    if (!automationReady) reasons.push('Automation Ready is not checked');
+
+    const lockedCopy = normaliseText(queuePost.copy?.default);
+    if (!lockedCopy) reasons.push('Locked queue copy.default is empty');
+    if (normaliseText(finalCopy) !== lockedCopy) reasons.push('Final Copy does not exactly match the locked queue caption');
+    if (normaliseText(publishPayload) !== lockedCopy) reasons.push('Publish Payload does not exactly match the locked queue caption');
+
+    const targets = Array.isArray(queuePost.targets) ? queuePost.targets : [];
+    if (targets.length !== 1) reasons.push('Governed PDF intake must contain exactly one target');
+    const targetSchedules = targets.map((target) => queuePost.scheduledAt?.[target]).filter(Boolean);
+    if (targetSchedules.length !== 1) reasons.push('Governed PDF intake must contain exactly one locked target schedule');
+    else if (!notionScheduledAt) reasons.push('Scheduled At is unset in Notion');
+    else if (!sameInstant(notionScheduledAt, targetSchedules[0])) reasons.push('Scheduled At does not match the locked queue schedule');
+  }
 
   return {
     pass: reasons.length === 0,
     reasons,
-    snapshot: { decision, approval, antiDnaPass, automationStatus, bufferStatus },
+    snapshot: {
+      decision,
+      approval,
+      antiDnaPass,
+      automationStatus,
+      bufferStatus,
+      assetReady,
+      automationReady,
+      archived: page.archived === true,
+      inTrash: page.in_trash === true,
+      scheduledAt: notionScheduledAt,
+      finalCopyMatches: queuePost?.sourceType === 'chatgpt_pdf_intake' ? normaliseText(finalCopy) === normaliseText(queuePost.copy?.default) : null,
+      publishPayloadMatches: queuePost?.sourceType === 'chatgpt_pdf_intake' ? normaliseText(publishPayload) === normaliseText(queuePost.copy?.default) : null,
+    },
   };
 }
 
@@ -72,7 +139,7 @@ async function assertLiveNotionQualityGate(queuePost, token, fetchImpl = fetch) 
   if (!queuePost) throw new Error('Queue post was not found for live quality validation.');
   const pageId = extractNotionPageId(queuePost.sourceUrl);
   const page = await fetchNotionPage(pageId, token, fetchImpl);
-  const result = evaluateNotionQualityGate(page, pageId);
+  const result = evaluateNotionQualityGate(page, pageId, queuePost);
   if (!result.pass) {
     const error = new Error(`${queuePost.id || 'queue item'} failed live Notion quality gate: ${result.reasons.join('; ')}`);
     error.qualityGate = result;
@@ -82,6 +149,8 @@ async function assertLiveNotionQualityGate(queuePost, token, fetchImpl = fetch) 
 }
 
 module.exports = {
+  ALLOWED_BUFFER,
+  BLOCKED_BUFFER,
   REQUIRED_APPROVAL,
   REQUIRED_DECISION,
   assertLiveNotionQualityGate,
@@ -89,4 +158,8 @@ module.exports = {
   extractNotionPageId,
   fetchNotionPage,
   normaliseNotionPageId,
+  normaliseText,
+  readDateStart,
+  readText,
+  sameInstant,
 };

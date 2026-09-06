@@ -19,12 +19,24 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule != '42 7 * * *'
     runs-on: ubuntu-latest
     steps:
+      - name: Check out governed verification helpers
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
       - name: Verify due Buffer posts reached LinkedIn
         uses: actions/github-script@v7
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
         with:
           script: |
+            const path = require('node:path');
+            const {
+              parseAcceptanceEntries,
+              parseIntentKeys,
+              selectTrustedLedgerIssue,
+            } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
+
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured');
@@ -42,33 +54,76 @@ jobs:
             }
 
             function acceptedRows(comments) {
-              const rows = [];
+              const byBufferId = new Map();
               for (const comment of comments) {
+                if (comment.user?.login !== 'github-actions[bot]') continue;
                 const body = String(comment.body || '');
-                const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
+                // Supports historical and current audit-line separators.
+                const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+(?:\u2014|\|)\s+([^\s\n|]+))?/gm;
                 let match;
-                while ((match = regex.exec(body))) rows.push({ label: match[1].trim(), bufferId: match[2], dueAt: match[3] || null });
+                while ((match = regex.exec(body))) {
+                  if (!byBufferId.has(match[2])) byBufferId.set(match[2], { label: match[1].trim(), bufferId: match[2], dueAt: match[3] || null, source: 'approval_issue' });
+                }
               }
-              return rows;
+              return [...byBufferId.values()];
             }
 
             function markerSet(comments, kind) {
               const out = new Set();
               const regex = new RegExp(`<!-- ${kind} bufferId=([^\\s>]+)`, 'g');
               for (const comment of comments) {
+                if (comment.user?.login !== 'github-actions[bot]') continue;
                 let match;
                 while ((match = regex.exec(String(comment.body || '')))) out.add(match[1]);
               }
               return out;
             }
 
-            const since = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString();
+            const since = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString();
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
             const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
-            const now = Date.now();
+            const commentsByIssue = new Map();
+            const issueByIntentKey = new Map();
 
             for (const issue of candidates) {
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+              commentsByIssue.set(issue.number, comments);
+              const keys = parseIntentKeys(comments);
+              for (const key of keys) {
+                if (issueByIntentKey.has(key) && issueByIntentKey.get(key).number !== issue.number) {
+                  throw new Error(`Buffer dispatch intent ${key} appears on more than one governed approval issue.`);
+                }
+                issueByIntentKey.set(key, issue);
+              }
+            }
+
+            // The durable ledger is deliberately discovered independently of owner-authored
+            // approval issues because GitHub Actions creates the ledger issue as the actions bot.
+            const ledgerUniverse = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 });
+            const ledger = selectTrustedLedgerIssue(ledgerUniverse, owner);
+            const ledgerEntries = new Map();
+            if (ledger) {
+              const ledgerComments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: ledger.number, per_page: 100 });
+              for (const [key, entry] of parseAcceptanceEntries(ledgerComments)) ledgerEntries.set(key, entry);
+            }
+
+            const ledgerRowsByIssue = new Map();
+            for (const [key, entry] of ledgerEntries) {
+              const sourceIssue = issueByIntentKey.get(key);
+              if (!sourceIssue) continue;
+              const rows = ledgerRowsByIssue.get(sourceIssue.number) || [];
+              rows.push({
+                label: key,
+                bufferId: entry.bufferId,
+                dueAt: entry.dueAt,
+                source: 'durable_ledger_fallback',
+              });
+              ledgerRowsByIssue.set(sourceIssue.number, rows);
+            }
+
+            const now = Date.now();
+            for (const issue of candidates) {
+              const comments = commentsByIssue.get(issue.number) || [];
               const verified = markerSet(comments, 'LINKEDIN_PUBLICATION_VERIFIED');
               const failed = markerSet(comments, 'LINKEDIN_PUBLICATION_FAILED');
               const pending = markerSet(comments, 'LINKEDIN_PUBLICATION_PENDING');
@@ -78,7 +133,11 @@ jobs:
               const ownerAbandoned = markerSet(comments, 'LINKEDIN_OWNER_ABANDONED_DRAFT');
               const terminal = new Set([...verified, ...failed, ...draftVerified, ...superseded, ...retiredDrafts, ...ownerAbandoned]);
               const isDraft = /^MODE:\s*draft\s*$/mi.test(String(issue.body || ''));
-              const rows = acceptedRows(comments);
+              const rowsByBufferId = new Map(acceptedRows(comments).map((row) => [row.bufferId, row]));
+              for (const row of ledgerRowsByIssue.get(issue.number) || []) {
+                if (!rowsByBufferId.has(row.bufferId)) rowsByBufferId.set(row.bufferId, row);
+              }
+              const rows = [...rowsByBufferId.values()];
 
               for (const row of rows) {
                 if (terminal.has(row.bufferId)) continue;
@@ -104,6 +163,7 @@ jobs:
                         `<!-- LINKEDIN_DRAFT_CANARY_VERIFIED bufferId=${row.bufferId} -->`,
                       ].join('\n'),
                     });
+                    terminal.add(row.bufferId);
                     continue;
                   }
                   if (post.status === 'error') {
@@ -119,6 +179,7 @@ jobs:
                         `<!-- LINKEDIN_PUBLICATION_FAILED bufferId=${row.bufferId} -->`,
                       ].join('\n'),
                     });
+                    terminal.add(row.bufferId);
                     continue;
                   }
                   await github.rest.issues.createComment({
@@ -134,6 +195,7 @@ jobs:
                       `<!-- LINKEDIN_PUBLICATION_FAILED bufferId=${row.bufferId} -->`,
                     ].join('\n'),
                   });
+                  terminal.add(row.bufferId);
                   if (issue.state === 'closed') await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'open' });
                   continue;
                 }
@@ -146,6 +208,7 @@ jobs:
                       '',
                       `- ${row.label}`,
                       `- Buffer post ID: \`${row.bufferId}\``,
+                      `- Acceptance source: **${row.source}**`,
                       '- Buffer state: **sent**',
                       `- Published at: **${post.sentAt}**`,
                       `- LinkedIn destination: ${post.externalLink || '**Buffer did not return an external link**'}`,
@@ -153,6 +216,7 @@ jobs:
                       `<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=${row.bufferId} sentAt=${post.sentAt} -->`,
                     ].join('\n'),
                   });
+                  terminal.add(row.bufferId);
                   continue;
                 }
 
@@ -164,6 +228,7 @@ jobs:
                       '',
                       `- ${row.label}`,
                       `- Buffer post ID: \`${row.bufferId}\``,
+                      `- Acceptance source: **${row.source}**`,
                       '- Buffer state: **error**',
                       `- Error: ${post.error?.message || 'Buffer returned no error message.'}`,
                       post.error?.supportUrl ? `- Support: ${post.error.supportUrl}` : '',
@@ -172,6 +237,7 @@ jobs:
                       `<!-- LINKEDIN_PUBLICATION_FAILED bufferId=${row.bufferId} -->`,
                     ].filter(Boolean).join('\n'),
                   });
+                  terminal.add(row.bufferId);
                   if (issue.state === 'closed') await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'open' });
                   continue;
                 }
@@ -185,12 +251,14 @@ jobs:
                       '',
                       `- ${row.label}`,
                       `- Buffer post ID: \`${row.bufferId}\``,
+                      `- Acceptance source: **${row.source}**`,
                       `- Current Buffer state: **${post.status}**`,
                       '- The due time is more than 30 minutes old. Treat this as UNKNOWN until Buffer reports sent or error.',
                       '',
                       `<!-- LINKEDIN_PUBLICATION_PENDING bufferId=${row.bufferId} -->`,
                     ].join('\n'),
                   });
+                  pending.add(row.bufferId);
                   if (issue.state === 'closed') await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'open' });
                 }
               }
@@ -222,20 +290,20 @@ jobs:
               return payload.data;
             }
 
-            const since = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString();
+            const since = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString();
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
             const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
 
             for (const issue of candidates) {
               if (/^MODE:\s*draft\s*$/mi.test(String(issue.body || ''))) continue;
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
-              const body = comments.map((comment) => String(comment.body || '')).join('\n');
+              const body = comments.filter((comment) => comment.user?.login === 'github-actions[bot]').map((comment) => String(comment.body || '')).join('\n');
               const verified = [...body.matchAll(/<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=([^\s>]+)/g)].map((m) => m[1]);
               const captured = new Set([...body.matchAll(/<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
               const nativeRequired = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_REQUIRED bufferId=([^\s>]+)/g)].map((m) => m[1]));
               const nativeCaptured = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
 
-              for (const bufferId of verified) {
+              for (const bufferId of [...new Set(verified)]) {
                 if (captured.has(bufferId) || nativeRequired.has(bufferId) || nativeCaptured.has(bufferId)) continue;
                 const data = await buffer(`query Metrics { post(input: { id: ${JSON.stringify(bufferId)} }) { id status sentAt externalLink metricsUpdatedAt metrics { type name value unit } assets { mimeType source } } }`);
                 const post = data?.post;

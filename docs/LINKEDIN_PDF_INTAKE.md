@@ -1,148 +1,231 @@
-# ChatGPT → GitHub → Buffer → LinkedIn PDF lane
+# 222Emails LinkedIn PDF intake
 
 ## Purpose
 
-This lane removes the manual hosting step for LinkedIn PDF/document carousels produced in ChatGPT while preserving exact media bytes and the existing owner approval controls.
+This document describes the canonical intake route for 222Emails LinkedIn PDF/document posts. The full operator playbook is `docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md` and takes precedence if this summary ever drifts.
 
-A finished PDF can enter through either of two mutually exclusive transports:
+Canonical route:
 
-1. ordered repository-safe base64 text chunks plus one manifest; or
-2. a temporary public HTTPS binary bridge plus a manifest containing the locked expected SHA-256.
-
-Both routes converge on the same governed intake. The workflow reconstructs or downloads the exact PDF, verifies its signature, byte count and SHA-256, reads the page count, generates a first-page thumbnail, promotes the media into the governed LinkedIn review area, and creates or updates the locked queue revision.
-
-The lane does **not** publish merely because media is ingested. Public Buffer mutation remains controlled by the existing repository-owner `[APPROVED LINKEDIN]` / `[APPROVED LINKEDIN WEEK]` gate.
-
-## End-to-end flow
-
-1. ChatGPT identifies the final LinkedIn PDF and verifies that it is the intended revision.
-2. ChatGPT computes and locks the source PDF SHA-256.
-3. Choose exactly one transport:
-   - **Chunk transport:** base64-encode the PDF, split it into repository-safe `.b64` chunks, commit the chunks first, then commit the manifest last.
-   - **HTTPS binary bridge:** obtain a temporary public HTTPS download URL for the exact PDF and place that URL plus the mandatory locked `expectedSha256` in the manifest. The temporary URL is transport only and is never promoted as the canonical media URL.
-4. Commit the manifest at `media-staging/pdf-intake/<post-id>/manifest.json`.
-5. `.github/workflows/linkedin-pdf-intake.yml` starts automatically from the manifest commit.
-6. `scripts/linkedin-pdf-intake.cjs`:
-   - requires exactly one transport, `chunks` or `downloadUrl`
-   - reconstructs or downloads the original PDF
-   - refuses non-PDF bytes
-   - enforces the 100 MB document ceiling
-   - requires SHA-256 for HTTPS bridge transport and verifies the exact digest
-   - rejects non-HTTPS URLs, embedded URL credentials, localhost and private-address targets
-   - follows HTTPS redirects only
-   - reads and caps page count at 300
-   - renders a JPEG thumbnail from page 1
-   - stores the promoted package under `apps/linkedin-review/media/intake/<post-id>/`
-   - creates stable public `raw.githubusercontent.com` URLs
-   - creates or updates the queue candidate as `status: review`
-   - redacts the temporary bridge URL from audit output and never writes it into the queue
-7. The workflow runs PDF intake tests and existing media-preflight tests before committing the promoted media and queue revision.
-8. The workflow re-downloads the public raw PDF and thumbnail, verifies the promoted PDF hash again, and then opens or updates a `[PDF INTAKE READY]` audit issue.
-9. Human/repository-owner approval remains mandatory.
-10. Once explicitly approved, the existing `linkedin-buffer-autopost.yml` path performs media preflight, capacity checks, revision/fingerprint checks and Buffer scheduling.
-11. Existing publication verification later proves sent/error/unknown state independently of Buffer acceptance.
-
-## Manifest schema
-
-### Base64 chunk transport
-
-```json
-{
-  "schemaVersion": 1,
-  "id": "tte-li-cold-enquiries-001",
-  "revision": 1,
-  "title": "How to fix cold enquiries and ghost clients",
-  "documentTitle": "How to Fix Cold Enquiries & Ghost Clients",
-  "category": "buyer_diagnostics",
-  "funnelStage": "mof",
-  "targets": ["personal"],
-  "mode": "draft",
-  "copy": {
-    "default": "LinkedIn caption here"
-  },
-  "mediaAlt": "Nine-page 222Emails carousel explaining how service businesses can recover cold enquiries and ghost clients.",
-  "expectedSha256": "<64-character lowercase sha256>",
-  "chunks": [
-    "media-staging/pdf-intake/tte-li-cold-enquiries-001/part-001.b64",
-    "media-staging/pdf-intake/tte-li-cold-enquiries-001/part-002.b64"
-  ]
-}
+```text
+final approved PDF + caption
+-> authorised Gmail
+-> hello@222emails.com
+-> PrivateEmail IMAP
+-> owner [IMAP PDF INTAKE] issue
+-> exact attachment proof
+-> revision-scoped GitHub media
+-> immutable commit pin for PDF and thumbnail
+-> governed queue
+-> live Notion gate
+-> owner [APPROVED LINKEDIN] issue
+-> final pre-mutation Notion recheck
+-> Buffer intent + provider write + durable acceptance
+-> separate publication verifier
 ```
 
-### HTTPS binary bridge transport
+Transport, exact-media readiness, Buffer acceptance and LinkedIn publication are separate states.
 
-```json
+## Transport
+
+```text
+FROM: tripletwochelston@gmail.com
+TO: hello@222emails.com
+SUBJECT: TTE LINKEDIN PDF INTAKE <id>
+ATTACHMENT: <exact final PDF filename>
+```
+
+The IMAP bridge does not trust MIME labelling as the PDF identity. Mail clients may use `application/pdf` or a generic binary type. The authoritative checks are exact filename, byte count, `%PDF-` signature and SHA-256.
+
+## Owner intake issue
+
+Title:
+
+```text
+[IMAP PDF INTAKE] <id>
+```
+
+Required shape:
+
+```html
+<!-- INTAKE_CONFIG_START -->
 {
-  "schemaVersion": 1,
-  "id": "tte-li-cold-enquiries-001",
-  "revision": 1,
-  "title": "How to fix cold enquiries and ghost clients",
-  "documentTitle": "How to Fix Cold Enquiries & Ghost Clients",
-  "category": "buyer_diagnostics",
-  "funnelStage": "mof",
-  "targets": ["secondary"],
-  "mode": "schedule",
-  "copy": {
-    "default": "LinkedIn caption here"
-  },
-  "mediaAlt": "LinkedIn PDF carousel.",
-  "expectedSha256": "<64-character lowercase sha256>",
-  "downloadUrl": "https://temporary-public-https-file-url.example/document.pdf",
-  "scheduledAt": {
-    "secondary": "2026-09-09T08:45:00+01:00"
+  "id": "<id>",
+  "expectedSubject": "TTE LINKEDIN PDF INTAKE <id>",
+  "expectedSender": "tripletwochelston@gmail.com",
+  "expectedFilename": "<exact filename.pdf>",
+  "expectedSha256": "<64-character SHA-256>",
+  "expectedBytes": 12345678,
+  "expectedPages": 10,
+  "manifest": {
+    "schemaVersion": 1,
+    "id": "<id>",
+    "revision": 1,
+    "title": "<single-line title>",
+    "documentTitle": "<single-line document title>",
+    "category": "buyer_diagnostics",
+    "funnelStage": "mof",
+    "targets": ["secondary"],
+    "mode": "schedule",
+    "scheduledAt": {"secondary": "<ISO with Z or explicit UTC offset>"},
+    "copy": {"default": "<exact approved caption>"},
+    "mediaAlt": "<carousel description>",
+    "expectedSha256": "<same SHA-256>",
+    "publicMediaApproved": true,
+    "publicReleaseMaterialApproved": true,
+    "sourceUrl": "https://app.notion.com/<concrete-page-id>"
   }
 }
+<!-- INTAKE_CONFIG_END -->
 ```
 
-`chunks` and `downloadUrl` are mutually exclusive. `expectedSha256` is mandatory when `downloadUrl` is used.
+Do not include chunks, arbitrary download URLs, raw PDF bytes or secrets in the issue.
 
-For a directly scheduled candidate, set `"mode": "schedule"` and include an ISO timestamp for every target. Schedule data entering the queue is still not approval to publish. The owner approval issue must exactly match the locked queue revision.
+## Locked validation contract
 
-## ChatGPT operator contract
+The canonical IMAP route fails closed unless:
 
-When a user says, in substance, “schedule this PDF on LinkedIn”, the preferred path is:
+- issue is created by the repository owner
+- title prefix and ID are exact
+- exactly one config block exists
+- sender and subject are exact
+- filename is a plain PDF filename
+- bytes, pages and SHA-256 are valid
+- schema version is 1
+- revision is a positive integer
+- title and document title are single-line header-safe values
+- category and funnel stage are header-safe slugs when present
+- only `copy.default` exists
+- caption is 1 to 3,000 characters
+- caption contains no em dash
+- caption contains no reserved LinkedIn target-section marker, including whitespace-padded forms
+- exactly one target exists
+- exactly one schedule key exists and matches that target
+- mode is `schedule`
+- schedule contains an explicit offset or `Z`
+- schedule is more than ten minutes away and no more than 90 days ahead
+- `publicMediaApproved` is true
+- `publicReleaseMaterialApproved` is true
+- `sourceUrl` contains a concrete Notion page ID
 
-1. Verify the final PDF exists and is the intended revision.
-2. Derive caption, document title, destination and explicit future schedule from the user's instruction/context.
-3. Measure page count and byte count and compute the original PDF SHA-256.
-4. Use the HTTPS bridge for large exact PDFs when a connected file-transfer action can provide a temporary public HTTPS URL. Otherwise use deterministic ordered base64 chunks.
-5. Commit all chunks before the manifest when using chunk transport. For HTTPS transport, commit only the manifest after the real bridge URL is available.
-6. Wait for the PDF intake workflow result and verify `[PDF INTAKE READY]` evidence.
-7. Verify the public raw GitHub PDF returns the expected hash and the queue revision carries the exact caption, media, target and schedule.
-8. Only when the user's instruction constitutes explicit approval, create the exact owner `[APPROVED LINKEDIN]` record used by the current release workflow.
-9. Verify Buffer acceptance and report it as scheduled/accepted, never as published.
-10. Publication becomes true only when the existing verifier records sent evidence after due time.
+The 90-day scheduling ceiling keeps canonical approvals safely inside the current 120-day publication-verifier horizon.
 
-## Safety invariants
+## Public repository boundary
 
-- No binary is pasted into an issue.
-- No API key is placed in repository content.
-- Temporary transport URLs are not canonical media URLs and are not written into the queue.
-- HTTPS bridge transport requires the exact locked SHA-256 before download.
-- Bridge transport rejects HTTP, URL credentials, localhost and private-address targets.
-- Redirects are constrained to HTTPS.
-- Chunks are transport only. The reconstructed PDF hash is the source-of-truth proof.
-- Stale revisions fail closed.
-- Invalid, oversized or non-PDF input fails closed.
-- A changed promoted PDF hash fails media preflight.
-- The lane does not change Buffer recurring schedules.
-- The lane does not move already scheduled posts.
-- The lane does not bypass capacity, idempotency, content QA or publication verification.
+The repository and governed raw media URLs are public. The owner issue and queue can expose caption, schedule, target, title, Notion source URL and media identity before publication. Git history can retain those values afterwards.
 
-## Stable hosting decision
+Use this lane only when the media and release metadata are safe for public repository archival.
 
-The repository is public, so promoted PDF assets use stable HTTPS raw GitHub URLs. GitHub may serve raw PDFs as `application/octet-stream`; the hardened preflight allows that **only** for `raw.githubusercontent.com` `.pdf` URLs and still requires a `%PDF-` file signature plus the locked byte/hash checks. Other document hosts continue to require `application/pdf`.
+## IMAP selection
 
-## Current implementation files
+The bridge scans eligible mailboxes in its recent 72-hour window, excluding Sent, Drafts, Trash and Junk special-use mailboxes.
 
-- `.github/workflows/linkedin-pdf-intake.yml`
-- `scripts/linkedin-pdf-intake.cjs`
-- `tests/linkedin-pdf-intake.test.cjs`
-- `scripts/linkedin-media-preflight.cjs`
-- `tests/linkedin-media-preflight.test.cjs`
-- `apps/linkedin-review/queue.json`
-- `.github/workflows/linkedin-buffer-autopost.yml`
+A candidate must match:
+
+```text
+sender
+subject
+filename
+exact bytes
+%PDF- signature
+SHA-256
+```
+
+Only then is it selected and staged internally for reconstruction.
+
+## Revision and replay safety
+
+Media lives under:
+
+```text
+apps/linkedin-review/media/intake/<id>/r<revision>/
+```
+
+Rules:
+
+- identical same revision is an idempotent replay
+- changed same revision fails closed
+- changed release material requires a higher revision
+
+On an idempotent replay, the intake snapshots the already-governed PDF and thumbnail. Once incoming identity and queue fingerprint prove the same release, the existing governed media bytes are restored exactly before commit evaluation. Missing or drifted governed media fails closed.
+
+This prevents PDF-thumbnail renderer changes from silently mutating a locked revision.
+
+## Concurrency safety
+
+Before each media/queue push, the workflow refreshes current `main`, rebuilds the deterministic mutation and retries on concurrent advancement. It never forces a stale queue snapshot over newer state.
+
+## Immutable media proof
+
+After promotion, both PDF and thumbnail are pinned to the same full 40-character Git commit that contains those files.
+
+The public pinned URLs are then fetched and verified again:
+
+- PDF bytes
+- PDF SHA-256
+- PDF page count
+- PDF type/signature
+- thumbnail bytes against the promoted local thumbnail
+- thumbnail SHA-256 against the promoted local thumbnail
+- thumbnail image type
+
+`[PDF INTAKE READY] <id>@<revision>` proves exact media and queue readiness only.
+
+## Notion gate
+
+For governed PDF intake, the live source page must remain active and must pass:
+
+- not archived
+- not in trash
+- Content Decision = Keep
+- Approval = Approved
+- Anti-DNA pass
+- Asset Ready
+- Automation Ready
+- automation-capable status, not Manual
+- permitted Buffer state
+- Final Copy exact-match to locked caption
+- Publish Payload exact-match to locked caption
+- exactly one target and schedule
+- Scheduled At exact instant match
+
+The production Buffer release checks this during planning and again immediately before each provider write.
+
+## Owner approval and Buffer release
+
+After `[PDF INTAKE READY]`, create the owner approval:
+
+```text
+[APPROVED LINKEDIN] <id>@<revision>
+```
+
+It must exactly match the current queue revision, target, schedule, caption, immutable media URLs, document metadata, byte count and SHA-256.
+
+Before Buffer mutation, all selected media is remotely preflighted. A durable `BUFFER_DISPATCH_INTENT` is written before the provider write. When Buffer returns a post ID, `BUFFER_ACCEPTED` is written to the trusted durable ledger first and then mirrored to the approval issue.
+
+Accepted placement keys are idempotent. Unresolved intent keys block automatic recreation.
+
+## Intent reconciliation
+
+The owner-gated `[RECONCILE LINKEDIN BUFFER INTENTS]` workflow is read-only toward Buffer and shares the release concurrency lock.
+
+For an unresolved intent, it can adopt exactly one Buffer post in `scheduled`, `sent` or `error` state only when channel, due instant, caption digest and media asset source all match the locked placement. For text-only posts it requires no media source.
+
+Zero or multiple matches remain blocked.
+
+## Publication verification
+
+Buffer acceptance is not publication proof.
+
+The separate verifier uses the accepted Buffer ID. If the approval-issue acceptance comment was lost after the durable ledger write, it can recover that ID from the trusted ledger by mapping the dispatch-intent placement key to exactly one governed approval issue.
+
+Only Buffer `sent` with `sentAt` becomes publication verified. Buffer `error` is failure. A late unresolved state remains UNKNOWN/pending.
+
+## Retired routes
+
+`.github/workflows/linkedin-pdf-intake.yml` and `.github/workflows/linkedin-pdf-share-now.yml` are retired compatibility surfaces. They must not reconstruct, schedule or publish PDFs.
+
+Do not create a parallel manifest, immediate-share or arbitrary-download production lane.
 
 ## Definition of complete
 
-The PDF lane is operational when a final ChatGPT PDF can enter by one approved transport, the workflow promotes and verifies the exact bytes, the queue contains the exact locked revision, the existing owner approval path can send that revision to Buffer, Buffer returns an accepted post ID, and the publication verifier can later prove the LinkedIn outcome without any manual external media hosting.
+A canonical PDF revision is complete only when exact attachment identity is proven, revision-scoped media is promoted, replay rules pass, PDF and thumbnail are immutably pinned and publicly reverified, the active Notion source passes both quality checks, owner approval exactly matches the queue, Buffer acceptance is durably recorded, and the later verifier independently proves the LinkedIn outcome.
