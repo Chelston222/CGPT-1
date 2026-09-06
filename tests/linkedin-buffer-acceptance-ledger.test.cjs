@@ -10,6 +10,7 @@ const {
   dispatchIntentComment,
   dispatchIntentMarker,
   parseAcceptanceEntries,
+  selectTrustedLedgerIssue,
   unresolvedIntentKeys,
 } = require('../scripts/linkedin-buffer-acceptance-ledger.cjs');
 
@@ -46,6 +47,22 @@ test('an intent without acceptance blocks automatic recreation', () => {
 test('matching acceptance resolves a dispatch intent', () => {
   const comments = [{ user: { login: 'github-actions[bot]' }, body: `${dispatchIntentMarker('rs-li-demo@2:secondary')}\n${acceptanceMarker({ key: 'rs-li-demo@2:secondary', bufferId: 'buf-123' })}` }];
   assert.deepEqual([...unresolvedIntentKeys(comments)], []);
+});
+
+test('selects a durable ledger created by the actions bot instead of requiring owner authorship', () => {
+  const issues = [
+    { number: 1, title: '[BUFFER ACCEPTANCE LEDGER] LinkedIn governed releases', user: { login: 'outside-user' } },
+    { number: 2, title: '[BUFFER ACCEPTANCE LEDGER] LinkedIn governed releases', user: { login: 'github-actions[bot]' } },
+  ];
+  assert.equal(selectTrustedLedgerIssue(issues, 'Chelston222').number, 2);
+});
+
+test('fails closed when more than one trusted durable ledger exists', () => {
+  const issues = [
+    { number: 2, title: '[BUFFER ACCEPTANCE LEDGER] LinkedIn governed releases', user: { login: 'github-actions[bot]' } },
+    { number: 3, title: '[BUFFER ACCEPTANCE LEDGER] LinkedIn governed releases', user: { login: 'Chelston222' } },
+  ];
+  assert.throws(() => selectTrustedLedgerIssue(issues, 'Chelston222'), /split-brain/i);
 });
 
 test('dispatch intent comment explains the fail-safe recovery boundary', () => {
