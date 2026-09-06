@@ -38,22 +38,13 @@ test('parses channel-specific copy variants', () => {
 });
 
 test('requires explicit content QA and image safe-zone QA', () => {
-  assert.throws(
-    () => validateRequest('TARGETS: personal\nMODE: draft\n---\nCopy', ENV),
-    /CONTENT_QA: PASS/,
-  );
-  assert.throws(
-    () => validateRequest('TARGETS: personal\nMODE: draft\nCONTENT_QA: PASS\nMEDIA_URL: https://example.com/a.png\nMEDIA_KIND: image\nALT_TEXT: Example\n---\nCopy', ENV),
-    /SAFE_ZONE_QA: PASS/,
-  );
+  assert.throws(() => validateRequest('TARGETS: personal\nMODE: draft\n---\nCopy', ENV), /CONTENT_QA: PASS/);
+  assert.throws(() => validateRequest('TARGETS: personal\nMODE: draft\nCONTENT_QA: PASS\nMEDIA_URL: https://example.com/a.png\nMEDIA_KIND: image\nALT_TEXT: Example\n---\nCopy', ENV), /SAFE_ZONE_QA: PASS/);
 });
 
 test('preflights all target secrets before returning a request', () => {
   const body = `POST_ID: tte-001\nTARGETS: personal,secondary\nMODE: draft\nCONTENT_QA: PASS\n---\nSafe draft copy`;
-  assert.throws(
-    () => validateRequest(body, { ...ENV, BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: '' }),
-    /BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID/,
-  );
+  assert.throws(() => validateRequest(body, { ...ENV, BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: '' }), /BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID/);
 });
 
 test('supports staggered schedules for combinations', () => {
@@ -65,19 +56,14 @@ test('supports staggered schedules for combinations', () => {
   assert.equal(result.contentQa, 'pass');
 });
 
+test('rejects schedule timestamps without explicit timezone information', () => {
+  assert.throws(() => validateRequest('TARGETS: personal\nMODE: schedule\nCONTENT_QA: PASS\nSCHEDULE_AT: 2026-09-01T08:00:00\n---\nCopy', ENV, Date.parse('2026-08-09T00:00:00Z')), /explicit Z or UTC offset/);
+});
+
 test('rejects past schedules, unsafe media and empty copy', () => {
-  assert.throws(
-    () => validateRequest('TARGETS: personal\nMODE: schedule\nCONTENT_QA: PASS\nSCHEDULE_AT: 2020-01-01T00:00:00Z\n---\nCopy', ENV),
-    /future/,
-  );
-  assert.throws(
-    () => validateRequest('TARGETS: personal\nMODE: draft\nCONTENT_QA: PASS\nSAFE_ZONE_QA: PASS\nMEDIA_URL: http://example.com/a.png\nALT_TEXT: Example\n---\nCopy', ENV),
-    /HTTPS/,
-  );
-  assert.throws(
-    () => validateRequest('TARGETS: personal\nMODE: draft\nCONTENT_QA: PASS\n---\n', ENV),
-    /empty/,
-  );
+  assert.throws(() => validateRequest('TARGETS: personal\nMODE: schedule\nCONTENT_QA: PASS\nSCHEDULE_AT: 2020-01-01T00:00:00Z\n---\nCopy', ENV), /future/);
+  assert.throws(() => validateRequest('TARGETS: personal\nMODE: draft\nCONTENT_QA: PASS\nSAFE_ZONE_QA: PASS\nMEDIA_URL: http://example.com/a.png\nALT_TEXT: Example\n---\nCopy', ENV), /HTTPS/);
+  assert.throws(() => validateRequest('TARGETS: personal\nMODE: draft\nCONTENT_QA: PASS\n---\n', ENV), /empty/);
 });
 
 test('non-publishing test mutation cannot accidentally schedule or publish', () => {
@@ -90,39 +76,22 @@ test('non-publishing test mutation cannot accidentally schedule or publish', () 
 });
 
 test('LinkedIn image media requires alt text and preserves it in Buffer metadata', () => {
-  assert.throws(
-    () => validateRequest('TARGETS: personal\nMODE: draft\nCONTENT_QA: PASS\nSAFE_ZONE_QA: PASS\nMEDIA_URL: https://example.com/a.png\nMEDIA_KIND: image\n---\nCopy', ENV),
-    /ALT_TEXT/,
-  );
+  assert.throws(() => validateRequest('TARGETS: personal\nMODE: draft\nCONTENT_QA: PASS\nSAFE_ZONE_QA: PASS\nMEDIA_URL: https://example.com/a.png\nMEDIA_KIND: image\n---\nCopy', ENV), /ALT_TEXT/);
   const request = validateRequest('TARGETS: personal\nMODE: draft\nCONTENT_QA: PASS\nSAFE_ZONE_QA: PASS\nMEDIA_URL: https://example.com/a.png\nMEDIA_KIND: image\nALT_TEXT: Revenue recovery diagram\n---\nCopy', ENV);
   assert.equal(request.mediaAltText, 'Revenue recovery diagram');
   assert.equal(request.safeZoneQa, 'pass');
-  const mutation = buildCreatePostMutation(
-    { id: 'id', text: 'copy', dueAt: null },
-    'draft',
-    { url: request.mediaUrl, kind: 'image', altText: request.mediaAltText },
-  );
+  const mutation = buildCreatePostMutation({ id: 'id', text: 'copy', dueAt: null }, 'draft', { url: request.mediaUrl, kind: 'image', altText: request.mediaAltText });
   assert.match(mutation, /metadata: \{ altText:/);
   assert.match(mutation, /Revenue recovery diagram/);
 });
 
 test('LinkedIn PDF documents require locked page count and use a document asset', () => {
-  assert.throws(
-    () => validateRequest('TARGETS: personal\nMODE: schedule\nCONTENT_QA: PASS\nSCHEDULE_AT: 2026-09-01T08:00:00Z\nMEDIA_URL: https://example.com/carousel.pdf\nMEDIA_KIND: document\n---\nCopy', ENV, Date.parse('2026-08-09T00:00:00Z')),
-    /DOCUMENT_TITLE/,
-  );
-  assert.throws(
-    () => validateRequest('TARGETS: personal\nMODE: schedule\nCONTENT_QA: PASS\nSCHEDULE_AT: 2026-09-01T08:00:00Z\nMEDIA_URL: https://example.com/carousel.pdf\nMEDIA_KIND: document\nDOCUMENT_TITLE: Carousel\nDOCUMENT_THUMBNAIL_URL: https://example.com/cover.png\n---\nCopy', ENV, Date.parse('2026-08-09T00:00:00Z')),
-    /DOCUMENT_PAGE_COUNT/,
-  );
+  assert.throws(() => validateRequest('TARGETS: personal\nMODE: schedule\nCONTENT_QA: PASS\nSCHEDULE_AT: 2026-09-01T08:00:00Z\nMEDIA_URL: https://example.com/carousel.pdf\nMEDIA_KIND: document\n---\nCopy', ENV, Date.parse('2026-08-09T00:00:00Z')), /DOCUMENT_TITLE/);
+  assert.throws(() => validateRequest('TARGETS: personal\nMODE: schedule\nCONTENT_QA: PASS\nSCHEDULE_AT: 2026-09-01T08:00:00Z\nMEDIA_URL: https://example.com/carousel.pdf\nMEDIA_KIND: document\nDOCUMENT_TITLE: Carousel\nDOCUMENT_THUMBNAIL_URL: https://example.com/cover.png\n---\nCopy', ENV, Date.parse('2026-08-09T00:00:00Z')), /DOCUMENT_PAGE_COUNT/);
   const request = validateRequest('TARGETS: personal\nMODE: schedule\nCONTENT_QA: PASS\nSCHEDULE_AT: 2026-09-01T08:00:00Z\nMEDIA_URL: https://example.com/carousel.pdf\nMEDIA_KIND: document\nDOCUMENT_TITLE: Carousel\nDOCUMENT_THUMBNAIL_URL: https://example.com/cover.png\nDOCUMENT_PAGE_COUNT: 6\nMEDIA_BYTES: 1000\nMEDIA_SHA256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n---\nCopy', ENV, Date.parse('2026-08-09T00:00:00Z'));
   assert.equal(request.documentPageCount, 6);
   assert.equal(request.mediaBytes, 1000);
-  const mutation = buildCreatePostMutation(
-    { id: 'id', text: 'copy', dueAt: '2026-09-01T08:00:00.000Z' },
-    'schedule',
-    { url: request.mediaUrl, kind: 'document', title: 'Five follow-up leaks', thumbnailUrl: request.documentThumbnailUrl },
-  );
+  const mutation = buildCreatePostMutation({ id: 'id', text: 'copy', dueAt: '2026-09-01T08:00:00.000Z' }, 'schedule', { url: request.mediaUrl, kind: 'document', title: 'Five follow-up leaks', thumbnailUrl: request.documentThumbnailUrl });
   assert.match(mutation, /document:/);
   assert.match(mutation, /Five follow-up leaks/);
   assert.match(mutation, /thumbnailUrl/);
