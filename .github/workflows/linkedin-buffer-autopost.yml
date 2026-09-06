@@ -57,6 +57,7 @@ jobs:
               acceptanceComment,
               acceptedKeys: ledgerAcceptedKeys,
               dispatchIntentComment,
+              selectTrustedLedgerIssue,
               unresolvedIntentKeys,
             } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
 
@@ -118,13 +119,13 @@ jobs:
             }
 
             async function getOrCreateLedgerIssue() {
-              const all = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, per_page: 100 });
-              const existing = all.find((issue) => !issue.pull_request && issue.title === LEDGER_TITLE);
+              const all = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 });
+              const existing = selectTrustedLedgerIssue(all, owner);
               if (existing) {
                 if (existing.state !== 'open') await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'open' });
                 return existing.number;
               }
-              const created = await github.rest.issues.create({ owner, repo, title: LEDGER_TITLE, body: 'Durable machine ledger of Buffer placement acceptance. Bot comments are authoritative for idempotency. Do not delete or manually edit accepted markers.' });
+              const created = await github.rest.issues.create({ owner, repo, title: LEDGER_TITLE, body: 'Durable machine ledger of Buffer dispatch intent and placement acceptance. Bot comments are authoritative for idempotency. Do not delete or manually edit machine markers.' });
               return created.data.number;
             }
 
