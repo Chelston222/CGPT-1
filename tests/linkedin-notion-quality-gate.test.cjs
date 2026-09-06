@@ -101,6 +101,19 @@ test('governed PDF intake blocks Manual automation state before Buffer release',
   assert.match(result.reasons.join(' '), /Manual for governed PDF release/);
 });
 
+test('governed PDF intake fails closed if queue target or schedule cardinality becomes ambiguous', () => {
+  const multipleTargets = evaluateNotionQualityGate(page(), '3ace72eb85878183a413d264211cab80', queuePost({
+    targets: ['personal', 'secondary'],
+    scheduledAt: { personal: '2026-09-16T06:45:00Z', secondary: '2026-09-16T07:45:00Z' },
+  }));
+  assert.equal(multipleTargets.pass, false);
+  assert.match(multipleTargets.reasons.join(' '), /exactly one target/);
+
+  const missingSchedule = evaluateNotionQualityGate(page(), '3ace72eb85878183a413d264211cab80', queuePost({ scheduledAt: {} }));
+  assert.equal(missingSchedule.pass, false);
+  assert.match(missingSchedule.reasons.join(' '), /exactly one locked target schedule/);
+});
+
 test('fails PDF intake if final copy or publish payload drifts after queue lock', () => {
   const result = evaluateNotionQualityGate(page({
     'Final Copy': rich('Changed caption'),
