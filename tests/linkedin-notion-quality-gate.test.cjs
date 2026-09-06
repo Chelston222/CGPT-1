@@ -90,6 +90,17 @@ test('fails closed on non-approved, blocked automation or non-release Buffer sta
   assert.match(result.reasons.join(' '), /Buffer Status/);
 });
 
+test('generic live rows may retain Manual automation state when another governed lane handles them', () => {
+  const result = evaluateNotionQualityGate(page({ 'Automation Status': { select: { name: 'Manual' } } }), '3ace72eb85878183a413d264211cab80');
+  assert.equal(result.pass, true);
+});
+
+test('governed PDF intake blocks Manual automation state before Buffer release', () => {
+  const result = evaluateNotionQualityGate(page({ 'Automation Status': { select: { name: 'Manual' } } }), '3ace72eb85878183a413d264211cab80', queuePost());
+  assert.equal(result.pass, false);
+  assert.match(result.reasons.join(' '), /Manual for governed PDF release/);
+});
+
 test('fails PDF intake if final copy or publish payload drifts after queue lock', () => {
   const result = evaluateNotionQualityGate(page({
     'Final Copy': rich('Changed caption'),
