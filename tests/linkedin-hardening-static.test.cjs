@@ -26,6 +26,18 @@ test('all approved media is preflighted before the first Buffer createPost mutat
   assert.match(autopost, /MEDIA_SHA256|mediaProof\.sha256/);
 });
 
+test('live Notion is rechecked immediately before dispatch intent and Buffer mutation', () => {
+  const dispatchLoop = autopost.indexOf('for (const { job, channel, key } of plan.dispatch)');
+  const livePostIndex = autopost.indexOf('const liveQueuePost', dispatchLoop);
+  const notionIndex = autopost.indexOf('await assertLiveNotionQualityGate(liveQueuePost', dispatchLoop);
+  const intentIndex = autopost.indexOf('const intentBody = dispatchIntentComment', dispatchLoop);
+  const mutationIndex = autopost.indexOf('const data = await buffer(buildCreatePostMutation', dispatchLoop);
+  assert.ok(dispatchLoop >= 0 && livePostIndex > dispatchLoop, 'dispatch-loop live queue check is missing');
+  assert.ok(notionIndex > livePostIndex, 'pre-mutation live Notion recheck is missing');
+  assert.ok(intentIndex > notionIndex, 'dispatch intent can be written before final Notion recheck');
+  assert.ok(mutationIndex > intentIndex, 'Buffer mutation ordering is invalid');
+});
+
 test('draft mode survives capacity planning into daily placement validation', () => {
   assert.match(autopost, /request: \{ mode: job\.request\.mode, channels: \[channel\] \}/);
   assert.match(autopost, /request: \{ mode: 'schedule', channels: \[\{ target: targetByChannelId\[entry\.channelId\], dueAt: entry\.dueAt \}\] \}/);
