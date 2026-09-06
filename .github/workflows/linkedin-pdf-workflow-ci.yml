@@ -70,6 +70,7 @@ jobs:
           set -euo pipefail
           node --test tests/linkedin-imap-intake-config.test.cjs
           node --test tests/linkedin-pdf-intake.test.cjs
+          node --test tests/linkedin-pdf-replay-preservation.test.cjs
           node --test tests/linkedin-review-core.test.cjs
           node --test tests/linkedin-media-preflight.test.cjs
           node --test tests/linkedin-notion-quality-gate.test.cjs
