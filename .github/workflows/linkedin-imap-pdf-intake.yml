@@ -92,43 +92,30 @@ jobs:
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF_NAME: main
+          EXPECTED_PAGES: ${{ steps.intake.outputs.pages }}
+          EXPECTED_BYTES: ${{ steps.intake.outputs.bytes }}
+          EXPECTED_SHA: ${{ steps.intake.outputs.sha256 }}
+          POST_ID: ${{ steps.intake.outputs.post_id }}
+          REVISION: ${{ steps.intake.outputs.revision }}
         shell: bash
         run: |
           set -euo pipefail
-          post_id='${{ steps.intake.outputs.post_id }}'
-          revision='${{ steps.intake.outputs.revision }}'
+          post_id="$POST_ID"
+          revision="$REVISION"
           manifest='${{ steps.bridge.outputs.manifest_path }}'
-          expected_pages='${{ steps.intake.outputs.pages }}'
-          expected_bytes='${{ steps.intake.outputs.bytes }}'
-          expected_sha='${{ steps.intake.outputs.sha256 }}'
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-          # Rebuild from the latest main immediately before every push attempt.
-          # This avoids stale queue snapshots when multiple owner intake issues are opened together
-          # or another governed workflow updates queue.json while this job is running.
+          # Rebuild from latest main immediately before each push. This makes queue updates
+          # resilient to several owner intake issues being opened together and to unrelated
+          # governed queue writes that happen while the job is running.
           for attempt in 1 2 3; do
             echo "Queue commit attempt ${attempt}/3"
             git fetch origin main
             git reset --hard origin/main
 
             node scripts/linkedin-pdf-intake.cjs "$manifest" > /tmp/pdf-intake-retry.json
-            node - <<'NODE'
-          const fs = require('node:fs');
-          const r = JSON.parse(fs.readFileSync('/tmp/pdf-intake-retry.json', 'utf8'));
-          const expected = {
-            pages: process.env.EXPECTED_PAGES,
-            bytes: process.env.EXPECTED_BYTES,
-            sha: process.env.EXPECTED_SHA,
-            postId: process.env.POST_ID,
-            revision: process.env.REVISION,
-          };
-          if (String(r.metadata.pageCount) !== expected.pages) throw new Error('Retry page-count drift');
-          if (String(r.metadata.bytes) !== expected.bytes) throw new Error('Retry byte-count drift');
-          if (String(r.metadata.sha256) !== expected.sha) throw new Error('Retry SHA drift');
-          if (String(r.post.id) !== expected.postId) throw new Error('Retry post ID drift');
-          if (String(r.post.revision) !== expected.revision) throw new Error('Retry revision drift');
-          NODE
+            node -e "const r=require('/tmp/pdf-intake-retry.json'); if(String(r.metadata.pageCount)!==process.env.EXPECTED_PAGES) throw new Error('Retry page-count drift'); if(String(r.metadata.bytes)!==process.env.EXPECTED_BYTES) throw new Error('Retry byte-count drift'); if(String(r.metadata.sha256)!==process.env.EXPECTED_SHA) throw new Error('Retry SHA drift'); if(String(r.post.id)!==process.env.POST_ID) throw new Error('Retry post ID drift'); if(String(r.post.revision)!==process.env.REVISION) throw new Error('Retry revision drift');"
 
             git add apps/linkedin-review/queue.json "apps/linkedin-review/media/intake/${post_id}"
             git diff --cached --quiet && { echo 'Expected governed media/queue changes are missing.' >&2; exit 1; }
@@ -141,12 +128,6 @@ jobs:
           done
           echo 'Unable to commit governed media after three latest-main rebuild attempts.' >&2
           exit 1
-        env:
-          EXPECTED_PAGES: ${{ steps.intake.outputs.pages }}
-          EXPECTED_BYTES: ${{ steps.intake.outputs.bytes }}
-          EXPECTED_SHA: ${{ steps.intake.outputs.sha256 }}
-          POST_ID: ${{ steps.intake.outputs.post_id }}
-          REVISION: ${{ steps.intake.outputs.revision }}
 
       - name: Verify public raw media reachability and digest
         shell: bash
