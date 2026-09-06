@@ -70,6 +70,8 @@ function evaluateNotionQualityGate(page, expectedPageId = null, queuePost = null
   const notionScheduledAt = readDateStart(page, 'Scheduled At');
 
   const reasons = [];
+  if (page.archived === true) reasons.push('Notion source page is archived');
+  if (page.in_trash === true) reasons.push('Notion source page is in trash');
   if (decision !== REQUIRED_DECISION) reasons.push(`Content Decision is ${decision || 'unset'}, not ${REQUIRED_DECISION}`);
   if (approval !== REQUIRED_APPROVAL) reasons.push(`Approval is ${approval || 'unset'}, not ${REQUIRED_APPROVAL}`);
   if (!antiDnaPass) reasons.push('Anti-DNA | Pass is not checked');
@@ -106,6 +108,8 @@ function evaluateNotionQualityGate(page, expectedPageId = null, queuePost = null
       bufferStatus,
       assetReady,
       automationReady,
+      archived: page.archived === true,
+      inTrash: page.in_trash === true,
       scheduledAt: notionScheduledAt,
       finalCopyMatches: queuePost?.sourceType === 'chatgpt_pdf_intake' ? normaliseText(finalCopy) === normaliseText(queuePost.copy?.default) : null,
       publishPayloadMatches: queuePost?.sourceType === 'chatgpt_pdf_intake' ? normaliseText(publishPayload) === normaliseText(queuePost.copy?.default) : null,
