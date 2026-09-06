@@ -10,6 +10,7 @@ const MAX_DOCUMENT_BYTES = 100_000_000;
 const MAX_DOCUMENT_PAGES = 300;
 const ALLOWED_TARGETS = new Set(['personal', 'main', 'secondary']);
 const EXPLICIT_ZONE_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+const COMMIT_SHA = /^[a-f0-9]{40}$/i;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -169,8 +170,31 @@ function renderThumbnail(pdfPath, jpgPath) {
   assert(fs.existsSync(jpgPath) && fs.statSync(jpgPath).size > 0, 'Failed to create PDF thumbnail.');
 }
 
-function rawUrl(owner, repo, branch, relativePath) {
-  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${relativePath.split(path.sep).map(encodeURIComponent).join('/')}`;
+function rawUrl(owner, repo, ref, relativePath) {
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${relativePath.split(path.sep).map(encodeURIComponent).join('/')}`;
+}
+
+function rawGitHubRef(value) {
+  try {
+    const parsed = new URL(String(value || ''));
+    if (parsed.hostname.toLowerCase() !== 'raw.githubusercontent.com') return null;
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    return parts.length >= 4 ? parts[2] : null;
+  } catch {
+    return null;
+  }
+}
+
+function stableMediaIdentity(value) {
+  try {
+    const parsed = new URL(String(value || ''));
+    if (parsed.hostname.toLowerCase() !== 'raw.githubusercontent.com') return parsed.toString();
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    if (parts.length < 4) return parsed.toString();
+    return `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/<immutable-ref>/${parts.slice(3).join('/')}`;
+  } catch {
+    return String(value || '');
+  }
 }
 
 function buildQueuePost(manifest, metadata, urls, nowIso) {
@@ -228,9 +252,9 @@ function stablePostFingerprint(post) {
     scheduledAt: post.scheduledAt || null,
     copy: post.copy,
     mediaAlt: post.mediaAlt,
-    mediaUrl: post.mediaUrl,
+    mediaUrl: stableMediaIdentity(post.mediaUrl),
     documentTitle: post.documentTitle,
-    documentThumbnailUrl: post.documentThumbnailUrl,
+    documentThumbnailUrl: stableMediaIdentity(post.documentThumbnailUrl),
     slideCount: post.carousel?.slideCount || null,
     pdfBytes: post.carousel?.pdfBytes || null,
     pdfSha256: post.carousel?.pdfSha256 || null,
@@ -259,6 +283,49 @@ function upsertQueue(queuePath, post, nowIso) {
   queue.generatedAt = nowIso;
   fs.writeFileSync(queuePath, `${JSON.stringify(queue, null, 2)}\n`);
   return { changed: true, replay: false };
+}
+
+function pinQueueMediaUrls(queuePath, { id, revision, owner, repo, ref, nowIso = new Date().toISOString() }) {
+  assert(owner && repo, 'owner and repo are required for media URL pinning.');
+  assert(COMMIT_SHA.test(String(ref || '')), 'media URL pinning requires a full 40-character Git commit SHA.');
+  const postId = safeId(id);
+  const rev = Number(revision);
+  assert(Number.isSafeInteger(rev) && rev >= 1, 'revision must be a positive integer for media URL pinning.');
+
+  const queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
+  assert(Array.isArray(queue.posts), 'queue.json posts array is missing.');
+  const post = queue.posts.find((item) => item.id === postId && Number(item.revision) === rev);
+  assert(post, `Cannot pin media URL because ${postId}@${rev} is not in the governed queue.`);
+  assert(post.sourceType === 'chatgpt_pdf_intake', `Cannot pin non-intake queue item ${postId}@${rev}.`);
+  assert(post.carousel?.pdfSha256 && post.carousel?.pdfBytes, `Cannot pin ${postId}@${rev} without locked PDF integrity metadata.`);
+
+  const existingRef = rawGitHubRef(post.mediaUrl);
+  if (existingRef && COMMIT_SHA.test(existingRef)) {
+    return {
+      changed: false,
+      replay: true,
+      ref: existingRef,
+      pdfUrl: post.mediaUrl,
+      thumbnailUrl: post.documentThumbnailUrl,
+    };
+  }
+
+  const base = path.join('apps', 'linkedin-review', 'media', 'intake', postId, `r${rev}`);
+  const pdfUrl = rawUrl(owner, repo, ref, path.join(base, `${postId}.pdf`));
+  const thumbnailUrl = rawUrl(owner, repo, ref, path.join(base, 'thumbnail.jpg'));
+  post.mediaUrl = pdfUrl;
+  post.mediaPreviewUrl = thumbnailUrl;
+  post.documentThumbnailUrl = thumbnailUrl;
+  post.history = Array.isArray(post.history) ? post.history : [];
+  post.history.push({
+    state: 'media_urls_pinned',
+    at: nowIso,
+    actor: 'github-actions[bot]',
+    note: `Governed PDF and thumbnail URLs pinned to immutable Git commit ${ref}.`,
+  });
+  queue.generatedAt = nowIso;
+  fs.writeFileSync(queuePath, `${JSON.stringify(queue, null, 2)}\n`);
+  return { changed: true, replay: false, ref, pdfUrl, thumbnailUrl };
 }
 
 function run({ root = process.cwd(), manifestPath, owner, repo, branch = 'main' }) {
@@ -303,6 +370,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  COMMIT_SHA,
   EXPLICIT_ZONE_ISO,
   MAX_DOCUMENT_BYTES,
   MAX_DOCUMENT_PAGES,
@@ -310,9 +378,12 @@ module.exports = {
   decodeChunks,
   downloadPdf,
   loadManifest,
+  pinQueueMediaUrls,
+  rawGitHubRef,
   rawUrl,
   run,
   safeId,
+  stableMediaIdentity,
   stablePostFingerprint,
   upsertQueue,
   validateDownloadUrl,
