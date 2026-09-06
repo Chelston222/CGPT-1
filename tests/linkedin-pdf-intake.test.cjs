@@ -10,8 +10,11 @@ const test = require('node:test');
 const {
   buildQueuePost,
   loadManifest,
+  pinQueueMediaUrls,
+  rawGitHubRef,
   rawUrl,
   safeId,
+  stableMediaIdentity,
   stablePostFingerprint,
   upsertQueue,
   validateDownloadUrl,
@@ -33,6 +36,31 @@ function baseManifest(overrides = {}) {
   };
 }
 
+function queueItem(overrides = {}) {
+  return {
+    id: 'tte-li-demo',
+    revision: 2,
+    title: 'Demo',
+    category: 'buyer_diagnostics',
+    funnelStage: 'mof',
+    format: 'carousel',
+    targets: ['secondary'],
+    mode: 'schedule',
+    scheduledAt: { secondary: '2026-09-16T08:45:00+01:00' },
+    copy: { default: 'Caption' },
+    mediaAlt: 'Alt',
+    mediaUrl: 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-demo/r2/tte-li-demo.pdf',
+    mediaPreviewUrl: 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-demo/r2/thumbnail.jpg',
+    documentTitle: 'Doc',
+    documentThumbnailUrl: 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-demo/r2/thumbnail.jpg',
+    carousel: { slideCount: 10, pdfBytes: 100, pdfSha256: 'a'.repeat(64) },
+    sourceUrl: 'https://app.notion.com/p/1234567890abcdef1234567890abcdef',
+    sourceType: 'chatgpt_pdf_intake',
+    history: [],
+    ...overrides,
+  };
+}
+
 test('safeId accepts stable queue IDs and rejects path-like input', () => {
   assert.equal(safeId('tte-li-cold-enquiries-001'), 'tte-li-cold-enquiries-001');
   assert.throws(() => safeId('../escape'), /manifest.id/);
@@ -43,6 +71,16 @@ test('rawUrl preserves revision-scoped repository paths', () => {
     rawUrl('Chelston222', 'CGPT-1', 'main', 'apps/linkedin-review/media/intake/demo/r2/demo.pdf'),
     'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/demo/r2/demo.pdf',
   );
+});
+
+test('stable media identity treats branch and commit refs as the same release path while preserving path differences', () => {
+  const sha = '1'.repeat(40);
+  const main = 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/demo/r2/demo.pdf';
+  const pinned = `https://raw.githubusercontent.com/Chelston222/CGPT-1/${sha}/apps/linkedin-review/media/intake/demo/r2/demo.pdf`;
+  const other = `https://raw.githubusercontent.com/Chelston222/CGPT-1/${sha}/apps/linkedin-review/media/intake/demo/r3/demo.pdf`;
+  assert.equal(stableMediaIdentity(main), stableMediaIdentity(pinned));
+  assert.notEqual(stableMediaIdentity(main), stableMediaIdentity(other));
+  assert.equal(rawGitHubRef(pinned), sha);
 });
 
 test('loadManifest requires document title, copy, targets and exactly one transport', () => {
@@ -171,11 +209,13 @@ test('buildQueuePost records HTTPS bridge provenance without persisting transpor
   assert.equal(JSON.stringify(post).includes('token=secret'), false);
 });
 
-test('stable post fingerprint ignores audit timestamps but locks release material', () => {
-  const a = buildQueuePost({ id: 'tte-li-demo', revision: 2, title: 'Demo', documentTitle: 'Doc', targets: ['secondary'], mode: 'schedule', scheduledAt: { secondary: '2026-09-16T08:45:00+01:00' }, copy: { default: 'Caption' }, sourceUrl: 'https://app.notion.com/p/1234567890abcdef1234567890abcdef', publicMediaApproved: true }, { bytes: 1, sha256: 'a'.repeat(64), pageCount: 1 }, { pdfUrl: 'https://raw.githubusercontent.com/x/y/main/a.pdf', thumbnailUrl: 'https://raw.githubusercontent.com/x/y/main/a.jpg' }, '2026-09-01T00:00:00Z');
+test('stable post fingerprint ignores audit timestamps and raw GitHub ref changes but locks release material', () => {
+  const a = buildQueuePost({ id: 'tte-li-demo', revision: 2, title: 'Demo', documentTitle: 'Doc', targets: ['secondary'], mode: 'schedule', scheduledAt: { secondary: '2026-09-16T08:45:00+01:00' }, copy: { default: 'Caption' }, sourceUrl: 'https://app.notion.com/p/1234567890abcdef1234567890abcdef', publicMediaApproved: true }, { bytes: 1, sha256: 'a'.repeat(64), pageCount: 1 }, { pdfUrl: 'https://raw.githubusercontent.com/x/y/main/apps/intake/r2/a.pdf', thumbnailUrl: 'https://raw.githubusercontent.com/x/y/main/apps/intake/r2/a.jpg' }, '2026-09-01T00:00:00Z');
   const b = JSON.parse(JSON.stringify(a));
   b.carousel.verifiedAt = '2026-09-02T00:00:00Z';
   b.history[0].at = '2026-09-02T00:00:00Z';
+  b.mediaUrl = `https://raw.githubusercontent.com/x/y/${'1'.repeat(40)}/apps/intake/r2/a.pdf`;
+  b.documentThumbnailUrl = `https://raw.githubusercontent.com/x/y/${'1'.repeat(40)}/apps/intake/r2/a.jpg`;
   assert.equal(stablePostFingerprint(a), stablePostFingerprint(b));
   b.copy.default = 'Changed';
   assert.notEqual(stablePostFingerprint(a), stablePostFingerprint(b));
@@ -184,17 +224,42 @@ test('stable post fingerprint ignores audit timestamps but locks release materia
 test('upsertQueue is replay-safe for an identical same revision, rejects conflicting same revision and accepts higher revision', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-queue-'));
   const queuePath = path.join(dir, 'queue.json');
-  const current = {
-    id: 'tte-li-demo', revision: 2, title: 'Demo', category: 'buyer_diagnostics', funnelStage: 'mof', format: 'carousel', targets: ['secondary'], mode: 'schedule', scheduledAt: { secondary: '2026-09-16T08:45:00+01:00' }, copy: { default: 'Caption' }, mediaAlt: 'Alt', mediaUrl: 'https://raw.githubusercontent.com/x/y/main/r2/demo.pdf', documentTitle: 'Doc', documentThumbnailUrl: 'https://raw.githubusercontent.com/x/y/main/r2/thumbnail.jpg', carousel: { slideCount: 10, pdfBytes: 100, pdfSha256: 'a'.repeat(64) }, sourceUrl: 'https://app.notion.com/p/1234567890abcdef1234567890abcdef', sourceType: 'chatgpt_pdf_intake',
-  };
+  const current = queueItem();
   fs.writeFileSync(queuePath, JSON.stringify({ posts: [current] }));
   const replay = upsertQueue(queuePath, JSON.parse(JSON.stringify(current)), '2026-08-29T15:00:00.000Z');
   assert.deepEqual(replay, { changed: false, replay: true });
   const conflict = JSON.parse(JSON.stringify(current));
   conflict.copy.default = 'Changed';
   assert.throws(() => upsertQueue(queuePath, conflict, '2026-08-29T15:00:00.000Z'), /conflicts with the requested same revision/);
-  const higher = { ...JSON.parse(JSON.stringify(current)), revision: 3, mediaUrl: 'https://raw.githubusercontent.com/x/y/main/r3/demo.pdf', documentThumbnailUrl: 'https://raw.githubusercontent.com/x/y/main/r3/thumbnail.jpg' };
+  const higher = { ...JSON.parse(JSON.stringify(current)), revision: 3, mediaUrl: 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-demo/r3/tte-li-demo.pdf', documentThumbnailUrl: 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-demo/r3/thumbnail.jpg' };
   upsertQueue(queuePath, higher, '2026-08-29T15:00:00.000Z');
   const queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
   assert.equal(queue.posts[0].revision, 3);
+});
+
+test('pinQueueMediaUrls rewrites governed media to one immutable commit and is replay-safe once pinned', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-pin-'));
+  const queuePath = path.join(dir, 'queue.json');
+  fs.writeFileSync(queuePath, JSON.stringify({ posts: [queueItem()] }));
+  const sha = '1'.repeat(40);
+  const first = pinQueueMediaUrls(queuePath, { id: 'tte-li-demo', revision: 2, owner: 'Chelston222', repo: 'CGPT-1', ref: sha, nowIso: '2026-09-06T10:00:00Z' });
+  assert.equal(first.changed, true);
+  assert.match(first.pdfUrl, new RegExp(`/CGPT-1/${sha}/apps/linkedin-review/media/intake/tte-li-demo/r2/tte-li-demo\\.pdf$`));
+  const queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
+  assert.equal(rawGitHubRef(queue.posts[0].mediaUrl), sha);
+  assert.equal(rawGitHubRef(queue.posts[0].mediaPreviewUrl), sha);
+  assert.equal(rawGitHubRef(queue.posts[0].documentThumbnailUrl), sha);
+  assert.match(queue.posts[0].history.at(-1).note, new RegExp(sha));
+
+  const second = pinQueueMediaUrls(queuePath, { id: 'tte-li-demo', revision: 2, owner: 'Chelston222', repo: 'CGPT-1', ref: '2'.repeat(40) });
+  assert.deepEqual(second, { changed: false, replay: true, ref: sha, pdfUrl: first.pdfUrl, thumbnailUrl: first.thumbnailUrl });
+});
+
+test('pinQueueMediaUrls rejects non-commit refs and non-governed intake rows', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-pin-reject-'));
+  const queuePath = path.join(dir, 'queue.json');
+  fs.writeFileSync(queuePath, JSON.stringify({ posts: [queueItem()] }));
+  assert.throws(() => pinQueueMediaUrls(queuePath, { id: 'tte-li-demo', revision: 2, owner: 'Chelston222', repo: 'CGPT-1', ref: 'main' }), /40-character Git commit SHA/);
+  fs.writeFileSync(queuePath, JSON.stringify({ posts: [queueItem({ sourceType: 'notion_archive' })] }));
+  assert.throws(() => pinQueueMediaUrls(queuePath, { id: 'tte-li-demo', revision: 2, owner: 'Chelston222', repo: 'CGPT-1', ref: '1'.repeat(40) }), /Cannot pin non-intake/);
 });
