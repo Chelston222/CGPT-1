@@ -2,30 +2,30 @@
 
 ## Purpose
 
-This is the canonical intake path for 222Emails LinkedIn PDF and document carousels produced outside GitHub. It preserves exact media identity, keeps publication authority separate from transport, and fails closed when any locked field drifts.
+This document describes the canonical intake route for 222Emails LinkedIn PDF/document posts. The full operator playbook is `docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md` and takes precedence if this summary ever drifts.
 
-The canonical route is:
+Canonical route:
 
 ```text
-final approved PDF + final approved caption
--> authorised Gmail transport from tripletwochelston@gmail.com
+final approved PDF + caption
+-> authorised Gmail
 -> hello@222emails.com
 -> PrivateEmail IMAP
--> repository-owner [IMAP PDF INTAKE] issue
--> exact attachment verification
--> governed GitHub queue and media package
--> immutable Git commit media pin
--> live Notion quality gate
--> repository-owner [APPROVED LINKEDIN] gate
--> Buffer
--> separate publication verification
+-> owner [IMAP PDF INTAKE] issue
+-> exact attachment proof
+-> revision-scoped GitHub media
+-> immutable commit pin for PDF and thumbnail
+-> governed queue
+-> live Notion gate
+-> owner [APPROVED LINKEDIN] issue
+-> final pre-mutation Notion recheck
+-> Buffer intent + provider write + durable acceptance
+-> separate publication verifier
 ```
 
-Transport, intake, Buffer acceptance and LinkedIn publication are different states. Never treat one as proof of the next.
+Transport, exact-media readiness, Buffer acceptance and LinkedIn publication are separate states.
 
-## Canonical transport
-
-Send the exact final PDF using:
+## Transport
 
 ```text
 FROM: tripletwochelston@gmail.com
@@ -34,17 +34,17 @@ SUBJECT: TTE LINKEDIN PDF INTAKE <id>
 ATTACHMENT: <exact final PDF filename>
 ```
 
-The email only transports bytes. It is not publication authority.
+The IMAP bridge does not trust MIME labelling as the PDF identity. Mail clients may use `application/pdf` or a generic binary type. The authoritative checks are exact filename, byte count, `%PDF-` signature and SHA-256.
 
-## Governed intake issue
+## Owner intake issue
 
-Create one repository-owner issue with title:
+Title:
 
 ```text
 [IMAP PDF INTAKE] <id>
 ```
 
-The body must contain exactly one locked config block:
+Required shape:
 
 ```html
 <!-- INTAKE_CONFIG_START -->
@@ -53,164 +53,179 @@ The body must contain exactly one locked config block:
   "expectedSubject": "TTE LINKEDIN PDF INTAKE <id>",
   "expectedSender": "tripletwochelston@gmail.com",
   "expectedFilename": "<exact filename.pdf>",
-  "expectedSha256": "<64-character lowercase SHA-256>",
+  "expectedSha256": "<64-character SHA-256>",
   "expectedBytes": 12345678,
   "expectedPages": 10,
   "manifest": {
     "schemaVersion": 1,
     "id": "<id>",
     "revision": 1,
-    "title": "<post title>",
-    "documentTitle": "<LinkedIn document title>",
-    "category": "<category>",
-    "funnelStage": "<stage>",
+    "title": "<single-line title>",
+    "documentTitle": "<single-line document title>",
+    "category": "buyer_diagnostics",
+    "funnelStage": "mof",
     "targets": ["secondary"],
     "mode": "schedule",
-    "scheduledAt": {
-      "secondary": "2026-09-16T08:45:00+01:00"
-    },
-    "copy": {
-      "default": "<exact approved caption>"
-    },
+    "scheduledAt": {"secondary": "<ISO with Z or explicit UTC offset>"},
+    "copy": {"default": "<exact approved caption>"},
     "mediaAlt": "<carousel description>",
-    "expectedSha256": "<same exact SHA-256>",
-    "sourceUrl": "https://app.notion.com/<concrete-page-id>",
-    "publicMediaApproved": true
+    "expectedSha256": "<same SHA-256>",
+    "publicMediaApproved": true,
+    "publicReleaseMaterialApproved": true,
+    "sourceUrl": "https://app.notion.com/<concrete-page-id>"
   }
 }
 <!-- INTAKE_CONFIG_END -->
 ```
 
-Do not place raw PDF bytes, base64 chunks, arbitrary download URLs or API keys in the issue.
+Do not include chunks, arbitrary download URLs, raw PDF bytes or secrets in the issue.
 
-## Permanent validation contract
+## Locked validation contract
 
-The intake fails closed unless all of these are true:
+The canonical IMAP route fails closed unless:
 
-- the issue author is the repository owner
-- the title starts exactly with `[IMAP PDF INTAKE] `
-- the title ID exactly matches `config.id`
-- the sender is exactly `tripletwochelston@gmail.com`
-- the expected subject is exactly `TTE LINKEDIN PDF INTAKE <id>`
-- the filename is a plain PDF filename with no path separators or control characters
-- expected SHA-256 is valid and exactly matches `manifest.expectedSha256`
-- expected byte count is 1 to 100,000,000
-- expected page count is 1 to 300
-- `schemaVersion` is exactly 1
-- revision is an explicit positive integer
-- title, document title and default copy are present
-- approved copy contains no em dash
-- the canonical IMAP PDF route contains exactly one target
-- the target is one of `personal`, `main`, `secondary`
+- issue is created by the repository owner
+- title prefix and ID are exact
+- exactly one config block exists
+- sender and subject are exact
+- filename is a plain PDF filename
+- bytes, pages and SHA-256 are valid
+- schema version is 1
+- revision is a positive integer
+- title and document title are single-line header-safe values
+- category and funnel stage are header-safe slugs when present
+- only `copy.default` exists
+- caption is 1 to 3,000 characters
+- caption contains no em dash
+- caption contains no reserved LinkedIn target-section marker, including whitespace-padded forms
+- exactly one target exists
+- exactly one schedule key exists and matches that target
 - mode is `schedule`
-- the target has a valid ISO 8601 timestamp with an explicit UTC offset or `Z`
-- the schedule is more than 10 minutes in the future at intake time
-- `sourceUrl` identifies a concrete Notion page
-- `publicMediaApproved` is exactly `true`
+- schedule contains an explicit offset or `Z`
+- schedule is more than ten minutes away and no more than 90 days ahead
+- `publicMediaApproved` is true
+- `publicReleaseMaterialApproved` is true
+- `sourceUrl` contains a concrete Notion page ID
 
-The one-target rule is deliberate. The live Notion PDF gate has one authoritative `Scheduled At` field, so canonical PDF intake does not permit ambiguous multi-target scheduling.
+The 90-day scheduling ceiling keeps canonical approvals safely inside the current 120-day publication-verifier horizon.
 
-## IMAP attachment selection
+## Public repository boundary
 
-The IMAP bridge scans eligible recent mailboxes while excluding Sent, Drafts, Trash and Junk special-use mailboxes. A candidate message must match the locked sender, subject and filename.
+The repository and governed raw media URLs are public. The owner issue and queue can expose caption, schedule, target, title, Notion source URL and media identity before publication. Git history can retain those values afterwards.
 
-The attachment must then match the exact expected byte count, `%PDF-` signature and SHA-256. A same-name attachment with the wrong bytes is rejected.
+Use this lane only when the media and release metadata are safe for public repository archival.
 
-Verified bytes are staged internally for deterministic reconstruction. Those staging chunks are implementation detail and are not a second operator-facing intake route.
+## IMAP selection
 
-## Reconstruction and promotion
+The bridge scans eligible mailboxes in its recent 72-hour window, excluding Sent, Drafts, Trash and Junk special-use mailboxes.
 
-`scripts/linkedin-pdf-intake.cjs` reconstructs the verified PDF, checks bytes, SHA-256 and page count, renders the first-page thumbnail and writes the revision package under:
+A candidate must match:
+
+```text
+sender
+subject
+filename
+exact bytes
+%PDF- signature
+SHA-256
+```
+
+Only then is it selected and staged internally for reconstruction.
+
+## Revision and replay safety
+
+Media lives under:
 
 ```text
 apps/linkedin-review/media/intake/<id>/r<revision>/
 ```
 
-The queue row is created or updated as `status: review`. Same-revision replay is accepted only when the release fingerprint is identical. Any changed copy, schedule, media identity or other release material requires a higher revision.
+Rules:
 
-## Immutable media pin
+- identical same revision is an idempotent replay
+- changed same revision fails closed
+- changed release material requires a higher revision
 
-The first promotion commit may initially produce branch-shaped raw GitHub URLs. The intake workflow then rewrites the queue media URLs to the exact 40-character Git commit that contains the promoted PDF and thumbnail.
+On an idempotent replay, the intake snapshots the already-governed PDF and thumbnail. Once incoming identity and queue fingerprint prove the same release, the existing governed media bytes are restored exactly before commit evaluation. Missing or drifted governed media fails closed.
 
-The final governed media URL therefore has an immutable commit ref, not mutable `main`.
+This prevents PDF-thumbnail renderer changes from silently mutating a locked revision.
 
-After pinning, the workflow downloads the exact pinned public PDF and thumbnail and verifies byte count, SHA-256, page count and file type again. The `[PDF INTAKE READY] <id>@<revision>` evidence records that immutable media commit.
+## Concurrency safety
 
-Because the repository is public, promoted media is publicly reachable before LinkedIn publication. `publicMediaApproved: true` is an explicit acknowledgement of that confidentiality boundary.
+Before each media/queue push, the workflow refreshes current `main`, rebuilds the deterministic mutation and retries on concurrent advancement. It never forces a stale queue snapshot over newer state.
 
-## Live Notion gate
+## Immutable media proof
 
-A governed PDF release must resolve to its exact Notion source page. Before Buffer release the live row must prove:
+After promotion, both PDF and thumbnail are pinned to the same full 40-character Git commit that contains those files.
 
+The public pinned URLs are then fetched and verified again:
+
+- PDF bytes
+- PDF SHA-256
+- PDF page count
+- PDF type/signature
+- thumbnail bytes against the promoted local thumbnail
+- thumbnail SHA-256 against the promoted local thumbnail
+- thumbnail image type
+
+`[PDF INTAKE READY] <id>@<revision>` proves exact media and queue readiness only.
+
+## Notion gate
+
+For governed PDF intake, the live source page must remain active and must pass:
+
+- not archived
+- not in trash
 - Content Decision = Keep
 - Approval = Approved
-- Anti-DNA | Pass = checked
-- Automation Status is release-capable and is not Manual for a governed PDF intake
-- Buffer Status is Ready for Buffer or Queued in Buffer
-- Asset Ready = checked
-- Automation Ready = checked
-- Final Copy exactly matches the locked queue caption
-- Publish Payload exactly matches the locked queue caption
-- Scheduled At matches the locked queue schedule
+- Anti-DNA pass
+- Asset Ready
+- Automation Ready
+- automation-capable status, not Manual
+- permitted Buffer state
+- Final Copy exact-match to locked caption
+- Publish Payload exact-match to locked caption
+- exactly one target and schedule
+- Scheduled At exact instant match
 
-A missing `NOTION_API_KEY`, missing page, wrong page, changed copy, changed schedule or blocked readiness state fails closed.
+The production Buffer release checks this during planning and again immediately before each provider write.
 
-## Repository-owner approval
+## Owner approval and Buffer release
 
-`[PDF INTAKE READY]` proves exact media readiness only. Publication authority remains separate.
-
-Only after exact-media readiness exists should a repository-owner approval issue be created:
+After `[PDF INTAKE READY]`, create the owner approval:
 
 ```text
 [APPROVED LINKEDIN] <id>@<revision>
 ```
 
-Its request must exactly match the current locked queue revision, including target, schedule, caption, media URL, document title, thumbnail, page count, byte count and SHA-256.
+It must exactly match the current queue revision, target, schedule, caption, immutable media URLs, document metadata, byte count and SHA-256.
 
-Legacy issue-only release that no longer matches the queue is rejected.
+Before Buffer mutation, all selected media is remotely preflighted. A durable `BUFFER_DISPATCH_INTENT` is written before the provider write. When Buffer returns a post ID, `BUFFER_ACCEPTED` is written to the trusted durable ledger first and then mirrored to the approval issue.
 
-## Buffer acceptance and durable idempotency
+Accepted placement keys are idempotent. Unresolved intent keys block automatic recreation.
 
-Before the first Buffer write, all approved media is remotely preflighted.
+## Intent reconciliation
 
-For every destination placement the release path records a durable dispatch intent before the Buffer mutation. If Buffer returns a post ID, the acceptance record is written immediately to the durable ledger and approval issue.
+The owner-gated `[RECONCILE LINKEDIN BUFFER INTENTS]` workflow is read-only toward Buffer and shares the release concurrency lock.
 
-This protects partial releases. A placement with a durable acceptance marker is not recreated. A placement with an unresolved prior dispatch intent is also not recreated automatically.
+For an unresolved intent, it can adopt exactly one Buffer post in `scheduled`, `sent` or `error` state only when channel, due instant, caption digest and media asset source all match the locked placement. For text-only posts it requires no media source.
 
-An owner-gated intent reconciler can inspect Buffer without creating, editing or deleting posts. It repairs an unresolved intent only when exactly one scheduled Buffer post matches the locked destination, due time and caption digest. Zero or multiple matches remain blocked for explicit review.
-
-Buffer acceptance means scheduled or accepted by Buffer. It is not publication proof.
+Zero or multiple matches remain blocked.
 
 ## Publication verification
 
-After the due time, the separate publication verifier queries the exact Buffer post ID.
+Buffer acceptance is not publication proof.
 
-Only positive `sent` evidence with a sent timestamp can move the state to publication verified. Buffer `error` is recorded as failed. Unknown or late unresolved state remains pending for review.
+The separate verifier uses the accepted Buffer ID. If the approval-issue acceptance comment was lost after the durable ledger write, it can recover that ID from the trusted ledger by mapping the dispatch-intent placement key to exactly one governed approval issue.
 
-PDF and document posts retain a native LinkedIn analytics requirement where Buffer does not expose complete document analytics.
+Only Buffer `sent` with `sentAt` becomes publication verified. Buffer `error` is failure. A late unresolved state remains UNKNOWN/pending.
 
-## Retired parallel routes
+## Retired routes
 
-`.github/workflows/linkedin-pdf-intake.yml` and `.github/workflows/linkedin-pdf-share-now.yml` remain only as retired compatibility surfaces. They must not reconstruct, schedule or publish PDFs.
+`.github/workflows/linkedin-pdf-intake.yml` and `.github/workflows/linkedin-pdf-share-now.yml` are retired compatibility surfaces. They must not reconstruct, schedule or publish PDFs.
 
-Do not invent a parallel repository-manifest, immediate share-now or arbitrary download-URL lane for production PDF publishing.
-
-## Current implementation files
-
-- `.github/workflows/linkedin-imap-pdf-intake.yml`
-- `.github/workflows/linkedin-buffer-autopost.yml`
-- `.github/workflows/linkedin-buffer-intent-reconcile.yml`
-- `.github/workflows/linkedin-publication-verifier.yml`
-- `scripts/linkedin-imap-intake-config.cjs`
-- `scripts/linkedin-imap-intake-from-issue.mjs`
-- `scripts/linkedin-imap-pdf-intake.mjs`
-- `scripts/linkedin-pdf-intake.cjs`
-- `scripts/linkedin-notion-quality-gate.cjs`
-- `scripts/linkedin-buffer-acceptance-ledger.cjs`
-- `scripts/linkedin-media-preflight.cjs`
-- `apps/linkedin-review/queue.json`
-- `docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md`
+Do not create a parallel manifest, immediate-share or arbitrary-download production lane.
 
 ## Definition of complete
 
-The canonical PDF lane is complete for one revision only when the exact final PDF has been retrieved from the authorised mailbox, exact bytes/SHA/pages are verified, the revision is promoted, the media URLs are pinned to an immutable Git commit, the pinned public media re-verifies, the live Notion row matches the locked release state, the repository owner explicitly approves that current revision, Buffer acceptance is durably recorded, and the separate publication verifier later proves the LinkedIn outcome.
+A canonical PDF revision is complete only when exact attachment identity is proven, revision-scoped media is promoted, replay rules pass, PDF and thumbnail are immutably pinned and publicly reverified, the active Notion source passes both quality checks, owner approval exactly matches the queue, Buffer acceptance is durably recorded, and the later verifier independently proves the LinkedIn outcome.
