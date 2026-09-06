@@ -285,6 +285,22 @@ function upsertQueue(queuePath, post, nowIso) {
   return { changed: true, replay: false };
 }
 
+function snapshotFile(filePath) {
+  return fs.existsSync(filePath) ? fs.readFileSync(filePath) : null;
+}
+
+function restoreGovernedMediaOnReplay({ queueResult, pdfPath, jpgPath, existingPdf, existingJpg, metadata }) {
+  if (!queueResult?.replay) return false;
+  assert(Buffer.isBuffer(existingPdf) && existingPdf.length > 0, 'Idempotent replay requires the previously governed PDF bytes to exist.');
+  assert(Buffer.isBuffer(existingJpg) && existingJpg.length > 0, 'Idempotent replay requires the previously governed thumbnail bytes to exist.');
+  const governedSha256 = crypto.createHash('sha256').update(existingPdf).digest('hex');
+  assert(existingPdf.length === metadata.bytes, `Existing governed replay PDF byte count drifted: expected ${metadata.bytes}, found ${existingPdf.length}.`);
+  assert(governedSha256 === metadata.sha256, `Existing governed replay PDF SHA-256 drifted: expected ${metadata.sha256}, found ${governedSha256}.`);
+  fs.writeFileSync(pdfPath, existingPdf);
+  fs.writeFileSync(jpgPath, existingJpg);
+  return true;
+}
+
 function pinQueueMediaUrls(queuePath, { id, revision, owner, repo, ref, nowIso = new Date().toISOString() }) {
   assert(owner && repo, 'owner and repo are required for media URL pinning.');
   assert(COMMIT_SHA.test(String(ref || '')), 'media URL pinning requires a full 40-character Git commit SHA.');
@@ -338,6 +354,8 @@ function run({ root = process.cwd(), manifestPath, owner, repo, branch = 'main' 
   fs.mkdirSync(intakeDir, { recursive: true });
   const pdfPath = path.join(intakeDir, `${manifest.id}.pdf`);
   const jpgPath = path.join(intakeDir, 'thumbnail.jpg');
+  const existingPdf = snapshotFile(pdfPath);
+  const existingJpg = snapshotFile(jpgPath);
   const measured = manifest.downloadUrl ? downloadPdf(manifest, pdfPath) : decodeChunks(root, manifest, pdfPath);
   const inspected = inspectPdf(pdfPath);
   renderThumbnail(pdfPath, jpgPath);
@@ -352,9 +370,10 @@ function run({ root = process.cwd(), manifestPath, owner, repo, branch = 'main' 
   const queuePath = path.join(root, 'apps', 'linkedin-review', 'queue.json');
   const post = buildQueuePost(manifest, metadata, urls, nowIso);
   const queueResult = upsertQueue(queuePath, post, nowIso);
+  const replayMediaRestored = restoreGovernedMediaOnReplay({ queueResult, pdfPath, jpgPath, existingPdf, existingJpg, metadata });
   const manifestAudit = { ...manifest };
   if (manifestAudit.downloadUrl) manifestAudit.downloadUrl = '[redacted]';
-  return { manifest: manifestAudit, metadata, urls, post, queueResult, pdfRelative, jpgRelative, queuePath };
+  return { manifest: manifestAudit, metadata, urls, post, queueResult, replayMediaRestored, pdfRelative, jpgRelative, queuePath };
 }
 
 if (require.main === module) {
@@ -381,8 +400,10 @@ module.exports = {
   pinQueueMediaUrls,
   rawGitHubRef,
   rawUrl,
+  restoreGovernedMediaOnReplay,
   run,
   safeId,
+  snapshotFile,
   stableMediaIdentity,
   stablePostFingerprint,
   upsertQueue,
