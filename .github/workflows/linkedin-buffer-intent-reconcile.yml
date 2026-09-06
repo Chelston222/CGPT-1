@@ -35,9 +35,9 @@ jobs:
             const path = require('node:path');
             const crypto = require('node:crypto');
             const {
-              LEDGER_TITLE,
               acceptanceComment,
               dispatchIntentMarker,
+              selectTrustedLedgerIssue,
               unresolvedIntentKeys,
             } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
             const { validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
@@ -80,15 +80,13 @@ jobs:
               return crypto.createHash('sha256').update(String(value || ''), 'utf8').digest('hex');
             }
 
-            const allIssues = await github.paginate(github.rest.issues.listForRepo, {
+            const ledgerUniverse = await github.paginate(github.rest.issues.listForRepo, {
               owner,
               repo,
               state: 'all',
-              creator: owner,
-              since: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
               per_page: 100,
             });
-            const ledger = allIssues.find((issue) => !issue.pull_request && issue.title === LEDGER_TITLE);
+            const ledger = selectTrustedLedgerIssue(ledgerUniverse, owner);
             if (!ledger) throw new Error('Durable Buffer acceptance ledger does not exist.');
             const ledgerComments = await github.paginate(github.rest.issues.listComments, {
               owner,
@@ -108,9 +106,17 @@ jobs:
               return;
             }
 
-            const approvalIssues = allIssues.filter((issue) => !issue.pull_request && /^\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+            const approvalIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'all',
+              creator: owner,
+              since: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+              per_page: 100,
+            });
+            const governedApprovals = approvalIssues.filter((issue) => !issue.pull_request && /^\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
             const sourceByKey = new Map();
-            for (const issue of approvalIssues) {
+            for (const issue of governedApprovals) {
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
               const botBodies = comments.filter((comment) => comment.user?.login === 'github-actions[bot]').map((comment) => String(comment.body || ''));
               for (const key of unresolved) {
