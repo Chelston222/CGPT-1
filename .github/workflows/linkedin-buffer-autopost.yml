@@ -50,9 +50,15 @@ jobs:
             const { buildCreatePostMutation, validateRequest } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-review-core.cjs'));
             const { preflightMedia } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-media-preflight.cjs'));
             const { postBody, validateWeeklyBatch, withQaReplenishment } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
-            const { acceptedMarker, classifyBufferFailure, localDate, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
+            const { classifyBufferFailure, localDate, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
             const { assertLiveNotionQualityGate } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-quality-gate.cjs'));
-            const { LEDGER_TITLE, acceptanceComment, acceptedKeys: ledgerAcceptedKeys } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
+            const {
+              LEDGER_TITLE,
+              acceptanceComment,
+              acceptedKeys: ledgerAcceptedKeys,
+              dispatchIntentComment,
+              unresolvedIntentKeys,
+            } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -107,12 +113,7 @@ jobs:
                 documentTitle: request.documentTitle || '',
                 documentThumbnailUrl: request.documentThumbnailUrl || null,
                 documentPageCount: request.documentPageCount || null,
-                channels: request.channels.map((channel) => ({
-                  target: channel.target,
-                  id: channel.id,
-                  text: channel.text,
-                  dueAt: channel.dueAt || null,
-                })),
+                channels: request.channels.map((channel) => ({ target: channel.target, id: channel.id, text: channel.text, dueAt: channel.dueAt || null })),
               });
             }
 
@@ -123,12 +124,7 @@ jobs:
                 if (existing.state !== 'open') await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'open' });
                 return existing.number;
               }
-              const created = await github.rest.issues.create({
-                owner,
-                repo,
-                title: LEDGER_TITLE,
-                body: 'Durable machine ledger of Buffer placement acceptance. Bot comments are authoritative for idempotency. Do not delete or manually edit accepted markers.',
-              });
+              const created = await github.rest.issues.create({ owner, repo, title: LEDGER_TITLE, body: 'Durable machine ledger of Buffer placement acceptance. Bot comments are authoritative for idempotency. Do not delete or manually edit accepted markers.' });
               return created.data.number;
             }
 
@@ -149,13 +145,11 @@ jobs:
             const ledgerIssueNumber = await getOrCreateLedgerIssue();
             const ledgerComments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: ledgerIssueNumber, per_page: 100 });
             const durableAccepted = ledgerAcceptedKeys(ledgerComments);
+            const unresolvedIntents = unresolvedIntentKeys(ledgerComments);
 
-            // Never process only the triggering issue. GitHub concurrency may replace an
-            // older pending run with a newer one, so the surviving run drains all current
-            // approvals under the same global capacity lock.
-            const issues = (await github.paginate(github.rest.issues.listForRepo, {
-              owner, repo, state: 'open', creator: owner, per_page: 100,
-            }))
+            // Never process only the triggering issue. The surviving concurrency run must
+            // drain all current open approvals under the same global capacity lock.
+            const issues = (await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', creator: owner, per_page: 100 }))
               .filter((issue) => !issue.pull_request && (issue.title.startsWith('[APPROVED LINKEDIN WEEK]') || issue.title.startsWith('[APPROVED LINKEDIN]')))
               .sort((a, b) => a.number - b.number);
 
@@ -168,16 +162,13 @@ jobs:
                 const batch = isWeekly ? validateWeeklyBatch(issue.body || '', baseQueue, process.env, Date.parse(issue.created_at), { allowGeneratedAtDrift: accepted.size > 0 }) : null;
 
                 let jobs;
-                if (isWeekly) {
-                  jobs = batch.jobs;
-                } else {
+                if (isWeekly) jobs = batch.jobs;
+                else {
                   const approvedRequest = validateRequest(issue.body || '', process.env, Date.parse(issue.created_at));
                   const queuePost = (queue.posts || []).find((post) => post.id === approvedRequest.postId && String(post.revision) === String(approvedRequest.revision));
                   if (!queuePost) throw new Error(`${approvedRequest.postId}@${approvedRequest.revision} is not the current locked queue revision. Legacy issue-only dispatch is disabled.`);
                   const lockedRequest = validateRequest(postBody(queuePost), process.env, Date.parse(issue.created_at));
-                  if (requestFingerprint(approvedRequest) !== requestFingerprint(lockedRequest)) {
-                    throw new Error(`${approvedRequest.postId}@${approvedRequest.revision} approval body does not exactly match the locked queue copy, schedule, targets or media.`);
-                  }
+                  if (requestFingerprint(approvedRequest) !== requestFingerprint(lockedRequest)) throw new Error(`${approvedRequest.postId}@${approvedRequest.revision} approval body does not exactly match the locked queue copy, schedule, targets or media.`);
                   jobs = [{ post: queuePost, request: lockedRequest }];
                 }
 
@@ -203,6 +194,11 @@ jobs:
                 const occupancy = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [target, capacity.counts[id] || 0]));
                 const plan = planCapacityWindow(jobs, occupancy, accepted);
 
+                const unresolvedForThisIssue = plan.dispatch.filter(({ key }) => unresolvedIntents.has(key));
+                if (unresolvedForThisIssue.length) {
+                  throw new Error(`Unresolved prior Buffer dispatch intent for ${unresolvedForThisIssue.map((item) => item.key).join(', ')}. Automatic recreation is blocked until Buffer is reconciled and the ledger is repaired.`);
+                }
+
                 const targetByChannelId = Object.fromEntries(Object.entries(channelIdByTarget).map(([target, id]) => [id, target]));
                 const proposedJobs = plan.dispatch.map(({ job, channel }) => ({ post: job.post, request: { mode: job.request.mode, channels: [channel] } }));
                 const proposedDates = new Set(plan.dispatch.map(({ channel }) => localDate(channel.dueAt, queue.timezone || 'Europe/London')).filter(Boolean));
@@ -219,36 +215,23 @@ jobs:
                 }
 
                 for (const { job, channel, key } of plan.dispatch) {
-                  if (channel.dueAt && new Date(channel.dueAt).getTime() <= Date.now() + 5 * 60_000) {
-                    throw new Error(`${job.post.id} / ${channel.name}: approved time is too close or has passed; revise the schedule and approve the new revision.`);
-                  }
-                  const media = job.request.mediaUrl ? {
-                    url: job.request.mediaUrl,
-                    kind: job.request.mediaKind,
-                    title: job.request.documentTitle,
-                    thumbnailUrl: job.request.documentThumbnailUrl,
-                    altText: job.request.mediaAltText,
-                  } : null;
+                  if (channel.dueAt && new Date(channel.dueAt).getTime() <= Date.now() + 5 * 60_000) throw new Error(`${job.post.id} / ${channel.name}: approved time is too close or has passed; revise the schedule and approve the new revision.`);
+                  const media = job.request.mediaUrl ? { url: job.request.mediaUrl, kind: job.request.mediaKind, title: job.request.documentTitle, thumbnailUrl: job.request.documentThumbnailUrl, altText: job.request.mediaAltText } : null;
+
+                  const intentBody = dispatchIntentComment({ key, queueId: job.post.id, revision: job.post.revision, targetName: channel.name, target: channel.target });
+                  await commentWithRetry(ledgerIssueNumber, intentBody);
+                  await commentWithRetry(issue.number, intentBody);
+                  unresolvedIntents.add(key);
+
                   const data = await buffer(buildCreatePostMutation(channel, job.request.mode, media));
                   const result = data.createPost;
                   if (!result?.post?.id) throw new Error(`${job.post.id} / ${channel.name}: Buffer did not return a post ID.`);
                   const proof = mediaProofs.get(`${job.post.id}@${job.post.revision}`)?.media || null;
-                  const acceptedBody = acceptanceComment({
-                    key,
-                    queueId: job.post.id,
-                    revision: job.post.revision,
-                    targetName: channel.name,
-                    target: channel.target,
-                    bufferId: result.post.id,
-                    dueAt: channel.dueAt,
-                    mediaProof: proof,
-                  });
+                  const acceptedBody = acceptanceComment({ key, queueId: job.post.id, revision: job.post.revision, targetName: channel.name, target: channel.target, bufferId: result.post.id, dueAt: channel.dueAt, mediaProof: proof });
 
-                  // Persist acceptance immediately after Buffer returns the post ID. The
-                  // durable ledger makes a replacement approval issue idempotent, while
-                  // the approval-issue copy keeps the publication verifier self-contained.
                   await commentWithRetry(ledgerIssueNumber, acceptedBody);
                   await commentWithRetry(issue.number, acceptedBody);
+                  unresolvedIntents.delete(key);
                   durableAccepted.add(key);
                   accepted.add(key);
                   results.push({ key, queueId: job.post.id, revision: job.post.revision, name: channel.name, postId: result.post.id, dueAt: channel.dueAt, mediaProof: proof });
@@ -263,42 +246,34 @@ jobs:
                 const alreadyReportedSameWait = comments.some((comment) => comment.user?.login === 'github-actions[bot]' && String(comment.body || '').includes(waitingMarker));
                 if (results.length || !waiting || !alreadyReportedSameWait) await github.rest.issues.createComment({
                   owner, repo, issue_number: issue.number, body: [
-                    waiting ? '🕒 Buffer capacity window processed.' : '✅ Buffer accepted every remaining requested destination.',
-                    '',
-                    `- Quality gate mode: **${qualityMode}**`,
-                    ...qualityLines,
+                    waiting ? '🕒 Buffer capacity window processed.' : '✅ Buffer accepted every remaining requested destination.', '',
+                    `- Quality gate mode: **${qualityMode}**`, ...qualityLines,
                     `- Audit status: **${waiting ? 'approved, waiting for Buffer capacity' : 'scheduled'}**`,
                     batch ? `- Approved week: **${batch.weekStart} to ${batch.weekEnd}**` : `- Queue post: **${jobs[0].post.id}**`,
                     `- Already accepted before this run: **${plan.alreadyAccepted.length}**`,
                     `- Accepted in this run: **${results.length}**`,
                     `- Waiting for a free queue slot: **${waiting}**`,
-                    ...(resultLines.length ? resultLines : ['- No new Buffer placements were created in this capacity check.']),
-                    '',
+                    ...(resultLines.length ? resultLines : ['- No new Buffer placements were created in this capacity check.']), '',
                     waiting ? 'The exact owner approval remains locked. The next automatic capacity check will resume without recreating accepted destinations.' : 'This records Buffer acceptance, not proof of LinkedIn publication. Publication verification is handled separately after the due time.',
                     waiting ? waitingMarker : '',
                   ].join('\n'),
                 });
                 if (!waiting) await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed' });
               } catch (error) {
-                const retryable = error.failure?.retryable === true;
-                const partial = results.length
-                  ? results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\` (already durably recorded)`).join('\n')
-                  : '- None';
+                const retryable = error.failure?.retryable === true && !/Unresolved prior Buffer dispatch intent/.test(error.message);
+                const partial = results.length ? results.map((result) => `- ${result.queueId}@${result.revision} · ${result.name}: Buffer post ID \`${result.postId}\` (already durably recorded)`).join('\n') : '- None';
                 await github.rest.issues.createComment({
                   owner, repo, issue_number: issue.number,
                   body: [
                     '❌ LinkedIn Buffer dispatch failed closed.', '',
                     `- Error: ${error.message}`,
-                    `- Failure class: **${error.failure?.code || (error.qualityGate ? 'live_quality_gate' : 'preflight_failure')}**`,
+                    `- Failure class: **${/Unresolved prior Buffer dispatch intent/.test(error.message) ? 'unresolved_dispatch_intent' : error.failure?.code || (error.qualityGate ? 'live_quality_gate' : 'preflight_failure')}**`,
                     '- Destinations created before the failure:', partial, '',
-                    retryable ? 'The next capacity check will retry and skip every destination already recorded in the durable acceptance ledger.' : 'This needs correction and a new revision before scheduling can continue. Any destination already recorded in the durable ledger remains protected from duplicate creation.',
+                    retryable ? 'The next capacity check will retry and skip every destination already recorded in the durable acceptance ledger.' : 'This needs correction before scheduling can continue. Any unresolved dispatch intent must be reconciled against Buffer before automatic recreation. Any destination already accepted remains protected from duplicate creation.',
                     'Nothing should be assumed published.',
                   ].join('\n'),
                 });
-                if (!retryable) await github.rest.issues.update({
-                  owner, repo, issue_number: issue.number,
-                  title: issue.title.replace('[APPROVED LINKEDIN WEEK]', '[FAILED LINKEDIN WEEK]').replace('[APPROVED LINKEDIN]', '[FAILED LINKEDIN]'),
-                });
+                if (!retryable) await github.rest.issues.update({ owner, repo, issue_number: issue.number, title: issue.title.replace('[APPROVED LINKEDIN WEEK]', '[FAILED LINKEDIN WEEK]').replace('[APPROVED LINKEDIN]', '[FAILED LINKEDIN]') });
                 if (context.eventName === 'issues') core.setFailed(error.message);
               }
             }
