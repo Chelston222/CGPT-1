@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-06T08:23:57.174Z",
+  "generatedAt": "2026-09-06T08:34:16.786Z",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -1220,6 +1220,49 @@
       ],
       "scheduledAt": {
         "secondary": "2026-09-11T08:45:00+01:00"
+      }
+    },
+    {
+      "id": "rs-li-retention-school-part-2",
+      "revision": 1,
+      "title": "Retention School Part 2: Build the Return System",
+      "category": "buyer_diagnostics",
+      "funnelStage": "mof",
+      "format": "carousel",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "copy": {
+        "default": "Finding the leak is useful.\n\nBuilding the system that closes it is where things get interesting.\n\nPart 2 of Retention School is about giving every completed appointment a clear next step.\n\nAppointment.\nAftercare.\nCheck-in.\nRebooking.\nReminder.\nReactivation.\n\nNot every customer needs every message.\n\nBut the journey should be designed before the customer disappears.\n\nStart with one service.\n\nAsk:\n\nWhat should happen immediately afterwards?\n\nWhen should this customer realistically return?\n\nWhat happens if they do not rebook?\n\nWhen do they become lapsed?\n\nWhat should bring them back?\n\nThen measure the outcome.\n\nNot just whether the message was sent.\n\nDid they rebook?\nHow quickly?\nDid a lapsed customer return?\nDid another appointment get created?\n\nOne service.\nOne journey.\nOne measurable Client Return System.\n\nNext: Part 3, Write the Messages That Bring Them Back.\n\n#RetentionSchool"
+      },
+      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-retention-school-part-2/thumbnail.jpg",
+      "mediaAlt": "Retention School Part 2 carousel showing a client return system from appointment through aftercare, check-in, rebooking, reminders and reactivation.",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-retention-school-part-2/rs-li-retention-school-part-2.pdf",
+      "documentTitle": "Retention School Part 2 Build the Return System",
+      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-retention-school-part-2/thumbnail.jpg",
+      "carousel": {
+        "libraryId": "rs-li-retention-school-part-2",
+        "slideCount": 10,
+        "readiness": "ready",
+        "pdfBytes": 22244922,
+        "pdfSha256": "653432b489b7df73e1bcf52b78c413b2dc14517c8ee65ffdf96eb5f038b27b66",
+        "verifiedAt": "2026-09-06T08:34:16.786Z",
+        "sourceFolder": "ChatGPT PDF intake rs-li-retention-school-part-2"
+      },
+      "sourceUrl": "https://app.notion.com/p/3d3e72eb8587817eb5e9c5d3e75b9c36",
+      "sourceType": "chatgpt_pdf_intake",
+      "status": "review",
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-06T08:34:16.786Z",
+          "actor": "github-actions[bot]",
+          "note": "PDF reconstructed from locked base64 chunks, verified against its locked SHA-256, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied."
+        }
+      ],
+      "scheduledAt": {
+        "secondary": "2026-09-14T08:45:00+01:00"
       }
     }
   ]
