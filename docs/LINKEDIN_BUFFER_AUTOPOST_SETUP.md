@@ -2,273 +2,225 @@
 
 ## Purpose
 
-This document describes the governed release layer that sits between the 222Emails LinkedIn review queue and Buffer.
+This document describes the governed release layer between the 222Emails LinkedIn review queue and Buffer. The canonical PDF operator contract is `docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md`.
 
-A saved review decision is not publication authority. Only an eligible repository-owner approval issue can enter the Buffer release path. PDF/document posts additionally require the canonical exact-media intake route and live Notion quality gate.
+A saved review decision is not publication authority. Only an eligible repository-owner approval can enter the Buffer release path. Governed PDF/document posts additionally require the canonical exact-media IMAP intake and live Notion gate.
 
-Supported destinations:
+## Authority states
 
-- Chelston personal LinkedIn profile
-- Main 222Emails LinkedIn Page
-- 222Emails | Retention Lab
-
-Supported formats:
-
-- text-only posts
-- single-image posts
-- LinkedIn PDF/document posts
-
-The repository and public review UI do not contain Buffer credentials.
-
-## Live components
-
-- Content Swiper: `apps/linkedin-review/`
-- Governed queue: `apps/linkedin-review/queue.json`
-- Approval and Buffer release: `.github/workflows/linkedin-buffer-autopost.yml`
-- Buffer intent reconciliation: `.github/workflows/linkedin-buffer-intent-reconcile.yml`
-- Publication and analytics verification: `.github/workflows/linkedin-publication-verifier.yml`
-- Read-only Buffer queue diagnostic: `.github/workflows/buffer-usage-check-once.yml`
-- Media integrity preflight: `scripts/linkedin-media-preflight.cjs`
-- Durable Buffer acceptance ledger helpers: `scripts/linkedin-buffer-acceptance-ledger.cjs`
-- Live Notion quality gate: `scripts/linkedin-notion-quality-gate.cjs`
-- Core request and mutation builder: `scripts/linkedin-review-core.cjs`
-- Weekly lock and validation: `scripts/linkedin-week-batch.cjs`
-- Canonical PDF intake: `.github/workflows/linkedin-imap-pdf-intake.yml`
-- Canonical PDF playbook: `docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md`
-
-## Repository secrets
-
-Store production secrets only in GitHub Actions secrets:
-
-- `BUFFER_API_KEY`
-- `BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID`
-- `BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID`
-- `BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID`
-- `NOTION_API_KEY`
-
-For the PrivateEmail PDF bridge, the existing mail credential is also required by the intake workflow.
-
-Never place API keys or mailbox passwords in issues, repository files, Notion rows or public review state.
-
-## Authority model
-
-These states must remain separate:
+Keep these states separate:
 
 1. reviewed
 2. exact media verified
 3. owner approved
-4. accepted or scheduled by Buffer
+4. accepted/scheduled by Buffer
 5. publication verified
 
-A YES decision in the Content Swiper is review state only. `[PDF INTAKE READY]` is media-readiness evidence only. A Buffer post ID proves provider acceptance only. None of those alone prove LinkedIn publication.
+A Buffer post ID is provider acceptance evidence. It is not LinkedIn publication proof.
+
+## Live components
+
+- review UI: `apps/linkedin-review/`
+- governed queue: `apps/linkedin-review/queue.json`
+- release: `.github/workflows/linkedin-buffer-autopost.yml`
+- read-only intent recovery: `.github/workflows/linkedin-buffer-intent-reconcile.yml`
+- publication/analytics verification: `.github/workflows/linkedin-publication-verifier.yml`
+- media preflight: `scripts/linkedin-media-preflight.cjs`
+- durable ledger helpers: `scripts/linkedin-buffer-acceptance-ledger.cjs`
+- live Notion gate: `scripts/linkedin-notion-quality-gate.cjs`
+- request builder: `scripts/linkedin-review-core.cjs`
+- weekly lock validation: `scripts/linkedin-week-batch.cjs`
+- canonical PDF intake: `.github/workflows/linkedin-imap-pdf-intake.yml`
+
+Secrets remain in GitHub Actions secrets only. Do not place API keys or mailbox passwords in issues, repository files or Notion.
 
 ## Release lock
 
-All production Buffer releases share one concurrency group:
+All production Buffer releases use:
 
 ```text
 linkedin-buffer-capacity-release
 ```
 
-The surviving run drains the full eligible open approval queue under that lock rather than processing only the triggering issue. The read-only dispatch-intent reconciler uses the same lock so reconciliation and new release cannot race each other.
+The surviving run drains the full eligible open approval queue under that lock. The read-only intent reconciler shares the same lock, preventing reconciliation and a new provider write from racing each other.
 
-## Production credential gate
+## Credential gate
 
-The production release fails closed if `BUFFER_API_KEY` is missing.
+Production release fails closed without `BUFFER_API_KEY`.
 
-For every non-QA governed release, it also fails closed without `NOTION_API_KEY`. The live Notion gate is part of the release contract, not an optional enhancement.
+Every non-QA governed release also fails closed without `NOTION_API_KEY`. Live Notion is part of the release authority model, not an optional enhancement.
 
-## Current queue lock
+## Queue and approval lock
 
-A single-post approval is accepted only when it exactly matches a current `post-id@revision` in `apps/linkedin-review/queue.json`.
+A single-post approval must exactly match a current `post-id@revision` in the governed queue.
 
-The approval fingerprint locks release material including:
+The fingerprint binds:
 
-- post ID and revision
-- target or targets
+- ID and revision
+- target(s)
 - mode and schedule
 - caption copy
 - media URL and kind
-- image alt text where applicable
+- image alt text when applicable
 - document title and thumbnail
 - document page count
-- media byte count and SHA-256 where supplied
+- media byte count and SHA-256 when supplied
 
-A stale or issue-only request that no longer matches the current queue fails closed. Changed release material requires a new revision and new owner approval.
+Changed release material requires a new revision and new approval.
 
 ## Live Notion quality gate
 
-For normal production rows the release workflow reads the exact Notion source page referenced by the queue and requires the configured content and automation state to remain release-ready.
+For governed PDF intake rows, Notion must remain active and release-ready:
 
-For governed PDF intake rows the gate additionally binds:
-
+- page not archived
+- page not in trash
+- Content Decision = Keep
+- Approval = Approved
+- Anti-DNA pass
 - exactly one governed target
 - exactly one locked target schedule
 - Asset Ready
 - Automation Ready
-- Final Copy
-- Publish Payload
-- Scheduled At
+- automation-capable status, not Manual
+- permitted Buffer state
+- Final Copy exactly matches the queue caption
+- Publish Payload exactly matches the queue caption
+- Scheduled At represents the same instant as the queue schedule
 
-The locked queue caption must exactly match both Final Copy and Publish Payload. The Notion schedule must represent the same instant as the locked queue schedule.
-
-`Automation Status = Manual` may remain legitimate for other governed content, but it does not authorise automated Buffer release for a canonical PDF intake row.
+The release workflow checks the live Notion row during planning and **again immediately before each dispatch intent and Buffer provider write**. This closes the practical time-of-check/time-of-use gap if the source row is revoked while media or capacity preflight is running.
 
 ## Media preflight
 
-All approved media selected for a dispatch plan is remotely preflighted before the first Buffer write.
+All approved media selected for dispatch is remotely preflighted before the first Buffer write.
 
-The preflight verifies, as applicable:
+As applicable it verifies:
 
-- HTTPS transport
+- HTTPS
 - final resolved URL
 - HTTP success
-- expected content type
+- content type
 - byte ceiling
-- approved byte count
+- approved bytes
 - approved SHA-256
 - PDF signature
-- document page count
+- page count
 - image alt text
 
-For canonical PDF intake, the governed PDF and thumbnail URLs are pinned to the exact immutable Git commit that contains those files before downstream release. The public PDF is rechecked for exact bytes, SHA-256 and page count. The public thumbnail is also checked against the exact promoted thumbnail bytes and SHA-256. The release therefore does not depend on a mutable `main` media ref.
+Canonical PDF and thumbnail URLs are revision-scoped and pinned to the same immutable Git commit. The intake also publicly re-verifies the PDF bytes/SHA/pages and exact promoted thumbnail bytes/SHA before approval can proceed.
 
-## Buffer capacity
+## Capacity
 
-Capacity calculations inspect the current scheduled Buffer inventory for the configured LinkedIn channels. Duplicate channel IDs are normalised before querying.
+Capacity checks inspect the current scheduled Buffer inventory for configured LinkedIn channels. Duplicate channel IDs are normalised.
 
-If the provider returns more scheduled rows than the supported complete query can represent, release fails closed rather than calculating from a partial inventory.
+If the provider response cannot represent the full inventory within the supported query, capacity fails closed instead of using a partial count.
 
-Current daily placement limits and weekly content ceilings remain enforced by the existing capacity policy. Existing owner-approved schedules are never silently moved to make capacity.
+Existing owner-approved schedules are never silently moved to create capacity.
 
-## Durable dispatch intent and acceptance ledger
+## Durable dispatch intent and acceptance
 
-Every governed placement has a stable placement key derived from queue ID, revision and destination.
+Each placement has a stable key:
 
-Immediately before the Buffer write, the workflow writes a durable dispatch-intent marker to the machine ledger and the approval issue. This records that a provider write may have occurred even if the workflow crashes before receiving or persisting the response.
+```text
+<post-id>@<revision>:<target>
+```
 
-The ledger issue may be created by GitHub Actions, so trusted ledger discovery accepts the repository owner or `github-actions[bot]` as the ledger creator. More than one trusted ledger is treated as split-brain state and fails closed.
+Immediately before Buffer mutation the workflow writes a durable dispatch intent to the trusted ledger and approval issue.
 
-When Buffer returns a post ID, the workflow immediately writes a durable acceptance record containing the placement identity, Buffer post ID, due time and available media proof.
+After Buffer returns a post ID, durable acceptance is written to the trusted ledger first and then mirrored onto the approval issue.
 
-Accepted placement keys are treated as idempotent across later approval runs. They are not blindly recreated because another destination failed or a later workflow run started.
+Trusted ledger selection allows the repository owner or `github-actions[bot]` as creator. More than one trusted ledger is split-brain state and fails closed.
 
-An unresolved intent is more conservative: automatic recreation of that placement is blocked until the provider state is reconciled.
+A durable accepted key is idempotent and is not recreated. An unresolved intent also blocks automatic recreation until provider state is reconciled.
 
 ## Read-only intent reconciliation
 
-The owner-gated workflow `.github/workflows/linkedin-buffer-intent-reconcile.yml` exists only for unresolved dispatch intents.
+The owner-gated `.github/workflows/linkedin-buffer-intent-reconcile.yml` is strictly a recovery path for uncertain provider writes.
 
-It performs Buffer reads, not Buffer creates, edits or deletes.
+It never creates, edits or deletes a Buffer post.
 
-For each unresolved placement it reconstructs the locked release identity and searches the scheduled Buffer inventory. Automatic repair is allowed only when exactly one provider record matches:
+It reconstructs the locked placement and searches a bounded time window around its due instant. Recovery can use a provider record in `scheduled`, `sent` or `error` state, which allows an uncertain write to be reconciled even after the scheduled time has passed.
+
+Automatic repair requires exactly one provider post matching:
 
 - destination channel
-- exact due time
+- exact due instant
 - exact caption digest
-- exact media source URL for media posts, or no media asset for text-only posts
+- exact media asset source URL for media posts, or no media asset for text-only posts
 
-The media comparison uses Buffer's returned asset `source`, so an unrelated post with the same time and caption cannot be adopted merely because its text matches.
+Zero or multiple matches remain blocked.
 
-When exactly one full match exists, the reconciler writes the missing durable acceptance record. When zero or multiple matches exist, the placement stays blocked for explicit review.
-
-This boundary prevents a retry from manufacturing a duplicate when the original provider write may already have succeeded.
-
-## Approval examples
-
-### Text-only
-
-```text
-POST_ID: tte-li-013
-REVISION: 1
-CATEGORY: buyer_diagnostics
-TARGETS: personal,main
-MODE: schedule
-CONTENT_QA: PASS
-SCHEDULE_AT_PERSONAL: 2026-09-10T15:00:00+01:00
-SCHEDULE_AT_MAIN: 2026-09-10T20:00:00+01:00
----
-Fallback copy
----PERSONAL---
-Founder-led version
----MAIN---
-Company-page version
-```
-
-### Single-image additions
-
-```text
-CONTENT_QA: PASS
-SAFE_ZONE_QA: PASS
-MEDIA_URL: https://example.com/visual.png
-MEDIA_KIND: image
-ALT_TEXT: Clear description of the visual and its useful meaning
-MEDIA_BYTES: 845221
-MEDIA_SHA256: <64-character SHA-256 when the media is locked>
-```
-
-### PDF/document additions
-
-```text
-CONTENT_QA: PASS
-MEDIA_URL: https://raw.githubusercontent.com/<owner>/<repo>/<40-character-commit>/apps/linkedin-review/media/intake/<id>/r<revision>/<id>.pdf
-MEDIA_KIND: document
-DOCUMENT_TITLE: Five places repeat revenue quietly leaks
-DOCUMENT_THUMBNAIL_URL: https://raw.githubusercontent.com/<owner>/<repo>/<40-character-commit>/apps/linkedin-review/media/intake/<id>/r<revision>/thumbnail.jpg
-DOCUMENT_PAGE_COUNT: 10
-MEDIA_BYTES: 5187344
-MEDIA_SHA256: <64-character SHA-256>
-```
-
-Canonical IMAP PDF intake itself is single-target. The wider review system still supports explicit multi-target release for other content where the queue and quality model provide unambiguous per-destination state.
+When exactly one match exists, the reconciler writes the missing durable acceptance evidence. Publication still requires the separate verifier.
 
 ## Schedule integrity
 
 - `Europe/London` is the operating timezone.
-- Scheduled timestamps must contain an explicit UTC offset or `Z`.
-- The live release path rejects a due time that is too close to dispatch or has already passed.
-- Existing owner-approved schedules must never be silently moved.
-- A schedule change requires a new locked revision and new approval.
-- New unapproved inventory follows the current testing policy in `docs/LINKEDIN_CONTENT_STRATEGY_2026.md`.
-- Drafts do not consume scheduled publishing capacity until they are explicitly scheduled.
+- scheduled timestamps contain an explicit UTC offset or `Z`
+- a live release rejects a due time that is too close or already passed
+- existing approved schedules are never silently moved
+- changed time requires a new locked revision and owner approval
+- canonical IMAP PDF intake additionally limits new schedules to 90 days so they remain inside the current 120-day publication-verifier horizon
+
+## PDF approval shape
+
+```text
+POST_ID: <id>
+REVISION: <revision>
+CATEGORY: <category>
+TARGETS: <single target>
+MODE: schedule
+CONTENT_QA: PASS
+SCHEDULE_AT: <ISO with explicit offset or Z>
+MEDIA_URL: https://raw.githubusercontent.com/<owner>/<repo>/<40-character-commit>/apps/linkedin-review/media/intake/<id>/r<revision>/<id>.pdf
+MEDIA_KIND: document
+DOCUMENT_TITLE: <document title>
+DOCUMENT_THUMBNAIL_URL: https://raw.githubusercontent.com/<owner>/<repo>/<40-character-commit>/apps/linkedin-review/media/intake/<id>/r<revision>/thumbnail.jpg
+DOCUMENT_PAGE_COUNT: <page count>
+MEDIA_BYTES: <exact bytes>
+MEDIA_SHA256: <exact SHA-256>
+---
+<exact final caption>
+```
+
+Canonical IMAP PDF intake is single-target. The broader non-PDF review system can still support multi-target releases where its state model is unambiguous.
 
 ## Publication verification
 
 Buffer acceptance is not publication proof.
 
-After the due time, `.github/workflows/linkedin-publication-verifier.yml` reads the exact Buffer post ID. Only positive provider state `sent` with a sent timestamp becomes verified publication. Provider `error` becomes failed. A late unresolved state stays pending or unknown for review.
+The publication verifier reads exact accepted Buffer IDs. Normally those IDs come from trusted bot evidence on the approval issue. If the durable ledger was written but approval-issue writeback was lost, the verifier can recover the Buffer ID by mapping the trusted dispatch-intent placement key to exactly one governed approval issue.
 
-The verifier normally discovers accepted Buffer IDs from bot evidence on the approval issue. It also has a durable-ledger fallback. If the ledger acceptance was written but the matching approval-issue acceptance comment was lost after a partial failure, the verifier maps the trusted ledger entry back to the exact approval issue through its pre-write dispatch-intent marker and continues verification from that durable Buffer ID.
+Only provider state `sent` with `sentAt` becomes publication verified.
+
+Provider `error` becomes failed. A late unresolved state remains pending/UNKNOWN.
 
 Publication verification is read-only toward Buffer.
 
-PDF/document posts retain a native LinkedIn analytics requirement when Buffer does not expose complete document analytics.
+PDF posts retain a native LinkedIn analytics requirement when Buffer does not expose sufficient document analytics.
 
-## Retired PDF release surfaces
+## Retired PDF surfaces
 
-The historical `.github/workflows/linkedin-pdf-intake.yml` and `.github/workflows/linkedin-pdf-share-now.yml` are retired compatibility surfaces. They must not provide a parallel production upload, reconstruction or immediate-publication route.
-
-For LinkedIn PDF/document publishing, use the canonical IMAP exact-media path documented in `docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md`.
+`.github/workflows/linkedin-pdf-intake.yml` and `.github/workflows/linkedin-pdf-share-now.yml` are retired compatibility surfaces. They must not provide a parallel PDF reconstruction or immediate publication route.
 
 ## Failure classes
 
-The system should distinguish at least:
+The release layer distinguishes at least:
 
-- approval and revision mismatch
+- approval/revision mismatch
 - queue fingerprint drift
 - live Notion quality failure
-- media URL, type, size, byte or hash failure
-- Buffer authentication or channel access failure
-- incomplete Buffer capacity inventory
-- unresolved prior dispatch intent
+- archived/trashed Notion source
+- media URL/type/size/byte/hash failure
+- Buffer authentication/channel failure
+- incomplete capacity inventory
+- unresolved dispatch intent
 - durable-ledger split-brain state
-- Buffer write failure
-- acceptance-ledger write failure
+- Buffer provider-write failure
+- durable acceptance write failure
 - publication verification failure
-- analytics unavailable or native analytics required
+- analytics unavailable/native analytics required
 
-A successful destination is never recreated simply because another destination failed later. A failed or unknown publication must never be counted as published.
+Do not recreate an accepted destination simply because another stage failed. Do not count failed, pending or unknown state as published.
 
 ## Release rule
 
-Do not call the release layer complete merely because code exists. A hardened release is only green when the relevant CI suites pass, the current queue and media contracts remain valid, documentation matches implementation, no unexplained unresolved Buffer intent remains, and any live activation claim is supported by provider evidence rather than inference.
+A hardened release is green only when relevant CI is passing, queue and media contracts are current, documentation matches implementation, no unexplained unresolved intent remains, and every live claim is supported by provider evidence rather than inference.
