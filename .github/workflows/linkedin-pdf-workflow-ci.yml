@@ -5,6 +5,9 @@ on:
     paths:
       - '.github/workflows/linkedin-imap-pdf-intake.yml'
       - '.github/workflows/linkedin-buffer-autopost.yml'
+      - '.github/workflows/linkedin-buffer-intent-reconcile.yml'
+      - '.github/workflows/linkedin-pdf-intake.yml'
+      - '.github/workflows/linkedin-pdf-share-now.yml'
       - '.github/workflows/linkedin-publication-verifier.yml'
       - 'scripts/linkedin-imap-*.mjs'
       - 'scripts/linkedin-imap-*.cjs'
@@ -15,11 +18,15 @@ on:
       - 'scripts/linkedin-buffer-*.cjs'
       - 'tests/linkedin-*.test.cjs'
       - 'docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md'
+      - 'docs/LINKEDIN_PDF_INTAKE.md'
   push:
     branches: [main]
     paths:
       - '.github/workflows/linkedin-imap-pdf-intake.yml'
       - '.github/workflows/linkedin-buffer-autopost.yml'
+      - '.github/workflows/linkedin-buffer-intent-reconcile.yml'
+      - '.github/workflows/linkedin-pdf-intake.yml'
+      - '.github/workflows/linkedin-pdf-share-now.yml'
       - '.github/workflows/linkedin-publication-verifier.yml'
       - 'scripts/linkedin-imap-*.mjs'
       - 'scripts/linkedin-imap-*.cjs'
@@ -30,6 +37,7 @@ on:
       - 'scripts/linkedin-buffer-*.cjs'
       - 'tests/linkedin-*.test.cjs'
       - 'docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md'
+      - 'docs/LINKEDIN_PDF_INTAKE.md'
   workflow_dispatch:
 
 permissions:
@@ -42,7 +50,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       - name: Syntax checks
         shell: bash
         run: |
@@ -67,3 +75,4 @@ jobs:
           node --test tests/linkedin-notion-quality-gate.test.cjs
           node --test tests/linkedin-buffer-capacity.test.cjs
           node --test tests/linkedin-buffer-acceptance-ledger.test.cjs
+          node --test tests/linkedin-hardening-static.test.cjs
