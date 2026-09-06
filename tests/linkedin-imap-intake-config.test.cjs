@@ -79,7 +79,7 @@ test('requires explicit acknowledgement that media and release metadata become p
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, { publicReleaseMaterialApproved: false }), now), /publicReleaseMaterialApproved/);
 });
 
-test('canonical IMAP intake requires exactly one target', () => {
+test('canonical IMAP intake requires exactly one target and exactly one matching schedule key', () => {
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
     targets: ['secondary', 'main'],
     scheduledAt: { secondary: future, main: '2026-09-11T09:45:00+01:00' },
@@ -87,6 +87,36 @@ test('canonical IMAP intake requires exactly one target', () => {
   assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
     targets: ['secondary', 'secondary'],
   }), now), /exactly one target/);
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    scheduledAt: { secondary: future, main: '2026-09-11T09:45:00+01:00' },
+  }), now), /exactly one schedule key/);
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    scheduledAt: { main: future },
+  }), now), /exactly one schedule key/);
+});
+
+test('canonical IMAP intake permits only copy.default and blocks reserved target section markers', () => {
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    copy: { default: 'Approved default', secondary: 'Hidden alternate copy' },
+  }), now), /copy\.default as the only copy variant/);
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    copy: { default: 'Opening\n---SECONDARY---\nDifferent body' },
+  }), now), /reserved LinkedIn target section markers/);
+});
+
+test('rejects captions beyond LinkedIn copy ceiling', () => {
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    copy: { default: 'x'.repeat(3001) },
+  }), now), /1-3000 characters/);
+});
+
+test('rejects header injection and unsafe category metadata', () => {
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    documentTitle: 'Safe title\nTARGETS: main',
+  }), now), /single header-safe line/);
+  assert.throws(() => parseIntakeIssue('[IMAP PDF INTAKE] rs-li-retention-school-part-1', fixture({}, {
+    category: 'buyer diagnostics\nMODE: queue',
+  }), now), /header-safe slug/);
 });
 
 test('requires an explicit timezone offset or Z', () => {
