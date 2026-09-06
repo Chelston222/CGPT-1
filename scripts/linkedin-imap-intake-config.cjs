@@ -61,9 +61,8 @@ function parseIntakeIssue(title, body, nowMs = Date.now()) {
   assert(String(manifest.documentTitle || '').trim(), 'manifest.documentTitle is required.');
   assert(String(manifest.copy?.default || '').trim(), 'manifest.copy.default is required.');
   assert(!String(manifest.copy.default).includes('\u2014'), 'manifest.copy.default must not contain em dashes.');
-  assert(Array.isArray(manifest.targets) && manifest.targets.length >= 1, 'manifest.targets is required.');
+  assert(Array.isArray(manifest.targets) && manifest.targets.length === 1, 'Canonical IMAP PDF intake requires exactly one target.');
   assert(manifest.targets.every((target) => ALLOWED_TARGETS.has(target)), 'manifest.targets contains an unsupported target.');
-  assert(new Set(manifest.targets).size === manifest.targets.length, 'manifest.targets must not contain duplicate destinations.');
   assert((manifest.mode || 'draft') === 'schedule', 'Reusable IMAP intake currently requires mode=schedule.');
   assert(manifest.publicMediaApproved === true, 'manifest.publicMediaApproved must be true because the governed Buffer media URL is publicly reachable before publication.');
   assert(String(manifest.expectedSha256 || '').toLowerCase() === String(config.expectedSha256).toLowerCase(), 'manifest.expectedSha256 must match expectedSha256.');
