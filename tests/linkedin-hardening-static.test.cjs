@@ -115,9 +115,11 @@ test('one-shot approvals must exactly match a current locked queue revision', ()
 
 test('production release fails closed without live Notion and uses durable acceptance idempotency', () => {
   assert.match(autopost, /NOTION_API_KEY is missing\. Production LinkedIn release fails closed/);
-  assert.match(autopost, /BUFFER ACCEPTANCE LEDGER/);
+  assert.match(autopost, /LEDGER_TITLE/);
   assert.match(autopost, /commentWithRetry\(ledgerIssueNumber, acceptedBody\)/);
   assert.match(autopost, /commentWithRetry\(issue\.number, acceptedBody\)/);
+  assert.match(autopost, /dispatchIntentComment/);
+  assert.match(autopost, /unresolvedIntentKeys/);
 });
 
 test('IMAP intake explicitly checks public raw-hosting compatibility and revision-scoped evidence', () => {
