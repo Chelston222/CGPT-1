@@ -7,9 +7,17 @@ const EXPECTED_SENDER = 'tripletwochelston@gmail.com';
 const SUBJECT_PREFIX = 'TTE LINKEDIN PDF INTAKE ';
 const EXPLICIT_ZONE_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 const MAX_SCHEDULE_HORIZON_MS = 90 * 24 * 60 * 60 * 1000;
+const RESERVED_COPY_MARKER = /^---(?:PERSONAL|MAIN|SECONDARY)---$/mi;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+function assertHeaderSafe(value, fieldName, maxLength = 240) {
+  const text = String(value || '').trim();
+  assert(text.length > 0 && text.length <= maxLength, `${fieldName} must be 1-${maxLength} characters.`);
+  assert(!/[\r\n\u0000-\u001f\u007f]/.test(text), `${fieldName} must be a single header-safe line with no control characters.`);
+  return text;
 }
 
 function parseIntakeIssue(title, body, nowMs = Date.now()) {
@@ -58,10 +66,23 @@ function parseIntakeIssue(title, body, nowMs = Date.now()) {
   assert(manifest.schemaVersion === 1, 'manifest.schemaVersion must be exactly 1.');
   assert(String(manifest.id || '') === id, 'manifest.id must match config.id.');
   assert(Number.isSafeInteger(manifest.revision) && manifest.revision >= 1, 'manifest.revision must be an explicit positive integer.');
-  assert(String(manifest.title || '').trim(), 'manifest.title is required.');
-  assert(String(manifest.documentTitle || '').trim(), 'manifest.documentTitle is required.');
-  assert(String(manifest.copy?.default || '').trim(), 'manifest.copy.default is required.');
-  assert(!String(manifest.copy.default).includes('\u2014'), 'manifest.copy.default must not contain em dashes.');
+  manifest.title = assertHeaderSafe(manifest.title, 'manifest.title');
+  manifest.documentTitle = assertHeaderSafe(manifest.documentTitle, 'manifest.documentTitle');
+  if (manifest.category != null) {
+    assert(/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(String(manifest.category)), 'manifest.category must be a header-safe slug.');
+  }
+  if (manifest.funnelStage != null) {
+    assert(/^[a-z0-9][a-z0-9_-]{0,31}$/i.test(String(manifest.funnelStage)), 'manifest.funnelStage must be a header-safe slug.');
+  }
+
+  assert(manifest.copy && typeof manifest.copy === 'object' && !Array.isArray(manifest.copy), 'manifest.copy object is required.');
+  const copyKeys = Object.keys(manifest.copy);
+  assert(copyKeys.length === 1 && copyKeys[0] === 'default', 'Canonical IMAP PDF intake requires copy.default as the only copy variant.');
+  const defaultCopy = String(manifest.copy.default || '').trim();
+  assert(defaultCopy.length > 0 && defaultCopy.length <= 3000, 'manifest.copy.default must be 1-3000 characters.');
+  assert(!defaultCopy.includes('\u2014'), 'manifest.copy.default must not contain em dashes.');
+  assert(!RESERVED_COPY_MARKER.test(defaultCopy), 'manifest.copy.default must not contain reserved LinkedIn target section markers.');
+
   assert(Array.isArray(manifest.targets) && manifest.targets.length === 1, 'Canonical IMAP PDF intake requires exactly one target.');
   assert(manifest.targets.every((target) => ALLOWED_TARGETS.has(target)), 'manifest.targets contains an unsupported target.');
   assert((manifest.mode || 'draft') === 'schedule', 'Reusable IMAP intake currently requires mode=schedule.');
@@ -72,6 +93,8 @@ function parseIntakeIssue(title, body, nowMs = Date.now()) {
   assert(!manifest.chunks, 'Issue config must not provide manifest.chunks; the verified attachment creates them.');
 
   assert(manifest.scheduledAt && typeof manifest.scheduledAt === 'object' && !Array.isArray(manifest.scheduledAt), 'manifest.scheduledAt is required.');
+  const scheduleKeys = Object.keys(manifest.scheduledAt);
+  assert(scheduleKeys.length === 1 && scheduleKeys[0] === manifest.targets[0], 'Canonical IMAP PDF intake requires exactly one schedule key matching the single target.');
   for (const target of manifest.targets) {
     const scheduled = String(manifest.scheduledAt[target] || '').trim();
     assert(EXPLICIT_ZONE_ISO.test(scheduled), `manifest.scheduledAt.${target} must be ISO 8601 with an explicit Z or UTC offset.`);
@@ -105,6 +128,8 @@ module.exports = {
   EXPECTED_SENDER,
   EXPLICIT_ZONE_ISO,
   MAX_SCHEDULE_HORIZON_MS,
+  RESERVED_COPY_MARKER,
   SUBJECT_PREFIX,
+  assertHeaderSafe,
   parseIntakeIssue,
 };
