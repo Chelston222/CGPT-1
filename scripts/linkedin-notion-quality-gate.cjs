@@ -78,6 +78,7 @@ function evaluateNotionQualityGate(page, expectedPageId = null, queuePost = null
   if (!ALLOWED_BUFFER.has(bufferStatus)) reasons.push(`Buffer Status is ${bufferStatus || 'unset'}, not Ready for Buffer or Queued in Buffer`);
 
   if (queuePost?.sourceType === 'chatgpt_pdf_intake') {
+    if (automationStatus === 'Manual') reasons.push('Automation Status is Manual for governed PDF release');
     if (!assetReady) reasons.push('Asset Ready is not checked');
     if (!automationReady) reasons.push('Automation Ready is not checked');
 
