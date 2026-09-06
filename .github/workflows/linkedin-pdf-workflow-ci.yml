@@ -69,6 +69,7 @@ jobs:
         run: |
           set -euo pipefail
           node --test tests/linkedin-imap-intake-config.test.cjs
+          node --test tests/linkedin-imap-mime-resilience.test.cjs
           node --test tests/linkedin-pdf-intake.test.cjs
           node --test tests/linkedin-pdf-replay-preservation.test.cjs
           node --test tests/linkedin-review-core.test.cjs
