@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-05T21:50:18.292Z",
+  "generatedAt": "2026-09-06T08:23:57.174Z",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -1177,6 +1177,49 @@
         "publishable": true,
         "approvalEligible": true,
         "publishPermission": false
+      }
+    },
+    {
+      "id": "rs-li-retention-school-part-1",
+      "revision": 1,
+      "title": "Retention School Part 1: Diagnose the Leak",
+      "category": "buyer_diagnostics",
+      "funnelStage": "mof",
+      "format": "carousel",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "copy": {
+        "default": "You can deliver a great appointment and still lose the next one.\n\nThe problem often starts with what happens after the customer leaves.\n\nNo clear next step.\nNo reminder.\nNo rebooking prompt.\nNo reactivation path.\n\nThe service happened.\n\nThe customer journey stopped.\n\nPart 1 of Retention School is about diagnosing exactly where that happens.\n\nStart with four questions:\n\nWho finished?\nWho rebooked?\nWho lapsed?\nWho was followed up?\n\nThen map the first 7 days after the appointment.\n\nIf nothing intentional happens, that is the first place I would investigate.\n\nBecause acquiring the customer once is only part of the economics.\n\nGetting the right customers to return is where the relationship starts compounding.\n\nNext: Part 2, Build the Return System.\n\n#RetentionSchool"
+      },
+      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-retention-school-part-1/thumbnail.jpg",
+      "mediaAlt": "Retention School Part 1 carousel diagnosing where repeat-revenue opportunities can be lost after an appointment and mapping the first seven days of the client return journey.",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-retention-school-part-1/rs-li-retention-school-part-1.pdf",
+      "documentTitle": "Retention School Part 1 Diagnose the Leak",
+      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-retention-school-part-1/thumbnail.jpg",
+      "carousel": {
+        "libraryId": "rs-li-retention-school-part-1",
+        "slideCount": 10,
+        "readiness": "ready",
+        "pdfBytes": 3562430,
+        "pdfSha256": "cd8dc92f4dbfb6adf7706dbb08aa1acc329fe770d71a0cdc706df91617bd422f",
+        "verifiedAt": "2026-09-06T08:23:57.174Z",
+        "sourceFolder": "ChatGPT PDF intake rs-li-retention-school-part-1"
+      },
+      "sourceUrl": "https://app.notion.com/p/3d3e72eb858781f8a1c2d98eb4469b66",
+      "sourceType": "chatgpt_pdf_intake",
+      "status": "review",
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-06T08:23:57.174Z",
+          "actor": "github-actions[bot]",
+          "note": "PDF reconstructed from locked base64 chunks, verified against its locked SHA-256, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied."
+        }
+      ],
+      "scheduledAt": {
+        "secondary": "2026-09-11T08:45:00+01:00"
       }
     }
   ]
