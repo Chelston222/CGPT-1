@@ -11,6 +11,7 @@ on:
     paths:
       - 'scripts/linkedin-*.cjs'
       - 'tests/linkedin-*.test.cjs'
+      - 'tests/rr14-content-pool.test.cjs'
       - '.github/workflows/linkedin-*.yml'
       - 'apps/linkedin-review/**'
 
@@ -61,36 +62,21 @@ jobs:
             fi
           done
 
-          for testfile in \
-            tests/linkedin-buffer-capacity.test.cjs \
-            tests/linkedin-buffer-reliability.test.cjs \
-            tests/linkedin-qa-bank-audit.test.cjs \
-            tests/linkedin-week-batch.test.cjs \
-            tests/linkedin-green-gate-cutoff.test.cjs \
-            tests/linkedin-performance-learning.test.cjs \
-            tests/linkedin-performance-learning-v2.test.cjs \
-            tests/linkedin-content-traits-v2.test.cjs \
-            tests/linkedin-performance-policy.test.cjs \
-            tests/linkedin-performance-workflow-static.test.cjs \
-            tests/linkedin-commercial-outcome-capture.test.cjs \
-            tests/linkedin-content-supply.test.cjs
-          do
-            echo "=== TEST $testfile ==="
-            tmpfile="$(mktemp)"
-            if node --test "$testfile" >"$tmpfile" 2>&1; then
-              cat "$tmpfile"
-              echo "PASS_FILE $testfile"
-            else
-              cat "$tmpfile"
-              {
-                echo "===== FAIL_FILE $testfile ====="
-                cat "$tmpfile"
-                echo
-              } >> /tmp/linkedin-regression-failures.log
-              status=1
-            fi
-            rm -f "$tmpfile"
-          done
+          echo "=== AUTHORITATIVE LINKEDIN TEST SUITE ==="
+          test_tmp="$(mktemp)"
+          if node --test tests/linkedin-*.test.cjs tests/rr14-content-pool.test.cjs >"$test_tmp" 2>&1; then
+            cat "$test_tmp"
+            echo "PASS_AUTHORITATIVE_TEST_SUITE"
+          else
+            cat "$test_tmp"
+            {
+              echo "===== FAIL_AUTHORITATIVE_TEST_SUITE ====="
+              cat "$test_tmp"
+              echo
+            } >> /tmp/linkedin-regression-failures.log
+            status=1
+          fi
+          rm -f "$test_tmp"
 
           echo "=== QA BANK AUDIT ==="
           qa_tmp="$(mktemp)"
@@ -129,7 +115,7 @@ jobs:
               pass ? '🟢 **PASS**' : '🔴 **FAIL**', '',
               `- Checked at: **${new Date().toISOString()}**`,
               '- Syntax checked for the release, capacity, reliability, learning, QA and supply scripts.',
-              '- Core LinkedIn regression files executed individually.',
+              '- The same authoritative LinkedIn test suite used by the hardening gate was executed.',
               '- Full QA-bank audit executed.', '',
               pass ? 'The deterministic Content OS regression contract passes on the current main branch.' : 'At least one invariant failed. No failure is silently promoted as healthy.',
               !pass && failures ? '' : null,
