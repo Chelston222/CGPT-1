@@ -43,6 +43,17 @@ test('publication verifier is read-only towards Buffer and distinguishes sent, e
   assert.match(verifier, /120 \* 24 \* 60 \* 60 \* 1000/);
 });
 
+test('publication verifier can recover accepted Buffer IDs from the trusted durable ledger', () => {
+  assert.match(verifier, /Check out governed verification helpers/);
+  assert.match(verifier, /ref: main/);
+  assert.match(verifier, /selectTrustedLedgerIssue/);
+  assert.match(verifier, /parseAcceptanceEntries/);
+  assert.match(verifier, /parseIntentKeys/);
+  assert.match(verifier, /issueByIntentKey/);
+  assert.match(verifier, /durable_ledger_fallback/);
+  assert.match(verifier, /rowsByBufferId/);
+});
+
 test('publication backfill is read-only and uses cursor pagination', () => {
   assert.doesNotMatch(backfill, /mutation\s+CreatePost|createPost\s*\(/i);
   assert.doesNotMatch(backfill, /deletePost|updatePost|movePost/i);
@@ -114,18 +125,21 @@ test('one-shot approvals must exactly match a current locked queue revision', ()
   assert.doesNotMatch(autopost, /repository-owner-approved-legacy/);
 });
 
-test('production release fails closed without live Notion and uses durable acceptance idempotency', () => {
+test('production release fails closed without live Notion and uses one trusted durable ledger', () => {
   assert.match(autopost, /NOTION_API_KEY is missing\. Production LinkedIn release fails closed/);
   assert.match(autopost, /LEDGER_TITLE/);
+  assert.match(autopost, /selectTrustedLedgerIssue/);
+  assert.match(autopost, /state: 'all', per_page: 100/);
   assert.match(autopost, /commentWithRetry\(ledgerIssueNumber, acceptedBody\)/);
   assert.match(autopost, /commentWithRetry\(issue\.number, acceptedBody\)/);
   assert.match(autopost, /dispatchIntentComment/);
   assert.match(autopost, /unresolvedIntentKeys/);
 });
 
-test('dispatch-intent reconciliation is owner-gated, shares the release lock and never mutates Buffer', () => {
+test('dispatch-intent reconciliation is owner-gated, shares the release lock and never writes Buffer', () => {
   assert.match(reconcile, /github\.event\.issue\.user\.login == github\.repository_owner/);
   assert.match(reconcile, /group: linkedin-buffer-capacity-release/);
+  assert.match(reconcile, /selectTrustedLedgerIssue/);
   assert.match(reconcile, /unresolvedIntentKeys/);
   assert.match(reconcile, /dispatchIntentMarker/);
   assert.match(reconcile, /expected one exact scheduled Buffer match/);
@@ -134,7 +148,7 @@ test('dispatch-intent reconciliation is owner-gated, shares the release lock and
   assert.match(reconcile, /Buffer write performed: \*\*NO\*\*/);
 });
 
-test('IMAP intake checks public hosting, pins revision media to a commit and verifies the pinned URL', () => {
+test('IMAP intake checks public hosting and verifies immutable PDF plus thumbnail bytes', () => {
   assert.match(intake, /visibility.*public/s);
   assert.match(intake, /revision-scoped media/);
   assert.match(intake, /id: pin/);
@@ -142,6 +156,9 @@ test('IMAP intake checks public hosting, pins revision media to a commit and ver
   assert.match(intake, /git rev-parse HEAD/);
   assert.match(intake, /Pinned media ref is not an immutable commit SHA/);
   assert.match(intake, /steps\.pin\.outputs\.pdf_url/);
+  assert.match(intake, /steps\.pin\.outputs\.thumbnail_url/);
   assert.match(intake, /steps\.pin\.outputs\.media_ref/);
+  assert.match(intake, /sha256sum \/tmp\/public\.jpg/);
+  assert.match(intake, /sha256sum "\$local_thumb"/);
   assert.match(intake, /Immutable media commit/);
 });
