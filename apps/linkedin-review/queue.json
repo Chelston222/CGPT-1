@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-06T08:34:16.786Z",
+  "generatedAt": "2026-09-06T08:36:18.668Z",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -1263,6 +1263,49 @@
       ],
       "scheduledAt": {
         "secondary": "2026-09-14T08:45:00+01:00"
+      }
+    },
+    {
+      "id": "rs-li-retention-school-part-3",
+      "revision": 1,
+      "title": "Retention School Part 3: Write the Messages That Bring Them Back",
+      "category": "buyer_diagnostics",
+      "funnelStage": "mof",
+      "format": "carousel",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "copy": {
+        "default": "The system decides when the message should happen.\n\nThe message still has to make the next step worth taking.\n\nThat is Part 3 of Retention School.\n\nThe biggest mistake is trying to make one message do everything.\n\nThank them.\nAsk for a review.\nAsk for a referral.\nSell something.\nAsk them to rebook.\n\nAll at once.\n\nInstead:\n\nOne message.\nOne job.\nOne clear next step.\n\nA useful structure is:\n\nContext\nRelevance\nValue\nAction\n\nThen apply it to the five messages that matter most:\n\nAftercare.\nCheck-in.\nRebooking.\nReminder.\nReactivation.\n\nThe goal is not more messaging.\n\nIt is less friction between where the customer is now and what should happen next.\n\nStart with one customer journey and write those five messages first.\n\nNext: Part 4, Automate the Journey.\n\n#RetentionSchool"
+      },
+      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-retention-school-part-3/thumbnail.jpg",
+      "mediaAlt": "Retention School Part 3 carousel showing how to write clear aftercare, check-in, rebooking, reminder and reactivation messages using context, relevance, value and action.",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-retention-school-part-3/rs-li-retention-school-part-3.pdf",
+      "documentTitle": "Retention School Part 3 Write the Messages That Bring Them Back",
+      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-retention-school-part-3/thumbnail.jpg",
+      "carousel": {
+        "libraryId": "rs-li-retention-school-part-3",
+        "slideCount": 10,
+        "readiness": "ready",
+        "pdfBytes": 16934427,
+        "pdfSha256": "65a74d59078008c23c6a3c9a905e25ff16924ff5bfbfa73149f31470242cf609",
+        "verifiedAt": "2026-09-06T08:36:18.668Z",
+        "sourceFolder": "ChatGPT PDF intake rs-li-retention-school-part-3"
+      },
+      "sourceUrl": "https://app.notion.com/p/3d3e72eb8587814295a5e8893fd9681a",
+      "sourceType": "chatgpt_pdf_intake",
+      "status": "review",
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-06T08:36:18.668Z",
+          "actor": "github-actions[bot]",
+          "note": "PDF reconstructed from locked base64 chunks, verified against its locked SHA-256, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied."
+        }
+      ],
+      "scheduledAt": {
+        "secondary": "2026-09-16T08:45:00+01:00"
       }
     }
   ]
