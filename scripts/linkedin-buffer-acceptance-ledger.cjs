@@ -3,6 +3,7 @@
 const LEDGER_TITLE = '[BUFFER ACCEPTANCE LEDGER] LinkedIn governed releases';
 const ACCEPTED_PATTERN = /<!--\s*BUFFER_ACCEPTED\s+([^\s]+)\s+bufferId=([^\s>]+)(?:\s+dueAt=([^\s>]+))?\s*-->/g;
 const INTENT_PATTERN = /<!--\s*BUFFER_DISPATCH_INTENT\s+([^\s>]+)\s*-->/g;
+const ACTIONS_BOT_LOGIN = 'github-actions[bot]';
 
 function acceptanceKey(postId, revision, target) {
   return `${postId}@${revision}:${target}`;
@@ -18,14 +19,14 @@ function dispatchIntentMarker(key) {
   return `<!-- BUFFER_DISPATCH_INTENT ${key} -->`;
 }
 
-function trustedBodies(comments = [], trustedLogin = 'github-actions[bot]') {
+function trustedBodies(comments = [], trustedLogin = ACTIONS_BOT_LOGIN) {
   return comments.flatMap((comment) => {
     if (typeof comment === 'string') return [comment];
     return comment.user?.login === trustedLogin ? [String(comment.body || '')] : [];
   });
 }
 
-function parseAcceptanceEntries(comments = [], trustedLogin = 'github-actions[bot]') {
+function parseAcceptanceEntries(comments = [], trustedLogin = ACTIONS_BOT_LOGIN) {
   const entries = new Map();
   for (const body of trustedBodies(comments, trustedLogin)) {
     for (const match of body.matchAll(ACCEPTED_PATTERN)) {
@@ -40,7 +41,7 @@ function parseAcceptanceEntries(comments = [], trustedLogin = 'github-actions[bo
   return entries;
 }
 
-function parseIntentKeys(comments = [], trustedLogin = 'github-actions[bot]') {
+function parseIntentKeys(comments = [], trustedLogin = ACTIONS_BOT_LOGIN) {
   const keys = new Set();
   for (const body of trustedBodies(comments, trustedLogin)) {
     for (const match of body.matchAll(INTENT_PATTERN)) keys.add(match[1]);
@@ -48,19 +49,32 @@ function parseIntentKeys(comments = [], trustedLogin = 'github-actions[bot]') {
   return keys;
 }
 
-function acceptedKeys(comments = [], trustedLogin = 'github-actions[bot]') {
+function acceptedKeys(comments = [], trustedLogin = ACTIONS_BOT_LOGIN) {
   return new Set(parseAcceptanceEntries(comments, trustedLogin).keys());
 }
 
-function unresolvedIntentKeys(comments = [], trustedLogin = 'github-actions[bot]') {
+function unresolvedIntentKeys(comments = [], trustedLogin = ACTIONS_BOT_LOGIN) {
   const intents = parseIntentKeys(comments, trustedLogin);
   const accepted = acceptedKeys(comments, trustedLogin);
   return new Set([...intents].filter((key) => !accepted.has(key)));
 }
 
+function selectTrustedLedgerIssue(issues = [], ownerLogin) {
+  const owner = String(ownerLogin || '').trim();
+  if (!owner) throw new Error('Repository owner login is required to select the Buffer acceptance ledger.');
+  const trustedCreators = new Set([owner, ACTIONS_BOT_LOGIN]);
+  const matches = issues.filter((issue) => !issue.pull_request
+    && issue.title === LEDGER_TITLE
+    && trustedCreators.has(issue.user?.login));
+  if (matches.length > 1) {
+    throw new Error(`Multiple trusted Buffer acceptance ledgers exist (${matches.map((issue) => `#${issue.number}`).join(', ')}). Refusing split-brain idempotency state.`);
+  }
+  return matches[0] || null;
+}
+
 function dispatchIntentComment({ key, queueId, revision, targetName, target }) {
   return [
-    '⏳ Buffer dispatch intent recorded before mutation.',
+    '⏳ Buffer dispatch intent recorded before provider write.',
     '',
     `- ${queueId}@${revision} · ${targetName}`,
     `- Placement key: \`${key}\``,
@@ -85,6 +99,7 @@ function acceptanceComment({ key, queueId, revision, targetName, target, bufferI
 
 module.exports = {
   ACCEPTED_PATTERN,
+  ACTIONS_BOT_LOGIN,
   INTENT_PATTERN,
   LEDGER_TITLE,
   acceptanceComment,
@@ -95,5 +110,6 @@ module.exports = {
   dispatchIntentMarker,
   parseAcceptanceEntries,
   parseIntentKeys,
+  selectTrustedLedgerIssue,
   unresolvedIntentKeys,
 };
