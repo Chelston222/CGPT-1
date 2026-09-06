@@ -131,7 +131,7 @@ test('dispatch-intent reconciliation is owner-gated, shares the release lock and
   assert.match(reconcile, /expected one exact scheduled Buffer match/);
   assert.match(reconcile, /textDigest/);
   assert.doesNotMatch(reconcile, /createPost\s*\(|editPost\s*\(|deletePost\s*\(|mutation\s+/i);
-  assert.match(reconcile, /Buffer mutation performed: \*\*NO\*\*/);
+  assert.match(reconcile, /Buffer write performed: \*\*NO\*\*/);
 });
 
 test('IMAP intake checks public hosting, pins revision media to a commit and verifies the pinned URL', () => {
