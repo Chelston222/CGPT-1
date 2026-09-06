@@ -6,6 +6,7 @@ const CONFIG_END = '<!-- INTAKE_CONFIG_END -->';
 const EXPECTED_SENDER = 'tripletwochelston@gmail.com';
 const SUBJECT_PREFIX = 'TTE LINKEDIN PDF INTAKE ';
 const EXPLICIT_ZONE_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+const MAX_SCHEDULE_HORIZON_MS = 90 * 24 * 60 * 60 * 1000;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -65,6 +66,7 @@ function parseIntakeIssue(title, body, nowMs = Date.now()) {
   assert(manifest.targets.every((target) => ALLOWED_TARGETS.has(target)), 'manifest.targets contains an unsupported target.');
   assert((manifest.mode || 'draft') === 'schedule', 'Reusable IMAP intake currently requires mode=schedule.');
   assert(manifest.publicMediaApproved === true, 'manifest.publicMediaApproved must be true because the governed Buffer media URL is publicly reachable before publication.');
+  assert(manifest.publicReleaseMaterialApproved === true, 'manifest.publicReleaseMaterialApproved must be true because the public repository issue and queue expose the locked caption, schedule and release metadata before publication.');
   assert(String(manifest.expectedSha256 || '').toLowerCase() === String(config.expectedSha256).toLowerCase(), 'manifest.expectedSha256 must match expectedSha256.');
   assert(!manifest.downloadUrl, 'IMAP intake must not provide manifest.downloadUrl.');
   assert(!manifest.chunks, 'Issue config must not provide manifest.chunks; the verified attachment creates them.');
@@ -76,6 +78,7 @@ function parseIntakeIssue(title, body, nowMs = Date.now()) {
     const timestamp = Date.parse(scheduled);
     assert(Number.isFinite(timestamp), `manifest.scheduledAt.${target} must be a valid ISO date/time.`);
     assert(timestamp > nowMs + 10 * 60 * 1000, `manifest.scheduledAt.${target} must be more than 10 minutes in the future.`);
+    assert(timestamp <= nowMs + MAX_SCHEDULE_HORIZON_MS, `manifest.scheduledAt.${target} must be within 90 days so the current 120-day publication verifier horizon cannot lose the approval before due time.`);
   }
 
   const sourceUrl = String(manifest.sourceUrl || '').trim();
@@ -95,4 +98,13 @@ function parseIntakeIssue(title, body, nowMs = Date.now()) {
   };
 }
 
-module.exports = { ALLOWED_TARGETS, CONFIG_START, CONFIG_END, EXPECTED_SENDER, EXPLICIT_ZONE_ISO, SUBJECT_PREFIX, parseIntakeIssue };
+module.exports = {
+  ALLOWED_TARGETS,
+  CONFIG_START,
+  CONFIG_END,
+  EXPECTED_SENDER,
+  EXPLICIT_ZONE_ISO,
+  MAX_SCHEDULE_HORIZON_MS,
+  SUBJECT_PREFIX,
+  parseIntakeIssue,
+};
