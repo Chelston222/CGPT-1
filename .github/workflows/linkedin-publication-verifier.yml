@@ -42,27 +42,34 @@ jobs:
             }
 
             function acceptedRows(comments) {
-              const rows = [];
+              const byBufferId = new Map();
               for (const comment of comments) {
+                if (comment.user?.login !== 'github-actions[bot]') continue;
                 const body = String(comment.body || '');
-                const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
+                // Supports the historical separator and the current pipe-separated audit line.
+                const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+(?:—|\|)\s+([^\s\n|]+))?/gm;
                 let match;
-                while ((match = regex.exec(body))) rows.push({ label: match[1].trim(), bufferId: match[2], dueAt: match[3] || null });
+                while ((match = regex.exec(body))) {
+                  if (!byBufferId.has(match[2])) byBufferId.set(match[2], { label: match[1].trim(), bufferId: match[2], dueAt: match[3] || null });
+                }
               }
-              return rows;
+              return [...byBufferId.values()];
             }
 
             function markerSet(comments, kind) {
               const out = new Set();
               const regex = new RegExp(`<!-- ${kind} bufferId=([^\\s>]+)`, 'g');
               for (const comment of comments) {
+                if (comment.user?.login !== 'github-actions[bot]') continue;
                 let match;
                 while ((match = regex.exec(String(comment.body || '')))) out.add(match[1]);
               }
               return out;
             }
 
-            const since = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString();
+            // Long-horizon schedules remain verifiable. 120 days is deliberately much
+            // larger than the current posting runway while keeping the issue scan bounded.
+            const since = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString();
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
             const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
             const now = Date.now();
@@ -104,6 +111,7 @@ jobs:
                         `<!-- LINKEDIN_DRAFT_CANARY_VERIFIED bufferId=${row.bufferId} -->`,
                       ].join('\n'),
                     });
+                    terminal.add(row.bufferId);
                     continue;
                   }
                   if (post.status === 'error') {
@@ -119,6 +127,7 @@ jobs:
                         `<!-- LINKEDIN_PUBLICATION_FAILED bufferId=${row.bufferId} -->`,
                       ].join('\n'),
                     });
+                    terminal.add(row.bufferId);
                     continue;
                   }
                   await github.rest.issues.createComment({
@@ -134,6 +143,7 @@ jobs:
                       `<!-- LINKEDIN_PUBLICATION_FAILED bufferId=${row.bufferId} -->`,
                     ].join('\n'),
                   });
+                  terminal.add(row.bufferId);
                   if (issue.state === 'closed') await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'open' });
                   continue;
                 }
@@ -153,6 +163,7 @@ jobs:
                       `<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=${row.bufferId} sentAt=${post.sentAt} -->`,
                     ].join('\n'),
                   });
+                  terminal.add(row.bufferId);
                   continue;
                 }
 
@@ -172,6 +183,7 @@ jobs:
                       `<!-- LINKEDIN_PUBLICATION_FAILED bufferId=${row.bufferId} -->`,
                     ].filter(Boolean).join('\n'),
                   });
+                  terminal.add(row.bufferId);
                   if (issue.state === 'closed') await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'open' });
                   continue;
                 }
@@ -191,6 +203,7 @@ jobs:
                       `<!-- LINKEDIN_PUBLICATION_PENDING bufferId=${row.bufferId} -->`,
                     ].join('\n'),
                   });
+                  pending.add(row.bufferId);
                   if (issue.state === 'closed') await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'open' });
                 }
               }
@@ -222,20 +235,20 @@ jobs:
               return payload.data;
             }
 
-            const since = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString();
+            const since = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString();
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
             const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
 
             for (const issue of candidates) {
               if (/^MODE:\s*draft\s*$/mi.test(String(issue.body || ''))) continue;
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
-              const body = comments.map((comment) => String(comment.body || '')).join('\n');
+              const body = comments.filter((comment) => comment.user?.login === 'github-actions[bot]').map((comment) => String(comment.body || '')).join('\n');
               const verified = [...body.matchAll(/<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=([^\s>]+)/g)].map((m) => m[1]);
               const captured = new Set([...body.matchAll(/<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
               const nativeRequired = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_REQUIRED bufferId=([^\s>]+)/g)].map((m) => m[1]));
               const nativeCaptured = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
 
-              for (const bufferId of verified) {
+              for (const bufferId of [...new Set(verified)]) {
                 if (captured.has(bufferId) || nativeRequired.has(bufferId) || nativeCaptured.has(bufferId)) continue;
                 const data = await buffer(`query Metrics { post(input: { id: ${JSON.stringify(bufferId)} }) { id status sentAt externalLink metricsUpdatedAt metrics { type name value unit } assets { mimeType source } } }`);
                 const post = data?.post;
