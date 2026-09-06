@@ -11,7 +11,13 @@ on:
     paths:
       - 'apps/linkedin-review/**'
       - 'scripts/linkedin-buffer-*.cjs'
+      - 'scripts/linkedin-media-preflight.cjs'
+      - 'scripts/linkedin-pdf-intake.cjs'
       - 'scripts/linkedin-week-batch.cjs'
+      - 'tests/linkedin-review-static.test.cjs'
+      - 'tests/linkedin-pdf-intake.test.cjs'
+      - 'tests/linkedin-buffer-reliability.test.cjs'
+      - 'tests/linkedin-buffer-capacity.test.cjs'
       - '.github/workflows/linkedin-buffer-autopost.yml'
       - '.github/workflows/linkedin-buffer-reliability-sentinel.yml'
 
@@ -29,10 +35,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify repository release invariants
+        id: repo_gate
+        continue-on-error: true
+        run: |
+          node --test \
+            tests/linkedin-review-static.test.cjs \
+            tests/linkedin-pdf-intake.test.cjs \
+            tests/linkedin-buffer-reliability.test.cjs \
+            tests/linkedin-buffer-capacity.test.cjs
 
       - name: Verify live Buffer against the governed Content OS
         uses: actions/github-script@v7
         env:
+          REPOSITORY_GATE_OUTCOME: ${{ steps.repo_gate.outcome }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
           BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
@@ -56,6 +76,9 @@ jobs:
               secondary: process.env.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID,
             };
             const hardFailures = [];
+            if (process.env.REPOSITORY_GATE_OUTCOME !== 'success') {
+              hardFailures.push('Repository release-invariant gate failed before the live Buffer check.');
+            }
             const providerStates = {};
             let livePosts = [];
             let paginationIncomplete = false;
@@ -164,6 +187,7 @@ jobs:
               '# LinkedIn / Buffer permanent reliability sentinel', '',
               report.ok ? '🟢 **GREEN**' : '🔴 **INCIDENT OPEN**', '',
               `- Checked at: **${new Date().toISOString()}**`,
+              `- Repository release gate: **${process.env.REPOSITORY_GATE_OUTCOME === 'success' ? 'PASS' : 'FAIL'}**`,
               `- Live scheduled placements: **${report.totalCount}**`,
               `- Trusted approval/queue mapping: **${report.mappedCount}/${report.totalCount}**`,
               `- Queue fingerprint: \`${report.fingerprint}\``,
