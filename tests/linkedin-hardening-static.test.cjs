@@ -145,7 +145,11 @@ test('dispatch-intent reconciliation is owner-gated, shares the release lock and
   assert.match(reconcile, /canonicalMediaUrl/);
   assert.match(reconcile, /assets \{ source mimeType \}/);
   assert.match(reconcile, /mediaSourceMatches/);
-  assert.match(reconcile, /expected one exact scheduled Buffer match across channel, due time, caption and media source/);
+  assert.match(reconcile, /status: \[scheduled, sent, error\]/);
+  assert.match(reconcile, /recoverableStatuses/);
+  assert.match(reconcile, /startDate/);
+  assert.match(reconcile, /endDate/);
+  assert.match(reconcile, /expected one exact Buffer match across channel, due time, caption and media source in scheduled\/sent\/error state/);
   assert.match(reconcile, /textDigest/);
   assert.doesNotMatch(reconcile, /createPost\s*\(|editPost\s*\(|deletePost\s*\(|mutation\s+/i);
   assert.match(reconcile, /Buffer write performed: \*\*NO\*\*/);
