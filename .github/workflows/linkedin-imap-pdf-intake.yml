@@ -204,15 +204,22 @@ jobs:
           pdf='${{ steps.pin.outputs.pdf_url }}'
           thumb='${{ steps.pin.outputs.thumbnail_url }}'
           ref='${{ steps.pin.outputs.media_ref }}'
+          post_id='${{ steps.intake.outputs.post_id }}'
+          revision='${{ steps.intake.outputs.revision }}'
+          local_thumb="apps/linkedin-review/media/intake/${post_id}/r${revision}/thumbnail.jpg"
           test -n "$pdf" -a -n "$thumb"
           echo "$ref" | grep -Eq '^[a-f0-9]{40}$'
-          echo "$pdf" | grep -F "/$ref/apps/linkedin-review/media/intake/${{ steps.intake.outputs.post_id }}/r${{ steps.intake.outputs.revision }}/" >/dev/null
+          echo "$pdf" | grep -F "/$ref/apps/linkedin-review/media/intake/${post_id}/r${revision}/${post_id}.pdf" >/dev/null
+          echo "$thumb" | grep -F "/$ref/apps/linkedin-review/media/intake/${post_id}/r${revision}/thumbnail.jpg" >/dev/null
+          test -s "$local_thumb"
           sleep 3
           curl --fail --location --silent --show-error --retry 5 --retry-delay 2 "$pdf" -o /tmp/public.pdf
           curl --fail --location --silent --show-error --retry 5 --retry-delay 2 "$thumb" -o /tmp/public.jpg
           test "$(stat -c%s /tmp/public.pdf)" = '${{ steps.intake.outputs.bytes }}'
           test "$(sha256sum /tmp/public.pdf | awk '{print $1}')" = '${{ steps.intake.outputs.sha256 }}'
           test "$(pdfinfo /tmp/public.pdf | awk '/^Pages:/ {print $2}')" = '${{ steps.intake.outputs.pages }}'
+          test "$(stat -c%s /tmp/public.jpg)" = "$(stat -c%s "$local_thumb")"
+          test "$(sha256sum /tmp/public.jpg | awk '{print $1}')" = "$(sha256sum "$local_thumb" | awk '{print $1}')"
           file /tmp/public.pdf | grep -qi 'PDF document'
           file /tmp/public.jpg | grep -Eqi 'JPEG|image'
 
