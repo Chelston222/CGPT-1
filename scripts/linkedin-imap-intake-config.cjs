@@ -7,7 +7,7 @@ const EXPECTED_SENDER = 'tripletwochelston@gmail.com';
 const SUBJECT_PREFIX = 'TTE LINKEDIN PDF INTAKE ';
 const EXPLICIT_ZONE_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 const MAX_SCHEDULE_HORIZON_MS = 90 * 24 * 60 * 60 * 1000;
-const RESERVED_COPY_MARKER = /^---(?:PERSONAL|MAIN|SECONDARY)---$/mi;
+const RESERVED_COPY_MARKER = /^\s*---(?:PERSONAL|MAIN|SECONDARY)---\s*$/mi;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
