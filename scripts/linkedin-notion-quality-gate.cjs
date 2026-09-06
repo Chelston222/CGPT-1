@@ -87,16 +87,12 @@ function evaluateNotionQualityGate(page, expectedPageId = null, queuePost = null
     if (normaliseText(finalCopy) !== lockedCopy) reasons.push('Final Copy does not exactly match the locked queue caption');
     if (normaliseText(publishPayload) !== lockedCopy) reasons.push('Publish Payload does not exactly match the locked queue caption');
 
-    const targetSchedules = (queuePost.targets || []).map((target) => queuePost.scheduledAt?.[target]).filter(Boolean);
-    if (targetSchedules.length === 1) {
-      if (!notionScheduledAt) reasons.push('Scheduled At is unset in Notion');
-      else if (!sameInstant(notionScheduledAt, targetSchedules[0])) reasons.push('Scheduled At does not match the locked queue schedule');
-    } else if (targetSchedules.length > 1) {
-      const instants = new Set(targetSchedules.map((value) => Date.parse(value)).filter(Number.isFinite));
-      if (instants.size === 1) {
-        if (!notionScheduledAt || !sameInstant(notionScheduledAt, targetSchedules[0])) reasons.push('Scheduled At does not match the shared locked queue schedule');
-      }
-    }
+    const targets = Array.isArray(queuePost.targets) ? queuePost.targets : [];
+    if (targets.length !== 1) reasons.push('Governed PDF intake must contain exactly one target');
+    const targetSchedules = targets.map((target) => queuePost.scheduledAt?.[target]).filter(Boolean);
+    if (targetSchedules.length !== 1) reasons.push('Governed PDF intake must contain exactly one locked target schedule');
+    else if (!notionScheduledAt) reasons.push('Scheduled At is unset in Notion');
+    else if (!sameInstant(notionScheduledAt, targetSchedules[0])) reasons.push('Scheduled At does not match the locked queue schedule');
   }
 
   return {
