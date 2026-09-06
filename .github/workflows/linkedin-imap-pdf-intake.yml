@@ -36,6 +36,21 @@ jobs:
           git fetch origin main
           git checkout -B main origin/main
 
+      - name: Verify public media-hosting contract
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          visibility="$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY" | jq -r '.visibility')"
+          test "$visibility" = 'public' || {
+            echo 'This lane uses raw.githubusercontent.com as Buffer media hosting. The repository is not public, so the media URL would not be fetchable by Buffer.' >&2
+            exit 2
+          }
+
       - name: Verify existing PrivateEmail credential
         shell: bash
         run: |
@@ -68,7 +83,7 @@ jobs:
           set -euo pipefail
           node scripts/linkedin-pdf-intake.cjs "${{ steps.bridge.outputs.manifest_path }}" > /tmp/pdf-intake-result.json
           cat /tmp/pdf-intake-result.json
-          node -e "const r=require('/tmp/pdf-intake-result.json'); console.log('pdf_url='+r.urls.pdfUrl); console.log('thumbnail_url='+r.urls.thumbnailUrl); console.log('post_id='+r.post.id); console.log('revision='+r.post.revision); console.log('pages='+r.metadata.pageCount); console.log('bytes='+r.metadata.bytes); console.log('sha256='+r.metadata.sha256);" >> "$GITHUB_OUTPUT"
+          node -e "const r=require('/tmp/pdf-intake-result.json'); console.log('pdf_url='+r.urls.pdfUrl); console.log('thumbnail_url='+r.urls.thumbnailUrl); console.log('post_id='+r.post.id); console.log('revision='+r.post.revision); console.log('pages='+r.metadata.pageCount); console.log('bytes='+r.metadata.bytes); console.log('sha256='+r.metadata.sha256); console.log('replay='+(r.queueResult?.replay===true?'true':'false'));" >> "$GITHUB_OUTPUT"
 
       - name: Enforce exact media proof
         shell: bash
@@ -86,6 +101,7 @@ jobs:
           node --test tests/linkedin-imap-intake-config.test.cjs
           node --test tests/linkedin-pdf-intake.test.cjs
           node --test tests/linkedin-media-preflight.test.cjs
+          node --test tests/linkedin-notion-quality-gate.test.cjs
 
       - name: Commit governed media package and locked queue revision
         env:
@@ -118,7 +134,10 @@ jobs:
             node -e "const r=require('/tmp/pdf-intake-retry.json'); if(String(r.metadata.pageCount)!==process.env.EXPECTED_PAGES) throw new Error('Retry page-count drift'); if(String(r.metadata.bytes)!==process.env.EXPECTED_BYTES) throw new Error('Retry byte-count drift'); if(String(r.metadata.sha256)!==process.env.EXPECTED_SHA) throw new Error('Retry SHA drift'); if(String(r.post.id)!==process.env.POST_ID) throw new Error('Retry post ID drift'); if(String(r.post.revision)!==process.env.REVISION) throw new Error('Retry revision drift');"
 
             git add apps/linkedin-review/queue.json "apps/linkedin-review/media/intake/${post_id}"
-            git diff --cached --quiet && { echo 'Expected governed media/queue changes are missing.' >&2; exit 1; }
+            if git diff --cached --quiet; then
+              echo "${post_id}@${revision} is already promoted with the exact locked state. Treating this trigger as an idempotent replay."
+              exit 0
+            fi
             git commit -m "Promote LinkedIn PDF ${post_id}@${revision}"
             if git push origin HEAD:main; then
               exit 0
@@ -162,13 +181,15 @@ jobs:
               `- Thumbnail: ${{ steps.intake.outputs.thumbnail_url }}`,
               `- Source mailbox: ${{ steps.bridge.outputs.source_mailbox }}`,
               `- Source UID: ${{ steps.bridge.outputs.source_uid }}`,
+              `- Idempotent replay: **${{ steps.intake.outputs.replay }}**`,
+              '- Visibility: **publicly reachable governed media**. The owner intake contract explicitly acknowledged this before promotion.',
               '',
               'This proves exact media and queue readiness only. It is not permission to publish.',
               'Publishing still requires the repository-owner `[APPROVED LINKEDIN]` gate.',
             ].join('\n');
-            const existing = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
-            const match = existing.find((issue) => issue.title === title);
-            if (match) await github.rest.issues.update({ owner, repo, issue_number: match.number, body });
+            const existing = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 });
+            const match = existing.find((issue) => !issue.pull_request && issue.title === title);
+            if (match) await github.rest.issues.update({ owner, repo, issue_number: match.number, body, state: 'open' });
             else await github.rest.issues.create({ owner, repo, title, body });
 
       - name: Close transport trigger with proof
@@ -181,9 +202,10 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: [
-                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed raw GitHub media and locked into the LinkedIn queue.',
+                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed revision-scoped media and locked into the LinkedIn queue.',
                 '',
                 `Queue item: **${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}**`,
+                `Idempotent replay: **${{ steps.intake.outputs.replay }}**`,
                 'Owner publication approval remains a separate gate.',
               ].join('\n'),
             });
