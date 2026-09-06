@@ -102,6 +102,8 @@ For normal production rows the release workflow reads the exact Notion source pa
 
 For governed PDF intake rows the gate additionally binds:
 
+- exactly one governed target
+- exactly one locked target schedule
 - Asset Ready
 - Automation Ready
 - Final Copy
@@ -114,7 +116,7 @@ The locked queue caption must exactly match both Final Copy and Publish Payload.
 
 ## Media preflight
 
-All approved media selected for a dispatch plan is remotely preflighted before the first Buffer mutation.
+All approved media selected for a dispatch plan is remotely preflighted before the first Buffer write.
 
 The preflight verifies, as applicable:
 
@@ -129,7 +131,7 @@ The preflight verifies, as applicable:
 - document page count
 - image alt text
 
-For canonical PDF intake, the governed PDF and thumbnail URLs are pinned to the exact immutable Git commit that contains those files before downstream release. The release therefore does not depend on a mutable `main` media ref.
+For canonical PDF intake, the governed PDF and thumbnail URLs are pinned to the exact immutable Git commit that contains those files before downstream release. The public PDF is rechecked for exact bytes, SHA-256 and page count. The public thumbnail is also checked against the exact promoted thumbnail bytes and SHA-256. The release therefore does not depend on a mutable `main` media ref.
 
 ## Buffer capacity
 
@@ -143,7 +145,9 @@ Current daily placement limits and weekly content ceilings remain enforced by th
 
 Every governed placement has a stable placement key derived from queue ID, revision and destination.
 
-Immediately before the Buffer mutation, the workflow writes a durable dispatch-intent marker to the machine ledger and the approval issue. This records that a provider write may have occurred even if the workflow crashes before receiving or persisting the response.
+Immediately before the Buffer write, the workflow writes a durable dispatch-intent marker to the machine ledger and the approval issue. This records that a provider write may have occurred even if the workflow crashes before receiving or persisting the response.
+
+The ledger issue may be created by GitHub Actions, so trusted ledger discovery accepts the repository owner or `github-actions[bot]` as the ledger creator. More than one trusted ledger is treated as split-brain state and fails closed.
 
 When Buffer returns a post ID, the workflow immediately writes a durable acceptance record containing the placement identity, Buffer post ID, due time and available media proof.
 
@@ -162,8 +166,11 @@ For each unresolved placement it reconstructs the locked release identity and se
 - destination channel
 - exact due time
 - exact caption digest
+- exact media source URL for media posts, or no media asset for text-only posts
 
-When exactly one match exists, the reconciler writes the missing durable acceptance record. When zero or multiple matches exist, the placement stays blocked for explicit review.
+The media comparison uses Buffer's returned asset `source`, so an unrelated post with the same time and caption cannot be adopted merely because its text matches.
+
+When exactly one full match exists, the reconciler writes the missing durable acceptance record. When zero or multiple matches exist, the placement stays blocked for explicit review.
 
 This boundary prevents a retry from manufacturing a duplicate when the original provider write may already have succeeded.
 
@@ -231,6 +238,8 @@ Buffer acceptance is not publication proof.
 
 After the due time, `.github/workflows/linkedin-publication-verifier.yml` reads the exact Buffer post ID. Only positive provider state `sent` with a sent timestamp becomes verified publication. Provider `error` becomes failed. A late unresolved state stays pending or unknown for review.
 
+The verifier normally discovers accepted Buffer IDs from bot evidence on the approval issue. It also has a durable-ledger fallback. If the ledger acceptance was written but the matching approval-issue acceptance comment was lost after a partial failure, the verifier maps the trusted ledger entry back to the exact approval issue through its pre-write dispatch-intent marker and continues verification from that durable Buffer ID.
+
 Publication verification is read-only toward Buffer.
 
 PDF/document posts retain a native LinkedIn analytics requirement when Buffer does not expose complete document analytics.
@@ -252,7 +261,8 @@ The system should distinguish at least:
 - Buffer authentication or channel access failure
 - incomplete Buffer capacity inventory
 - unresolved prior dispatch intent
-- Buffer mutation failure
+- durable-ledger split-brain state
+- Buffer write failure
 - acceptance-ledger write failure
 - publication verification failure
 - analytics unavailable or native analytics required
