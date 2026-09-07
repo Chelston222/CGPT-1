@@ -16,14 +16,15 @@ final approved PDF + caption
 -> revision-scoped GitHub media
 -> immutable commit pin for PDF and thumbnail
 -> governed queue
--> live Notion gate
+-> optional live Notion defence when GitHub credential exists
 -> owner [APPROVED LINKEDIN] issue
--> final pre-mutation Notion recheck
+-> exact current-queue fingerprint lock
+-> optional final pre-mutation Notion recheck when credentialed
 -> Buffer intent + provider write + durable acceptance
 -> separate publication verifier
 ```
 
-Transport, exact-media readiness, Buffer acceptance and LinkedIn publication are separate states.
+Transport, exact-media readiness, owner approval, Buffer acceptance and LinkedIn publication are separate states.
 
 ## Transport
 
@@ -170,9 +171,9 @@ The public pinned URLs are then fetched and verified again:
 
 `[PDF INTAKE READY] <id>@<revision>` proves exact media and queue readiness only.
 
-## Notion gate
+## Notion operating record and optional live gate
 
-For governed PDF intake, the live source page must remain active and must pass:
+The Notion source page remains the operational calendar and audit record. It should remain active and release-ready:
 
 - not archived
 - not in trash
@@ -188,7 +189,11 @@ For governed PDF intake, the live source page must remain active and must pass:
 - exactly one target and schedule
 - Scheduled At exact instant match
 
-The production Buffer release checks this during planning and again immediately before each provider write.
+If GitHub has `NOTION_API_KEY`, production checks this during planning and again immediately before each provider write. A failing live gate blocks release.
+
+If that secret is absent, the standalone Notion preflight reports `SKIPPED_NO_SECRET` and production records `owner-approved-current-queue-no-notion-secret`. It then relies on exact current-queue fingerprinting plus repository-owner approval and must not claim a live Notion pass.
+
+In no-secret mode, changing only Notion is not a guaranteed machine revocation mechanism. Revoke by withdrawing the owner approval or changing the governed queue revision.
 
 ## Owner approval and Buffer release
 
@@ -200,7 +205,7 @@ After `[PDF INTAKE READY]`, create the owner approval:
 
 It must exactly match the current queue revision, target, schedule, caption, immutable media URLs, document metadata, byte count and SHA-256.
 
-Before Buffer mutation, all selected media is remotely preflighted. A durable `BUFFER_DISPATCH_INTENT` is written before the provider write. When Buffer returns a post ID, `BUFFER_ACCEPTED` is written to the trusted durable ledger first and then mirrored to the approval issue.
+`BUFFER_API_KEY` is mandatory. Before Buffer mutation, all selected media is remotely preflighted. A durable `BUFFER_DISPATCH_INTENT` is written before the provider write. When Buffer returns a post ID, `BUFFER_ACCEPTED` is written to the trusted durable ledger first and then mirrored to the approval issue.
 
 Accepted placement keys are idempotent. Unresolved intent keys block automatic recreation.
 
@@ -228,4 +233,4 @@ Do not create a parallel manifest, immediate-share or arbitrary-download product
 
 ## Definition of complete
 
-A canonical PDF revision is complete only when exact attachment identity is proven, revision-scoped media is promoted, replay rules pass, PDF and thumbnail are immutably pinned and publicly reverified, the active Notion source passes both quality checks, owner approval exactly matches the queue, Buffer acceptance is durably recorded, and the later verifier independently proves the LinkedIn outcome.
+A canonical PDF revision is production-ready only when exact attachment identity is proven, revision-scoped media is promoted, replay rules pass, PDF and thumbnail are immutably pinned and publicly reverified, owner approval exactly matches the current queue, Buffer acceptance is durably recorded, and the later verifier independently proves the LinkedIn outcome. If the optional GitHub Notion credential is configured, its live quality checks must also pass. If it is absent, the audit must explicitly state the owner-approved current-queue fallback rather than implying Notion was checked.

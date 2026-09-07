@@ -4,7 +4,7 @@
 
 This document describes the governed release layer between the 222Emails LinkedIn review queue and Buffer. The canonical PDF operator contract is `docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md`.
 
-A saved review decision is not publication authority. Only an eligible repository-owner approval can enter the Buffer release path. Governed PDF/document posts additionally require the canonical exact-media IMAP intake and live Notion gate.
+A saved review decision is not publication authority. Only an eligible repository-owner approval can enter the Buffer release path. Governed PDF/document posts additionally require the canonical exact-media IMAP intake. Live Notion checking is an additional defence when the GitHub Notion credential is configured.
 
 ## Authority states
 
@@ -25,9 +25,10 @@ A Buffer post ID is provider acceptance evidence. It is not LinkedIn publication
 - release: `.github/workflows/linkedin-buffer-autopost.yml`
 - read-only intent recovery: `.github/workflows/linkedin-buffer-intent-reconcile.yml`
 - publication/analytics verification: `.github/workflows/linkedin-publication-verifier.yml`
+- optional Notion read preflight: `.github/workflows/linkedin-notion-preflight.yml`
 - media preflight: `scripts/linkedin-media-preflight.cjs`
 - durable ledger helpers: `scripts/linkedin-buffer-acceptance-ledger.cjs`
-- live Notion gate: `scripts/linkedin-notion-quality-gate.cjs`
+- live Notion helper: `scripts/linkedin-notion-quality-gate.cjs`
 - request builder: `scripts/linkedin-review-core.cjs`
 - weekly lock validation: `scripts/linkedin-week-batch.cjs`
 - canonical PDF intake: `.github/workflows/linkedin-imap-pdf-intake.yml`
@@ -44,11 +45,23 @@ linkedin-buffer-capacity-release
 
 The surviving run drains the full eligible open approval queue under that lock. The read-only intent reconciler shares the same lock, preventing reconciliation and a new provider write from racing each other.
 
-## Credential gate
+## Credential and authority gate
 
 Production release fails closed without `BUFFER_API_KEY`.
 
-Every non-QA governed release also fails closed without `NOTION_API_KEY`. Live Notion is part of the release authority model, not an optional enhancement.
+`NOTION_API_KEY` is optional defence-in-depth, not the sole release authority. The minimum authority remains an exact current governed queue revision plus a repository-owner approval whose fingerprint exactly matches that revision.
+
+If `NOTION_API_KEY` exists, live Notion is checked during planning and again before provider mutation. A failing live gate blocks release.
+
+If it does not exist, the release audit explicitly uses:
+
+```text
+owner-approved-current-queue-no-notion-secret
+```
+
+and must not claim that Notion was live-checked. A change made only in Notion cannot be relied upon to revoke an already matching GitHub approval in this mode. Revoke by withdrawing the approval or changing the governed queue revision.
+
+The standalone Notion preflight reports `SKIPPED_NO_SECRET` rather than failing the repository when the optional credential is absent.
 
 ## Queue and approval lock
 
@@ -68,9 +81,9 @@ The fingerprint binds:
 
 Changed release material requires a new revision and new approval.
 
-## Live Notion quality gate
+## Optional live Notion quality gate
 
-For governed PDF intake rows, Notion must remain active and release-ready:
+For governed PDF intake rows, the operational Notion record should remain active and release-ready:
 
 - page not archived
 - page not in trash
@@ -87,7 +100,9 @@ For governed PDF intake rows, Notion must remain active and release-ready:
 - Publish Payload exactly matches the queue caption
 - Scheduled At represents the same instant as the queue schedule
 
-The release workflow checks the live Notion row during planning and **again immediately before each dispatch intent and Buffer provider write**. This closes the practical time-of-check/time-of-use gap if the source row is revoked while media or capacity preflight is running.
+When the GitHub credential exists, the release workflow checks the live Notion row during planning and **again immediately before each dispatch intent and Buffer provider write**. This closes the practical time-of-check/time-of-use gap if the source row is revoked while media or capacity preflight is running.
+
+When the credential is absent, this live layer is skipped explicitly. Exact current-queue fingerprinting and repository-owner approval remain mandatory.
 
 ## Media preflight
 
@@ -207,8 +222,8 @@ The release layer distinguishes at least:
 
 - approval/revision mismatch
 - queue fingerprint drift
-- live Notion quality failure
-- archived/trashed Notion source
+- optional live Notion quality failure when credentialed
+- archived/trashed Notion source when credentialed
 - media URL/type/size/byte/hash failure
 - Buffer authentication/channel failure
 - incomplete capacity inventory
@@ -223,4 +238,4 @@ Do not recreate an accepted destination simply because another stage failed. Do 
 
 ## Release rule
 
-A hardened release is green only when relevant CI is passing, queue and media contracts are current, documentation matches implementation, no unexplained unresolved intent remains, and every live claim is supported by provider evidence rather than inference.
+A hardened release is green only when relevant CI is passing, queue and media contracts are current, documentation matches implementation, no unexplained unresolved intent remains, and every live claim is supported by provider evidence rather than inference. The audit must always state whether live Notion defence ran or the no-secret owner-approved current-queue fallback was used.

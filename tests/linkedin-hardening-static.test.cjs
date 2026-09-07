@@ -12,6 +12,7 @@ const autopost = read('.github/workflows/linkedin-buffer-autopost.yml');
 const verifier = read('.github/workflows/linkedin-publication-verifier.yml');
 const intake = read('.github/workflows/linkedin-imap-pdf-intake.yml');
 const reconcile = read('.github/workflows/linkedin-buffer-intent-reconcile.yml');
+const notionPreflight = read('.github/workflows/linkedin-notion-preflight.yml');
 const retiredPdfIntake = read('.github/workflows/linkedin-pdf-intake.yml');
 const retiredPdfShareNow = read('.github/workflows/linkedin-pdf-share-now.yml');
 const backfill = read('.github/workflows/linkedin-publication-backfill.yml');
@@ -26,16 +27,33 @@ test('all approved media is preflighted before the first Buffer createPost mutat
   assert.match(autopost, /MEDIA_SHA256|mediaProof\.sha256/);
 });
 
-test('live Notion is rechecked immediately before dispatch intent and Buffer mutation', () => {
+test('live Notion is rechecked immediately before dispatch when the optional credential exists', () => {
   const dispatchLoop = autopost.indexOf('for (const { job, channel, key } of plan.dispatch)');
   const livePostIndex = autopost.indexOf('const liveQueuePost', dispatchLoop);
+  const conditionalIndex = autopost.indexOf('if (process.env.NOTION_API_KEY &&', dispatchLoop);
   const notionIndex = autopost.indexOf('await assertLiveNotionQualityGate(liveQueuePost', dispatchLoop);
   const intentIndex = autopost.indexOf('const intentBody = dispatchIntentComment', dispatchLoop);
   const mutationIndex = autopost.indexOf('const data = await buffer(buildCreatePostMutation', dispatchLoop);
   assert.ok(dispatchLoop >= 0 && livePostIndex > dispatchLoop, 'dispatch-loop live queue check is missing');
-  assert.ok(notionIndex > livePostIndex, 'pre-mutation live Notion recheck is missing');
-  assert.ok(intentIndex > notionIndex, 'dispatch intent can be written before final Notion recheck');
+  assert.ok(conditionalIndex > livePostIndex, 'Notion recheck is not explicitly conditional on the credential');
+  assert.ok(notionIndex > conditionalIndex, 'credentialed pre-mutation live Notion recheck is missing');
+  assert.ok(intentIndex > notionIndex, 'dispatch intent can be written before the optional final Notion recheck');
   assert.ok(mutationIndex > intentIndex, 'Buffer mutation ordering is invalid');
+});
+
+test('missing Notion credential is explicit fallback, never misreported as a live check', () => {
+  assert.match(autopost, /owner-approved-current-queue-no-notion-secret/);
+  assert.match(autopost, /Release remains governed by exact current-queue fingerprint plus repository-owner approval/);
+  assert.doesNotMatch(autopost, /NOTION_API_KEY is required for every non-QA LinkedIn release/);
+  assert.doesNotMatch(autopost, /NOTION_API_KEY is missing\. Production LinkedIn release fails closed/);
+  assert.match(notionPreflight, /SKIPPED_NO_SECRET/);
+  assert.match(notionPreflight, /OPTIONAL_DEFENCE_UNAVAILABLE/);
+  assert.match(notionPreflight, /EXACT_CURRENT_QUEUE_PLUS_REPOSITORY_OWNER_APPROVAL/);
+});
+
+test('Buffer credential remains mandatory even when Notion defence is optional', () => {
+  assert.match(autopost, /test -n "\$BUFFER_API_KEY"/);
+  assert.match(autopost, /BUFFER_API_KEY is missing/);
 });
 
 test('draft mode survives capacity planning into daily placement validation', () => {
@@ -137,8 +155,7 @@ test('one-shot approvals must exactly match a current locked queue revision', ()
   assert.doesNotMatch(autopost, /repository-owner-approved-legacy/);
 });
 
-test('production release fails closed without live Notion and uses one trusted durable ledger', () => {
-  assert.match(autopost, /NOTION_API_KEY is missing\. Production LinkedIn release fails closed/);
+test('production release uses one trusted durable ledger in both Notion modes', () => {
   assert.match(autopost, /LEDGER_TITLE/);
   assert.match(autopost, /selectTrustedLedgerIssue/);
   assert.match(autopost, /state: 'all', per_page: 100/);
