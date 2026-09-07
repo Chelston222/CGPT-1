@@ -1,43 +1,59 @@
 BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//222Emails//Agentic OS//EN
+PRODID:-//Chelston222//Agentic OS//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-X-WR-CALNAME:Agentic OS
+X-WR-CALNAME:AOS • EXECUTION
 X-WR-TIMEZONE:Europe/London
 BEGIN:VEVENT
-UID:aos-ceo-start-2026-09-06-segment-0@agentic-os
-DTSTAMP:20260905T071042Z
-DTSTART;TZID=Europe/London:20260906T072000
-DTEND;TZID=Europe/London:20260906T074000
-SUMMARY:AOS | CEO START
-DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-06\nAOS_BLOCK_ID=aos-ceo-start-2026-09-06-segment-0\nOutcome: reconcile the live ranked execution plan, remove stale/superseded work and start the highest-value currently valid action. Manual events remain protected.
-X-AOS-ACTION-ID:aos-ceo-start-2026-09-06
-X-AOS-BLOCK-ID:aos-ceo-start-2026-09-06-segment-0
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-BEGIN:VEVENT
-UID:aos-ceo-start-2026-09-07-segment-0@agentic-os
-DTSTAMP:20260905T071042Z
-DTSTART;TZID=Europe/London:20260907T072000
-DTEND;TZID=Europe/London:20260907T074000
-SUMMARY:AOS | CEO START
-DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-07\nAOS_BLOCK_ID=aos-ceo-start-2026-09-07-segment-0\nOutcome: reconcile the live ranked execution plan, remove stale/superseded work and start the highest-value currently valid action. Manual events remain protected.
-X-AOS-ACTION-ID:aos-ceo-start-2026-09-07
-X-AOS-BLOCK-ID:aos-ceo-start-2026-09-07-segment-0
+UID:linkedin-prospect-refill-2026-09-07-main@agentic-os
+DTSTAMP:20260907T153431Z
+DTSTART:20260907T160000Z
+DTEND:20260907T173000Z
+SUMMARY:AOS | Refill LinkedIn Prospect Pool
+DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-linkedin-prospect-refill-2026-09-07\nAOS_BLOCK_ID=linkedin-prospect-refill-2026-09-07-main\n\nOutcome: restore the private 222Emails LinkedIn verified prospect pool to at least 60 unused eligible prospects\, preferably 120 when practical\, without lowering the admission standard.\n\nTrigger: the private production batch for 7 Sep reports 23 eligible unused prospects remaining\, below the 36-prospect warning threshold and below the 60-prospect minimum refill target.\n\nExecution contract:\n1. Research and verify fresh appointment-led decision-makers using current public evidence.\n2. Admit only records that pass the private repo admission gate\, including named decision-maker\, canonical LinkedIn profile\, independent evidence\, 95+ first-touch quality\, finished connection note/post-accept copy\, second verification and red-team pass.\n3. Preserve business/profile dedupe and stale-evidence gates.\n4. LinkedIn actions remain manual. This block authorises research\, verification and inventory repair only. It does not authorise automated connection requests\, InMail or messages.\n5. Stop when the minimum 60 unused verified prospects is restored or the timebox ends. If incomplete\, re-evaluate at the next Agentic OS noon reconciliation rather than auto-carrying the task.\n\nSource authority: Chelston222/222emails-linkedin-ops README.md + REPLENISH.md + latest private batch inventory.\nOwned by Agentic OS. Manual calendar events remain protected.
+X-AOS-ID:linkedin-prospect-refill-2026-09-07-main
+X-AOS-ACTION-ID:aos-linkedin-prospect-refill-2026-09-07
+X-AOS-TASK-ID:aos-linkedin-prospect-refill-2026-09-07
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
 BEGIN:VEVENT
 UID:aos-ceo-start-2026-09-08-segment-0@agentic-os
-DTSTAMP:20260905T071042Z
-DTSTART;TZID=Europe/London:20260908T072000
-DTEND;TZID=Europe/London:20260908T074000
+DTSTAMP:20260907T153431Z
+DTSTART:20260908T062000Z
+DTEND:20260908T064000Z
 SUMMARY:AOS | CEO START
-DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-08\nAOS_BLOCK_ID=aos-ceo-start-2026-09-08-segment-0\nOutcome: reconcile the live ranked execution plan, remove stale/superseded work and start the highest-value currently valid action. Manual events remain protected.
+DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-08\nAOS_BLOCK_ID=aos-ceo-start-2026-09-08-segment-0\n\nOutcome: reconcile the live ranked execution plan\, remove stale or superseded work and start the highest-value currently valid action.\n\nThis is a flexible Agentic OS-owned one-off block. Manual calendar events remain protected. The block may be moved or replaced by Agentic OS when live priorities materially change.
+X-AOS-ID:aos-ceo-start-2026-09-08-segment-0
 X-AOS-ACTION-ID:aos-ceo-start-2026-09-08
-X-AOS-BLOCK-ID:aos-ceo-start-2026-09-08-segment-0
+X-AOS-TASK-ID:aos-ceo-start-2026-09-08
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:aos-ceo-start-2026-09-09-segment-0@agentic-os
+DTSTAMP:20260907T153431Z
+DTSTART:20260909T062000Z
+DTEND:20260909T064000Z
+SUMMARY:AOS | CEO START
+DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-09\nAOS_BLOCK_ID=aos-ceo-start-2026-09-09-segment-0\n\nOutcome: reconcile the live ranked execution plan\, remove stale or superseded work and start the highest-value currently valid action.\n\nThis is a flexible Agentic OS-owned one-off block. Manual calendar events remain protected. The block may be moved or replaced by Agentic OS when live priorities materially change.
+X-AOS-ID:aos-ceo-start-2026-09-09-segment-0
+X-AOS-ACTION-ID:aos-ceo-start-2026-09-09
+X-AOS-TASK-ID:aos-ceo-start-2026-09-09
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:aos-ceo-start-2026-09-10-segment-0@agentic-os
+DTSTAMP:20260907T153431Z
+DTSTART:20260910T062000Z
+DTEND:20260910T064000Z
+SUMMARY:AOS | CEO START
+DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-10\nAOS_BLOCK_ID=aos-ceo-start-2026-09-10-segment-0\n\nOutcome: reconcile the live ranked execution plan\, remove stale or superseded work and start the highest-value currently valid action.\n\nThis is a flexible Agentic OS-owned one-off block. Manual calendar events remain protected. The block may be moved or replaced by Agentic OS when live priorities materially change.
+X-AOS-ID:aos-ceo-start-2026-09-10-segment-0
+X-AOS-ACTION-ID:aos-ceo-start-2026-09-10
+X-AOS-TASK-ID:aos-ceo-start-2026-09-10
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
