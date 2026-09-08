@@ -72,9 +72,9 @@ jobs:
 
             const body = [
               '# LinkedIn content supply health', '',
-              supply.green ? '🟢 **GREEN** — at least two weeks of current-policy review-ready reserve is available at the configured baseline.' : '🟠 **REPLENISH** — current-policy review-ready reserve is below target.', '',
+              supply.green ? '🟢 **GREEN** — the configured current-policy review-ready reserve is available.' : '🟠 **REPLENISH** — current-policy review-ready reserve is below target.', '',
               `- Lookahead: **${DEFAULT_POLICY.lookaheadDays} days**`,
-              '- Reserve targets: **14 personal · 10 Main 222Emails · 10 Retention School**',
+              `- Reserve targets: **${DEFAULT_POLICY.reserveTargets.personal} personal · ${DEFAULT_POLICY.reserveTargets.main} Main 222Emails · ${DEFAULT_POLICY.reserveTargets.secondary} Retention School**`,
               `- Total current-policy reserve gap: **${supply.totalGap}**`,
               `- Reserved/previously approved post IDs excluded: **${reservedIds.size}**`,
               `- Checked at: **${new Date(now).toISOString()}**`, '',
