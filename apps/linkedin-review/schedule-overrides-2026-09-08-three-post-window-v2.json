@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "batchId": "linkedin-window-2026-09-08-three-post-v2",
+  "generatedAt": "2026-09-08T12:19:00+01:00",
+  "windowStart": "2026-09-08",
+  "windowEnd": "2026-09-14",
+  "isolationRule": "This exact 21-post batch runs at three personal-profile posts per day from 8 September 2026 onward. Do not reduce this batch because of unrelated pre-existing content. Do not mutate, delete or reschedule unrelated posts.",
+  "todayRule": "8 September 2026 must contain all three batch posts after the owner instruction time.",
+  "posts": [
+    {"id":"tte-week-2026-09-14-personal-01","revision":2,"scheduledAt":{"personal":"2026-09-08T14:00:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-02","revision":2,"scheduledAt":{"personal":"2026-09-08T16:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-03","revision":2,"scheduledAt":{"personal":"2026-09-08T18:30:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-04","revision":2,"scheduledAt":{"personal":"2026-09-09T08:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-05","revision":2,"scheduledAt":{"personal":"2026-09-09T13:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-06","revision":2,"scheduledAt":{"personal":"2026-09-09T18:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-07","revision":2,"scheduledAt":{"personal":"2026-09-10T08:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-08","revision":2,"scheduledAt":{"personal":"2026-09-10T13:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-09","revision":2,"scheduledAt":{"personal":"2026-09-10T18:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-10","revision":2,"scheduledAt":{"personal":"2026-09-11T08:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-11","revision":2,"scheduledAt":{"personal":"2026-09-11T13:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-12","revision":2,"scheduledAt":{"personal":"2026-09-11T18:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-13","revision":2,"scheduledAt":{"personal":"2026-09-12T08:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-14","revision":2,"scheduledAt":{"personal":"2026-09-12T13:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-15","revision":2,"scheduledAt":{"personal":"2026-09-12T18:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-16","revision":2,"scheduledAt":{"personal":"2026-09-13T08:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-17","revision":2,"scheduledAt":{"personal":"2026-09-13T13:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-18","revision":2,"scheduledAt":{"personal":"2026-09-13T18:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-19","revision":2,"scheduledAt":{"personal":"2026-09-14T08:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-20","revision":2,"scheduledAt":{"personal":"2026-09-14T13:15:00+01:00"}},
+    {"id":"tte-week-2026-09-14-personal-21","revision":2,"scheduledAt":{"personal":"2026-09-14T18:15:00+01:00"}}
+  ]
+}
