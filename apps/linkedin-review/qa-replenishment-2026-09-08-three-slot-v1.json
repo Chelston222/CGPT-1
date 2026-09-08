@@ -30,9 +30,7 @@
       "targets": ["personal"],
       "mode": "schedule",
       "scheduledAt": {"personal": "2026-09-14T13:15:00+01:00"},
-      "copy": {
-        "default": "A cancellation is not one problem.\n\nIt can mean:\n\nThe client still wants the service but the time stopped working.\nThey need a different practitioner.\nThey changed their mind.\nThey cannot afford it right now.\nThey found another option.\nThey simply never got around to rebooking.\n\nThose situations should not automatically get the same follow-up.\n\nThe useful question is not just:\n\nWho cancelled?\n\nIt is:\n\nWhat state are they in now, and is there a sensible next step we can make easier?\n\nThat small shift turns cancellation reporting into something commercially useful."
-      },
+      "copy": {"default": "A cancellation is not one problem.\n\nIt can mean:\n\nThe client still wants the service but the time stopped working.\nThey need a different practitioner.\nThey changed their mind.\nThey cannot afford it right now.\nThey found another option.\nThey simply never got around to rebooking.\n\nThose situations should not automatically get the same follow-up.\n\nThe useful question is not just:\n\nWho cancelled?\n\nIt is:\n\nWhat state are they in now, and is there a sensible next step we can make easier?\n\nThat small shift turns cancellation reporting into something commercially useful."},
       "sourceType": "performance_learning_v2",
       "status": "review",
       "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
@@ -48,9 +46,7 @@
       "targets": ["personal"],
       "mode": "schedule",
       "scheduledAt": {"personal": "2026-09-14T18:15:00+01:00"},
-      "copy": {
-        "default": "If somebody showed me one retention percentage and nothing else, I would not know what to do with it yet.\n\nA single number can hide very different problems.\n\nAre first-time clients failing to return?\nAre regulars stretching the gap between visits?\nAre cancellations not being recovered?\nAre certain services creating weaker return patterns?\nAre clients leaving without a next appointment?\n\nThe headline metric tells you something changed.\n\nThe journey tells you where to look.\n\nThat is why I increasingly think retention analysis should begin with customer states and transitions, not one blended percentage."
-      },
+      "copy": {"default": "If somebody showed me one retention percentage and nothing else, I would not know what to do with it yet.\n\nA single number can hide very different problems.\n\nAre first-time clients failing to return?\nAre regulars stretching the gap between visits?\nAre cancellations not being recovered?\nAre certain services creating weaker return patterns?\nAre clients leaving without a next appointment?\n\nThe headline metric tells you something changed.\n\nThe journey tells you where to look.\n\nThat is why I increasingly think retention analysis should begin with customer states and transitions, not one blended percentage."},
       "sourceType": "performance_learning_v2",
       "status": "review",
       "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
@@ -66,9 +62,7 @@
       "targets": ["personal"],
       "mode": "schedule",
       "scheduledAt": {"personal": "2026-09-15T13:15:00+01:00"},
-      "copy": {
-        "default": "Sometimes the follow-up message is not the real problem.\n\nThe next step is.\n\nIf a client has to:\n\nSearch for the right service again.\nWork out who they saw last time.\nFind a suitable appointment from scratch.\nCall during opening hours.\nRepeat information the business already has.\n\nThen a beautifully written reminder can still lead into unnecessary friction.\n\nBefore rewriting the copy, I would ask:\n\nHow easy is it for this person to do the thing we are asking them to do?\n\nGood follow-up should reduce effort, not just increase message volume."
-      },
+      "copy": {"default": "Sometimes the follow-up message is not the real problem.\n\nThe next step is.\n\nIf a client has to:\n\nSearch for the right service again.\nWork out who they saw last time.\nFind a suitable appointment from scratch.\nCall during opening hours.\nRepeat information the business already has.\n\nThen a beautifully written reminder can still lead into unnecessary friction.\n\nBefore rewriting the copy, I would ask:\n\nHow easy is it for this person to do the thing we are asking them to do?\n\nGood follow-up should reduce effort, not just increase message volume."},
       "sourceType": "performance_learning_v2",
       "status": "review",
       "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
@@ -84,9 +78,7 @@
       "targets": ["personal"],
       "mode": "schedule",
       "scheduledAt": {"personal": "2026-09-15T18:15:00+01:00"},
-      "copy": {
-        "default": "Building Retention School is forcing me to answer a useful question:\n\nCan I explain retention without hiding behind marketing language?\n\nBecause an appointment-led business owner should not need a lifecycle-marketing dictionary to understand where revenue is leaking.\n\nA client left without rebooking.\nAn enquiry never became an appointment.\nA cancellation created an empty slot.\nA regular quietly stopped returning.\nCapacity is sitting unused.\n\nThose are operationally recognisable moments.\n\nThe system can get sophisticated underneath.\n\nThe problem should stay simple enough to see.\n\nThat is becoming one of my favourite constraints while building this."
-      },
+      "copy": {"default": "Building Retention School is forcing me to answer a useful question:\n\nCan I explain retention without hiding behind marketing language?\n\nBecause an appointment-led business owner should not need a lifecycle-marketing dictionary to understand where revenue is leaking.\n\nA client left without rebooking.\nAn enquiry never became an appointment.\nA cancellation created an empty slot.\nA regular quietly stopped returning.\nCapacity is sitting unused.\n\nThose are operationally recognisable moments.\n\nThe system can get sophisticated underneath.\n\nThe problem should stay simple enough to see.\n\nThat is becoming one of my favourite constraints while building this."},
       "sourceType": "performance_learning_v2",
       "status": "review",
       "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
@@ -102,9 +94,7 @@
       "targets": ["personal"],
       "mode": "schedule",
       "scheduledAt": {"personal": "2026-09-16T13:15:00+01:00"},
-      "copy": {
-        "default": "An empty appointment slot does not automatically mean the price is wrong.\n\nBefore reaching for a discount, I would want to know why the capacity is empty.\n\nWas demand never there?\nDid somebody cancel?\nDid a waitlist exist but nobody activated it?\nAre regular clients overdue?\nAre enquiries getting stuck before booking?\nIs the empty time simply unpopular?\n\nThose causes point to different actions.\n\nDiscounting is one possible lever.\n\nIt should not be the diagnosis.\n\nIf the real issue is a broken return or recovery path, cheaper appointments can hide the leak rather than fix it."
-      },
+      "copy": {"default": "An empty appointment slot does not automatically mean the price is wrong.\n\nBefore reaching for a discount, I would want to know why the capacity is empty.\n\nWas demand never there?\nDid somebody cancel?\nDid a waitlist exist but nobody activated it?\nAre regular clients overdue?\nAre enquiries getting stuck before booking?\nIs the empty time simply unpopular?\n\nThose causes point to different actions.\n\nDiscounting is one possible lever.\n\nIt should not be the diagnosis.\n\nIf the real issue is a broken return or recovery path, cheaper appointments can hide the leak rather than fix it."},
       "sourceType": "performance_learning_v2",
       "status": "review",
       "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
@@ -114,15 +104,13 @@
       "revision": 1,
       "title": "A CRM field should earn its place",
       "category": "crm_design",
-      "contentRole": "founder_operator_pov",
+      "contentRole": "authority",
       "funnelStage": "tof",
       "format": "text",
       "targets": ["personal"],
       "mode": "schedule",
       "scheduledAt": {"personal": "2026-09-16T18:15:00+01:00"},
-      "copy": {
-        "default": "I have started judging CRM fields by a simple standard:\n\nWhat decision becomes better because this exists?\n\nIf the answer is none, the field might just be administrative decoration.\n\nFor a client return system, useful data should help answer things like:\n\nWhat state is this client in?\nWhen should the business act?\nWhat happened last time?\nWhat should stop the workflow?\nWho owns the next step?\nDid the client return?\n\nMore fields do not automatically create more intelligence.\n\nThe goal is not to collect everything.\n\nIt is to capture enough truth to make the next action better."
-      },
+      "copy": {"default": "I have started judging CRM fields by a simple standard:\n\nWhat decision becomes better because this exists?\n\nIf the answer is none, the field might just be administrative decoration.\n\nFor a client return system, useful data should help answer things like:\n\nWhat state is this client in?\nWhen should the business act?\nWhat happened last time?\nWhat should stop the workflow?\nWho owns the next step?\nDid the client return?\n\nMore fields do not automatically create more intelligence.\n\nThe goal is not to collect everything.\n\nIt is to capture enough truth to make the next action better."},
       "sourceType": "performance_learning_v2",
       "status": "review",
       "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
@@ -138,9 +126,7 @@
       "targets": ["personal"],
       "mode": "schedule",
       "scheduledAt": {"personal": "2026-09-17T13:15:00+01:00"},
-      "copy": {
-        "default": "“Inactive client” is often too blunt to be useful.\n\nA person who normally returns every four weeks and is now at week six is different from somebody who visited once eighteen months ago.\n\nBoth might be labelled inactive.\n\nOnly one may be behaving unusually for their own pattern.\n\nThat is why I like the idea of looking for overdue behaviour, not just old dates.\n\nWhat was normal for this client or this service?\nWhen did they move outside that range?\nIs contact appropriate now?\n\nThe better the state definition, the less the business has to rely on blanket win-back campaigns."
-      },
+      "copy": {"default": "“Inactive client” is often too blunt to be useful.\n\nA person who normally returns every four weeks and is now at week six is different from somebody who visited once eighteen months ago.\n\nBoth might be labelled inactive.\n\nOnly one may be behaving unusually for their own pattern.\n\nThat is why I like the idea of looking for overdue behaviour, not just old dates.\n\nWhat was normal for this client or this service?\nWhen did they move outside that range?\nIs contact appropriate now?\n\nThe better the state definition, the less the business has to rely on blanket win-back campaigns."},
       "sourceType": "performance_learning_v2",
       "status": "review",
       "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
@@ -150,15 +136,13 @@
       "revision": 1,
       "title": "The question I want every automation to survive",
       "category": "automation_judgement",
-      "contentRole": "founder_operating_principle",
+      "contentRole": "authority",
       "funnelStage": "tof",
       "format": "text",
       "targets": ["personal"],
       "mode": "schedule",
       "scheduledAt": {"personal": "2026-09-17T18:15:00+01:00"},
-      "copy": {
-        "default": "Before automating a follow-up, I want it to survive one question:\n\nWould this still feel sensible if a good member of staff knew the full context?\n\nIf the answer is no, speed is not the problem.\n\nThe decision logic is.\n\nAutomation can make a useful action consistent.\n\nIt can also make a bad assumption happen perfectly every time.\n\nSo I would rather spend longer defining:\n\nWho should enter.\nWho should not.\nWhat event starts it.\nWhat event stops it.\nWhen a person should take over.\n\nThen automate.\n\nJudgement first. Repetition second."
-      },
+      "copy": {"default": "Before automating a follow-up, I want it to survive one question:\n\nWould this still feel sensible if a good member of staff knew the full context?\n\nIf the answer is no, speed is not the problem.\n\nThe decision logic is.\n\nAutomation can make a useful action consistent.\n\nIt can also make a bad assumption happen perfectly every time.\n\nSo I would rather spend longer defining:\n\nWho should enter.\nWho should not.\nWhat event starts it.\nWhat event stops it.\nWhen a person should take over.\n\nThen automate.\n\nJudgement first. Repetition second."},
       "sourceType": "performance_learning_v2",
       "status": "review",
       "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
@@ -174,9 +158,7 @@
       "targets": ["main"],
       "mode": "schedule",
       "scheduledAt": {"main": "2026-09-22T08:30:00+01:00"},
-      "copy": {
-        "default": "Five common revenue leaks in an appointment-led business can look similar on a spreadsheet because all five end with the same visible result:\n\nNo appointment.\n\nBut the underlying states are different.\n\n1. No rebook\nA client completed their appointment without securing the next one.\n\n2. Lapsed client\nA previous client moved beyond their expected return window.\n\n3. Cancellation or no-show loss\nBooked capacity disappeared and was not recovered.\n\n4. Unbooked enquiry\nIntent existed, but the journey stopped before an appointment.\n\n5. Empty capacity\nUseful appointment time remains unsold.\n\nTreating all five as “send more marketing” removes the diagnosis.\n\nA Client Return System starts by identifying the state, then deciding what action, if any, should follow."
-      },
+      "copy": {"default": "Five common revenue leaks in an appointment-led business can look similar on a spreadsheet because all five end with the same visible result:\n\nNo appointment.\n\nBut the underlying states are different.\n\n1. No rebook\nA client completed their appointment without securing the next one.\n\n2. Lapsed client\nA previous client moved beyond their expected return window.\n\n3. Cancellation or no-show loss\nBooked capacity disappeared and was not recovered.\n\n4. Unbooked enquiry\nIntent existed, but the journey stopped before an appointment.\n\n5. Empty capacity\nUseful appointment time remains unsold.\n\nTreating all five as “send more marketing” removes the diagnosis.\n\nA Client Return System starts by identifying the state, then deciding what action, if any, should follow."},
       "sourceType": "performance_learning_v2",
       "status": "review",
       "qa": {"status": "ready_for_human_review", "publishable": true, "approvalEligible": true, "publishPermission": false}
