@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-08T08:11:31.035Z",
+  "generatedAt": "2026-09-08T08:11:32.891Z",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -1322,11 +1322,11 @@
       "copy": {
         "default": "Cold enquiries. Ghost clients.\n\nBoth can look like a “we need more leads” problem.\n\nBut sometimes the opportunity is already sitting inside the business.\n\nEnquiries that never booked.\nClients who never rebooked.\nCancellations that disappeared.\nPast clients who simply went quiet.\n\nThis carousel breaks down the systems that can help bring more of those opportunities back into the diary.\n\nThe goal is simple: make it easier for the right people to take the next step.\n\n222Emails | Client Return Systems for appointment-led businesses"
       },
-      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-cold-enquiries-ghost-clients-001/r2/thumbnail.jpg",
+      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/cff1b373ea7f823a9ff6083076d67eff63b35c49/apps/linkedin-review/media/intake/tte-li-cold-enquiries-ghost-clients-001/r2/thumbnail.jpg",
       "mediaAlt": "Nine-page 222Emails carousel about cold enquiries, ghost clients, follow-up, rebooking and client return systems.",
-      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-cold-enquiries-ghost-clients-001/r2/tte-li-cold-enquiries-ghost-clients-001.pdf",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/cff1b373ea7f823a9ff6083076d67eff63b35c49/apps/linkedin-review/media/intake/tte-li-cold-enquiries-ghost-clients-001/r2/tte-li-cold-enquiries-ghost-clients-001.pdf",
       "documentTitle": "Cold Enquiries and Ghost Clients",
-      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-cold-enquiries-ghost-clients-001/r2/thumbnail.jpg",
+      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/cff1b373ea7f823a9ff6083076d67eff63b35c49/apps/linkedin-review/media/intake/tte-li-cold-enquiries-ghost-clients-001/r2/thumbnail.jpg",
       "carousel": {
         "libraryId": "tte-li-cold-enquiries-ghost-clients-001",
         "slideCount": 9,
@@ -1346,6 +1346,12 @@
           "at": "2026-09-08T08:11:31.035Z",
           "actor": "github-actions[bot]",
           "note": "PDF reconstructed from locked base64 chunks, verified against its locked SHA-256, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied."
+        },
+        {
+          "state": "media_urls_pinned",
+          "at": "2026-09-08T08:11:32.891Z",
+          "actor": "github-actions[bot]",
+          "note": "Governed PDF and thumbnail URLs pinned to immutable Git commit cff1b373ea7f823a9ff6083076d67eff63b35c49."
         }
       ],
       "scheduledAt": {
