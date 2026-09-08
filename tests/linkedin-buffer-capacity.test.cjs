@@ -20,13 +20,14 @@ function job(id, channels, mode = 'schedule') {
 
 test('enforces current three-account daily cadence while retaining broad capacity guard', () => {
   const valid = [
-    job('personal-core', [['personal', '2026-08-17T08:00:00Z']]),
-    job('personal-bonus', [['personal', '2026-08-17T16:00:00Z']]),
+    job('personal-morning', [['personal', '2026-08-17T07:15:00Z']]),
+    job('personal-midday', [['personal', '2026-08-17T12:15:00Z']]),
+    job('personal-evening', [['personal', '2026-08-17T17:15:00Z']]),
     job('main', [['main', '2026-08-17T09:00:00Z']]),
     job('secondary', [['secondary', '2026-08-17T10:00:00Z']]),
   ];
-  assert.equal(validateDailyPlacementLimit(valid)['2026-08-17'], 4);
-  assert.throws(() => validateDailyPlacementLimit([...valid, job('personal-third', [['personal', '2026-08-17T18:00:00Z']])]), /new cadence maximum is 2 per day/);
+  assert.equal(validateDailyPlacementLimit(valid)['2026-08-17'], 5);
+  assert.throws(() => validateDailyPlacementLimit([...valid, job('personal-fourth', [['personal', '2026-08-17T20:00:00Z']])]), /new cadence maximum is 3 per day/);
   assert.throws(() => validateDailyPlacementLimit([...valid, job('main-second', [['main', '2026-08-17T18:00:00Z']])]), /new cadence maximum is 1 per day/);
 });
 
@@ -38,6 +39,16 @@ test('enforces weekly company and Retention School ceilings', () => {
   const school = Array.from({ length: 5 }, (_, index) => job(`school-${index}`, [['secondary', `2026-08-${17 + index}T10:00:00Z`]]));
   assert.doesNotThrow(() => validateCadenceContract(school));
   assert.throws(() => validateCadenceContract([...school, job('school-six', [['secondary', '2026-08-23T10:00:00Z']])]), /maximum is 5 per week/);
+});
+
+test('enforces 21 personal placements per week', () => {
+  const personal = [];
+  for (let day = 0; day < 7; day += 1) {
+    const date = 17 + day;
+    for (const hour of [8, 13, 18]) personal.push(job(`personal-${day}-${hour}`, [['personal', `2026-08-${String(date).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00:00Z`]]));
+  }
+  assert.doesNotThrow(() => validateCadenceContract(personal));
+  assert.throws(() => validateCadenceContract([...personal, job('personal-22', [['personal', '2026-08-17T21:00:00Z']])]), /maximum is 3 per day|maximum is 21 per week/);
 });
 
 test('counts a multi-channel post once per destination', () => {
