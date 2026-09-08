@@ -32,5 +32,6 @@ test('current rolling manifest locks the exact 21 rebased revisions from 8 Septe
 test('current rolling manifest guarantees a full three posts on 8 September', () => {
   const today = override.posts.filter((post) => post.scheduledAt.personal.startsWith('2026-09-08'));
   assert.equal(today.length, 3);
-  assert.deepEqual(today.map((post) => post.scheduledAt.personal.slice(11, 16)), ['14:00', '16:15', '18:30']);
+  assert.deepEqual(today.map((post) => post.scheduledAt.personal.slice(11, 16)), ['19:00', '20:00', '21:00']);
+  assert.deepEqual(today.map((post) => post.revision), [3, 3, 3]);
 });
