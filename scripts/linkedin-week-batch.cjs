@@ -14,6 +14,13 @@ function qaReplenishmentPaths() {
     .map((name) => path.join(QA_REPLENISHMENT_DIR, name));
 }
 
+function scheduleOverridePaths() {
+  return fs.readdirSync(QA_REPLENISHMENT_DIR)
+    .filter((name) => /^schedule-overrides-.*\.json$/.test(name))
+    .sort()
+    .map((name) => path.join(QA_REPLENISHMENT_DIR, name));
+}
+
 function withQaReplenishment(queue) {
   const existingIds = new Set((queue.posts || []).map((post) => post.id));
   const additions = [];
@@ -37,7 +44,47 @@ function withQaReplenishment(queue) {
       additions.push(post);
     }
   }
-  return { ...queue, posts: [...(queue.posts || []), ...additions] };
+
+  let posts = [...(queue.posts || []), ...additions];
+  const overrides = new Map();
+  for (const filePath of scheduleOverridePaths()) {
+    let payload = { posts: [] };
+    try {
+      payload = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      continue;
+    }
+    for (const override of payload.posts || []) {
+      if (!override?.id || !Number.isInteger(override.revision) || !override.scheduledAt) continue;
+      overrides.set(override.id, override);
+    }
+  }
+
+  posts = posts.map((post) => {
+    const override = overrides.get(post.id);
+    if (!override) return post;
+    if (
+      post.status !== 'review'
+      || post.qa?.status !== 'ready_for_human_review'
+      || post.qa?.approvalEligible !== true
+      || post.qa?.publishPermission !== false
+    ) throw new Error(`${post.id} cannot receive a schedule override outside the review-only approval boundary.`);
+    if (override.revision <= Number(post.revision || 0)) throw new Error(`${post.id} schedule override must increment the locked revision.`);
+    return {
+      ...post,
+      revision: override.revision,
+      scheduledAt: override.scheduledAt,
+      scheduleOverrideSource: path.basename([...scheduleOverridePaths()].find((candidate) => {
+        try {
+          const payload = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+          return (payload.posts || []).some((item) => item.id === post.id && item.revision === override.revision);
+        } catch { return false; }
+      }) || ''),
+    };
+  });
+
+  return { ...queue, posts };
 }
 
 function parseHeaders(body = '') {
@@ -113,9 +160,7 @@ function postBody(post) {
 
 function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = {}) {
   const header = parseHeaders(body);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(header.WEEK_START || '')) throw new Error('WEEK_START must be a Monday in YYYY-MM-DD format.');
-  const startDate = new Date(`${header.WEEK_START}T12:00:00Z`);
-  if ((startDate.getUTCDay() || 7) !== 1) throw new Error('WEEK_START must be a Monday.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(header.WEEK_START || '')) throw new Error('WEEK_START must be in YYYY-MM-DD format.');
   if (String(header.QUEUE_SCHEMA) !== String(queue.schemaVersion)) throw new Error('The queue schema changed after review. Review this week again.');
   if (header.QUEUE_GENERATED_AT !== queue.generatedAt && !options.allowGeneratedAtDrift) throw new Error('The queue changed after review. Review this week again.');
 
@@ -143,13 +188,13 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
     for (const target of post.targets) {
       const scheduled = post.scheduledAt?.[target];
       const scheduledDate = dateOnly(scheduled);
-      if (!scheduled || scheduledDate < header.WEEK_START || scheduledDate > weekEnd) throw new Error(`${locked.id} has a ${target} schedule outside the approved week.`);
+      if (!scheduled || scheduledDate < header.WEEK_START || scheduledDate > weekEnd) throw new Error(`${locked.id} has a ${target} schedule outside the approved seven-day window.`);
     }
     return { post, request: validateRequest(postBody(post), env, now) };
   });
 
   const placementsByDay = validateDailyPlacementLimit(jobs);
-  return { batchId: header.BATCH_ID || `linkedin-week-${header.WEEK_START}`, weekStart: header.WEEK_START, weekEnd, jobs, placementsByDay };
+  return { batchId: header.BATCH_ID || `linkedin-window-${header.WEEK_START}`, weekStart: header.WEEK_START, weekEnd, jobs, placementsByDay };
 }
 
-module.exports = { imageSafeZonePassed, parseHeaders, parseItems, postBody, qaReplenishmentPaths, validateWeeklyBatch, withQaReplenishment };
+module.exports = { imageSafeZonePassed, parseHeaders, parseItems, postBody, qaReplenishmentPaths, scheduleOverridePaths, validateWeeklyBatch, withQaReplenishment };
