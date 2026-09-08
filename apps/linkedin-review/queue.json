@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-08T08:08:44.625Z",
+  "generatedAt": "2026-09-08T08:08:46.654Z",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -1372,11 +1372,11 @@
       "copy": {
         "default": "Your Fresha account can do more than manage bookings.\n\nThe bigger question is what happens around the appointment.\n\nRebooking.\nCancellations.\nNo-shows.\nClients going inactive.\nQuiet capacity.\n\nThis breakdown shows how those pieces can be connected into a Client Return System using the tools already available inside and around Fresha.\n\nRetention School by 222Emails\nPractical retention education for appointment-led businesses."
       },
-      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-fresha-client-return-system-001/r2/thumbnail.jpg",
+      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/f96b8f91ca314f32fc76c69768fe59850c8898c2/apps/linkedin-review/media/intake/rs-li-fresha-client-return-system-001/r2/thumbnail.jpg",
       "mediaAlt": "Ten-page Retention School carousel showing how Fresha features can support a Client Return System for appointment-led businesses.",
-      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-fresha-client-return-system-001/r2/rs-li-fresha-client-return-system-001.pdf",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/f96b8f91ca314f32fc76c69768fe59850c8898c2/apps/linkedin-review/media/intake/rs-li-fresha-client-return-system-001/r2/rs-li-fresha-client-return-system-001.pdf",
       "documentTitle": "Fresha Client Return System",
-      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-fresha-client-return-system-001/r2/thumbnail.jpg",
+      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/f96b8f91ca314f32fc76c69768fe59850c8898c2/apps/linkedin-review/media/intake/rs-li-fresha-client-return-system-001/r2/thumbnail.jpg",
       "carousel": {
         "libraryId": "rs-li-fresha-client-return-system-001",
         "slideCount": 10,
@@ -1396,6 +1396,12 @@
           "at": "2026-09-08T08:08:44.625Z",
           "actor": "github-actions[bot]",
           "note": "PDF reconstructed from locked base64 chunks, verified against its locked SHA-256, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied."
+        },
+        {
+          "state": "media_urls_pinned",
+          "at": "2026-09-08T08:08:46.654Z",
+          "actor": "github-actions[bot]",
+          "note": "Governed PDF and thumbnail URLs pinned to immutable Git commit f96b8f91ca314f32fc76c69768fe59850c8898c2."
         }
       ],
       "scheduledAt": {
