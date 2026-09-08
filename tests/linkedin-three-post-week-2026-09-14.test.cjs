@@ -30,12 +30,23 @@ test('curated Sep 14 week is exactly 21 personal placements at three per day', (
   assert.equal(batch.jobs.length, 21);
 
   const placements = Object.entries(batch.placementsByDay)
-    .filter(([key]) => key.endsWith(':personal'))
     .sort(([a], [b]) => a.localeCompare(b));
 
-  assert.equal(placements.length, 7);
-  for (const [key, count] of placements) {
-    assert.equal(count, 3, `${key} should contain exactly three personal posts`);
+  assert.deepEqual(placements.map(([date]) => date), [
+    '2026-09-14',
+    '2026-09-15',
+    '2026-09-16',
+    '2026-09-17',
+    '2026-09-18',
+    '2026-09-19',
+    '2026-09-20',
+  ]);
+  for (const [date, count] of placements) {
+    assert.equal(count, 3, `${date} should contain exactly three account placements`);
+  }
+
+  for (const job of batch.jobs) {
+    assert.deepEqual(job.post.targets, ['personal']);
   }
 
   const times = curated.posts.map((post) => post.scheduledAt.personal.slice(11, 16));
