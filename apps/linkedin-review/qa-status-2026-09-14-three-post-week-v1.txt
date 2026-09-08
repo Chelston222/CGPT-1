@@ -1,0 +1,3 @@
+STATUS: AWAITING AUTOMATED HARDENING RESULT
+CURRENT_HEAD_EXPECTED_TO_INCLUDE: exact 21-post week, exact-week regression test, approval manifest, manifest regression test, red-team record.
+RELEASE_PERMISSION: false
