@@ -1,0 +1,10 @@
+BATCH_ID: linkedin-window-2026-09-08-three-post-v2
+WEEK_START: 2026-09-08
+WINDOW_MODE: ROLLING_7_DAY
+QUEUE_SCHEMA: 2
+QUEUE_GENERATED_AT: 2026-09-08T08:11:32.891Z
+ITEMS: tte-week-2026-09-14-personal-01@2,tte-week-2026-09-14-personal-02@2,tte-week-2026-09-14-personal-03@2,tte-week-2026-09-14-personal-04@2,tte-week-2026-09-14-personal-05@2,tte-week-2026-09-14-personal-06@2,tte-week-2026-09-14-personal-07@2,tte-week-2026-09-14-personal-08@2,tte-week-2026-09-14-personal-09@2,tte-week-2026-09-14-personal-10@2,tte-week-2026-09-14-personal-11@2,tte-week-2026-09-14-personal-12@2,tte-week-2026-09-14-personal-13@2,tte-week-2026-09-14-personal-14@2,tte-week-2026-09-14-personal-15@2,tte-week-2026-09-14-personal-16@2,tte-week-2026-09-14-personal-17@2,tte-week-2026-09-14-personal-18@2,tte-week-2026-09-14-personal-19@2,tte-week-2026-09-14-personal-20@2,tte-week-2026-09-14-personal-21@2
+SOURCE_FILE: apps/linkedin-review/qa-replenishment-2026-09-14-three-post-week-v1.json
+SCHEDULE_OVERRIDE: apps/linkedin-review/schedule-overrides-2026-09-08-three-post-window-v2.json
+STATE: REVIEW READY
+RULE: This exact rolling seven-day batch is isolated from unrelated existing content. Do not reduce, delete, mutate or reschedule these 21 placements because of unrelated posts. Do not convert this manifest into a live owner release issue until Chelston explicitly approves the surfaced exact batch. Any revision, copy, schedule, queue schema or queue timestamp drift requires fresh approval.
