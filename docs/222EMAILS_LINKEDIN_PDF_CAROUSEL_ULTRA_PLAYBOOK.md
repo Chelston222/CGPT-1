@@ -5,38 +5,15 @@
 **Owner:** Chelston / 222Emails
 **Repository:** `Chelston222/CGPT-1`
 
-> For any 222Emails LinkedIn document post, PDF carousel, PDF packaging, governed PDF intake, Buffer scheduling or publication-verification task, use this pathway by default unless Chelston explicitly replaces it. Do not invent a parallel production route.
+For any 222Emails LinkedIn document post, PDF carousel, PDF packaging, governed PDF intake, Buffer scheduling or publication-verification task, use this pathway by default unless Chelston explicitly replaces it. Do not invent a parallel production route.
 
-**Source of truth:** current `main`. Superseded hardening branches and pull requests must not be merged over newer production state.
+Current `main` is authoritative. Superseded hardening branches and pull requests must not be merged over newer production state.
 
 ## Canonical architecture
 
-```text
-Approved final PDF + approved final caption
--> authorised Gmail transport
--> PrivateEmail IMAP
--> exact sender/subject/filename/bytes/SHA verification
--> revision-scoped GitHub media promotion
--> immutable Git-commit PDF and thumbnail pin
--> governed GitHub LinkedIn queue
--> repository-owner approval
--> exact current-queue fingerprint verification
--> Notion defence-in-depth when credentialled
--> remote media and Buffer capacity preflight
--> durable Buffer dispatch intent
--> Buffer createPost
--> durable Buffer acceptance ledger
--> LinkedIn
--> separate publication verification
-```
+Approved final PDF + approved final caption -> authorised Gmail transport -> PrivateEmail IMAP -> exact sender/subject/filename/bytes/SHA verification -> revision-scoped GitHub media promotion -> immutable Git-commit PDF and thumbnail pin -> governed GitHub LinkedIn queue -> repository-owner approval -> exact current-queue fingerprint verification -> Notion defence-in-depth when credentialled -> remote media and Buffer capacity preflight -> durable Buffer dispatch intent -> Buffer createPost -> durable Buffer acceptance ledger -> LinkedIn -> separate publication verification.
 
-Use these states precisely:
-
-1. exact media verified
-2. queued in governed GitHub layer
-3. owner approved
-4. accepted/scheduled by Buffer
-5. publication verified
+Use these states precisely: exact media verified; queued in governed GitHub layer; owner approved; accepted/scheduled by Buffer; publication verified.
 
 Never call a post published merely because Gmail sent the message, IMAP found the attachment, GitHub promoted the PDF, the owner approved it, or Buffer accepted it.
 
@@ -48,43 +25,40 @@ Only depart from this route when Chelston explicitly requests another method or 
 
 ## Hard locks
 
-- exactly one LinkedIn target per canonical governed PDF item
+- one LinkedIn target per canonical governed PDF item
 - exact sender, subject, filename, byte count, PDF signature and SHA-256
 - explicit positive revision
 - identical same-revision replay is idempotent
 - changed same revision fails closed and requires a higher revision
-- schedule requires explicit UTC offset or Z
-- schedule remains inside supported verifier horizon
-- caption within LinkedIn 3,000-character ceiling
-- no em dash in approved copy
-- `copy.default` is the sole canonical copy variant
-- parser-safe release metadata
-- explicit acknowledgement that media and release metadata can become public before publication
+- schedule requires explicit UTC offset or Z and stays inside verifier horizon
+- caption must fit LinkedIn's 3,000-character ceiling
+- approved copy contains no em dash
+- `copy.default` is the only canonical copy variant
+- release metadata is parser-safe
+- public-media and public release-metadata exposure must be explicitly acknowledged
 - confidential or embargoed material does not use the public raw-GitHub lane
-- revision-scoped media pinned to immutable Git commit
-- remote PDF and thumbnail re-verified after promotion
+- media is revision-scoped and pinned to an immutable Git commit
+- remote PDF and thumbnail are re-verified after promotion
 - queue writes rebuild against latest `main`
-- media readiness and publication authority remain separate
-- approval must exactly match current locked queue fingerprint
-- Notion may add drift protection when credentialled but does not override locked GitHub authority
+- media readiness and owner publication authority remain separate
+- owner approval must exactly match current queue fingerprint
+- Notion may provide drift protection when credentialled but cannot override locked GitHub authority
 - `Automation Status = Manual` does not authorise automated governed PDF release
-- media preflight occurs before first Buffer write
-- durable dispatch intent occurs before provider mutation
-- durable acceptance occurs immediately after Buffer returns an ID
-- unresolved dispatch intent blocks blind recreation
-- intent reconciliation is owner-gated and read-only toward Buffer
+- media preflight occurs before Buffer write
+- durable dispatch intent is recorded before provider mutation
+- durable acceptance is recorded immediately after Buffer returns an ID
+- unresolved intent blocks blind recreation
+- reconciliation is owner-gated, read-only and exact-match only
 - publication verification is separate and read-only
 - only Buffer `sent` plus `sentAt` may become publication verified
-- parallel direct-PDF and share-now production routes are retired
+- direct-repository PDF and immediate-share production routes are retired
 
 ## Canonical transport
 
-```text
 FROM: tripletwochelston@gmail.com
 TO: hello@222emails.com
 SUBJECT: TTE LINKEDIN PDF INTAKE <id>
 ATTACHMENT: <exact final PDF filename>
-```
 
 Transport is not publication authority.
 
@@ -102,15 +76,13 @@ Promote verified media under `apps/linkedin-review/media/intake/<id>/r<revision>
 
 A successful intake creates `[PDF INTAKE READY] <id>@<revision>`. This proves media readiness only.
 
-## Repository-owner approval
+## Owner approval and Buffer release
 
 Only after media readiness create `[APPROVED LINKEDIN] <id>@<revision>`. The approval must exactly match the current locked queue revision across target, schedule, caption and media identity.
 
-## Buffer release
+Before Buffer creation validate current queue identity, owner approval fingerprint, applicable Notion drift checks, remote media integrity and capacity. Write a durable dispatch intent immediately before Buffer creation and durable acceptance immediately after Buffer returns the post ID.
 
-Before provider mutation validate current queue identity, owner approval fingerprint, applicable Notion drift checks, remote media integrity and capacity. Write a durable dispatch intent immediately before Buffer creation and durable acceptance immediately after Buffer returns the post ID.
-
-Accepted placements are not recreated. Unresolved intents block blind recreation. Reconciliation is read-only and only succeeds on exactly one locked identity match.
+Accepted placements are not recreated. Unresolved intents block blind recreation. Reconciliation is read-only and succeeds only on exactly one locked identity match.
 
 ## Publication verification
 
@@ -126,7 +98,6 @@ Historical direct-repository PDF intake and immediate share-now workflows are re
 
 ## Canonical repository surfaces
 
-```text
 .github/workflows/linkedin-imap-pdf-intake.yml
 .github/workflows/linkedin-buffer-autopost.yml
 .github/workflows/linkedin-buffer-intent-reconcile.yml
@@ -145,7 +116,6 @@ apps/linkedin-review/queue.json
 apps/linkedin-review/media/intake/<post-id>/r<revision>/
 docs/LINKEDIN_PDF_INTAKE.md
 docs/LINKEDIN_BUFFER_AUTOPOST_SETUP.md
-```
 
 ## Proven Retention School run
 
@@ -159,19 +129,7 @@ These posts prove the production route but not every hardening layer added later
 
 ## Reuse command
 
-```text
-Use the canonical 222Emails LinkedIn PDF Carousel Publishing Workflow.
-Take this LinkedIn PDF through the governed IMAP route.
-Do not invent a parallel upload or immediate-publish path.
-Preserve exact-media verification, immutable commit-pinned PDF and thumbnail media,
-repository-owner approval, exact current-queue fingerprint matching,
-Notion defence-in-depth when credentialled,
-durable Buffer dispatch-intent and acceptance proof,
-read-only exact-match intent reconciliation,
-and separate publication verification.
-Diagnose and repair a failed stage rather than skipping it.
-Return only verified status.
-```
+Use the canonical 222Emails LinkedIn PDF Carousel Publishing Workflow. Take this LinkedIn PDF through the governed IMAP route. Do not invent a parallel upload or immediate-publish path. Preserve exact-media verification, immutable commit-pinned PDF and thumbnail media, repository-owner approval, exact current-queue fingerprint matching, Notion defence-in-depth when credentialled, durable Buffer dispatch-intent and acceptance proof, read-only exact-match intent reconciliation, and separate publication verification. Diagnose and repair a failed stage rather than skipping it. Return only verified status.
 
 ## Stopping rule
 
