@@ -26,7 +26,7 @@ function approvalBody() {
 }
 
 test('rebased Sep 8 window is exactly 21 personal placements at three per day', () => {
-  const batch = validateWeeklyBatch(approvalBody(), queue, ENV, Date.parse('2026-09-08T11:19:00Z'));
+  const batch = validateWeeklyBatch(approvalBody(), queue, ENV, Date.parse('2026-09-08T17:26:00Z'));
   assert.equal(batch.weekStart, '2026-09-08');
   assert.equal(batch.weekEnd, '2026-09-14');
   assert.equal(batch.windowMode, 'ROLLING_7_DAY');
@@ -47,23 +47,25 @@ test('rebased Sep 8 window is exactly 21 personal placements at three per day', 
 
   const today = batch.jobs.filter((job) => job.post.scheduledAt.personal.startsWith('2026-09-08'));
   assert.equal(today.length, 3);
-  assert.deepEqual(today.map((job) => job.post.scheduledAt.personal.slice(11, 16)), ['14:00', '16:15', '18:30']);
+  assert.deepEqual(today.map((job) => job.post.scheduledAt.personal.slice(11, 16)), ['19:00', '20:00', '21:00']);
+  assert.deepEqual(today.map((job) => job.post.revision), [3, 3, 3]);
 });
 
-test('rebased revisions remain review-only until owner approval', () => {
+test('realigned revisions remain review-only until owner approval', () => {
   const effective = withQaReplenishment({ ...queue, posts: [] }, {
     applyScheduleOverrides: true,
     batchId: override.batchId,
   });
   const selected = override.posts.map((locked) => effective.posts.find((post) => post.id === locked.id));
   assert.equal(selected.length, 21);
-  for (const post of selected) {
+  for (let index = 0; index < selected.length; index += 1) {
+    const post = selected[index];
     assert.ok(post);
     assert.equal(post.status, 'review');
     assert.equal(post.qa.status, 'ready_for_human_review');
     assert.equal(post.qa.approvalEligible, true);
     assert.equal(post.qa.publishPermission, false);
-    assert.equal(post.revision, 2);
+    assert.equal(post.revision, index < 3 ? 3 : 2);
   }
 });
 
