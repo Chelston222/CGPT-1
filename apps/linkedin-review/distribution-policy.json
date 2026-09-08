@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
   "configuredAt": "2026-09-08",
-  "effectiveDate": "2026-09-09",
-  "transitionRule": "The 8 September 2026 queue is preserved as a migration-day snapshot. Runtime cadence limits are live immediately, while static new-schedule enforcement starts on the first full day, 9 September 2026, so unrelated pre-existing same-day review candidates are not retroactively mutated.",
+  "effectiveDate": "2026-09-08",
+  "transitionRule": "Effective immediately. Human-review candidate schedules may overlap because they are alternatives, not publication proof. The canonical approval and release gate enforces the final approved set at no more than three personal placements per day and 21 per week, while Main 222Emails and Retention School retain their existing one-per-day and five-per-week ceilings.",
   "timezone": "Europe/London",
   "strategy": "extreme_creation_selective_publishing_extreme_distribution",
   "accounts": {
