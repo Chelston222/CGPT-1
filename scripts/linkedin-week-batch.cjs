@@ -21,7 +21,7 @@ function scheduleOverridePaths() {
     .map((name) => path.join(QA_REPLENISHMENT_DIR, name));
 }
 
-function withQaReplenishment(queue) {
+function withQaReplenishment(queue, options = {}) {
   const existingIds = new Set((queue.posts || []).map((post) => post.id));
   const additions = [];
   for (const filePath of qaReplenishmentPaths()) {
@@ -46,6 +46,8 @@ function withQaReplenishment(queue) {
   }
 
   let posts = [...(queue.posts || []), ...additions];
+  if (!options.applyScheduleOverrides) return { ...queue, posts };
+
   const overrides = new Map();
   for (const filePath of scheduleOverridePaths()) {
     let payload = { posts: [] };
@@ -55,6 +57,7 @@ function withQaReplenishment(queue) {
       if (error.code !== 'ENOENT') throw error;
       continue;
     }
+    if (options.batchId && payload.batchId !== options.batchId) continue;
     for (const override of payload.posts || []) {
       if (!override?.id || !Number.isInteger(override.revision) || !override.scheduledAt) continue;
       overrides.set(override.id, { ...override, source: path.basename(filePath) });
@@ -164,7 +167,10 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
 
   const approved = parseItems(header.APPROVED_ITEMS);
   if (!approved.length) throw new Error('APPROVED_ITEMS must contain at least one locked post.');
-  const effectiveQueue = withQaReplenishment(queue);
+  const effectiveQueue = withQaReplenishment(queue, {
+    applyScheduleOverrides: rollingWindow,
+    batchId: rollingWindow ? header.BATCH_ID : null,
+  });
   queue.posts = effectiveQueue.posts;
   const queueById = new Map(effectiveQueue.posts.map((post) => [post.id, post]));
   const weekEnd = addDays(header.WEEK_START, 6);
@@ -186,7 +192,7 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
     for (const target of post.targets) {
       const scheduled = post.scheduledAt?.[target];
       const scheduledDate = dateOnly(scheduled);
-      if (!scheduled || scheduledDate < header.WEEK_START || scheduledDate > weekEnd) throw new Error(`${locked.id} has a ${target} schedule outside the approved seven-day window.`);
+      if (!scheduled || scheduledDate < header.WEEK_START || scheduledDate > weekEnd) throw new Error(`${locked.id} has a ${target} schedule outside the approved ${rollingWindow ? 'seven-day window' : 'week'}.`);
     }
     return { post, request: validateRequest(postBody(post), env, now) };
   });
