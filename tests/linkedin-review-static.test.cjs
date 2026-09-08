@@ -9,6 +9,7 @@ const {
   MAX_DOCUMENT_BYTES,
   canonicalMediaUrl,
 } = require('../scripts/linkedin-media-preflight.cjs');
+const { DEFAULT_CADENCE_POLICY } = require('../scripts/linkedin-buffer-capacity.cjs');
 
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'apps/linkedin-review/index.html'), 'utf8');
@@ -25,17 +26,6 @@ function localDate(value) {
   const match = String(value).match(/^(\d{4}-\d{2}-\d{2})T/);
   assert.ok(match, `scheduledAt must begin with an ISO local date: ${value}`);
   return match[1];
-}
-
-function mondayOf(dateString) {
-  const date = new Date(`${dateString}T12:00:00Z`);
-  const weekday = date.getUTCDay() || 7;
-  date.setUTCDate(date.getUTCDate() - weekday + 1);
-  return date.toISOString().slice(0, 10);
-}
-
-function addCount(map, key) {
-  map.set(key, (map.get(key) || 0) + 1);
 }
 
 function repoAssetPath(url) {
@@ -127,7 +117,7 @@ test('non-public drafts remain outside the public scheduling projection', () => 
   assert.equal(publicPosts.length + draftPosts.length, queue.posts.length);
 });
 
-test('current distribution policy governs new schedules while Buffer capacity stays separate', () => {
+test('distribution policy and canonical release gate agree while Buffer capacity stays separate', () => {
   assert.equal(queue.capacityPolicy.bufferFreeScheduledPerChannel, 10);
   assert.equal(queue.capacityPolicy.maximumPlacementsPerChannelPerDay, 5);
   assert.equal(queue.capacityPolicy.maximumAccountPlacementsPerDay, 15);
@@ -136,29 +126,31 @@ test('current distribution policy governs new schedules while Buffer capacity st
   assert.match(html, /Buffer Free holds 10 scheduled posts per account/);
   assert.match(app, /placements\.length} prepared/);
 
-  const effectiveDate = distributionPolicy.effectiveDate;
-  const daily = new Map();
-  const weekly = new Map();
-  for (const post of publicPosts) {
-    for (const target of post.targets) {
-      const value = post.scheduledAt?.[target];
-      assert.ok(value, `${post.id} is missing scheduledAt.${target}`);
-      const date = localDate(value);
-      if (date < effectiveDate) continue;
-      addCount(daily, `${target}:${date}`);
-      addCount(weekly, `${target}:${mondayOf(date)}`);
-    }
+  for (const target of TARGETS) {
+    assert.equal(
+      DEFAULT_CADENCE_POLICY[target].maxPerDay,
+      distributionPolicy.accounts[target].maximumPerDay,
+      `${target} runtime daily release gate drifted from distribution policy`,
+    );
+    assert.equal(
+      DEFAULT_CADENCE_POLICY[target].maxPerWeek,
+      distributionPolicy.accounts[target].maximumPerWeek,
+      `${target} runtime weekly release gate drifted from distribution policy`,
+    );
   }
 
-  for (const [key, count] of daily) {
-    const target = key.split(':')[0];
-    const maximum = distributionPolicy.accounts[target].maximumPerDay;
-    assert.ok(count <= maximum, `${key} has ${count} placements, above the governed ${maximum}/day`);
-  }
-  for (const [key, count] of weekly) {
-    const target = key.split(':')[0];
-    const maximum = distributionPolicy.accounts[target].maximumPerWeek;
-    assert.ok(count <= maximum, `${key} has ${count} placements, above the governed ${maximum}/week`);
+  assert.equal(distributionPolicy.accounts.personal.maximumPerDay, 3);
+  assert.equal(distributionPolicy.accounts.personal.maximumPerWeek, 21);
+
+  // queue.json is a human-review candidate projection, not publication proof.
+  // Candidate schedules may collide because only an explicitly approved subset
+  // reaches validateWeeklyBatch/validateDailyPlacementLimit. Do not weaken the
+  // real release gate merely to make a review bank look like a live schedule.
+  for (const post of publicPosts) {
+    for (const target of post.targets) {
+      assert.ok(post.scheduledAt?.[target], `${post.id} is missing scheduledAt.${target}`);
+      localDate(post.scheduledAt[target]);
+    }
   }
 });
 
