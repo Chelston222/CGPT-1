@@ -1,0 +1,10 @@
+BATCH_ID: linkedin-week-2026-09-14-three-post-v1
+WEEK_START: 2026-09-14
+QUEUE_SCHEMA: 2
+QUEUE_GENERATED_AT: 2026-09-08T08:11:32.891Z
+ITEMS: tte-week-2026-09-14-personal-01@1,tte-week-2026-09-14-personal-02@1,tte-week-2026-09-14-personal-03@1,tte-week-2026-09-14-personal-04@1,tte-week-2026-09-14-personal-05@1,tte-week-2026-09-14-personal-06@1,tte-week-2026-09-14-personal-07@1,tte-week-2026-09-14-personal-08@1,tte-week-2026-09-14-personal-09@1,tte-week-2026-09-14-personal-10@1,tte-week-2026-09-14-personal-11@1,tte-week-2026-09-14-personal-12@1,tte-week-2026-09-14-personal-13@1,tte-week-2026-09-14-personal-14@1,tte-week-2026-09-14-personal-15@1,tte-week-2026-09-14-personal-16@1,tte-week-2026-09-14-personal-17@1,tte-week-2026-09-14-personal-18@1,tte-week-2026-09-14-personal-19@1,tte-week-2026-09-14-personal-20@1,tte-week-2026-09-14-personal-21@1
+SOURCE_FILE: apps/linkedin-review/qa-replenishment-2026-09-14-three-post-week-v1.json
+SOURCE_COMMIT: 8489dbc54e28c416bb22b4cc9ed24d0f1fabf8da
+TEST_COMMIT: f5382c0d9f171a98ffe57b91947f6659f6f756dc
+STATE: REVIEW READY
+RULE: Do not convert this manifest into a live owner release issue until Chelston explicitly approves the surfaced exact batch. If the queue schema, queue timestamp, any listed revision or exact copy changes first, rebuild the manifest and require fresh approval.
