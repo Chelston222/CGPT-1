@@ -112,18 +112,16 @@ test('weekly image posts require an explicit safe-zone pass on the exact queue r
   assert.equal(result.jobs[0].request.safeZoneQa, 'pass');
 });
 
-test('accepts the current maximum strategic cadence of 24 placements per week', () => {
+test('accepts the current maximum strategic cadence of 31 placements per week', () => {
   const posts = [];
   for (let day = 0; day < 7; day += 1) {
     const date = 17 + day;
-    posts.push({
-      id: `personal-a-${day}`, revision: 1, category: 'education', mode: 'schedule', targets: ['personal'],
-      scheduledAt: { personal: `2026-08-${String(date).padStart(2, '0')}T08:15:00+01:00` }, copy: { default: `Personal A ${day}` },
-    });
-    posts.push({
-      id: `personal-b-${day}`, revision: 1, category: 'education', mode: 'schedule', targets: ['personal'],
-      scheduledAt: { personal: `2026-08-${String(date).padStart(2, '0')}T16:15:00+01:00` }, copy: { default: `Personal B ${day}` },
-    });
+    for (const [slot, hour] of [['morning', 8], ['midday', 13], ['evening', 18]]) {
+      posts.push({
+        id: `personal-${slot}-${day}`, revision: 1, category: 'education', mode: 'schedule', targets: ['personal'],
+        scheduledAt: { personal: `2026-08-${String(date).padStart(2, '0')}T${String(hour).padStart(2, '0')}:15:00+01:00` }, copy: { default: `Personal ${slot} ${day}` },
+      });
+    }
   }
   for (let day = 0; day < 5; day += 1) {
     const date = 17 + day;
@@ -139,11 +137,11 @@ test('accepts the current maximum strategic cadence of 24 placements per week', 
   const strategicQueue = { ...queue, posts };
   const items = posts.map((post) => `${post.id}@1`).join(',');
   const result = validateWeeklyBatch(body({ items }), strategicQueue, ENV, Date.parse('2026-08-09T00:00:00Z'));
-  assert.equal(result.jobs.length, 24);
+  assert.equal(result.jobs.length, 31);
 });
 
-test('rejects a third personal placement on one day before Buffer is contacted', () => {
-  const posts = Array.from({ length: 3 }, (_, index) => ({
+test('rejects a fourth personal placement on one day before Buffer is contacted', () => {
+  const posts = Array.from({ length: 4 }, (_, index) => ({
     id: `personal-${index}`, revision: 1, category: 'education', mode: 'schedule',
     targets: ['personal'], scheduledAt: { personal: `2026-08-17T${String(8 + index * 4).padStart(2, '0')}:15:00+01:00` },
     copy: { default: `Useful post ${index}` },
@@ -151,7 +149,7 @@ test('rejects a third personal placement on one day before Buffer is contacted',
   const overloaded = { ...queue, posts };
   assert.throws(
     () => validateWeeklyBatch(body({ items: posts.map((post) => `${post.id}@1`).join(',') }), overloaded, ENV, Date.parse('2026-08-09T00:00:00Z')),
-    /new cadence maximum is 2 per day/,
+    /new cadence maximum is 3 per day/,
   );
 });
 
