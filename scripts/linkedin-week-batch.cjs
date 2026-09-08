@@ -46,7 +46,8 @@ function withQaReplenishment(queue, options = {}) {
   }
 
   let posts = [...(queue.posts || []), ...additions];
-  if (!options.applyScheduleOverrides) return { ...queue, posts };
+  const applyScheduleOverrides = options.applyScheduleOverrides !== false;
+  if (!applyScheduleOverrides) return { ...queue, posts };
 
   const overrides = new Map();
   for (const filePath of scheduleOverridePaths()) {
@@ -73,7 +74,14 @@ function withQaReplenishment(queue, options = {}) {
       || post.qa?.approvalEligible !== true
       || post.qa?.publishPermission !== false
     ) throw new Error(`${post.id} cannot receive a schedule override outside the review-only approval boundary.`);
-    if (override.revision <= Number(post.revision || 0)) throw new Error(`${post.id} schedule override must increment the locked revision.`);
+
+    const currentRevision = Number(post.revision || 0);
+    const sameSchedule = JSON.stringify(post.scheduledAt || {}) === JSON.stringify(override.scheduledAt || {});
+    if (override.revision < currentRevision || (override.revision === currentRevision && !sameSchedule)) {
+      throw new Error(`${post.id} schedule override must increment the locked revision.`);
+    }
+    if (override.revision === currentRevision && sameSchedule) return post;
+
     return {
       ...post,
       revision: override.revision,
