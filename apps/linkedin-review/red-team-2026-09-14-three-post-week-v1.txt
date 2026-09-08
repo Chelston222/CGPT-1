@@ -1,0 +1,25 @@
+RED TEAM PASS 1: Cadence
+Result: PASS. Exactly three personal slots per day across seven days, anchored at 08:15, 13:15 and 18:15 Europe/London.
+
+RED TEAM PASS 2: Same-day differentiation
+Result: PASS. Morning diagnosis/teaching, midday founder/trust/business lesson, evening recognition/community/experiment are materially separated.
+
+RED TEAM PASS 3: Positioning
+Result: PASS. Current Client Return Systems and Revenue Recovery positioning is dominant. Generic email-tip filler excluded.
+
+RED TEAM PASS 4: Commercial restraint
+Result: PASS. Most posts teach or diagnose. Direct offer language is limited and diagnosis-led.
+
+RED TEAM PASS 5: Evidence integrity
+Result: PASS. No client result, revenue, conversion-rate or performance claim is invented. Founder references are limited to known current work and final-year university context.
+
+RED TEAM PASS 6: Voice and authenticity
+Result: PASS. Copy uses direct founder/operator language, varied hooks and practical examples. No low-effort generic AI phrasing is intentionally used as the core value of a post.
+
+RED TEAM PASS 7: Repetition risk
+Result: PASS WITH CONTROL. Repeated category themes are expected across a retention-focused week, but exact copy is unique and same-day roles differ. The weekly learning loop should still watch median per-post reach and qualified conversations for topic fatigue.
+
+RED TEAM PASS 8: Safety and release governance
+Result: PASS. Every post remains review-only with publishPermission false. Exact owner release remains separately gated.
+
+STOPPING RULE: No further evidence-backed material improvement remains before live performance data. Move to exact owner approval only after automated regression tests confirm the locked batch.
