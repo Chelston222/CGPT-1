@@ -33,15 +33,26 @@ function limitsFromPolicy(policy = {}) {
   }));
 }
 
+function sameLedgerEvidence(a, b) {
+  return String(a?.bufferId || '') === String(b?.bufferId || '')
+    && String(a?.queueId || '') === String(b?.queueId || '')
+    && String(a?.revision || '') === String(b?.revision || '')
+    && String(a?.acceptedDueAt || '') === String(b?.acceptedDueAt || '');
+}
+
 function normaliseLedger(ledgerEntries = []) {
   const ledger = new Map();
-  const duplicates = [];
+  const conflicts = [];
   for (const entry of ledgerEntries) {
     if (!entry?.bufferId) continue;
-    if (ledger.has(entry.bufferId)) duplicates.push(entry.bufferId);
-    ledger.set(entry.bufferId, entry);
+    const existing = ledger.get(entry.bufferId);
+    if (!existing) {
+      ledger.set(entry.bufferId, entry);
+      continue;
+    }
+    if (!sameLedgerEvidence(existing, entry)) conflicts.push(entry.bufferId);
   }
-  return { ledger, duplicates };
+  return { ledger, conflicts };
 }
 
 function isHttpsUrl(value) {
@@ -77,11 +88,9 @@ function buildIntegrityReport({
   const warnings = [];
   const limits = limitsFromPolicy(policy);
   const configuredIds = TARGETS.map((target) => channelIds[target]).filter(Boolean);
-  if (new Set(configuredIds).size !== configuredIds.length) {
-    failures.push('Configured Buffer channel IDs must be unique across personal, main and secondary.');
-  }
+  if (new Set(configuredIds).size !== configuredIds.length) failures.push('Configured Buffer channel IDs must be unique across personal, main and secondary.');
   const targetByChannel = Object.fromEntries(Object.entries(channelIds).map(([target, id]) => [id, target]));
-  const { ledger, duplicates: duplicateLedgerBufferIds } = normaliseLedger(ledgerEntries);
+  const { ledger, conflicts: conflictingLedgerBufferIds } = normaliseLedger(ledgerEntries);
   const queueByKey = new Map();
   const duplicateQueueKeys = [];
 
@@ -92,7 +101,7 @@ function buildIntegrityReport({
   }
 
   if (duplicateQueueKeys.length) failures.push(`Duplicate locked queue revision(s): ${[...new Set(duplicateQueueKeys)].join(', ')}`);
-  if (duplicateLedgerBufferIds.length) failures.push(`Duplicate Buffer acceptance ledger ID(s): ${[...new Set(duplicateLedgerBufferIds)].join(', ')}`);
+  if (conflictingLedgerBufferIds.length) failures.push(`Conflicting Buffer acceptance ledger evidence for ID(s): ${[...new Set(conflictingLedgerBufferIds)].join(', ')}`);
 
   for (const target of TARGETS) {
     const expectedId = channelIds[target];
@@ -106,9 +115,7 @@ function buildIntegrityReport({
     if (provider.connected === false) failures.push(`${target} Buffer channel is disconnected, locked or paused.`);
     if (provider.timezonePass === false) failures.push(`${target} Buffer timezone is not ${timeZone}.`);
     if (provider.identityPass === false) failures.push(`${target} Buffer channel identity does not match its governed role.`);
-    if (Number.isFinite(provider.recurringSlots) && provider.recurringSlots > limits[target].maxPerWeek) {
-      failures.push(`${target} recurring Buffer schedule has ${provider.recurringSlots} slots, above the governed ${limits[target].maxPerWeek}/week ceiling.`);
-    }
+    if (Number.isFinite(provider.recurringSlots) && provider.recurringSlots > limits[target].maxPerWeek) failures.push(`${target} recurring Buffer schedule has ${provider.recurringSlots} slots, above the governed ${limits[target].maxPerWeek}/week ceiling.`);
   }
 
   const seenBufferIds = new Set();
@@ -126,10 +133,7 @@ function buildIntegrityReport({
     }
     if (seenBufferIds.has(bufferId)) failures.push(`Duplicate live Buffer post ID ${bufferId}.`);
     seenBufferIds.add(bufferId);
-
-    if (live.status !== 'scheduled') {
-      failures.push(`Buffer post ${bufferId} was returned by the scheduled-post query with unexpected status ${live.status || '(missing)'}.`);
-    }
+    if (live.status !== 'scheduled') failures.push(`Buffer post ${bufferId} was returned by the scheduled-post query with unexpected status ${live.status || '(missing)'}.`);
 
     const target = targetByChannel[live.channelId] || 'UNKNOWN';
     if (target === 'UNKNOWN') failures.push(`Buffer post ${bufferId} belongs to an unknown channel ${live.channelId || '(missing)'}.`);
@@ -141,9 +145,7 @@ function buildIntegrityReport({
     if (ledgerEntry && !locked) failures.push(`Buffer post ${bufferId} maps to missing locked queue revision ${queueKey(ledgerEntry.queueId, ledgerEntry.revision)}.`);
 
     if (locked && target !== 'UNKNOWN') {
-      if (!Array.isArray(locked.targets) || !locked.targets.includes(target)) {
-        failures.push(`${queueKey(locked.id, locked.revision)} does not authorise target ${target}.`);
-      }
+      if (!Array.isArray(locked.targets) || !locked.targets.includes(target)) failures.push(`${queueKey(locked.id, locked.revision)} does not authorise target ${target}.`);
       if (locked.mode !== 'schedule') failures.push(`${queueKey(locked.id, locked.revision)} is live in Buffer but queue mode is ${locked.mode || '(missing)'}, not schedule.`);
 
       const expectedDue = locked.scheduledAt?.[target];
@@ -152,23 +154,13 @@ function buildIntegrityReport({
       const acceptedMs = Date.parse(ledgerEntry?.acceptedDueAt || '');
       if (!Number.isFinite(expectedMs)) failures.push(`${queueKey(locked.id, locked.revision)} has no valid locked schedule for ${target}.`);
       if (!Number.isFinite(liveMs)) failures.push(`Buffer post ${bufferId} has no valid due time.`);
-      if (Number.isFinite(expectedMs) && Number.isFinite(liveMs) && expectedMs !== liveMs) {
-        failures.push(`${queueKey(locked.id, locked.revision)} / ${target} due-time drift: queue ${expectedDue}, Buffer ${live.dueAt}.`);
-      }
-      if (ledgerEntry?.acceptedDueAt && !Number.isFinite(acceptedMs)) {
-        failures.push(`Buffer post ${bufferId} has an invalid acceptance-ledger due time ${ledgerEntry.acceptedDueAt}.`);
-      }
-      if (Number.isFinite(expectedMs) && Number.isFinite(acceptedMs) && expectedMs !== acceptedMs) {
-        failures.push(`${queueKey(locked.id, locked.revision)} / ${target} acceptance-ledger due-time drift: queue ${expectedDue}, accepted ${ledgerEntry.acceptedDueAt}.`);
-      }
-      if (Number.isFinite(liveMs) && Number.isFinite(acceptedMs) && liveMs !== acceptedMs) {
-        failures.push(`${queueKey(locked.id, locked.revision)} / ${target} Buffer due time no longer matches trusted acceptance evidence.`);
-      }
+      if (Number.isFinite(expectedMs) && Number.isFinite(liveMs) && expectedMs !== liveMs) failures.push(`${queueKey(locked.id, locked.revision)} / ${target} due-time drift: queue ${expectedDue}, Buffer ${live.dueAt}.`);
+      if (ledgerEntry?.acceptedDueAt && !Number.isFinite(acceptedMs)) failures.push(`Buffer post ${bufferId} has an invalid acceptance-ledger due time ${ledgerEntry.acceptedDueAt}.`);
+      if (Number.isFinite(expectedMs) && Number.isFinite(acceptedMs) && expectedMs !== acceptedMs) failures.push(`${queueKey(locked.id, locked.revision)} / ${target} acceptance-ledger due-time drift: queue ${expectedDue}, accepted ${ledgerEntry.acceptedDueAt}.`);
+      if (Number.isFinite(liveMs) && Number.isFinite(acceptedMs) && liveMs !== acceptedMs) failures.push(`${queueKey(locked.id, locked.revision)} / ${target} Buffer due time no longer matches trusted acceptance evidence.`);
 
       const key = placementKey(locked.id, locked.revision, target);
-      if (seenPlacementKeys.has(key) && seenPlacementKeys.get(key) !== bufferId) {
-        failures.push(`Duplicate live destination for ${key}: Buffer IDs ${seenPlacementKeys.get(key)} and ${bufferId}.`);
-      }
+      if (seenPlacementKeys.has(key) && seenPlacementKeys.get(key) !== bufferId) failures.push(`Duplicate live destination for ${key}: Buffer IDs ${seenPlacementKeys.get(key)} and ${bufferId}.`);
       seenPlacementKeys.set(key, bufferId);
 
       if (locked.mediaUrl) {
@@ -181,9 +173,7 @@ function buildIntegrityReport({
 
     const dueMs = Date.parse(live.dueAt || '');
     if (Number.isFinite(dueMs) && dueMs < now - PAST_DUE_GRACE_MS) failures.push(`Buffer post ${bufferId} is still scheduled more than 15 minutes past due.`);
-    if (live.isCustomScheduled === false || (live.shareMode && live.shareMode !== 'customScheduled')) {
-      failures.push(`Buffer post ${bufferId} is not protected as a fixed custom-scheduled placement.`);
-    }
+    if (live.isCustomScheduled === false || (live.shareMode && live.shareMode !== 'customScheduled')) failures.push(`Buffer post ${bufferId} is not protected as a fixed custom-scheduled placement.`);
 
     if (target !== 'UNKNOWN' && Number.isFinite(dueMs)) {
       const date = localDate(live.dueAt, timeZone);
@@ -192,16 +182,7 @@ function buildIntegrityReport({
       addCount(weekly, `${week}:${target}`);
     }
 
-    rows.push({
-      bufferId,
-      target,
-      dueAt: live.dueAt || null,
-      queueId: ledgerEntry?.queueId || null,
-      revision: ledgerEntry?.revision || null,
-      approvalIssue: ledgerEntry?.approvalIssue || null,
-      title: locked?.title || null,
-      mapped: Boolean(ledgerEntry && locked),
-    });
+    rows.push({ bufferId, target, dueAt: live.dueAt || null, queueId: ledgerEntry?.queueId || null, revision: ledgerEntry?.revision || null, approvalIssue: ledgerEntry?.approvalIssue || null, title: locked?.title || null, mapped: Boolean(ledgerEntry && locked) });
   }
 
   for (const [key, count] of daily) {
@@ -218,33 +199,9 @@ function buildIntegrityReport({
   }
 
   rows.sort((a, b) => String(a.dueAt || '').localeCompare(String(b.dueAt || '')) || a.target.localeCompare(b.target));
-  const fingerprint = crypto.createHash('sha256')
-    .update(rows.map((row) => [row.bufferId, row.target, row.dueAt, row.queueId, row.revision, row.approvalIssue].join('|')).join('\n'))
-    .digest('hex');
+  const fingerprint = crypto.createHash('sha256').update(rows.map((row) => [row.bufferId, row.target, row.dueAt, row.queueId, row.revision, row.approvalIssue].join('|')).join('\n')).digest('hex');
 
-  return {
-    ok: failures.length === 0,
-    failures,
-    warnings,
-    rows,
-    counts,
-    fingerprint,
-    mappedCount: rows.filter((row) => row.mapped).length,
-    totalCount: rows.length,
-    cadence: {
-      daily: Object.fromEntries([...daily.entries()].sort()),
-      weekly: Object.fromEntries([...weekly.entries()].sort()),
-    },
-  };
+  return { ok: failures.length === 0, failures, warnings, rows, counts, fingerprint, mappedCount: rows.filter((row) => row.mapped).length, totalCount: rows.length, cadence: { daily: Object.fromEntries([...daily.entries()].sort()), weekly: Object.fromEntries([...weekly.entries()].sort()) } };
 }
 
-module.exports = {
-  BUFFER_SCHEDULED_LIMIT_PER_CHANNEL,
-  DEFAULT_LIMITS,
-  PAST_DUE_GRACE_MS,
-  buildIntegrityReport,
-  limitsFromPolicy,
-  mediaIntegrity,
-  placementKey,
-  queueKey,
-};
+module.exports = { BUFFER_SCHEDULED_LIMIT_PER_CHANNEL, DEFAULT_LIMITS, PAST_DUE_GRACE_MS, buildIntegrityReport, limitsFromPolicy, mediaIntegrity, placementKey, queueKey };
