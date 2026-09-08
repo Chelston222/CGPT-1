@@ -1,16 +1,32 @@
 {
-  "schemaVersion": 1,
-  "effectiveDate": "2026-08-23",
+  "schemaVersion": 2,
+  "effectiveDate": "2026-09-08",
   "timezone": "Europe/London",
   "strategy": "extreme_creation_selective_publishing_extreme_distribution",
   "accounts": {
     "personal": {
       "displayRole": "Chelston personal LinkedIn",
       "primaryJob": "founder trust, authority, conversation and acquisition",
-      "baselinePerDay": 1,
-      "maximumPerDay": 2,
-      "maximumPerWeek": 14,
-      "bonusRule": "A second daily post is earned, never automatically filled. It requires genuine founder capture, real-world proof, a timely observation or another source with clear incremental value.",
+      "baselinePerDay": 3,
+      "maximumPerDay": 3,
+      "maximumPerWeek": 21,
+      "slotAnchorsLocal": [
+        "08:15",
+        "13:15",
+        "18:15"
+      ],
+      "slotJobs": [
+        "morning: diagnose, teach or prove",
+        "midday: founder trust, opportunity or business lesson",
+        "evening: reach, recognition, community or controlled experiment"
+      ],
+      "bonusRule": "Legacy compatibility field. The operating target is three distinct daily slots, but no slot may be automatically filled with weak or repetitive inventory. A slot that fails the quality, positioning or Anti-DNA gate must be rebuilt, replaced or left empty.",
+      "sameDaySeparationRules": [
+        "Do not repeat the same core premise, hook family and CTA combination on the same day.",
+        "Do not use legacy ecommerce or generic email-tip inventory when it conflicts with current Client Return Systems positioning for appointment-led businesses.",
+        "Keep direct promotional or BOF CTAs selective rather than attaching them to every slot.",
+        "Every post must add a distinct reason to read, follow, remember or act."
+      ],
       "allowedContentRoles": [
         "authority",
         "diagnosis",
@@ -122,7 +138,8 @@
     ],
     "deleteUnclassified": false,
     "changeRecurringBufferScheduleBeforeSnapshot": false,
-    "automaticBonusSlot": false
+    "automaticBonusSlot": false,
+    "automaticWeakFill": false
   },
   "successMetrics": {
     "primary": [
@@ -142,6 +159,10 @@
       "content_reuse_yield",
       "founder_effort"
     ],
-    "reviewWindowsDays": [14, 30]
+    "reviewWindowsDays": [
+      7,
+      14,
+      30
+    ]
   }
 }
