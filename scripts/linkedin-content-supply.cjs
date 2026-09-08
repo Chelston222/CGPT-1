@@ -3,7 +3,7 @@
 const TARGETS = ['personal', 'main', 'secondary'];
 const DEFAULT_POLICY = {
   lookaheadDays: 35,
-  reserveTargets: { personal: 14, main: 10, secondary: 10 },
+  reserveTargets: { personal: 21, main: 10, secondary: 10 },
 };
 
 function scheduledFor(post, target) {
