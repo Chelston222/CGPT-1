@@ -4,7 +4,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const queue = require('../apps/linkedin-review/queue.json');
 const curated = require('../apps/linkedin-review/qa-replenishment-2026-09-14-three-post-week-v1.json');
-const { validateWeeklyBatch } = require('../scripts/linkedin-week-batch.cjs');
+const override = require('../apps/linkedin-review/schedule-overrides-2026-09-08-three-post-window-v2.json');
+const { validateWeeklyBatch, withQaReplenishment } = require('../scripts/linkedin-week-batch.cjs');
 
 const ENV = {
   BUFFER_API_KEY: 'test-key',
@@ -15,55 +16,53 @@ const ENV = {
 
 function approvalBody() {
   return [
-    `BATCH_ID: ${curated.batchId}`,
-    `WEEK_START: ${curated.weekStart}`,
+    `BATCH_ID: ${override.batchId}`,
+    `WEEK_START: ${override.windowStart}`,
     `QUEUE_SCHEMA: ${queue.schemaVersion}`,
     `QUEUE_GENERATED_AT: ${queue.generatedAt}`,
-    `APPROVED_ITEMS: ${curated.posts.map((post) => `${post.id}@${post.revision}`).join(',')}`,
+    `APPROVED_ITEMS: ${override.posts.map((post) => `${post.id}@${post.revision}`).join(',')}`,
   ].join('\n');
 }
 
-test('curated Sep 14 week is exactly 21 personal placements at three per day', () => {
-  const batch = validateWeeklyBatch(approvalBody(), queue, ENV, Date.parse('2026-09-08T08:45:00Z'));
-  assert.equal(batch.weekStart, '2026-09-14');
-  assert.equal(batch.weekEnd, '2026-09-20');
+test('rebased Sep 8 window is exactly 21 personal placements at three per day', () => {
+  const batch = validateWeeklyBatch(approvalBody(), queue, ENV, Date.parse('2026-09-08T11:19:00Z'));
+  assert.equal(batch.weekStart, '2026-09-08');
+  assert.equal(batch.weekEnd, '2026-09-14');
   assert.equal(batch.jobs.length, 21);
 
-  const placements = Object.entries(batch.placementsByDay)
-    .sort(([a], [b]) => a.localeCompare(b));
-
+  const placements = Object.entries(batch.placementsByDay).sort(([a], [b]) => a.localeCompare(b));
   assert.deepEqual(placements.map(([date]) => date), [
+    '2026-09-08',
+    '2026-09-09',
+    '2026-09-10',
+    '2026-09-11',
+    '2026-09-12',
+    '2026-09-13',
     '2026-09-14',
-    '2026-09-15',
-    '2026-09-16',
-    '2026-09-17',
-    '2026-09-18',
-    '2026-09-19',
-    '2026-09-20',
   ]);
-  for (const [date, count] of placements) {
-    assert.equal(count, 3, `${date} should contain exactly three account placements`);
-  }
+  for (const [date, count] of placements) assert.equal(count, 3, `${date} should contain exactly three account placements`);
+  for (const job of batch.jobs) assert.deepEqual(job.post.targets, ['personal']);
 
-  for (const job of batch.jobs) {
-    assert.deepEqual(job.post.targets, ['personal']);
-  }
-
-  const times = curated.posts.map((post) => post.scheduledAt.personal.slice(11, 16));
-  assert.deepEqual([...new Set(times)].sort(), ['08:15', '13:15', '18:15']);
+  const today = batch.jobs.filter((job) => job.post.scheduledAt.personal.startsWith('2026-09-08'));
+  assert.equal(today.length, 3);
+  assert.deepEqual(today.map((job) => job.post.scheduledAt.personal.slice(11, 16)), ['14:00', '16:15', '18:30']);
 });
 
-test('curated Sep 14 week remains review-only until owner approval', () => {
-  for (const post of curated.posts) {
+test('rebased revisions remain review-only until owner approval', () => {
+  const effective = withQaReplenishment({ ...queue, posts: [] });
+  const selected = override.posts.map((locked) => effective.posts.find((post) => post.id === locked.id));
+  assert.equal(selected.length, 21);
+  for (const post of selected) {
+    assert.ok(post);
     assert.equal(post.status, 'review');
     assert.equal(post.qa.status, 'ready_for_human_review');
     assert.equal(post.qa.approvalEligible, true);
     assert.equal(post.qa.publishPermission, false);
-    assert.equal(post.revision, 1);
+    assert.equal(post.revision, 2);
   }
 });
 
-test('curated Sep 14 week contains no em dashes and no duplicate exact copy', () => {
+test('curated copy remains unchanged, unique and free of em dashes', () => {
   const copies = curated.posts.map((post) => post.copy.default);
   assert.equal(copies.some((copy) => copy.includes('—')), false);
   assert.equal(new Set(copies).size, copies.length);
