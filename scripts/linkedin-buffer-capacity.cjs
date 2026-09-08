@@ -6,7 +6,7 @@ const MAX_PLACEMENTS_PER_DAY = 15;
 const TARGETS = ['personal', 'main', 'secondary'];
 
 const DEFAULT_CADENCE_POLICY = Object.freeze({
-  personal: Object.freeze({ maxPerDay: 2, maxPerWeek: 14 }),
+  personal: Object.freeze({ maxPerDay: 3, maxPerWeek: 21 }),
   main: Object.freeze({ maxPerDay: 1, maxPerWeek: 5 }),
   secondary: Object.freeze({ maxPerDay: 1, maxPerWeek: 5 }),
 });
@@ -59,8 +59,8 @@ function validateDailyPlacementLimit(jobs, limit = MAX_PLACEMENTS_PER_DAY, perCh
     throw new Error(`${date} has ${channelOverflow[1]} placements for ${target}; maximum is ${perChannelLimit} per channel.`);
   }
 
-  // The legacy broad capacity ceiling stays as a defence-in-depth guard, but
-  // every live release must also satisfy the current three-account cadence.
+  // The broad account-capacity ceiling stays as defence in depth. Every live
+  // release must also satisfy the current per-channel strategic cadence.
   validateCadenceContract(jobs, DEFAULT_CADENCE_POLICY, timeZone);
   return Object.fromEntries([...counts.entries()].sort());
 }
