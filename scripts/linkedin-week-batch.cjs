@@ -57,7 +57,7 @@ function withQaReplenishment(queue) {
     }
     for (const override of payload.posts || []) {
       if (!override?.id || !Number.isInteger(override.revision) || !override.scheduledAt) continue;
-      overrides.set(override.id, override);
+      overrides.set(override.id, { ...override, source: path.basename(filePath) });
     }
   }
 
@@ -75,12 +75,7 @@ function withQaReplenishment(queue) {
       ...post,
       revision: override.revision,
       scheduledAt: override.scheduledAt,
-      scheduleOverrideSource: path.basename([...scheduleOverridePaths()].find((candidate) => {
-        try {
-          const payload = JSON.parse(fs.readFileSync(candidate, 'utf8'));
-          return (payload.posts || []).some((item) => item.id === post.id && item.revision === override.revision);
-        } catch { return false; }
-      }) || ''),
+      scheduleOverrideSource: override.source,
     };
   });
 
@@ -161,6 +156,9 @@ function postBody(post) {
 function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = {}) {
   const header = parseHeaders(body);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(header.WEEK_START || '')) throw new Error('WEEK_START must be in YYYY-MM-DD format.');
+  const rollingWindow = String(header.WINDOW_MODE || '').toUpperCase() === 'ROLLING_7_DAY';
+  const startDate = new Date(`${header.WEEK_START}T12:00:00Z`);
+  if (!rollingWindow && (startDate.getUTCDay() || 7) !== 1) throw new Error('WEEK_START must be a Monday unless WINDOW_MODE is ROLLING_7_DAY.');
   if (String(header.QUEUE_SCHEMA) !== String(queue.schemaVersion)) throw new Error('The queue schema changed after review. Review this week again.');
   if (header.QUEUE_GENERATED_AT !== queue.generatedAt && !options.allowGeneratedAtDrift) throw new Error('The queue changed after review. Review this week again.');
 
@@ -194,7 +192,7 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
   });
 
   const placementsByDay = validateDailyPlacementLimit(jobs);
-  return { batchId: header.BATCH_ID || `linkedin-window-${header.WEEK_START}`, weekStart: header.WEEK_START, weekEnd, jobs, placementsByDay };
+  return { batchId: header.BATCH_ID || `linkedin-window-${header.WEEK_START}`, weekStart: header.WEEK_START, weekEnd, windowMode: rollingWindow ? 'ROLLING_7_DAY' : 'MONDAY_WEEK', jobs, placementsByDay };
 }
 
 module.exports = { imageSafeZonePassed, parseHeaders, parseItems, postBody, qaReplenishmentPaths, scheduleOverridePaths, validateWeeklyBatch, withQaReplenishment };
