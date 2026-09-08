@@ -21,21 +21,21 @@ function post(id, target, dueAt, sourceType = 'performance_learning_v2') {
 
 test('current-policy future review posts satisfy supply while legacy posts do not', () => {
   const posts = [
-    ...Array.from({ length: 14 }, (_, i) => post(`p-${i}`, 'personal', `2026-09-${String(7 + (i % 7)).padStart(2, '0')}T12:00:00Z`)),
+    ...Array.from({ length: 21 }, (_, i) => post(`p-${i}`, 'personal', `2026-09-${String(7 + (i % 7)).padStart(2, '0')}T12:00:00Z`)),
     ...Array.from({ length: 10 }, (_, i) => post(`m-${i}`, 'main', `2026-09-${String(7 + (i % 7)).padStart(2, '0')}T12:00:00Z`)),
     ...Array.from({ length: 10 }, (_, i) => post(`s-${i}`, 'secondary', `2026-09-${String(7 + (i % 7)).padStart(2, '0')}T12:00:00Z`)),
     post('legacy', 'personal', '2026-09-09T12:00:00Z', 'qa_weekly_replenishment'),
   ];
   const result = evaluateSupply(posts, new Set(), NOW, DEFAULT_POLICY);
   assert.equal(result.green, true);
-  assert.equal(result.targets.personal.currentCount, 14);
+  assert.equal(result.targets.personal.currentCount, 21);
   assert.equal(result.targets.personal.legacyCount, 1);
 });
 
 test('reserved posts are excluded from future supply', () => {
-  const posts = Array.from({ length: 14 }, (_, i) => post(`p-${i}`, 'personal', '2026-09-07T12:00:00Z'));
+  const posts = Array.from({ length: 21 }, (_, i) => post(`p-${i}`, 'personal', '2026-09-07T12:00:00Z'));
   const result = evaluateSupply(posts, new Set(['p-0', 'p-1']), NOW, DEFAULT_POLICY);
-  assert.equal(result.targets.personal.currentCount, 12);
+  assert.equal(result.targets.personal.currentCount, 19);
   assert.equal(result.targets.personal.gap, 2);
   assert.equal(result.green, false);
 });
