@@ -10,7 +10,7 @@
     "activeBatchProtection": "Do not mutate, replace, reduce or reschedule the owner-approved 8-14 September 21-post personal batch. These posts are subsequent replenishment only.",
     "ratingScale": "0-100, combining current-context fit, commercial relevance, distinctiveness, hook strength, evidence safety and fatigue risk."
   },
-  "approvalRule": "Owner instructed 8 September 2026 to run existing content against current Google Drive context, rate passing posts and push the very best. These exact three selected copies are eligible for governed scheduling, subject to provider capacity and existing release gates.",
+  "approvalRule": "Review-only queue records. Publication permission is granted only by the repository-owner approval issue, never by this file.",
   "posts": [
     {
       "id": "tte-context-pass-personal-001",
@@ -26,8 +26,8 @@
       "scheduledAt": {"personal": "2026-09-22T08:15:00+01:00"},
       "copy": {"default": "Most local businesses do not need more software.\n\nThey often already have booking tools, inboxes, spreadsheets and customer data.\n\nThe gap is knowing what should happen next and making existing tools work together.\n\nAnother subscription cannot replace a clear operating decision.\n\nUse more of the system before buying more system."},
       "sourceUrl": "https://app.notion.com/3b0e72eb858781d6a587d2476307f050",
-      "status": "approved_for_governed_release",
-      "qa": {"contextPass": true, "evidenceSafe": true, "distinctFromActiveBatch": true, "publishable": true, "approvalEligible": true, "publishPermission": true}
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "contextPass": true, "evidenceSafe": true, "distinctFromActiveBatch": true, "publishable": true, "approvalEligible": true, "publishPermission": false}
     },
     {
       "id": "tte-context-pass-personal-002",
@@ -43,8 +43,8 @@
       "scheduledAt": {"personal": "2026-09-22T13:15:00+01:00"},
       "copy": {"default": "Some businesses are addicted to acquisition.\n\nNew leads create visible activity.\n\nRetention work is quieter: cleaner data, better timing, clearer journeys and consistent follow-up.\n\nThe excitement of acquisition can distract from customers already won.\n\nGrowth needs a front door and a reason to return."},
       "sourceUrl": "https://app.notion.com/3b0e72eb85878176bb13eda29d991705",
-      "status": "approved_for_governed_release",
-      "qa": {"contextPass": true, "evidenceSafe": true, "distinctFromActiveBatch": true, "publishable": true, "approvalEligible": true, "publishPermission": true}
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "contextPass": true, "evidenceSafe": true, "distinctFromActiveBatch": true, "publishable": true, "approvalEligible": true, "publishPermission": false}
     },
     {
       "id": "tte-context-pass-personal-003",
@@ -60,8 +60,8 @@
       "scheduledAt": {"personal": "2026-09-22T18:15:00+01:00"},
       "copy": {"default": "Your best marketing copy is hiding in customer replies.\n\nCustomers already tell you what they want, fear, misunderstand and value.\n\nIt appears in enquiries, reviews, objections, support questions and replies.\n\nThe language is usually clearer than the words created in a brainstorming session.\n\nBefore writing more copy, listen to the copy your customers are giving you."},
       "sourceUrl": "https://app.notion.com/3ace72eb8587810080ccc8419d3e119a",
-      "status": "approved_for_governed_release",
-      "qa": {"contextPass": true, "evidenceSafe": true, "distinctFromActiveBatch": true, "publishable": true, "approvalEligible": true, "publishPermission": true}
+      "status": "review",
+      "qa": {"status": "ready_for_human_review", "contextPass": true, "evidenceSafe": true, "distinctFromActiveBatch": true, "publishable": true, "approvalEligible": true, "publishPermission": false}
     }
   ]
 }
