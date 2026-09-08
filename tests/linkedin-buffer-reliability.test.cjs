@@ -13,7 +13,7 @@ const channelIds = {
 const policy = {
   timezone: 'Europe/London',
   accounts: {
-    personal: { maximumPerDay: 2, maximumPerWeek: 14 },
+    personal: { maximumPerDay: 3, maximumPerWeek: 21 },
     main: { maximumPerDay: 1, maximumPerWeek: 5 },
     secondary: { maximumPerDay: 1, maximumPerWeek: 5 },
   },
