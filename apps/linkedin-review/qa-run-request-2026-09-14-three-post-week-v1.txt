@@ -1,0 +1,4 @@
+REQUEST: Run the full LinkedIn hardening suite against the current default branch after the exact 21-post week and its manifest tests were added.
+REQUIRE: zero failing tests.
+FOCUS: curated exact batch validator, manifest lock, 3/day canonical capacity, approval-only release boundary, no em dashes, queue/revision integrity.
+NO_PUBLICATION: true
