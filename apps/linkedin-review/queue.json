@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-06T08:36:18.668Z",
+  "generatedAt": "2026-09-08T07:48:38.840Z",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -1306,6 +1306,50 @@
       ],
       "scheduledAt": {
         "secondary": "2026-09-16T08:45:00+01:00"
+      }
+    },
+    {
+      "id": "tte-li-cold-enquiries-ghost-clients-001",
+      "revision": 1,
+      "title": "Cold enquiries. Ghost clients.",
+      "category": "buyer_diagnostics",
+      "funnelStage": "mof",
+      "format": "carousel",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "copy": {
+        "default": "Cold enquiries. Ghost clients.\n\nBoth can look like a “we need more leads” problem.\n\nBut sometimes the opportunity is already sitting inside the business.\n\nEnquiries that never booked.\nClients who never rebooked.\nCancellations that disappeared.\nPast clients who simply went quiet.\n\nThis carousel breaks down the systems that can help bring more of those opportunities back into the diary.\n\nThe goal is simple: make it easier for the right people to take the next step.\n\n222Emails | Client Return Systems for appointment-led businesses"
+      },
+      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-cold-enquiries-ghost-clients-001/r1/thumbnail.jpg",
+      "mediaAlt": "Nine-page 222Emails carousel about cold enquiries, ghost clients, follow-up, rebooking and client return systems.",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-cold-enquiries-ghost-clients-001/r1/tte-li-cold-enquiries-ghost-clients-001.pdf",
+      "documentTitle": "Cold Enquiries and Ghost Clients",
+      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/tte-li-cold-enquiries-ghost-clients-001/r1/thumbnail.jpg",
+      "carousel": {
+        "libraryId": "tte-li-cold-enquiries-ghost-clients-001",
+        "slideCount": 9,
+        "readiness": "ready",
+        "pdfBytes": 16533091,
+        "pdfSha256": "529598c413d12846f9064dea5d30f5a9a4ada5149a28e5e62f4d4e4f3df83412",
+        "verifiedAt": "2026-09-08T07:48:38.840Z",
+        "sourceFolder": "ChatGPT PDF intake tte-li-cold-enquiries-ghost-clients-001",
+        "publicMediaApproved": true
+      },
+      "sourceUrl": "https://app.notion.com/p/3d5e72eb858781559c74ed1dd7d9c904?pvs=204",
+      "sourceType": "chatgpt_pdf_intake",
+      "status": "review",
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-08T07:48:38.840Z",
+          "actor": "github-actions[bot]",
+          "note": "PDF reconstructed from locked base64 chunks, verified against its locked SHA-256, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied."
+        }
+      ],
+      "scheduledAt": {
+        "main": "2026-09-08T16:30:00+01:00"
       }
     }
   ]
