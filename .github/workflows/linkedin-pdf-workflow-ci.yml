@@ -78,3 +78,4 @@ jobs:
           node --test tests/linkedin-buffer-capacity.test.cjs
           node --test tests/linkedin-buffer-acceptance-ledger.test.cjs
           node --test tests/linkedin-hardening-static.test.cjs
+          node --test tests/linkedin-pdf-final-verification.test.cjs
