@@ -29,8 +29,8 @@ test('curated Sep 14 week is exactly 21 personal placements at three per day', (
   assert.equal(batch.weekEnd, '2026-09-20');
   assert.equal(batch.jobs.length, 21);
 
-  const placements = [...batch.placementsByDay.entries()]
-    .filter(([key]) => key.startsWith('personal:'))
+  const placements = Object.entries(batch.placementsByDay)
+    .filter(([key]) => key.endsWith(':personal'))
     .sort(([a], [b]) => a.localeCompare(b));
 
   assert.equal(placements.length, 7);
