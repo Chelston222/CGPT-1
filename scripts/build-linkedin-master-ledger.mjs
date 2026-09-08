@@ -48,7 +48,7 @@ const hash = (value) => createHash('sha256').update(value).digest('hex');
 let queueChanged = false;
 
 const CURRENT_CADENCE_POLICY = Object.freeze({
-  personal: Object.freeze({ maxPerDay: 2, maxPerWeek: 14 }),
+  personal: Object.freeze({ maxPerDay: 3, maxPerWeek: 21 }),
   main: Object.freeze({ maxPerDay: 1, maxPerWeek: 5 }),
   secondary: Object.freeze({ maxPerDay: 1, maxPerWeek: 5 }),
 });
