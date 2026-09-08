@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-08T07:48:43.019Z",
+  "generatedAt": "2026-09-08T07:50:36.985Z",
   "timezone": "Europe/London",
   "masterLedger": {
     "id": "222-emails-master-linkedin-ledger",
@@ -1356,6 +1356,50 @@
       ],
       "scheduledAt": {
         "main": "2026-09-08T16:30:00+01:00"
+      }
+    },
+    {
+      "id": "rs-li-fresha-client-return-system-001",
+      "revision": 1,
+      "title": "Your Fresha account could be holding revenue you haven’t collected yet.",
+      "category": "journey_education",
+      "funnelStage": "tof",
+      "format": "carousel",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "copy": {
+        "default": "Your Fresha account can do more than manage bookings.\n\nThe bigger question is what happens around the appointment.\n\nRebooking.\nCancellations.\nNo-shows.\nClients going inactive.\nQuiet capacity.\n\nThis breakdown shows how those pieces can be connected into a Client Return System using the tools already available inside and around Fresha.\n\nRetention School by 222Emails\nPractical retention education for appointment-led businesses."
+      },
+      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-fresha-client-return-system-001/r1/thumbnail.jpg",
+      "mediaAlt": "Ten-page Retention School carousel showing how Fresha features can support a Client Return System for appointment-led businesses.",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-fresha-client-return-system-001/r1/rs-li-fresha-client-return-system-001.pdf",
+      "documentTitle": "Fresha Client Return System",
+      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/intake/rs-li-fresha-client-return-system-001/r1/thumbnail.jpg",
+      "carousel": {
+        "libraryId": "rs-li-fresha-client-return-system-001",
+        "slideCount": 10,
+        "readiness": "ready",
+        "pdfBytes": 19275689,
+        "pdfSha256": "8011d5b95e83c17ae5a79dcc902ff373028cc177f5531f0a91005b6bcc486fb3",
+        "verifiedAt": "2026-09-08T07:50:36.985Z",
+        "sourceFolder": "ChatGPT PDF intake rs-li-fresha-client-return-system-001",
+        "publicMediaApproved": true
+      },
+      "sourceUrl": "https://app.notion.com/p/3d5e72eb85878102ae50ff72c59d8a23?pvs=204",
+      "sourceType": "chatgpt_pdf_intake",
+      "status": "review",
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-08T07:50:36.985Z",
+          "actor": "github-actions[bot]",
+          "note": "PDF reconstructed from locked base64 chunks, verified against its locked SHA-256, thumbnailed and promoted into the governed LinkedIn queue. No publish authority implied."
+        }
+      ],
+      "scheduledAt": {
+        "secondary": "2026-09-10T08:45:00+01:00"
       }
     }
   ]
