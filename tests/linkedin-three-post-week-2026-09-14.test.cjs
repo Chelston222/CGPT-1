@@ -18,6 +18,7 @@ function approvalBody() {
   return [
     `BATCH_ID: ${override.batchId}`,
     `WEEK_START: ${override.windowStart}`,
+    'WINDOW_MODE: ROLLING_7_DAY',
     `QUEUE_SCHEMA: ${queue.schemaVersion}`,
     `QUEUE_GENERATED_AT: ${queue.generatedAt}`,
     `APPROVED_ITEMS: ${override.posts.map((post) => `${post.id}@${post.revision}`).join(',')}`,
@@ -28,6 +29,7 @@ test('rebased Sep 8 window is exactly 21 personal placements at three per day', 
   const batch = validateWeeklyBatch(approvalBody(), queue, ENV, Date.parse('2026-09-08T11:19:00Z'));
   assert.equal(batch.weekStart, '2026-09-08');
   assert.equal(batch.weekEnd, '2026-09-14');
+  assert.equal(batch.windowMode, 'ROLLING_7_DAY');
   assert.equal(batch.jobs.length, 21);
 
   const placements = Object.entries(batch.placementsByDay).sort(([a], [b]) => a.localeCompare(b));
