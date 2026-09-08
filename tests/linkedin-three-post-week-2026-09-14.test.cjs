@@ -51,7 +51,10 @@ test('rebased Sep 8 window is exactly 21 personal placements at three per day', 
 });
 
 test('rebased revisions remain review-only until owner approval', () => {
-  const effective = withQaReplenishment({ ...queue, posts: [] });
+  const effective = withQaReplenishment({ ...queue, posts: [] }, {
+    applyScheduleOverrides: true,
+    batchId: override.batchId,
+  });
   const selected = override.posts.map((locked) => effective.posts.find((post) => post.id === locked.id));
   assert.equal(selected.length, 21);
   for (const post of selected) {
