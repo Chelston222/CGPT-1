@@ -5,7 +5,7 @@ const { localDate, weekKeyFromLocalDate } = require('./linkedin-buffer-capacity.
 
 const TARGETS = ['personal', 'main', 'secondary'];
 const DEFAULT_LIMITS = Object.freeze({
-  personal: Object.freeze({ maxPerDay: 2, maxPerWeek: 14 }),
+  personal: Object.freeze({ maxPerDay: 3, maxPerWeek: 21 }),
   main: Object.freeze({ maxPerDay: 1, maxPerWeek: 5 }),
   secondary: Object.freeze({ maxPerDay: 1, maxPerWeek: 5 }),
 });
