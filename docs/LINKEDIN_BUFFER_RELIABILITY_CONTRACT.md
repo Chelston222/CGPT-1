@@ -10,6 +10,14 @@ Keep the governed LinkedIn Content OS reliable over time by making failure visib
 
 The design goal is **zero silent failure**, not the impossible promise that an external platform can never fail.
 
+## Canonical responsibilities
+
+- GitHub is the canonical machine state for locked queue revisions, release evidence and reliability checks.
+- Notion is the editorial and quality-control layer.
+- Buffer is the delivery provider, never the source of truth.
+- Google Drive is archive/source storage, not publication authority.
+- Netlify and temporary transport mechanisms are not required production dependencies for LinkedIn PDF releases.
+
 ## Permanent release invariants
 
 Every live scheduled Buffer placement must satisfy all of the following:
@@ -26,6 +34,18 @@ Every live scheduled Buffer placement must satisfy all of the following:
 10. A duplicate live destination for the same queue revision and target is a hard failure.
 11. A scheduled placement more than 15 minutes past due is a hard failure until publication or failure state is reconciled.
 12. Buffer pagination must be complete. An incomplete provider view is never treated as healthy.
+13. The durable Buffer acceptance ledger is issue #607. GitHub Actions `BUFFER_ACCEPTED` comments there are trusted provider-acceptance evidence and must be included in reconciliation alongside historical approval issues.
+14. Tests must validate current invariants and policy, not obsolete fixed inventory counts or historic date windows.
+
+## Release state model
+
+A governed release progresses only through explicit evidence-backed states:
+
+`CREATED -> FILE_VERIFIED -> MEDIA_PROMOTED -> QA_APPROVED -> OWNER_APPROVED -> BUFFER_ACCEPTED -> SCHEDULED -> PUBLISHED -> LIVE_VERIFIED`
+
+Failure states are `BLOCKED`, `RETRYABLE` and `QUARANTINED`.
+
+`BUFFER_ACCEPTED` is never publication proof.
 
 ## Permanent monitoring
 
@@ -36,7 +56,8 @@ Workflow: `.github/workflows/linkedin-buffer-reliability-sentinel.yml`
 Runs every hour and on relevant production changes. It compares live Buffer state against:
 
 - the effective locked queue
-- trusted approval/acceptance history
+- trusted approval history
+- the durable Buffer acceptance ledger (#607)
 - the current distribution policy
 - live provider channel identity and connection state
 
@@ -103,7 +124,7 @@ A permanent data or content defect must fail closed and return through a new gov
 
 1. Preserve already-accepted healthy Buffer placements.
 2. Stop duplicate creation.
-3. Restore exact queue/approval mapping.
+3. Restore exact queue/approval/acceptance mapping.
 4. Restore provider connectivity and identity.
 5. Restore deterministic regression health.
 6. Re-run read-only live verification.
@@ -114,11 +135,13 @@ A permanent data or content defect must fail closed and return through a new gov
 The system is healthy when:
 
 - the hourly sentinel is green
-- every live Buffer placement is mapped to an exact locked revision
+- every live Buffer placement is mapped to an exact locked revision and trusted acceptance record
 - cadence passes
 - provider state passes
 - there are no stale scheduled placements
 - the recurring regression suite passes
 - the existing Content OS Green Gate is green or has only explicitly preserved historical debt
+
+Temporary one-shot recovery workflows should be retired when their function is covered by the canonical path. Git history is the archive for obsolete recovery routes, not active production architecture.
 
 This contract is intended to remain authoritative for future LinkedIn / Buffer hardening unless the distribution architecture itself is deliberately replaced.
