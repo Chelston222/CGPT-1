@@ -6,34 +6,8 @@ METHOD:PUBLISH
 X-WR-CALNAME:AOS • EXECUTION
 X-WR-TIMEZONE:Europe/London
 BEGIN:VEVENT
-UID:aos-ceo-start-2026-09-11-segment-0@agentic-os
-DTSTAMP:20260911T110700Z
-DTSTART:20260911T062000Z
-DTEND:20260911T064000Z
-SUMMARY:AOS | CEO START
-DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-11\nAOS_BLOCK_ID=aos-ceo-start-2026-09-11-segment-0\n\nOutcome: reconcile the live ranked execution plan\, remove stale or superseded work and start the highest-value currently valid action.\n\nThis is a flexible Agentic OS-owned one-off block. Manual calendar events remain protected. The block may be moved or replaced by Agentic OS when live priorities materially change.
-X-AOS-ID:aos-ceo-start-2026-09-11-segment-0
-X-AOS-ACTION-ID:aos-ceo-start-2026-09-11
-X-AOS-TASK-ID:aos-ceo-start-2026-09-11
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-BEGIN:VEVENT
-UID:aos-ceo-start-2026-09-12-segment-0@agentic-os
-DTSTAMP:20260911T110700Z
-DTSTART:20260912T062000Z
-DTEND:20260912T064000Z
-SUMMARY:AOS | CEO START
-DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-12\nAOS_BLOCK_ID=aos-ceo-start-2026-09-12-segment-0\n\nOutcome: reconcile the live ranked execution plan\, remove stale or superseded work and start the highest-value currently valid action.\n\nThis is a flexible Agentic OS-owned one-off block. Manual calendar events remain protected. The block may be moved or replaced by Agentic OS when live priorities materially change.
-X-AOS-ID:aos-ceo-start-2026-09-12-segment-0
-X-AOS-ACTION-ID:aos-ceo-start-2026-09-12
-X-AOS-TASK-ID:aos-ceo-start-2026-09-12
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-BEGIN:VEVENT
 UID:aos-ceo-start-2026-09-13-segment-0@agentic-os
-DTSTAMP:20260911T110700Z
+DTSTAMP:20260912T110043Z
 DTSTART:20260913T062000Z
 DTEND:20260913T064000Z
 SUMMARY:AOS | CEO START
@@ -41,6 +15,32 @@ DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-13\nAOS_BL
 X-AOS-ID:aos-ceo-start-2026-09-13-segment-0
 X-AOS-ACTION-ID:aos-ceo-start-2026-09-13
 X-AOS-TASK-ID:aos-ceo-start-2026-09-13
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:aos-ceo-start-2026-09-14-segment-0@agentic-os
+DTSTAMP:20260912T110043Z
+DTSTART:20260914T062000Z
+DTEND:20260914T064000Z
+SUMMARY:AOS | CEO START
+DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-14\nAOS_BLOCK_ID=aos-ceo-start-2026-09-14-segment-0\n\nOutcome: reconcile the live ranked execution plan\, remove stale or superseded work and start the highest-value currently valid action.\n\nThis is a flexible Agentic OS-owned one-off block. Manual calendar events remain protected. The block may be moved or replaced by Agentic OS when live priorities materially change.
+X-AOS-ID:aos-ceo-start-2026-09-14-segment-0
+X-AOS-ACTION-ID:aos-ceo-start-2026-09-14
+X-AOS-TASK-ID:aos-ceo-start-2026-09-14
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:aos-ceo-start-2026-09-15-segment-0@agentic-os
+DTSTAMP:20260912T110043Z
+DTSTART:20260915T062000Z
+DTEND:20260915T064000Z
+SUMMARY:AOS | CEO START
+DESCRIPTION:AOS_OWNER=agentic-os\nAOS_ACTION_ID=aos-ceo-start-2026-09-15\nAOS_BLOCK_ID=aos-ceo-start-2026-09-15-segment-0\n\nOutcome: reconcile the live ranked execution plan\, remove stale or superseded work and start the highest-value currently valid action.\n\nThis is a flexible Agentic OS-owned one-off block. Manual calendar events remain protected. The block may be moved or replaced by Agentic OS when live priorities materially change.
+X-AOS-ID:aos-ceo-start-2026-09-15-segment-0
+X-AOS-ACTION-ID:aos-ceo-start-2026-09-15
+X-AOS-TASK-ID:aos-ceo-start-2026-09-15
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
