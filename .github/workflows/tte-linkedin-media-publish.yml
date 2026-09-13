@@ -1,12 +1,9 @@
 name: TTE LinkedIn Media Publish
 
 on:
+  # Media changes no longer publish to production merely because they are merged.
+  # Release explicitly by workflow dispatch or the existing owner-only deploy issue.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/tte-mail-bridge/public/linkedin-media/**'
-      - '.github/workflows/tte-linkedin-media-publish.yml'
   issues:
     types: [opened]
 
