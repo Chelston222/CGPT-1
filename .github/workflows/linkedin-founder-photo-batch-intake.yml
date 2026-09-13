@@ -1,0 +1,124 @@
+name: LinkedIn Founder Photo Batch Intake
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: linkedin-founder-photo-batch-intake
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    if: github.event.issue.user.login == github.repository_owner && startsWith(github.event.issue.title, '[FOUNDER PHOTO BATCH INTAKE] ')
+    runs-on: ubuntu-latest
+    env:
+      TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
+      TTE_SMTP_USER: hello@222emails.com
+      TTE_IMAP_HOST: mail.privateemail.com
+      TTE_IMAP_PORT: '993'
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Refresh latest governed main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout -B main origin/main
+
+      - name: Verify credential and install tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$TTE_SMTP_PASS" || { echo 'TTE_SMTP_PASS missing'; exit 2; }
+          npm install --no-audit --no-fund --prefix apps/tte-mail-bridge
+          python3 -m pip install --disable-pip-version-check --quiet img2pdf
+
+      - name: Retrieve and verify exact founder media
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/linkedin-founder-photo-batch-intake.mjs retrieve
+
+      - name: Commit exact founder media bytes
+        id: media
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          batch_id="$(node -e "const e=require(process.env.GITHUB_EVENT_PATH); const b=String(e.issue.body); const s=b.indexOf('<!-- FOUNDER_BATCH_CONFIG_START -->'); const t=b.indexOf('<!-- FOUNDER_BATCH_CONFIG_END -->'); console.log(JSON.parse(b.slice(s+'<!-- FOUNDER_BATCH_CONFIG_START -->'.length,t).trim()).id)")"
+          git add "apps/linkedin-review/media/founder/$batch_id"
+          git commit -m "Promote founder photo batch $batch_id media"
+          git push origin HEAD:main
+          media_commit="$(git rev-parse HEAD)"
+          echo "media_commit=$media_commit" >> "$GITHUB_OUTPUT"
+          echo "batch_id=$batch_id" >> "$GITHUB_OUTPUT"
+
+      - name: Build review-only governed supplemental queue
+        env:
+          MEDIA_COMMIT: ${{ steps.media.outputs.media_commit }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/linkedin-founder-photo-batch-intake.mjs build
+
+      - name: Validate supplemental queue contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { withQaReplenishment, postBody } = require('./scripts/linkedin-week-batch.cjs');
+          const { validateRequest } = require('./scripts/linkedin-review-core.cjs');
+          const queue = JSON.parse(fs.readFileSync('apps/linkedin-review/queue.json','utf8'));
+          const effective = withQaReplenishment(queue);
+          const batchId = '${{ steps.media.outputs.batch_id }}';
+          const expected = effective.posts.filter((p) => p.sourceType === 'qa_replenishment' && p.id.startsWith('tte-founder-photo-'));
+          if (expected.length < 10) throw new Error(`Expected founder posts in effective queue, got ${expected.length}`);
+          const env = { BUFFER_API_KEY: 'test', BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: 'test-personal' };
+          for (const post of expected.slice(-10)) validateRequest(postBody(post), env, Date.now());
+          console.log(`Validated ${expected.slice(-10).length} founder posts`);
+          NODE
+
+      - name: Commit supplemental review queue
+        id: queue
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "apps/linkedin-review/qa-replenishment-${{ steps.media.outputs.batch_id }}.json"
+          git commit -m "Queue founder photo batch ${{ steps.media.outputs.batch_id }} for review"
+          git push origin HEAD:main
+          echo "queue_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Record ready proof
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              '✅ Founder photo batch exact-media intake completed.',
+              '',
+              `- Batch: **${{ steps.media.outputs.batch_id }}**`,
+              `- Immutable media commit: \`${{ steps.media.outputs.media_commit }}\``,
+              `- Supplemental queue commit: \`${{ steps.queue.outputs.queue_commit }}\``,
+              '- 10 review-only founder posts added to the effective governed queue.',
+              '- Darwen is packaged as a 2-page PDF carousel from the two exact original JPEGs so both proof images can reach Buffer without weakening the current single-image release contract.',
+              '',
+              'This is queue/media readiness only. Buffer release still requires repository-owner `[APPROVED LINKEDIN]` approval issues.',
+            ].join('\n');
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
+            await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed', state_reason: 'completed' });
