@@ -1,0 +1,402 @@
+{
+  "schemaVersion": 1,
+  "batchId": "founder-bonus-2026-09-13",
+  "generatedAt": "2026-09-13T14:34:36.343Z",
+  "posts": [
+    {
+      "id": "tte-founder-photo-01",
+      "revision": 1,
+      "title": "GULF cafe",
+      "category": "founder_life",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-13T18:15:00+01:00"
+      },
+      "copy": {
+        "default": "One thing I want more of while building everything else:\n\nMore moments like this.\n\nCoffee with my partner. Trying something new. Slowing down enough to actually enjoy where I am.\n\nI can be very forward-focused. The next move. The next target. The next opportunity. The next level.\n\nAmbition is good. But I do not want to become so obsessed with the future that I stop experiencing the present properly.\n\nBuild seriously. Care deeply. Work hard.\n\nBut make room for good coffee, good company and new experiences too."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-13T14:34:36.332Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        }
+      ],
+      "format": "image",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/IMG_2169.jpeg",
+      "mediaAlt": "Chelston seated at a cafe table while out for coffee with his partner.",
+      "mediaBytes": 217962,
+      "mediaSha256": "1a6278df6216942a89e35e505af39d14fe188885fc8a87f6216f67f3792ff986",
+      "safeZoneQa": "pass"
+    },
+    {
+      "id": "tte-founder-photo-02",
+      "revision": 1,
+      "title": "Darwen Tower and 23,188 steps",
+      "category": "discipline_progress",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-14T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "23,188 steps.\n\nCanal walk first. Then Darwen Tower. Then the celebratory photo at the top.\n\nA lot of the things that make you proud afterwards do not feel particularly glamorous while you are doing them.\n\nIt is just step after step after step.\n\nNo dramatic breakthrough. Just movement.\n\nBuilding feels similar sometimes.\n\nPeople see the milestone. They rarely see all the ordinary reps underneath it.\n\nKeep walking. Keep building."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-13T14:34:36.333Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        }
+      ],
+      "format": "carousel",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/tte-founder-photo-02.pdf",
+      "documentTitle": "23,188 steps to Darwen Tower",
+      "documentThumbnailUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/tte-founder-photo-02-thumbnail.jpg",
+      "carousel": {
+        "slideCount": 2,
+        "readiness": "ready",
+        "pdfBytes": 578936,
+        "pdfSha256": "fc1c78522f29219ceae93c39ffd3966517aa06421b32bdd1180ec929b3152c2e"
+      },
+      "mediaPreviewUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/218F268E-7C18-4409-A81A-E27C7482894E.jpeg"
+    },
+    {
+      "id": "tte-founder-photo-03",
+      "revision": 1,
+      "title": "Porsche in Manchester",
+      "category": "aspiration",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-15T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "Spotted a gorgeous Porsche in Manchester and had one of those moments where ambition and humour meet in the middle.\n\nI was admiring the car, but also very aware I was still just a guy in the street having a laugh.\n\nI actually like this stage of life.\n\nWanting more without pretending I already have it.\n\nI do want a big life. Success. Freedom. Financial security. Things I genuinely enjoy.\n\nBut I also want to enjoy becoming the person who gets there."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-13T14:34:36.334Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        }
+      ],
+      "format": "image",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/IMG_2175.jpeg",
+      "mediaAlt": "Chelston car spotting a Porsche outside Mollie's in Manchester.",
+      "mediaBytes": 348350,
+      "mediaSha256": "1c3b327bad344dde242c0743abe0c376838e1d6791e63735711ac49acd956360",
+      "safeZoneQa": "pass"
+    },
+    {
+      "id": "tte-founder-photo-04",
+      "revision": 1,
+      "title": "Thailand birthday",
+      "category": "travel_perspective",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-16T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "Thailand, July 2025.\n\nOne thing travelling keeps teaching me is how much bigger life is than whatever feels urgent in the moment.\n\nWork, pressure and goals can make your world feel very narrow.\n\nThen you go somewhere new and your perspective stretches again.\n\nDifferent environment. Different pace. Different reminders of what is possible.\n\nThat is part of why I value travel so much.\n\nSometimes getting out of your usual environment helps you come back thinking bigger."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-13T14:34:36.335Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        }
+      ],
+      "format": "image",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/IMG_1338.jpeg",
+      "mediaAlt": "Chelston outdoors in Thailand during his July 2025 birthday trip.",
+      "mediaBytes": 765643,
+      "mediaSha256": "eaca7d60aeead3d68d9c85004d55e04cd0c977542318d24906cc1c1ad5ab03ca",
+      "safeZoneQa": "pass"
+    },
+    {
+      "id": "tte-founder-photo-05",
+      "revision": 1,
+      "title": "Amsterdam Capri-Sun",
+      "category": "founder_journey",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-17T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "I have a feeling I am going to miss this stage one day.\n\nNot because everything is easy. It is not.\n\nBut because so much is still unwritten.\n\nI do not know exactly how big the business becomes. I do not know which opportunities will matter most. I do not know who I will meet along the way.\n\nAnd I actually like that.\n\nMy job is just to keep giving myself more chances for the right things to happen.\n\nApparently with a Capri-Sun in hand."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-13T14:34:36.336Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        }
+      ],
+      "format": "image",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/IMG_3062.jpeg",
+      "mediaAlt": "Chelston by an Amsterdam canal holding a Capri-Sun.",
+      "mediaBytes": 251126,
+      "mediaSha256": "150700946d1a5856cd56890ae22b25873cbb6f01e7b97c9e3e9145c9292f274f",
+      "safeZoneQa": "pass"
+    },
+    {
+      "id": "tte-founder-photo-06",
+      "revision": 1,
+      "title": "Manchester Chinatown",
+      "category": "life_design",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-18T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "One thing I do not want entrepreneurship to do is make my world smaller.\n\nLaptop. Phone. Emails. Calls. Repeat.\n\nThere is always another thing I could be doing.\n\nBut I also want more places, more people, more conversations and more experiences.\n\nBecause building a good business means very little to me if I accidentally build a boring life around it.\n\nI want both."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-13T14:34:36.337Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        }
+      ],
+      "format": "image",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/IMG_6939.jpeg",
+      "mediaAlt": "Chelston walking beneath the Chinatown arch in Manchester.",
+      "mediaBytes": 758219,
+      "mediaSha256": "d0ccd9a38bd0c55b0bff68329000e47114b1774c6e9ee551551140bf921f0c26",
+      "safeZoneQa": "pass"
+    },
+    {
+      "id": "tte-founder-photo-07",
+      "revision": 1,
+      "title": "Amsterdam ice cream",
+      "category": "life_balance",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-19T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "Building something can make you permanently focused on the next thing.\n\nNext client. Next target. Next idea. Next version of yourself.\n\nI am definitely guilty of it.\n\nBut I do not want to spend years building the life I want and forget to actually live any of it on the way.\n\nBuild hard. Take the opportunities. Raise the standard.\n\nBut also go to Amsterdam and get the ice cream.\n\nThere will still be work tomorrow."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-13T14:34:36.338Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        }
+      ],
+      "format": "image",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/Video.jpeg",
+      "mediaAlt": "Chelston in Amsterdam eating an ice cream while sightseeing.",
+      "mediaBytes": 227334,
+      "mediaSha256": "836e969c6b7d85fb651a1382296b702e1efcac4a1936e1085d37a4f68008c368",
+      "safeZoneQa": "pass"
+    },
+    {
+      "id": "tte-founder-photo-08",
+      "revision": 1,
+      "title": "Graffiti selfie",
+      "category": "personality",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-20T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "A lot of my LinkedIn is business.\n\nThis is not.\n\nI thought the wall looked good. The lighting was decent.\n\nSo naturally there are now about 14 versions of this photo in my camera roll. 😂\n\nHope everyone is having a good week."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-13T14:34:36.339Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        }
+      ],
+      "format": "image",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/IMG_6933.jpeg",
+      "mediaAlt": "Chelston smiling for a casual selfie beside a colourful graffiti wall in Manchester.",
+      "mediaBytes": 665944,
+      "mediaSha256": "62af17ce48304602f89603ac973304b879023cdb84e03a203ba4a4c3df931118",
+      "safeZoneQa": "pass"
+    },
+    {
+      "id": "tte-founder-photo-09",
+      "revision": 1,
+      "title": "G-Wagon aspiration",
+      "category": "aspiration",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-21T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "I am not going to pretend material goals do not matter to me.\n\nThey do.\n\nI want to build real wealth. I want freedom. I want to help my family properly. I want to live well. And yes, I would love to own cars I genuinely admire.\n\nA G-Wagon has been one of my all-time favourites for a long time.\n\nBut the interesting part is not really the car.\n\nThe interesting part is becoming the type of person who can earn that level of life honestly.\n\nThe discipline. The skill. The resilience. The execution. The patience.\n\nAdmire the outcome, but build the person required to reach it."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-13T14:34:36.341Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        }
+      ],
+      "format": "image",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/IMG_6957.jpeg",
+      "mediaAlt": "Chelston standing in front of a black Mercedes G-Class, one of his favourite cars.",
+      "mediaBytes": 784152,
+      "mediaSha256": "145469a2d885c49009978d8024de0389919315dab0abf9b0c75e1efc1693f19d",
+      "safeZoneQa": "pass"
+    },
+    {
+      "id": "tte-founder-photo-10",
+      "revision": 1,
+      "title": "Controlled build in public",
+      "category": "founder_journey",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-22T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "I am not particularly interested in pretending I am already where I want to be.\n\nI am not.\n\nThere is a lot I still want to build. A lot I still need to learn. A lot I need to get better at.\n\nAnd some of the targets I have set myself are probably unreasonable by normal standards.\n\nGood.\n\nI would rather spend the next few years finding out what I am capable of than make the target smaller so I can guarantee I hit it.\n\nI will show the wins.\n\nBut I want to show the misses too.\n\nIf this works, I would rather have the real journey documented than rewrite the story afterwards and pretend everything went to plan."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "approvalEligible": true,
+        "publishPermission": false,
+        "safeZoneQa": "pass"
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-09-13T14:34:36.342Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        }
+      ],
+      "format": "image",
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/b9bbad60afe212405cfa39908ab638101ba2417c/apps/linkedin-review/media/founder/founder-bonus-2026-09-13/IMG_3063.jpeg",
+      "mediaAlt": "Chelston in Amsterdam during a founder journey and travel moment.",
+      "mediaBytes": 383480,
+      "mediaSha256": "7a339ec0555578aedbb73fe21870bbe068370dcfa000fa8a11a482317d87f1d8",
+      "safeZoneQa": "pass"
+    }
+  ]
+}
