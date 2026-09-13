@@ -10,7 +10,7 @@ on:
       - '.github/workflows/tte-supervisor-watchdog.yml'
   workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '0 * * * *'
 
 permissions:
   contents: write
