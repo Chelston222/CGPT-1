@@ -47,6 +47,6 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add apps/tte-supervisor/state/health.json || true
           if ! git diff --cached --quiet; then
-            git commit -m "TTE supervisor: refresh health snapshot"
+            git commit -m "TTE supervisor: refresh health snapshot [skip netlify]"
             git push origin HEAD:main
           fi
