@@ -1,12 +1,9 @@
 name: TTE Mail Bridge Apex Deploy
 
 on:
+  # Production deployment is deliberately explicit. Code changes are verified
+  # before release and do not consume a Netlify production deploy automatically.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/tte-mail-bridge/**'
-      - '.github/workflows/tte-mail-bridge-deploy.yml'
 
 permissions:
   contents: read
