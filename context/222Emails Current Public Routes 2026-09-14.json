@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "effective_date": "2026-09-14",
   "status": "current",
   "purpose": "Authoritative public-funnel routing addendum. New agents and workflows should prefer this file over older August route snapshots when resolving current 222Emails public forms and payment destinations.",
@@ -32,6 +32,11 @@
     "https://tally.so/r/68gpyN": {
       "status": "closed",
       "reason": "Non-canonical aesthetics Fit Check / Challenge test route. Its two submissions were explicit internal synthetic tests and no current repo route references it.",
+      "replacement": "https://tally.so/r/44057b"
+    },
+    "https://tally.so/r/Npj0Ap": {
+      "status": "closed",
+      "reason": "Superseded Founding 10 acquisition funnel promising the first 10 qualified businesses a free diagnostic and manual cohort review. It had zero submissions and no current GitHub or Drive route references, and conflicts with the current Partner Programme / Free Revenue Recovery Check model.",
       "replacement": "https://tally.so/r/44057b"
     }
   },
