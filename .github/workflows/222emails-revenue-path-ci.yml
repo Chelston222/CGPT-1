@@ -55,6 +55,10 @@ jobs:
           grep -q 'Retention Marketing Lancashire' dist/retention-marketing-lancashire/index.html
           grep -q 'Illustrative rate, not a benchmark' dist/client-return-opportunity-calculator/index.html
           grep -q 'aria-live="polite"' dist/client-return-opportunity-calculator/index.html
+          for page in client-return-systems retention-marketing-lancashire client-retention-salons-barbers-lancashire client-reactivation-aesthetics-lancashire patient-reactivation-dental-lancashire client-return-opportunity-calculator about-222emails; do
+            grep -q 'class="skip-link"' "dist/${page}/index.html"
+            grep -q '<main id="main"' "dist/${page}/index.html"
+          done
           ! grep -R -q 'RecoveryDashboard' dist/assets
           ! grep -R -q 'Start your free Fit Check' dist/assets
           ! grep -R -q 'client-return-fit-check' dist/index.html
