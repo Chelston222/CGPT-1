@@ -6,6 +6,14 @@ const {
   assertCurrentPublicMessageGuard,
   evaluateCurrentPublicMessageGuard,
 } = require('../scripts/linkedin-public-message-guard.cjs');
+const { validateRequest } = require('../scripts/linkedin-review-core.cjs');
+
+const ENV = {
+  BUFFER_API_KEY: 'test',
+  BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: 'personal-test',
+  BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: 'main-test',
+  BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: 'secondary-test',
+};
 
 function post(copy, extra = {}) {
   return {
@@ -15,6 +23,19 @@ function post(copy, extra = {}) {
     copy: { default: copy },
     ...extra,
   };
+}
+
+function approvedBody(copy, extraHeader = '') {
+  return [
+    'POST_ID: tte-test',
+    'REVISION: 1',
+    'TARGETS: personal',
+    'MODE: draft',
+    'CONTENT_QA: PASS',
+    extraHeader,
+    '---',
+    copy,
+  ].filter(Boolean).join('\n');
 }
 
 test('current Revenue Recovery Check language passes', () => {
@@ -61,4 +82,37 @@ test('historical audit records are exempt and remain readable', () => {
   );
   assert.equal(result.pass, true);
   assert.deepEqual(result.reasons, []);
+});
+
+test('central validateRequest accepts current Revenue Recovery Check copy', () => {
+  const request = validateRequest(
+    approvedBody('Start with the Free Revenue Recovery Check. No mandatory discovery call is required.'),
+    ENV,
+  );
+  assert.equal(request.postId, 'tte-test');
+  assert.equal(request.channels[0].text.includes('Revenue Recovery Check'), true);
+});
+
+test('central validateRequest rejects retired current-facing copy before Buffer', () => {
+  assert.throws(
+    () => validateRequest(approvedBody('DM FIT and I will send the Client Return Fit Check.'), ENV),
+    /current public message guard/i,
+  );
+});
+
+test('central validateRequest checks target-specific copy variants', () => {
+  const body = [
+    'POST_ID: tte-test',
+    'REVISION: 1',
+    'TARGETS: personal,main',
+    'MODE: draft',
+    'CONTENT_QA: PASS',
+    '---',
+    'Current default copy.',
+    '---PERSONAL---',
+    'Current personal copy.',
+    '---MAIN---',
+    'New from 222Emails | Retention Lab.',
+  ].join('\n');
+  assert.throws(() => validateRequest(body, ENV), /Retention Lab/);
 });
