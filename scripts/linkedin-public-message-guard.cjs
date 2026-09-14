@@ -36,8 +36,12 @@ function evaluateCurrentPublicMessageGuard(queuePost, options = {}) {
   }
 
   const freeDiagnosticPattern = /\b(?:free\s+)?(?:revenue\s+recovery\s+check|recovery\s+check|rrc)\b/i;
-  const requiredConversationPattern = /\b(?:required|must|need(?:ed)?|have)\b[^\n.!?]{0,45}\b(?:call|conversation)\b|\b(?:call|conversation)\b[^\n.!?]{0,45}\b(?:required|mandatory|must|need(?:ed)?)\b/i;
-  if (freeDiagnosticPattern.test(text) && requiredConversationPattern.test(text)) {
+  const obligationText = text
+    .replace(/\bno\s+(?:mandatory|required)\s+(?:discovery\s+)?(?:call|conversation)\b/gi, '')
+    .replace(/\b(?:call|conversation)\s+(?:is|are)\s+not\s+(?:mandatory|required)\b/gi, '')
+    .replace(/\b(?:do|does)\s+not\s+require\s+(?:a\s+)?(?:discovery\s+)?(?:call|conversation)\b/gi, '');
+  const requiredConversationPattern = /\b(?:requires?|must|need(?:ed)?\s+to|have\s+to)\b[^\n.!?]{0,45}\b(?:call|conversation)\b|\b(?:mandatory|required)\s+(?:discovery\s+)?(?:call|conversation)\b|\b(?:call|conversation)\s+(?:is|are)\s+(?:mandatory|required)\b/i;
+  if (freeDiagnosticPattern.test(text) && requiredConversationPattern.test(obligationText)) {
     reasons.push('The Free Revenue Recovery Check must not be framed as requiring a call or conversation');
   }
 
