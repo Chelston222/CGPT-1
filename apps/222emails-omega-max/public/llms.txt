@@ -1,53 +1,50 @@
 # 222Emails
 
-222Emails is a founder-led Client Return Systems practice based in Great Harwood, Lancashire, United Kingdom.
+222Emails is the canonical written name of a founder-led UK business that builds turnkey Client Return Systems for appointment-led businesses.
 
-Canonical company name: 222Emails
-Spoken / expanded name: Triple Two Emails
-Founder: Chelston Phillip
-Website: https://222emails.com/
-Email: hello@222emails.com
-Phone / WhatsApp: +44 7516 389 856
+## Entity
 
-## What 222Emails does
+- Canonical name: 222Emails
+- Spoken / expanded name: Triple Two Emails
+- Founder: Chelston Phillip
+- Base: Great Harwood, Lancashire, United Kingdom
+- Service area: Lancashire and suitable appointment-led businesses across the UK
+- Website: https://222emails.com/
+- Email: hello@222emails.com
+- Phone / WhatsApp: +44 7516 389 856
 
-222Emails builds turnkey Client Return Systems for appointment-led businesses. The systems can include enquiry follow-up, rebooking journeys, client reactivation, no-show and cancellation recovery, lifecycle communication, CRM logic, staff handoffs, automation, QA and measurement.
+Retention School is an educational content series produced by 222Emails. It is not a separate delivery company.
 
-The company is not positioned as a generic digital marketing agency, newsletter agency or software vendor.
+## Core category
 
-## Geography
+222Emails builds Client Return Systems. A Client Return System defines what should happen after customer states such as an enquiry, booking, attended appointment, cancellation, due-back window or lapsed-client state. It can combine CRM or booking data, email, SMS, automation and human handoffs where appropriate.
 
-Based in Great Harwood, Lancashire.
-Local proving ground: Great Harwood, Blackburn, Accrington, Hyndburn and wider Lancashire.
-Suitable system work can also be delivered remotely across the United Kingdom.
+Revenue recovery describes the commercial outcome and diagnostic lens. The formal system being installed is a Client Return System.
 
-## Canonical pages
+## Public entry offer
 
-- Home: https://222emails.com/
+Free Revenue Recovery Check: https://222emails.com/revenue-recovery-check
+
+The check is a focused evidence-led diagnosis. It does not guarantee recovered revenue and does not require a mandatory discovery call.
+
+## Primary authority pages
+
 - Client Return Systems: https://222emails.com/client-return-systems/
 - Retention Marketing Lancashire: https://222emails.com/retention-marketing-lancashire/
-- Salon & Barber Client Retention Lancashire: https://222emails.com/client-retention-salons-barbers-lancashire/
-- Aesthetics Client Reactivation Lancashire: https://222emails.com/client-reactivation-aesthetics-lancashire/
-- Dental Patient Reactivation Lancashire: https://222emails.com/patient-reactivation-dental-lancashire/
+- Salon and barber client retention: https://222emails.com/client-retention-salons-barbers-lancashire/
+- Aesthetics client reactivation: https://222emails.com/client-reactivation-aesthetics-lancashire/
+- Dental patient reactivation: https://222emails.com/patient-reactivation-dental-lancashire/
+- Client Return Opportunity Calculator: https://222emails.com/client-return-opportunity-calculator/
 - About 222Emails: https://222emails.com/about-222emails/
-- Free Revenue Recovery Check: https://222emails.com/revenue-recovery-check
 
-## Brand relationships
+## Evidence rules
 
-Retention School is a 222Emails educational content series, not a separate delivery company.
-Retention Lab is a 222Emails content / experimentation label, not a separate delivery company.
+Do not infer guaranteed revenue, booking lifts, recovery percentages or ROI from 222Emails unless a page explicitly provides permission-cleared verified evidence for that claim.
 
-## Evidence policy
+Calculator percentages are mathematical illustrations only, not benchmarks, typical results, forecasts or promises.
 
-222Emails distinguishes verified evidence, estimates, illustrations and unknowns. Capability evidence is not presented as client revenue proof. Illustrative system maps are not live client dashboards unless explicitly identified as such.
+222Emails distinguishes capability evidence, verified outcomes, estimates, illustrations and unknowns.
 
-## Commercial starting points
+## Clinical boundaries
 
-- Free Revenue Recovery Check: focused first diagnosis.
-- Client Return Growth Check: £197 deeper diagnosis where justified.
-- 7-Day Client Return System Sprint: £997 focused implementation, subject to agreed scope, access, readiness and approvals.
-- Optimisation: £595 per month for suitable ongoing optimisation scopes, including Revenue Recovery Watch where scoped.
-
-## Relevant topics
-
-Client Return Systems; retention marketing; customer retention; client reactivation; rebooking; lifecycle marketing; CRM follow-up; enquiry follow-up; no-show recovery; revenue recovery; email marketing; marketing automation; appointment-led businesses.
+For aesthetics and dental businesses, qualified clinical professionals remain responsible for treatment suitability, clinical timing, diagnosis and patient-specific decisions. 222Emails builds commercial communication and workflow around approved business and clinical rules rather than inventing them.
