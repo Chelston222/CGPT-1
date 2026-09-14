@@ -5,6 +5,7 @@ on:
     paths:
       - 'apps/222emails-omega-max/**'
       - '.github/workflows/222emails-revenue-path-ci.yml'
+      - '.github/workflows/222emails-omega-max-production.yml'
   workflow_dispatch:
 
 permissions:
@@ -33,24 +34,52 @@ jobs:
           test -f dist/_redirects
           test -f dist/robots.txt
           test -f dist/sitemap.xml
+          test -f dist/llms.txt
+          test -f dist/authority.css
           test -f dist/privacy/index.html
           test -f dist/terms/index.html
           test -f dist/cookies/index.html
           test -f dist/accessibility/index.html
-          grep -R -q 'Recover more from the enquiries and clients you already have' dist/assets
+          test -f dist/client-return-systems/index.html
+          test -f dist/retention-marketing-lancashire/index.html
+          test -f dist/client-retention-salons-barbers-lancashire/index.html
+          test -f dist/client-reactivation-aesthetics-lancashire/index.html
+          test -f dist/patient-reactivation-dental-lancashire/index.html
+          test -f dist/client-return-opportunity-calculator/index.html
+          test -f dist/about-222emails/index.html
+          grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
           grep -R -q 'Free Revenue Recovery Check' dist/assets
           grep -R -q 'Client Return System' dist/assets
+          grep -R -q 'Evidence-led diagnosis' dist/assets
+          grep -q 'Great Harwood' dist/index.html
+          grep -q 'Retention Marketing Lancashire' dist/retention-marketing-lancashire/index.html
+          grep -q 'Illustrative rate, not a benchmark' dist/client-return-opportunity-calculator/index.html
+          grep -q 'aria-live="polite"' dist/client-return-opportunity-calculator/index.html
+          for page in client-return-systems retention-marketing-lancashire client-retention-salons-barbers-lancashire client-reactivation-aesthetics-lancashire patient-reactivation-dental-lancashire client-return-opportunity-calculator about-222emails; do
+            grep -q 'class="skip-link"' "dist/${page}/index.html"
+            grep -q '<main id="main"' "dist/${page}/index.html"
+          done
           ! grep -R -q 'RecoveryDashboard' dist/assets
           ! grep -R -q 'Start your free Fit Check' dist/assets
           ! grep -R -q 'client-return-fit-check' dist/index.html
           grep -q '/fit-check /revenue-recovery-check 301' dist/_redirects
           grep -q 'https://222emails.com/sitemap.xml' dist/robots.txt
+          grep -q 'OAI-SearchBot' dist/robots.txt
+          grep -q 'PerplexityBot' dist/robots.txt
       - name: Verify public source truthfulness gates
         working-directory: apps/222emails-omega-max
         run: |
           set -euo pipefail
-          ! grep -R -q '61/100' src index.html
-          ! grep -R -q 'guarantee.*revenue' src index.html
-          ! grep -R -q 'stores the client' src index.html
+          ! grep -R -q '61/100' src index.html public
+          ! grep -R -E -q 'guarantee(d)? revenue|guaranteed revenue' src index.html public
+          ! grep -R -q 'stores the client' src index.html public
+          ! grep -R -q 'RECALL System' src index.html public
+          ! grep -R -q '£20K–£50K' src index.html public
+          ! grep -R -q 'Human-reviewed' src index.html public
+          ! grep -R -q 'Retention Lab' src index.html public
           grep -R -q 'Existing tools first' src
           grep -R -q 'No mandatory discovery call' src
+          grep -R -q 'utm_source' src/main.tsx
+          grep -R -q 'sessionStorage' src/main.tsx
+          grep -R -q 'does not invent clinical timing' public/client-reactivation-aesthetics-lancashire
+          grep -R -q 'does not set clinical recall intervals' public/patient-reactivation-dental-lancashire

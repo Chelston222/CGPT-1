@@ -38,19 +38,37 @@ jobs:
           test -f dist/_redirects
           test -f dist/robots.txt
           test -f dist/sitemap.xml
+          test -f dist/llms.txt
+          test -f dist/authority.css
+          test -f dist/client-return-systems/index.html
+          test -f dist/retention-marketing-lancashire/index.html
+          test -f dist/client-retention-salons-barbers-lancashire/index.html
+          test -f dist/client-reactivation-aesthetics-lancashire/index.html
+          test -f dist/patient-reactivation-dental-lancashire/index.html
+          test -f dist/client-return-opportunity-calculator/index.html
+          test -f dist/about-222emails/index.html
 
       - name: Run canonical content gates
         working-directory: apps/222emails-omega-max
         run: |
           set -euo pipefail
-          grep -R -q 'Recover more from the enquiries and clients you already have' dist/assets
+          grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
           grep -R -q 'Free Revenue Recovery Check' dist/assets
           grep -R -q 'Client Return System' dist/assets
           grep -R -q 'Existing tools first' dist/assets
+          grep -R -q 'Evidence-led diagnosis' dist/assets
+          grep -q 'Great Harwood' dist/index.html
+          grep -q 'OAI-SearchBot' dist/robots.txt
+          grep -q 'Retention Marketing Lancashire' dist/retention-marketing-lancashire/index.html
+          grep -q 'Illustrative rate, not a benchmark' dist/client-return-opportunity-calculator/index.html
           ! grep -R -q 'RecoveryDashboard' dist/assets
           ! grep -R -q 'Start your free Fit Check' dist/assets
           ! grep -R -q '61/100' dist/assets
           ! grep -R -q 'client-return-fit-check' dist/index.html
+          ! grep -R -q 'Human-reviewed' src index.html public
+          ! grep -R -q 'Retention Lab' src index.html public
+          grep -R -q 'utm_source' src/main.tsx
+          grep -R -q 'sessionStorage' src/main.tsx
           grep -q '/fit-check /revenue-recovery-check 301' dist/_redirects
 
       - name: Install Netlify CLI
@@ -60,7 +78,7 @@ jobs:
         working-directory: apps/222emails-omega-max
         run: |
           set -euo pipefail
-          netlify deploy --dir=dist --no-build --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="222Emails canonical revenue path candidate" --json > /tmp/draft.json
+          netlify deploy --dir=dist --no-build --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="222Emails competitive authority candidate" --json > /tmp/draft.json
           node - <<'NODE'
           const fs=require('fs');
           const j=JSON.parse(fs.readFileSync('/tmp/draft.json','utf8'));
@@ -73,20 +91,22 @@ jobs:
       - name: Smoke test isolated draft
         run: |
           set -euo pipefail
-          for path in / /revenue-recovery-check /revenue-recovery-check/thank-you /privacy/ /terms/ /cookies/ /accessibility/ /robots.txt /sitemap.xml; do
+          for path in / /revenue-recovery-check /revenue-recovery-check/thank-you /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /privacy/ /terms/ /cookies/ /accessibility/ /robots.txt /sitemap.xml /llms.txt; do
             code=$(curl -L --retry 4 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${DRAFT_URL}${path}")
             test "$code" = "200" || { echo "Draft ${path} returned ${code}"; exit 1; }
           done
           code=$(curl -L --retry 4 --retry-delay 2 -sS -o /tmp/legacy -w '%{http_code}' "${DRAFT_URL}/fit-check")
           test "$code" = "200" || { echo "Legacy redirect failed: $code"; exit 1; }
-          curl -fsSL --retry 4 "$DRAFT_URL/" | grep -q 'Client Return Systems for Appointment-Led SMEs'
+          curl -fsSL --retry 4 "$DRAFT_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
+          curl -fsSL --retry 4 "$DRAFT_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
+          curl -fsSL --retry 4 "$DRAFT_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
           curl -fsSL --retry 4 "$DRAFT_URL/privacy/" | grep -q 'How 222Emails collects and uses personal data'
 
       - name: Publish verified build to production
         working-directory: apps/222emails-omega-max
         run: |
           set -euo pipefail
-          netlify deploy --dir=dist --no-build --prod --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="222Emails canonical revenue path production" --json > /tmp/prod.json
+          netlify deploy --dir=dist --no-build --prod --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="222Emails competitive authority production" --json > /tmp/prod.json
           node - <<'NODE'
           const fs=require('fs');
           const j=JSON.parse(fs.readFileSync('/tmp/prod.json','utf8'));
@@ -99,14 +119,16 @@ jobs:
       - name: Production smoke tests
         run: |
           set -euo pipefail
-          for path in / /revenue-recovery-check /privacy/ /terms/ /cookies/ /accessibility/; do
+          for path in / /revenue-recovery-check /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /privacy/ /terms/ /cookies/ /accessibility/; do
             code=$(curl -L --retry 6 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${PROD_URL}${path}")
             test "$code" = "200" || { echo "Production ${path} returned ${code}"; exit 1; }
           done
-          curl -fsSL --retry 6 "$PROD_URL/" | grep -q 'Client Return Systems for Appointment-Led SMEs'
+          curl -fsSL --retry 6 "$PROD_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
+          curl -fsSL --retry 6 "$PROD_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
+          curl -fsSL --retry 6 "$PROD_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
 
       - name: Release summary
         run: |
-          echo "222Emails canonical revenue path passed release gates."
+          echo "222Emails competitive authority build passed release gates."
           echo "Draft: ${DRAFT_URL}"
           echo "Production: ${PROD_URL}"
