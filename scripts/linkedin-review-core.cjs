@@ -1,5 +1,7 @@
 'use strict';
 
+const { assertCurrentPublicMessageGuard } = require('./linkedin-public-message-guard.cjs');
+
 const TARGET_ALIASES = {
   personal: ['personal'],
   business: ['main'],
@@ -173,6 +175,15 @@ function validateRequest(body, env = {}, now = Date.now()) {
   if (mediaUrl && mediaKind === 'document' && !documentThumbnailUrl) throw new Error('DOCUMENT_THUMBNAIL_URL is required for a LinkedIn PDF carousel.');
   if (mediaUrl && mediaKind === 'document' && !documentPageCount) throw new Error('DOCUMENT_PAGE_COUNT is required for a LinkedIn PDF carousel.');
   if (mediaSha256 && !/^[a-f0-9]{64}$/i.test(mediaSha256)) throw new Error('MEDIA_SHA256 must be a 64-character hexadecimal SHA-256 digest.');
+
+  assertCurrentPublicMessageGuard({
+    id: header.POST_ID || 'approved-request',
+    revision: header.REVISION || '1',
+    title: header.CATEGORY || '',
+    documentTitle,
+    mediaAltText,
+    copy,
+  }, { phase: 'dispatch' });
 
   const channels = targets.map((target) => {
     const secretName = TARGET_SECRET_NAMES[target];
