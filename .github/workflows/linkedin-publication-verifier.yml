@@ -81,7 +81,12 @@ jobs:
 
             const since = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString();
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
-            const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+            // A historical acceptance ledger uses an approval-family title for sentinel discovery.
+            // It stores mirrored evidence, not a second creative approval. Keep it out of
+            // approval indexing without weakening the genuine duplicate-intent guard.
+            const candidates = issues.filter((issue) => !issue.pull_request
+              && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title)
+              && !/^\[(?:APPROVED|FAILED) LINKEDIN\]\s+Buffer acceptance ledger$/i.test(issue.title));
             const commentsByIssue = new Map();
             const issueByIntentKey = new Map();
 
@@ -292,7 +297,12 @@ jobs:
 
             const since = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString();
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
-            const candidates = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+            // A historical acceptance ledger uses an approval-family title for sentinel discovery.
+            // It stores mirrored evidence, not a second creative approval. Keep it out of
+            // approval indexing without weakening the genuine duplicate-intent guard.
+            const candidates = issues.filter((issue) => !issue.pull_request
+              && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title)
+              && !/^\[(?:APPROVED|FAILED) LINKEDIN\]\s+Buffer acceptance ledger$/i.test(issue.title));
 
             for (const issue of candidates) {
               if (/^MODE:\s*draft\s*$/mi.test(String(issue.body || ''))) continue;
