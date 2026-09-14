@@ -1,0 +1,123 @@
+name: 222Emails One-Time Production Promotion
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/222emails-one-time-production-promote.yml'
+
+permissions:
+  contents: read
+
+env:
+  NETLIFY_SITE_ID: fc7ccb38-7e6d-4a15-83bc-88bd84ea5687
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Verify deployment credential
+        run: test -n "$NETLIFY_AUTH_TOKEN" || { echo 'NETLIFY_AUTH_TOKEN is missing'; exit 2; }
+
+      - name: Build verified canonical source
+        working-directory: apps/222emails-omega-max
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npm run build
+          test -f dist/index.html
+          test -f dist/_headers
+          test -f dist/_redirects
+          test -f dist/robots.txt
+          test -f dist/sitemap.xml
+          test -f dist/llms.txt
+          test -f dist/authority.css
+          test -f dist/client-return-systems/index.html
+          test -f dist/retention-marketing-lancashire/index.html
+          test -f dist/client-retention-salons-barbers-lancashire/index.html
+          test -f dist/client-reactivation-aesthetics-lancashire/index.html
+          test -f dist/patient-reactivation-dental-lancashire/index.html
+          test -f dist/client-return-opportunity-calculator/index.html
+          test -f dist/about-222emails/index.html
+
+      - name: Run canonical content gates
+        working-directory: apps/222emails-omega-max
+        run: |
+          set -euo pipefail
+          grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
+          grep -R -q 'Free Revenue Recovery Check' dist/assets
+          grep -R -q 'Client Return System' dist/assets
+          grep -R -q 'Evidence-led diagnosis' dist/assets
+          grep -q 'Great Harwood' dist/index.html
+          grep -q 'OAI-SearchBot' dist/robots.txt
+          grep -q 'Retention Marketing Lancashire' dist/retention-marketing-lancashire/index.html
+          grep -q 'Illustrative rate, not a benchmark' dist/client-return-opportunity-calculator/index.html
+          ! grep -R -q 'Human-reviewed' src index.html public
+          ! grep -R -q 'Retention Lab' src index.html public
+          ! grep -R -q 'client-return-fit-check' dist/index.html
+          grep -q '/fit-check /revenue-recovery-check 301' dist/_redirects
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli@latest
+
+      - name: Create isolated draft deploy
+        working-directory: apps/222emails-omega-max
+        run: |
+          set -euo pipefail
+          netlify deploy --dir=dist --no-build --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="222Emails one-time verified production candidate" --json > /tmp/draft.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const j=JSON.parse(fs.readFileSync('/tmp/draft.json','utf8'));
+          const url=j.deploy_url||j.deployUrl||j.url;
+          if(!url) process.exit(1);
+          fs.appendFileSync(process.env.GITHUB_ENV,`DRAFT_URL=${url}\n`);
+          console.log(`Draft deploy: ${url}`);
+          NODE
+
+      - name: Smoke test isolated draft
+        run: |
+          set -euo pipefail
+          for path in / /revenue-recovery-check /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /robots.txt /sitemap.xml /llms.txt; do
+            code=$(curl -L --retry 5 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${DRAFT_URL}${path}")
+            test "$code" = "200" || { echo "Draft ${path} returned ${code}"; exit 1; }
+          done
+          curl -fsSL --retry 5 "$DRAFT_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
+          curl -fsSL --retry 5 "$DRAFT_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
+
+      - name: Publish verified build to production
+        working-directory: apps/222emails-omega-max
+        run: |
+          set -euo pipefail
+          netlify deploy --dir=dist --no-build --prod --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="222Emails OMEGA verified production" --json > /tmp/prod.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const j=JSON.parse(fs.readFileSync('/tmp/prod.json','utf8'));
+          const url=j.url||j.deploy_url||j.deployUrl;
+          if(!url) process.exit(1);
+          fs.appendFileSync(process.env.GITHUB_ENV,`PROD_URL=${url}\n`);
+          console.log(`Production URL: ${url}`);
+          NODE
+
+      - name: Smoke test production
+        run: |
+          set -euo pipefail
+          for path in / /revenue-recovery-check /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /robots.txt /sitemap.xml /llms.txt; do
+            code=$(curl -L --retry 6 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${PROD_URL}${path}")
+            test "$code" = "200" || { echo "Production ${path} returned ${code}"; exit 1; }
+          done
+          curl -fsSL --retry 6 "$PROD_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
+          curl -fsSL --retry 6 "$PROD_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
+          curl -fsSL --retry 6 "$PROD_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
+
+      - name: Release summary
+        run: |
+          echo "222Emails OMEGA production promotion passed."
+          echo "Draft: ${DRAFT_URL}"
+          echo "Production: ${PROD_URL}"
