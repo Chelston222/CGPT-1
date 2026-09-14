@@ -45,6 +45,13 @@ test('current Revenue Recovery Check language passes', () => {
   assert.equal(result.pass, true);
 });
 
+test('optional call language remains allowed', () => {
+  const result = assertCurrentPublicMessageGuard(post(
+    'Start with the Free Revenue Recovery Check. A short call can be used later if it genuinely helps clarify a complex opportunity.'
+  ));
+  assert.equal(result.pass, true);
+});
+
 test('retired Client Return Fit Check naming fails closed', () => {
   const result = evaluateCurrentPublicMessageGuard(post('Start with the Client Return Fit Check.'));
   assert.equal(result.pass, false);
