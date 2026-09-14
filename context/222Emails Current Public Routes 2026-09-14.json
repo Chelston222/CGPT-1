@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "effective_date": "2026-09-14",
+  "status": "current",
+  "purpose": "Authoritative public-funnel routing addendum. New agents and workflows should prefer this file over older August route snapshots when resolving current 222Emails public forms and payment destinations.",
+  "brand": {
+    "written_name": "222Emails",
+    "spoken_name": "Triple Two Emails",
+    "public_entry_offer": "Free Revenue Recovery Check",
+    "paid_diagnostic": "Client Return Growth Check"
+  },
+  "routes": {
+    "website": "https://222emails.com/",
+    "free_revenue_recovery_check": "https://tally.so/r/44057b",
+    "client_return_growth_check": "https://tally.so/r/D4jM5N",
+    "growth_check_payment": "https://buy.stripe.com/8x2bJ11A73aq8Gc8kQeME0l"
+  },
+  "verified_payment": {
+    "stripe_payment_link_id": "plink_1UFXqeFIDOkAVbvURQ1zv8n7",
+    "currency": "GBP",
+    "amount_pence": 19700,
+    "product_name": "222Emails Client Return Growth Check",
+    "offer_metadata": "client_return_growth_check",
+    "guarantee_metadata": "985_opportunity_guarantee"
+  },
+  "retired_or_noncanonical_routes": {
+    "https://tally.so/r/xXbKDG": {
+      "status": "closed",
+      "reason": "Older route was assigned to Growth Check in August context but its live content later became a Free Revenue Recovery Check clone with mismatched Growth Check metadata. Latest Drive master now points the paid Growth Check to D4jM5N.",
+      "replacement": "https://tally.so/r/D4jM5N"
+    },
+    "https://tally.so/r/68gpyN": {
+      "status": "closed",
+      "reason": "Non-canonical aesthetics Fit Check / Challenge test route. Its two submissions were explicit internal synthetic tests and no current repo route references it.",
+      "replacement": "https://tally.so/r/44057b"
+    }
+  },
+  "operating_rules": [
+    "Do not use Client Return Fit Check as current public offer naming.",
+    "Do not use Retention Lab as a current public brand or channel identity.",
+    "Do not require or keyword-gate a call to access the Free Revenue Recovery Check.",
+    "Preserve historical records rather than rewriting past published/audit evidence.",
+    "Do not change operational support forms such as onboarding, evidence intake, results capture or client update merely because Tally list names are ambiguous.",
+    "Website production is not yet updated until Netlify production publish authority is restored and the live domain passes smoke tests."
+  ]
+}
