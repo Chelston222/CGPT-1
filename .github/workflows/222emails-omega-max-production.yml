@@ -56,13 +56,19 @@ jobs:
           grep -R -q 'Free Revenue Recovery Check' dist/assets
           grep -R -q 'Client Return System' dist/assets
           grep -R -q 'Existing tools first' dist/assets
+          grep -R -q 'Evidence-led diagnosis' dist/assets
           grep -q 'Great Harwood' dist/index.html
           grep -q 'OAI-SearchBot' dist/robots.txt
           grep -q 'Retention Marketing Lancashire' dist/retention-marketing-lancashire/index.html
+          grep -q 'Illustrative rate, not a benchmark' dist/client-return-opportunity-calculator/index.html
           ! grep -R -q 'RecoveryDashboard' dist/assets
           ! grep -R -q 'Start your free Fit Check' dist/assets
           ! grep -R -q '61/100' dist/assets
           ! grep -R -q 'client-return-fit-check' dist/index.html
+          ! grep -R -q 'Human-reviewed' src index.html public
+          ! grep -R -q 'Retention Lab' src index.html public
+          grep -R -q 'utm_source' src/main.tsx
+          grep -R -q 'sessionStorage' src/main.tsx
           grep -q '/fit-check /revenue-recovery-check 301' dist/_redirects
 
       - name: Install Netlify CLI
@@ -93,6 +99,7 @@ jobs:
           test "$code" = "200" || { echo "Legacy redirect failed: $code"; exit 1; }
           curl -fsSL --retry 4 "$DRAFT_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
           curl -fsSL --retry 4 "$DRAFT_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
+          curl -fsSL --retry 4 "$DRAFT_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
           curl -fsSL --retry 4 "$DRAFT_URL/privacy/" | grep -q 'How 222Emails collects and uses personal data'
 
       - name: Publish verified build to production
@@ -118,6 +125,7 @@ jobs:
           done
           curl -fsSL --retry 6 "$PROD_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
           curl -fsSL --retry 6 "$PROD_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
+          curl -fsSL --retry 6 "$PROD_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
 
       - name: Release summary
         run: |
