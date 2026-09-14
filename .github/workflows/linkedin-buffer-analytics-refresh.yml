@@ -1,0 +1,64 @@
+name: LinkedIn Buffer Analytics Refresh
+
+on:
+  schedule:
+    - cron: '23 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: linkedin-buffer-analytics-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out production code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build Buffer analytics snapshot
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID }}
+          BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
+          BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
+        run: node scripts/linkedin-buffer-analytics.mjs /tmp/linkedin-buffer-analytics
+
+      - name: Publish data branch without touching Netlify production
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --exit-code --heads origin buffer-analytics-data >/dev/null 2>&1; then
+            git fetch origin buffer-analytics-data
+            git switch buffer-analytics-data
+            git rm -r --ignore-unmatch apps/linkedin-review/data >/dev/null 2>&1 || true
+          else
+            git switch --orphan buffer-analytics-data
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          mkdir -p apps/linkedin-review/data
+          cp -R /tmp/linkedin-buffer-analytics/. apps/linkedin-review/data/
+          touch .no-netlify-production-deploy
+          git add apps/linkedin-review/data .no-netlify-production-deploy
+
+          if git diff --cached --quiet; then
+            echo "Analytics snapshot unchanged. No data commit needed."
+            exit 0
+          fi
+
+          git commit -m "Refresh LinkedIn Buffer analytics data"
+          git push origin buffer-analytics-data
