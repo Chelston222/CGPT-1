@@ -1,0 +1,62 @@
+name: 222Emails Authority Preview
+
+on:
+  pull_request:
+    paths:
+      - 'apps/222emails-omega-max/**'
+      - '.github/workflows/222emails-authority-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NETLIFY_SITE_ID: fc7ccb38-7e6d-4a15-83bc-88bd84ea5687
+
+jobs:
+  draft-preview:
+    runs-on: ubuntu-24.04
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify draft deployment credential
+        run: test -n "$NETLIFY_AUTH_TOKEN" || { echo 'NETLIFY_AUTH_TOKEN is missing'; exit 2; }
+      - name: Build
+        working-directory: apps/222emails-omega-max
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli@latest
+      - name: Deploy isolated draft only
+        working-directory: apps/222emails-omega-max
+        run: |
+          set -euo pipefail
+          netlify deploy --dir=dist --no-build --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="PR ${GITHUB_EVENT_PULL_REQUEST_NUMBER:-manual} authority preview" --json > /tmp/draft.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const j=JSON.parse(fs.readFileSync('/tmp/draft.json','utf8'));
+          const url=j.deploy_url||j.deployUrl||j.url;
+          if(!url) process.exit(1);
+          fs.appendFileSync(process.env.GITHUB_ENV,`DRAFT_URL=${url}\n`);
+          console.log(`DRAFT_URL=${url}`);
+          NODE
+      - name: Smoke test draft authority routes
+        run: |
+          set -euo pipefail
+          for path in / /revenue-recovery-check /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /robots.txt /sitemap.xml /llms.txt; do
+            code=$(curl -L --retry 5 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${DRAFT_URL}${path}")
+            test "$code" = "200" || { echo "Draft ${path} returned ${code}"; exit 1; }
+          done
+          curl -fsSL --retry 5 "$DRAFT_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
+          curl -fsSL --retry 5 "$DRAFT_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
+          curl -fsSL --retry 5 "$DRAFT_URL/client-return-opportunity-calculator/" | grep -q 'mathematical scenarios, not forecasts or promises'
+      - name: Preview summary
+        run: |
+          echo "222Emails isolated preview passed smoke tests."
+          echo "Draft: ${DRAFT_URL}"
