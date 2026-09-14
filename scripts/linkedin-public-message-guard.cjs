@@ -5,13 +5,14 @@ function normalise(value) {
 }
 
 function publicText(queuePost = {}) {
+  const copyValues = Object.values(queuePost.copy || {}).filter(Boolean);
   const channelCopy = Object.values(queuePost.copyByTarget || {}).filter(Boolean);
   return [
     queuePost.title,
     queuePost.documentTitle,
     queuePost.mediaAlt,
     queuePost.mediaAltText,
-    queuePost.copy?.default,
+    ...copyValues,
     ...channelCopy,
   ].map(normalise).filter(Boolean).join('\n\n');
 }
