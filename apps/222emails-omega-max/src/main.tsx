@@ -3,6 +3,35 @@ import { createRoot } from 'react-dom/client';
 import './styles.css';
 
 const TALLY_URL = 'https://tally.so/r/44057b';
+const ATTRIBUTION_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ref'];
+
+function getAttributionParams() {
+  const params = new URLSearchParams();
+  const current = new URLSearchParams(window.location.search);
+
+  let referrer: URL | null = null;
+  try {
+    if (document.referrer) {
+      const candidate = new URL(document.referrer);
+      if (candidate.origin === window.location.origin) referrer = candidate;
+    }
+  } catch {
+    referrer = null;
+  }
+
+  ATTRIBUTION_KEYS.forEach((key) => {
+    const value = current.get(key) || referrer?.searchParams.get(key) || sessionStorage.getItem(`tte_${key}`);
+    if (value) {
+      params.set(key, value);
+      sessionStorage.setItem(`tte_${key}`, value);
+    }
+  });
+
+  const firstLanding = sessionStorage.getItem('tte_first_landing') || referrer?.pathname || window.location.pathname;
+  sessionStorage.setItem('tte_first_landing', firstLanding);
+  params.set('landing_page', firstLanding);
+  return params;
+}
 
 function setMeta(title: string, description: string, canonical: string) {
   document.title = title;
@@ -99,8 +128,8 @@ function Journey() {
 
 function Home() {
   useEffect(() => setMeta(
-    '222Emails | Client Return Systems for Appointment-Led Businesses',
-    '222Emails builds turnkey Client Return Systems for appointment-led businesses, helping tighten follow-up, rebooking, client reactivation and revenue recovery across Lancashire and the UK.',
+    'Client Return Systems & Retention Marketing | 222Emails',
+    '222Emails builds turnkey Client Return Systems for appointment-led businesses, improving follow-up, rebooking, client reactivation and revenue recovery across Lancashire and the UK.',
     'https://222emails.com/'
   ), []);
 
@@ -115,7 +144,7 @@ function Home() {
             <a className="button primary" href="/revenue-recovery-check">Get my Free Revenue Recovery Check</a>
             <a className="text-link" href="#how-it-works">See the system</a>
           </div>
-          <div className="trust-line"><span>Based in Great Harwood, Lancashire</span><span>Founder-led</span><span>Human-reviewed</span><span>No mandatory discovery call</span></div>
+          <div className="trust-line"><span>Based in Great Harwood, Lancashire</span><span>Founder-led</span><span>Evidence-led diagnosis</span><span>No mandatory discovery call</span></div>
         </div>
         <SystemPreview />
       </div>
@@ -201,15 +230,15 @@ function Home() {
 
     <section id="proof" className="section">
       <div className="wrap">
-        <p className="eyebrow">PROOF WITHOUT THEATRE</p>
-        <h2 className="section-title">Specific evidence beats a made-up percentage.</h2>
-        <p className="section-copy">222Emails is still building the permission-cleared commercial proof base for this appointment-led offer. Until a result is verified and publishable, we show what can be proven without upgrading capability into a claim.</p>
+        <p className="eyebrow">CAPABILITY + EVIDENCE</p>
+        <h2 className="section-title">A strong return system should be inspectable before it is impressive.</h2>
+        <p className="section-copy">The current public evidence shows how 222Emails builds and governs the work. Appointment-led commercial outcomes are published only when permission and event evidence support them.</p>
         <div className="proof-grid">
           <article><span className="proof-label">CAPABILITY</span><h3>Klaviyo Deliverability certified</h3><p>Relevant platform competence for lifecycle and retention work, presented as capability evidence rather than client revenue proof.</p></article>
           <article><span className="proof-label">DELIVERY STANDARD</span><h3>System architecture, not isolated copy</h3><p>Journeys include triggers, stop conditions, ownership, handoffs, permissions, QA, reporting and documentation.</p></article>
-          <article><span className="proof-label">EVIDENCE STANDARD</span><h3>Verified, estimated, illustrative or unknown</h3><p>Commercial evidence is labelled. Illustrative system maps are not passed off as live client dashboards.</p></article>
+          <article><span className="proof-label">PROOF CAPTURE</span><h3>Evidence is designed in from day one</h3><p>Baselines, launch state, events, booking outcomes, attribution limits and permission status can be recorded so useful results become evidence rather than anecdotes.</p></article>
         </div>
-        <div className="proof-next"><strong>What gets added next:</strong><span>Permission-cleared appointment-led case studies, on-time implementation evidence and event-backed commercial outcomes as soon as they meet the evidence standard.</span></div>
+        <div className="proof-next"><strong>Current proof boundary:</strong><span>Appointment-led revenue outcomes are not presented as public proof until they are verified and permission-cleared.</span></div>
       </div>
     </section>
 
@@ -228,7 +257,7 @@ function Home() {
 
     <section className="local-band section">
       <div className="wrap two-col">
-        <div><p className="eyebrow light">LOCAL ROOTS, UK DELIVERY</p><h2>Based in Great Harwood. Built to become Lancashire's clearest appointment-retention specialist.</h2></div>
+        <div><p className="eyebrow light">LOCAL ROOTS, UK DELIVERY</p><h2>Based in Great Harwood. Built for appointment-led businesses across Lancashire and the UK.</h2></div>
         <div><p>222Emails is based in Great Harwood, Lancashire and serves appointment-led businesses across Blackburn, Accrington, Hyndburn, wider Lancashire and the UK. Work can be delivered remotely, so geography does not limit the system.</p><a className="button light-button" href="/retention-marketing-lancashire/">Retention marketing in Lancashire</a></div>
       </div>
     </section>
@@ -238,7 +267,7 @@ function Home() {
         <p className="eyebrow">THE OFFER PATH</p>
         <h2 className="section-title">Start with diagnosis. Pay for depth only when the evidence justifies it.</h2>
         <div className="offer-grid offer-grid-four">
-          <article className="offer featured"><span>START HERE</span><h3>Free Revenue Recovery Check</h3><p>A focused, human-reviewed first diagnosis of the strongest identifiable issue and the first sensible next step.</p><strong>Free</strong><a className="button primary" href="/revenue-recovery-check">Start free</a></article>
+          <article className="offer featured"><span>START HERE</span><h3>Free Revenue Recovery Check</h3><p>A focused, evidence-led first diagnosis of the strongest identifiable issue and the first sensible next step.</p><strong>Free</strong><a className="button primary" href="/revenue-recovery-check">Start free</a></article>
           <article className="offer"><span>DEEPER DIAGNOSIS</span><h3>Client Return Growth Check</h3><p>Evidence-led diagnosis when the opportunity deserves deeper investigation before implementation.</p><strong>£197</strong><p className="small-note">Recommended only when the initial finding justifies it.</p></article>
           <article className="offer"><span>IMPLEMENTATION</span><h3>7-Day Client Return System Sprint</h3><p>Install two focused repeat-booking or reactivation assets within the agreed scope, subject to access, readiness and approvals.</p><strong>£997</strong><p className="small-note">Scope and dependencies are agreed before the seven-working-day build begins.</p></article>
           <article className="offer"><span>ONGOING</span><h3>Optimisation</h3><p>Monitor, repair, test and improve suitable live systems, including Revenue Recovery Watch where scoped.</p><strong>£595/mo</strong><p className="small-note">Prescribed after diagnosis or implementation when ongoing work is justified.</p></article>
@@ -248,7 +277,7 @@ function Home() {
 
     <section className="section founder-section-wrap">
       <div className="wrap two-col founder-section">
-        <div><p className="eyebrow">FOUNDER-LED</p><h2>No junior handoff. No generic agency bundle.</h2></div>
+        <div><p className="eyebrow">FOUNDER-LED</p><h2>Founder-led delivery. No generic agency bundle.</h2></div>
         <div><p>222Emails is a founder-led client return systems practice. The job is deliberately narrow: find where the journey is leaking, use the existing stack where sensible, build the smallest useful recovery system, document it properly and make the next action clear.</p><p>The goal is not to make a client permanently dependent on 222Emails. The goal is to leave behind a system the business can understand, operate and improve.</p><a className="text-link" href="/about-222emails/">About 222Emails and Chelston →</a></div>
       </div>
     </section>
@@ -274,11 +303,14 @@ function Home() {
 function RevenueRecoveryCheck() {
   useEffect(() => setMeta(
     'Free Revenue Recovery Check | 222Emails',
-    'A human-reviewed diagnostic for appointment-led businesses. Find the strongest identifiable revenue-recovery issue and the first sensible next step.',
+    'An evidence-led diagnostic for appointment-led businesses. Find the strongest identifiable revenue-recovery issue and the first sensible next step.',
     'https://222emails.com/revenue-recovery-check'
   ), []);
 
-  const formUrl = `${TALLY_URL}?landing_page=${encodeURIComponent(window.location.pathname)}&cta_location=revenue_recovery_check_page&form_version=2026-09-14`;
+  const attribution = getAttributionParams();
+  attribution.set('cta_location', 'revenue_recovery_check_page');
+  attribution.set('form_version', '2026-09-14');
+  const formUrl = `${TALLY_URL}?${attribution.toString()}`;
 
   return <Shell>
     <section className="rrc-hero section">
@@ -287,7 +319,7 @@ function RevenueRecoveryCheck() {
           <p className="eyebrow">FREE REVENUE RECOVERY CHECK</p>
           <h1>Find the strongest leak in the journey you already paid to create.</h1>
           <p className="hero-copy">For appointment-led businesses that want a clearer view of what may be happening after an enquiry arrives or a client finishes their appointment.</p>
-          <ul className="check-list"><li>About 3 minutes to start</li><li>Human-reviewed</li><li>No platform access required</li><li>No mandatory discovery call</li><li>No obligation to buy</li></ul>
+          <ul className="check-list"><li>About 3 minutes to start</li><li>Evidence-led diagnosis</li><li>No platform access required</li><li>No mandatory discovery call</li><li>No obligation to buy</li></ul>
         </div>
         <div className="rrc-summary"><h2>What you receive</h2><ol><li>The strongest identifiable issue from the information provided</li><li>Why that issue matters commercially</li><li>Any material unknowns that limit certainty</li><li>The first sensible move we would recommend</li><li>An honest view on whether paid work appears justified</li></ol><p className="boundary">This is a focused diagnostic, not a disguised consultancy project and not a promise of recovered revenue.</p></div>
       </div>
@@ -307,7 +339,7 @@ function RevenueRecoveryCheck() {
         <p className="section-copy">The form opens securely in Tally. Your diagnostic submission does not automatically subscribe you to marketing.</p>
         <div className="form-card">
           <a className="button primary large" href={formUrl} target="_blank" rel="noreferrer">Start my Free Revenue Recovery Check</a>
-          <p>Prefer a direct link? <a href={TALLY_URL} target="_blank" rel="noreferrer">Open the form here.</a></p>
+          <p>Prefer a direct link? <a href={formUrl} target="_blank" rel="noreferrer">Open the form here.</a></p>
           <small>Do not include passwords, payment details or unnecessary sensitive personal information.</small>
         </div>
       </div>
