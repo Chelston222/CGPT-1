@@ -1,0 +1,164 @@
+name: Stage approved Notion reserve to governed LinkedIn queue
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: linkedin-notion-reserve-stage
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    if: startsWith(github.event.issue.title, '[STAGE LINKEDIN RESERVE]') && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out governed queue
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Require Notion credential
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$NOTION_API_KEY" || { echo 'NOTION_API_KEY is required for the reserve bridge'; exit 2; }
+
+      - name: Build exact review-only reserve candidate
+        uses: actions/github-script@v7
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const bridge = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-reserve-bridge.cjs'));
+            const { fetchNotionPage } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-quality-gate.cjs'));
+            const { preflightOne } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-media-preflight.cjs'));
+            const { postBody } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = context.issue.number;
+            const body = String(context.payload.issue.body || '');
+            const raw = body.match(/^NOTION_PAGE:\s*(\S+)\s*$/mi)?.[1] || '';
+            const pageMatch = raw.match(/([0-9a-f]{32})/i) || raw.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+            if (!pageMatch) throw new Error('Issue body must contain NOTION_PAGE: <Notion page URL or ID>.');
+            const pageId = bridge.normalisePageId(pageMatch[1]);
+            const now = Date.parse(context.payload.issue.created_at || new Date().toISOString());
+            const targetFile = path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/qa-replenishment-notion-reserve.json');
+
+            try {
+              const first = await fetchNotionPage(pageId, process.env.NOTION_API_KEY, fetch);
+              const eligibility = bridge.evaluateReserveEligibility(first, now);
+              if (!eligibility.pass) throw new Error(`Reserve row is not eligible: ${eligibility.reasons.join('; ')}`);
+
+              const proof = await preflightOne({ url: eligibility.snapshot.mediaUrl, fieldName: 'MEDIA_URL', kind: 'image' }, fetch);
+              const finalUrl = bridge.validateStableMediaUrl(proof.url);
+              if (finalUrl !== eligibility.snapshot.mediaUrl) throw new Error('Media URL redirected during staging. Use the stable final direct URL in Notion, then restage.');
+
+              const candidate = bridge.buildCandidate(first, { bytes: proof.bytes, sha256: proof.sha256 }, now);
+              const second = await fetchNotionPage(pageId, process.env.NOTION_API_KEY, fetch);
+              const liveCandidate = bridge.buildCandidate(second, { bytes: proof.bytes, sha256: proof.sha256 }, now);
+              if (bridge.stableCandidateFingerprint(candidate) !== bridge.stableCandidateFingerprint(liveCandidate)) {
+                throw new Error('Notion row changed during staging. No queue write was made. Review the live row and retry.');
+              }
+
+              let payload = { schemaVersion: 1, generatedAt: null, source: 'notion_reserve_bridge', posts: [] };
+              if (fs.existsSync(targetFile)) payload = JSON.parse(fs.readFileSync(targetFile, 'utf8'));
+              const merged = bridge.mergeCandidate(payload, candidate);
+              const nextPayload = { ...merged.payload, generatedAt: merged.changed ? new Date().toISOString() : payload.generatedAt, source: 'notion_reserve_bridge' };
+              if (merged.changed) fs.writeFileSync(targetFile, `${JSON.stringify(nextPayload, null, 2)}\n`);
+
+              fs.writeFileSync('/tmp/notion-reserve-stage.json', JSON.stringify({ pageId, candidate, media: proof, changed: merged.changed, reason: merged.reason, approvalBody: postBody(candidate) }, null, 2));
+            } catch (error) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: issueNumber, body: `❌ Notion reserve staging failed closed.\n\n${error.message}\n\nNo publication approval was created by this workflow.` });
+              throw error;
+            }
+
+      - name: Commit governed candidate when changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- apps/linkedin-review/qa-replenishment-notion-reserve.json; then
+            echo 'Exact replay: governed queue file is unchanged.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/linkedin-review/qa-replenishment-notion-reserve.json
+          git commit -m 'Stage approved Notion reserve candidate'
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Reconcile live Notion row and write staging evidence
+        uses: actions/github-script@v7
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const bridge = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-reserve-bridge.cjs'));
+            const { fetchNotionPage } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-quality-gate.cjs'));
+            const result = JSON.parse(fs.readFileSync('/tmp/notion-reserve-stage.json', 'utf8'));
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = context.issue.number;
+
+            async function patchNotion(properties) {
+              const response = await fetch(`https://api.notion.com/v1/pages/${result.pageId}`, {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${process.env.NOTION_API_KEY}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ properties }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              if (!response.ok) throw new Error(`Notion writeback failed (${response.status}): ${payload.message || 'unknown error'}`);
+              return payload;
+            }
+
+            try {
+              const live = await fetchNotionPage(result.pageId, process.env.NOTION_API_KEY, fetch);
+              const rebuilt = bridge.buildCandidate(live, { bytes: result.media.bytes, sha256: result.media.sha256 }, Date.parse(context.payload.issue.created_at));
+              if (bridge.stableCandidateFingerprint(rebuilt) !== bridge.stableCandidateFingerprint(result.candidate)) {
+                await patchNotion({
+                  'Bridge Status': { select: { name: 'Drifted' } },
+                  'Sync Error': { rich_text: [{ type: 'text', text: { content: 'Live Notion row changed after governed queue staging. Publication remains blocked until a new revision is reviewed and restaged.' } }] },
+                  'Last Sync': { date: { start: new Date().toISOString() } },
+                });
+                throw new Error('Live Notion row drifted after repository staging. The staged candidate cannot pass the live dispatch gate.');
+              }
+
+              await patchNotion({
+                'Media SHA256': { rich_text: [{ type: 'text', text: { content: result.candidate.mediaSha256 } }] },
+                'Media Bytes': { number: result.candidate.mediaBytes },
+                'Bridge Fingerprint': { rich_text: [{ type: 'text', text: { content: result.candidate.bridgeFingerprint } }] },
+                'Bridge Status': { select: { name: 'Waiting Owner Approval' } },
+                'Sync Error': { rich_text: [] },
+                'Last Sync': { date: { start: new Date().toISOString() } },
+              });
+
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issueNumber,
+                body: [
+                  '✅ Exact Notion reserve revision staged into the governed review-only queue.', '',
+                  `- Queue item: \`${result.candidate.id}@${result.candidate.revision}\``,
+                  `- Bridge fingerprint: \`${result.candidate.bridgeFingerprint}\``,
+                  `- Media: ${result.candidate.mediaBytes} bytes / SHA-256 \`${result.candidate.mediaSha256}\``,
+                  `- Replay result: **${result.reason}**`, '',
+                  '**This is not publication approval.** Buffer remains unreachable until the repository owner separately creates an `[APPROVED LINKEDIN]` issue whose body exactly matches the locked request below.', '',
+                  '```text', result.approvalBody, '```',
+                ].join('\n'),
+              });
+              await github.rest.issues.update({ owner, repo, issue_number: issueNumber, state: 'closed' });
+            } catch (error) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: issueNumber, body: `❌ Reserve staging reconciliation failed closed.\n\n${error.message}\n\nNo publication approval was created. The live Notion gate prevents dispatch until this is reconciled.` }).catch(() => {});
+              throw error;
+            }
