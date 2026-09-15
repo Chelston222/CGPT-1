@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "batchId": "founder-bonus-2026-09-13-b-recovery-v2",
+  "generatedAt": "2026-09-15T20:20:00+01:00",
+  "windowStart": "2026-09-20",
+  "windowEnd": "2026-09-26",
+  "reason": "Minimal recovery after 22 September reached the strategic three-personal-post daily ceiling. Preserve already Buffer-accepted founder placements on 20 and 21 September and all three accepted context-pass placements on 22 September. Move only the unaccepted founder-photo-10 placement to the next verified free founder slot.",
+  "posts": [
+    {
+      "id": "tte-founder-photo-10",
+      "revision": 2,
+      "scheduledAt": {
+        "personal": "2026-09-23T13:15:00+01:00"
+      }
+    }
+  ]
+}
