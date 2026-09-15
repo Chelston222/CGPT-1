@@ -86,6 +86,7 @@ jobs:
           node --test tests/linkedin-notion-quality-gate.test.cjs
           node --test tests/linkedin-notion-reserve-bridge.test.cjs
           node --test tests/linkedin-notion-reserve-quality-gate.test.cjs
+          node --test tests/linkedin-notion-reserve-authority.test.cjs
           node --test tests/linkedin-buffer-capacity.test.cjs
           node --test tests/linkedin-buffer-acceptance-ledger.test.cjs
           node --test tests/linkedin-hardening-static.test.cjs
