@@ -9,16 +9,20 @@ on:
       - '.github/workflows/linkedin-pdf-intake.yml'
       - '.github/workflows/linkedin-pdf-share-now.yml'
       - '.github/workflows/linkedin-publication-verifier.yml'
+      - '.github/workflows/linkedin-notion-reserve-stage.yml'
       - 'scripts/linkedin-imap-*.mjs'
       - 'scripts/linkedin-imap-*.cjs'
       - 'scripts/linkedin-pdf-intake.cjs'
       - 'scripts/linkedin-review-core.cjs'
       - 'scripts/linkedin-media-preflight.cjs'
       - 'scripts/linkedin-notion-quality-gate.cjs'
+      - 'scripts/linkedin-notion-reserve-bridge.cjs'
       - 'scripts/linkedin-buffer-*.cjs'
+      - 'apps/linkedin-review/qa-replenishment-notion-reserve.json'
       - 'tests/linkedin-*.test.cjs'
       - 'docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md'
       - 'docs/LINKEDIN_PDF_INTAKE.md'
+      - 'docs/LINKEDIN_NOTION_RESERVE_BRIDGE.md'
   push:
     branches: [main]
     paths:
@@ -28,16 +32,20 @@ on:
       - '.github/workflows/linkedin-pdf-intake.yml'
       - '.github/workflows/linkedin-pdf-share-now.yml'
       - '.github/workflows/linkedin-publication-verifier.yml'
+      - '.github/workflows/linkedin-notion-reserve-stage.yml'
       - 'scripts/linkedin-imap-*.mjs'
       - 'scripts/linkedin-imap-*.cjs'
       - 'scripts/linkedin-pdf-intake.cjs'
       - 'scripts/linkedin-review-core.cjs'
       - 'scripts/linkedin-media-preflight.cjs'
       - 'scripts/linkedin-notion-quality-gate.cjs'
+      - 'scripts/linkedin-notion-reserve-bridge.cjs'
       - 'scripts/linkedin-buffer-*.cjs'
+      - 'apps/linkedin-review/qa-replenishment-notion-reserve.json'
       - 'tests/linkedin-*.test.cjs'
       - 'docs/222EMAILS_LINKEDIN_PDF_CAROUSEL_ULTRA_PLAYBOOK.md'
       - 'docs/LINKEDIN_PDF_INTAKE.md'
+      - 'docs/LINKEDIN_NOTION_RESERVE_BRIDGE.md'
   workflow_dispatch:
 
 permissions:
@@ -62,6 +70,7 @@ jobs:
           node --check scripts/linkedin-review-core.cjs
           node --check scripts/linkedin-media-preflight.cjs
           node --check scripts/linkedin-notion-quality-gate.cjs
+          node --check scripts/linkedin-notion-reserve-bridge.cjs
           node --check scripts/linkedin-buffer-capacity.cjs
           node --check scripts/linkedin-buffer-acceptance-ledger.cjs
       - name: Deterministic workflow contract tests
@@ -75,6 +84,10 @@ jobs:
           node --test tests/linkedin-review-core.test.cjs
           node --test tests/linkedin-media-preflight.test.cjs
           node --test tests/linkedin-notion-quality-gate.test.cjs
+          node --test tests/linkedin-notion-reserve-bridge.test.cjs
+          node --test tests/linkedin-notion-reserve-quality-gate.test.cjs
+          node --test tests/linkedin-notion-reserve-authority.test.cjs
+          node --test tests/linkedin-notion-reserve-workflow-static.test.cjs
           node --test tests/linkedin-buffer-capacity.test.cjs
           node --test tests/linkedin-buffer-acceptance-ledger.test.cjs
           node --test tests/linkedin-hardening-static.test.cjs
