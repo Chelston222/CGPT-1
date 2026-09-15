@@ -135,6 +135,7 @@ function postBody(post) {
     `MODE: ${post.mode}`,
     'CONTENT_QA: PASS',
   ];
+  if (post.sourceType === 'notion_reserve') lines.push('NOTION_LIVE_GATE: REQUIRED');
   const schedules = Object.entries(post.scheduledAt || {});
   if (schedules.length === 1) lines.push(`SCHEDULE_AT: ${schedules[0][1]}`);
   else schedules.forEach(([target, value]) => lines.push(`SCHEDULE_AT_${target.toUpperCase()}: ${value}`));
