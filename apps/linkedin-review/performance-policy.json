@@ -2,7 +2,9 @@
   "schemaVersion": 2,
   "purpose": "Use mature, verified LinkedIn performance evidence to prioritise future approved 222Emails content without overfitting small samples, stale analytics, recent repetition or vanity engagement.",
   "queueTargetPerChannel": 8,
+  "automaticReplenishmentCeilingPerChannel": 8,
   "queueMaximumPerChannel": 10,
+  "reservedInstantSlotsPerChannel": 2,
   "lookaheadDays": 14,
   "minimumTargetRecordsForLocalModel": 3,
   "localModelFullStrengthRecords": 20,
@@ -48,6 +50,8 @@
     "Blend channel-specific evidence with the combined model until the local channel has enough records to stand on its own.",
     "Penalise candidates that are too textually similar to recent posts or repeat a recently saturated category or primary trait.",
     "Do not fill a queue deficit with a candidate below the configured quality floor.",
+    "Automatic replenishment must stop at eight scheduled placements per channel. Slots nine and ten are reserved for owner-requested, timely or in-the-moment content and must never be consumed by automatic refill.",
+    "When occupancy is eight or higher, automatic replenishment must recommend zero additional placements until occupancy falls below eight.",
     "When any commercial signals are captured, give them up to 50 percent of the observed performance score so DMs, enquiries, Revenue Recovery Check progression, proposals and paid outcomes outrank vanity engagement.",
     "Keep 15 percent of recommendations available for deliberate exploration so the system does not converge prematurely.",
     "Do not auto-publish or create owner approval on the basis of a performance score alone."
