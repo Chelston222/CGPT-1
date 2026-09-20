@@ -383,8 +383,8 @@
     },
     {
       "id": "tte-founder-photo-10",
-      "revision": 1,
-      "title": "Controlled build in public",
+      "revision": 2,
+      "title": "I automated the wrong thing",
       "category": "founder_journey",
       "funnelStage": "tof",
       "targets": [
@@ -395,7 +395,7 @@
         "personal": "2026-09-22T13:15:00+01:00"
       },
       "copy": {
-        "default": "I am not particularly interested in pretending I am already where I want to be.\n\nI am not.\n\nThere is a lot I still want to build. A lot I still need to learn. A lot I need to get better at.\n\nAnd some of the targets I have set myself are probably unreasonable by normal standards.\n\nGood.\n\nI would rather spend the next few years finding out what I am capable of than make the target smaller so I can guarantee I hit it.\n\nI will show the wins.\n\nBut I want to show the misses too.\n\nIf this works, I would rather have the real journey documented than rewrite the story afterwards and pretend everything went to plan."
+        "default": "I built an automated LinkedIn system so I could stop thinking about LinkedIn every day.\n\nThen I looked at what it was actually about to post and thought: this is shit.\n\nThe system was doing its job.\n\nPosts queued.\nImages attached.\nBuffer scheduled.\nDuplicate protection working.\nSpace left for something live if it happened.\n\nThe problem was the writing.\n\nA G-Wagon photo had become another vague ambition post.\nA normal photo had become a lesson about personal branding.\nEvery messy bit of life somehow became a clean little founder moral by the end.\n\nIt was exactly the AI-flavoured LinkedIn slop I keep saying I don't want.\n\nAnd I'd built a machine that could now publish it consistently.\n\nThat was the uncomfortable bit.\n\nThe automation wasn't the problem. The standard I'd given it permission to automate was.\n\nSo I changed the system before I changed the next caption.\n\nNow a founder post needs something real underneath it. A number I'm actually chasing. Something that went wrong. A decision I'm unsure about. Something I genuinely believe. Or something I still don't know the answer to.\n\nIf the picture is the whole story, it doesn't go.\n\nIf another founder could swap their name in and post it tomorrow, it doesn't go.\n\nIf it's mostly there to make me look successful, it definitely doesn't go.\n\nThe G-Wagon post was the first test.\n\nThe old version was basically ambition, discipline, nice car.\n\nThe real thing on my mind is much less impressive:\n\nCan I make £2.5k weeks repeat?\n\nThat is the post now.\n\nI still have no idea whether this change will improve reach, engagement or leads.\n\nBut if a post flops now, at least it'll be something I actually meant."
       },
       "sourceType": "qa_replenishment",
       "status": "review",
@@ -403,7 +403,16 @@
         "status": "ready_for_human_review",
         "approvalEligible": true,
         "publishPermission": false,
-        "safeZoneQa": "pass"
+        "safeZoneQa": "pass",
+        "storyFirst": {
+          "status": "pass",
+          "randomFounder": "pass",
+          "imageOnly": "pass",
+          "statusPerformance": "pass",
+          "story": "pass",
+          "saveableStory": "pass",
+          "sourceBasis": "Chelston directly rejected the scheduled founder captions as surface-level, envy-led and AI slop, then required the LinkedIn system itself to be changed. The real current commercial tension he supplied is making £2.5k weeks repeat consistently."
+        }
       },
       "history": [
         {
@@ -411,6 +420,12 @@
           "at": "2026-09-13T14:34:36.342Z",
           "actor": "github-actions[bot]",
           "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        },
+        {
+          "state": "copy_revised",
+          "at": "2026-09-20T19:44:00Z",
+          "actor": "ChatGPT owner-authorised",
+          "note": "Revision 2 replaces generic build-in-public copy with the real 20 Sep story: the LinkedIn automation worked technically but was automating weak, AI-sounding founder captions. Story-first QA passed on Chelston-supplied context. Media and target unchanged; schedule remains governed by rev3 override."
         }
       ],
       "format": "image",
@@ -418,7 +433,8 @@
       "mediaAlt": "Chelston in Amsterdam during a founder journey and travel moment.",
       "mediaBytes": 383480,
       "mediaSha256": "7a339ec0555578aedbb73fe21870bbe068370dcfa000fa8a11a482317d87f1d8",
-      "safeZoneQa": "pass"
+      "safeZoneQa": "pass",
+      "contentRole": "founder_story"
     }
   ]
 }
