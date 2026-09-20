@@ -22,7 +22,7 @@ If commercial markers exist, downstream outcomes can contribute up to 50% of the
 
 ## Replenishment policy
 
-The live target is eight scheduled posts per LinkedIn channel, below the ten-post Buffer capacity ceiling. Recommendations use three lanes:
+The live automatic replenishment target is **eight scheduled posts per LinkedIn channel**. The Buffer capacity ceiling remains ten, so slots nine and ten are deliberately reserved for timely or owner-requested in-the-moment content. Automatic replenishment must stop at eight and must not consume those reserve slots. Recommendations use three lanes:
 
 - 60% EXPLOIT: strongest current evidence
 - 25% ADJACENT: related ideas that preserve learning momentum
@@ -47,3 +47,10 @@ Only observed actions should be recorded.
 ## Release authority
 
 The learning engine is read-only towards Buffer. It can rank already QA-eligible content and report live queue deficits. It cannot publish, reschedule, or manufacture repository-owner approval. Existing GitHub approval and Content OS release gates remain authoritative.
+
+
+## Founder-story eligibility
+
+Performance cannot rescue weak founder content. Personal founder-story and founder-photo candidates are recommendation-eligible only after the current story-first QA gate has passed: Random-founder, Image-only, Status-performance, Story and Saveable-story, grounded in real Chelston-supplied context.
+
+A queue deficit is not permission to fill a slot with a generic founder caption. If the required real event, tension, number, decision or consequence is missing, the candidate stays out of replenishment until the missing source material is supplied.
