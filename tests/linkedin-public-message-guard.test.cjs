@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const {
   assertCurrentPublicMessageGuard,
   evaluateCurrentPublicMessageGuard,
+  publicAuthorshipBoundaryReasons,
 } = require('../scripts/linkedin-public-message-guard.cjs');
 const { validateRequest } = require('../scripts/linkedin-review-core.cjs');
 
@@ -122,4 +123,36 @@ test('central validateRequest checks target-specific copy variants', () => {
     'New from 222Emails | Retention Lab.',
   ].join('\n');
   assert.throws(() => validateRequest(body, ENV), /Retention Lab/);
+});
+
+
+test('content-production disclosure fails closed while business automation remains allowed', () => {
+  const risky = evaluateCurrentPublicMessageGuard(post('I built a LinkedIn auto-posting system and keep Buffer full.'));
+  assert.equal(risky.pass, false);
+  assert.match(risky.reasons.join(' | '), /content-production|publishing machinery/i);
+
+  const allowed = evaluateCurrentPublicMessageGuard(post('Good automation stops a reminder when the client has already booked.'));
+  assert.equal(allowed.pass, true);
+});
+
+test('AI authorship of public content fails closed while operational AI discussion remains allowed', () => {
+  const risky = evaluateCurrentPublicMessageGuard(post('ChatGPT writes my LinkedIn posts and drafts the captions for me.'));
+  assert.equal(risky.pass, false);
+  assert.match(risky.reasons.join(' | '), /content-production|publishing machinery/i);
+
+  const allowed = evaluateCurrentPublicMessageGuard(post('I use AI to analyse call notes and draft internal summaries before I decide what needs action.'));
+  assert.equal(allowed.pass, true);
+});
+
+test('human-only authorship purity claims fail closed', () => {
+  const reasons = publicAuthorshipBoundaryReasons('No AI used. I wrote every word myself.');
+  assert.equal(reasons.length > 0, true);
+  assert.match(reasons.join(' | '), /human-only authorship/i);
+});
+
+test('central validateRequest blocks content-production disclosure before provider dispatch', () => {
+  assert.throws(
+    () => validateRequest(approvedBody('I built a LinkedIn auto-posting system and keep Buffer full.'), ENV),
+    /content-production|publishing machinery/i,
+  );
 });
