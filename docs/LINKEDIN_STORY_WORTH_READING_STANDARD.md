@@ -62,6 +62,18 @@ A real story should contain movement. Something happens, changes, fails, conflic
 
 If nothing materially happens, there probably is not a story yet.
 
+## Narrative architecture selector
+
+Canonical child layer: `docs/LINKEDIN_NARRATIVE_ARCHITECTURE_OS.md`.
+
+Only choose a framework after source truth and Story Worth Reading have passed. Frameworks are optional. A real story may use RAW STORY, SLAY OVERLAY, CONTRAST / GAP, FAILURE / CORRECTION, OPERATOR / BUILD-IN-PUBLIC or another truthful shape. Teaching and POV content may use their own non-story architectures.
+
+Lara Acosta's public SLAY framework is retained with attribution as an optional overlay: **Story → Lesson → Actionable Advice → You**. It is not the default and must not force a lesson, list, question or tidy resolution onto a story that does not earn one.
+
+Kleo is retained only as a creator-research-method benchmark: study structure, relative outliers and connection mechanisms; transfer the mechanism to Chelston's facts; never clone wording, persona, cadence or templates.
+
+If the framework is more visible than the story, rewrite.
+
 ## Current-truth rule
 
 The strongest founder content usually lives in the gap between:
@@ -129,6 +141,12 @@ Charlie Phillips and Yusuf may be used as structural references for:
 - readable story movement.
 
 Extract the mechanism only. Do not imitate distinctive wording, persona or cadence.
+
+## Reader handoff
+
+A question is never required. Use one only when the answer would create meaningful discussion. Do not end with a question merely because SLAY or a template suggests one.
+
+The reader handoff may instead be an implication, instruction, comparison, unresolved truth or no CTA at all.
 
 ## Relationship to the LinkedIn queue
 
