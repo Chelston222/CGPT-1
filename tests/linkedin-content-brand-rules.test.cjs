@@ -80,3 +80,19 @@ test('Story Worth Reading machine policy stays aligned with founder-content rule
   assert.match(standard, /Saveable-story test/i);
   assert.match(standard, /envy bait or success cosplay/i);
 });
+
+
+test('Narrative Architecture OS stays subordinate to source truth and Story Worth Reading', () => {
+  const narrative = fs.readFileSync(path.join(root, 'docs', 'LINKEDIN_NARRATIVE_ARCHITECTURE_OS.md'), 'utf8');
+  const policy = JSON.parse(fs.readFileSync(path.join(reviewDir, 'narrative-architecture-policy.json'), 'utf8'));
+  const patterns = JSON.parse(fs.readFileSync(path.join(reviewDir, 'creator-pattern-bank.json'), 'utf8'));
+  assert.match(narrative, /SOURCE TRUTH → STORY WORTH READING → CONTENT JOB → NARRATIVE ARCHITECTURE/i);
+  assert.match(narrative, /Story → Lesson → Actionable Advice → You/i);
+  assert.match(narrative, /question is not mandatory/i);
+  assert.match(narrative, /Kleo is a \*\*research-method benchmark\*\*/i);
+  assert.equal(policy.architectures.slay_overlay.questionRequired, false);
+  assert.equal(policy.heuristics.laraMobileHookWords.hardGate, false);
+  assert.equal(policy.externalResearch.kleoRole, 'research_method_benchmark_not_dependency');
+  assert.equal(patterns.records.find((r) => r.id === 'lara-acosta-slay').evidenceConfidence, 'primary_public_source');
+  assert.equal(patterns.records.find((r) => r.id === 'kleo-creator-research-method').evidenceConfidence, 'vendor_public_guidance');
+});
