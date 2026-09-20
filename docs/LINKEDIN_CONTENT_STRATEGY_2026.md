@@ -30,6 +30,33 @@ Do not force a visual where it weakens the post. Visuals must obey 222Emails bra
 
 A shared core idea may travel across channels, but exact duplicate distribution should be the exception. Rewrite the hook, framing and CTA for the identity publishing it. Stagger reused ideas when possible.
 
+## Founder-story operating standard
+
+Founder/photo content is not a caption-writing exercise. Start with the event, tension, contradiction, number, mistake, uncomfortable admission or unresolved problem that made the moment worth telling.
+
+Use the image as context or evidence, not as the subject by default. Do not spend the opening describing a wall, car, meal, trip or outfit unless that visible detail changes the story.
+
+Preferred raw-material order:
+1. What actually happened?
+2. What was at stake?
+3. What was uncomfortable, uncertain, surprising or different from expectation?
+4. What concrete detail or number makes the scene real?
+5. What is still unresolved?
+6. What ending is earned by the facts, even if the answer is “I do not know yet”?
+
+Good founder-story raw material includes the real attempt to make £2.5k weeks repeat consistently, a caller booking an opportunity while the sales process still has to prove itself, a system that was overbuilt before it produced revenue, a missed target, a bad week with a specific cause, or a decision that has not yet paid off.
+
+Reject generic motivation, polished hindsight, borrowed-status imagery, envy bait, forced vulnerability, fake confessions and neat morals added after the fact. A lifestyle or aspirational image is only useful when the caption anchors it to current reality rather than using the object to imply success.
+
+Use Charlie Phillips and Yusuf as structural references for strong hooks and story movement: specificity, tension, concrete scenes, numbers, candid admissions and a reason to keep reading. Do not imitate distinctive wording or persona.
+
+Three hard rejection tests apply before founder content can enter approval:
+- **Random-founder:** could another founder post this after changing the name?
+- **Image-only:** could the caption have been generated from the photo without Chelston's real context?
+- **Status-performance:** is the post primarily making Chelston look successful rather than telling something true?
+
+If any answer is yes, rewrite. If the missing ingredient is a fact only Chelston can supply, ask one precise question instead of inventing it.
+
 ## Frequency starting ranges
 
 Treat frequency as an experiment, not a quota:
