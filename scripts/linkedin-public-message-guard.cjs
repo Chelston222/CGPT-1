@@ -17,6 +17,33 @@ function publicText(queuePost = {}) {
   ].map(normalise).filter(Boolean).join('\n\n');
 }
 
+function publicAuthorshipBoundaryReasons(text) {
+  const value = String(text || '');
+  const reasons = [];
+
+  const processDisclosurePatterns = [
+    /\bauto[- ]?(?:post(?:ing|ed)?|publish(?:ing|ed)?)\b/i,
+    /\b(?:buffer|github)\b[^\n.!?]{0,90}\b(?:linkedin|post|content|publish|schedule|queue)\b/i,
+    /\b(?:linkedin|post|content|publish|schedule|queue)\b[^\n.!?]{0,90}\b(?:buffer|github)\b/i,
+    /\b(?:content|post|linkedin|caption|copy)\s+(?:queue|pipeline|workflow|replenish(?:ment)?|refill)\b/i,
+    /\b(?:ai|chatgpt|openai|claude|gemini|kleo|llm)\b[^\n.!?]{0,100}\b(?:linkedin|post|caption|content|copy|voice|publish\w*|schedul\w*)\b/i,
+    /\b(?:linkedin|post|caption|content|copy|voice|publish\w*|schedul\w*)\b[^\n.!?]{0,100}\b(?:ai|chatgpt|openai|claude|gemini|kleo|llm)\b/i,
+    /\b(?:written|generated|drafted|rewritten)\s+(?:entirely\s+)?by\s+(?:ai|chatgpt|openai|claude|gemini|kleo|an?\s+llm)\b/i,
+    /\b(?:prompt|prompt\s+chain|model)\b[^\n.!?]{0,80}\b(?:linkedin|post|caption|content|copy)\b/i,
+    /\b(?:linkedin|post|caption|content|copy)\b[^\n.!?]{0,80}\b(?:prompt|prompt\s+chain|model)\b/i,
+    /\b(?:keep|fill|refill)\s+(?:the\s+)?(?:buffer|content\s+queue)\b/i,
+    /\bqueue\s+(?:is|was|stays|remains)\s+(?:full|filled)\b/i,
+  ];
+  if (processDisclosurePatterns.some((pattern) => pattern.test(value))) {
+    reasons.push('Internal content-production or publishing machinery is disclosed in public copy');
+  }
+
+  const purityClaim = /\b(?:100%\s+human(?:-written)?|fully\s+human-written|no\s+ai\s+(?:was\s+)?used|without\s+ai|wrote\s+every\s+word\s+myself)\b/i;
+  if (purityClaim.test(value)) reasons.push('Unverified human-only authorship claim is not permitted');
+
+  return reasons;
+}
+
 function evaluateCurrentPublicMessageGuard(queuePost, options = {}) {
   const phase = options.phase || 'dispatch';
   if (phase === 'history') {
@@ -30,6 +57,7 @@ function evaluateCurrentPublicMessageGuard(queuePost, options = {}) {
   if (/\bclient return fit check\b/i.test(text)) reasons.push('Retired Client Return Fit Check naming is present');
   if (/\bretention lab\b/i.test(text)) reasons.push('Retired Retention Lab public brand is present');
   if (/\b222 Emails\b/.test(text)) reasons.push('Written company name must be 222Emails, not 222 Emails');
+  reasons.push(...publicAuthorshipBoundaryReasons(text));
 
   if (/\b(?:comment|dm|message|reply)\b[^\n.!?]{0,60}\b(?:fit(?:\s+check)?|revenue\s+recovery\s+check|recovery\s+check|rrc)\b/i.test(text)) {
     reasons.push('Keyword-gated access to the current free diagnostic is not allowed');
@@ -66,5 +94,6 @@ module.exports = {
   assertCurrentPublicMessageGuard,
   evaluateCurrentPublicMessageGuard,
   normalise,
+  publicAuthorshipBoundaryReasons,
   publicText,
 };
