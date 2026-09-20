@@ -50,12 +50,14 @@ Reject generic motivation, polished hindsight, borrowed-status imagery, envy bai
 
 Use Charlie Phillips and Yusuf as structural references for strong hooks and story movement: specificity, tension, concrete scenes, numbers, candid admissions and a reason to keep reading. Do not imitate distinctive wording or persona.
 
-Three hard rejection tests apply before founder content can enter approval:
+Five hard rejection tests apply before founder content can enter approval:
 - **Random-founder:** could another founder post this after changing the name?
 - **Image-only:** could the caption have been generated from the photo without Chelston's real context?
 - **Status-performance:** is the post primarily making Chelston look successful rather than telling something true?
+- **Story:** does something materially happen, change, fail, conflict or remain at stake?
+- **Saveable-story:** is there a tension, line or sequence worth remembering or retelling tomorrow?
 
-If any answer is yes, rewrite. If the missing ingredient is a fact only Chelston can supply, ask one precise question instead of inventing it.
+If any of the first three answers is yes, or either of the final two answers is no, rewrite. If the missing ingredient is a fact only Chelston can supply, ask one precise question instead of inventing it. This gate mirrors the live 222E Command and cannot be weakened by cadence, format or queue pressure.
 
 ## Frequency starting ranges
 
