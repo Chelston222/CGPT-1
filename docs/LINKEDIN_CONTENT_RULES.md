@@ -25,6 +25,9 @@ This is the default for Chelston's personal LinkedIn and any founder or photo-le
 
 - Start from **what actually happened**, not from what can be said about the photograph.
 - Treat the photo as context, evidence or atmosphere. Do not waste the opening by describing what the reader can already see unless that visible detail matters to the plot.
+
+- Do not reach for incidental self-focused details merely because they make the caption feel personal. The number of selfies taken, lighting, outfit, pose, wall, meal or similar trivia is not a story unless it materially changes what happened.
+- Do not turn a simple photo into a post about posting, authenticity or personal branding unless that meta-story is genuinely what happened and carries real stakes.
 - The hook should normally contain a real event, number, contradiction, admission, failure, uncomfortable truth or unresolved stake. It must be truthful and create a genuine reason to keep reading.
 - Preferred story spine: **HOOK → SCENE → FRICTION → WHAT HAPPENED → CURRENT TRUTH → EARNED ENDING**. It is a guide, not a template. Break it when the real story reads better another way.
 - Use specific current tensions instead of generic founder wisdom. Useful raw material includes trying to make **£2.5k weeks repeat consistently**, a booked call while the sales process still has to prove itself, a system that was built but did not yet produce revenue, a missed target, a bad week and exactly why it was bad, or a decision that still has an uncertain outcome.
