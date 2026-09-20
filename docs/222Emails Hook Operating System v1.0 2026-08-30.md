@@ -33,6 +33,29 @@ Specificity should be high enough for the right buyer to recognise relevance wit
 - Retention School: lesson title/opening and first teaching promise.
 - Paid ads: creative and headline/opening copy.
 
+## LinkedIn founder-story hook branch
+
+For Chelston personal founder/story posts, do not force the cross-channel buyer-callout formula onto a human story. The first impression may instead be built from a truthful event, number, contradiction, admission, failure, uncomfortable fact or unresolved stake.
+
+The governing question is: **what actually happened that makes this worth reading?**
+
+Strong founder-story hook inputs include:
+- a concrete number tied to a live goal or gap;
+- an outcome that happened, followed by what is still unproven;
+- a mistake or failed assumption;
+- a contradiction between the image and the current reality;
+- a decision with real consequences;
+- an admission that changes how the reader understands the situation.
+
+Do not use aspirational imagery as borrowed status. Do not manufacture confession, vulnerability or drama. Do not explain the photograph when the real story sits behind it.
+
+A founder-story hook must pass three tests:
+1. **Random-founder:** it should not remain equally valid after swapping Chelston's name for a random founder.
+2. **Image-only:** it should require real context beyond what can be inferred from the image.
+3. **Continuation:** the next paragraph must pay off the opening with a real scene or fact, not generic reflection.
+
+Charlie Phillips and Yusuf may be used as structural benchmark references for specificity, tension, scene-setting, numbers and candid founder storytelling. Extract the mechanism only. Do not copy distinctive wording, cadence or persona.
+
 ## Pre-test QA
 Score each candidate out of 100:
 - ICP relevance: 20
