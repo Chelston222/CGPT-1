@@ -147,29 +147,6 @@ jobs:
                 }
               }
 
-              const durableLedger = issues.find((issue) =>
-                !issue.pull_request
-                && issue.title === '[BUFFER ACCEPTANCE LEDGER] LinkedIn governed releases'
-              );
-              if (durableLedger) {
-                const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: durableLedger.number, per_page: 100 });
-                const markerPattern = /<!--\s*BUFFER_ACCEPTED\s+([^@\s]+)@(\d+):([^\s>]+)\s+bufferId=([^\s>]+)(?:\s+dueAt=([^\s>]+))?\s*-->/g;
-                for (const comment of comments) {
-                  if (comment.user?.login !== 'github-actions[bot]') continue;
-                  let match;
-                  while ((match = markerPattern.exec(String(comment.body || '')))) {
-                    ledgerEntries.push({
-                      bufferId: match[4],
-                      queueId: match[1].trim(),
-                      revision: String(match[2]).trim(),
-                      approvalIssue: durableLedger.number,
-                      acceptedDueAt: match[5] || null,
-                    });
-                  }
-                  markerPattern.lastIndex = 0;
-                }
-              }
-
               const durableLedger = selectTrustedLedgerIssue(issues, owner);
               if (!durableLedger) {
                 hardFailures.push('Trusted durable Buffer acceptance ledger does not exist.');
