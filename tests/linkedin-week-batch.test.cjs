@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { parseItems, qaReplenishmentPaths, validateWeeklyBatch, withQaReplenishment } = require('../scripts/linkedin-week-batch.cjs');
+const { parseItems, postBody, qaReplenishmentPaths, requiresStoryFirstQa, storyFirstQaPassed, validateWeeklyBatch, withQaReplenishment } = require('../scripts/linkedin-week-batch.cjs');
 
 const ENV = {
   BUFFER_API_KEY: 'test-key',
@@ -190,4 +190,49 @@ test('an explicitly approved future QA item can pass the canonical weekly gate w
   assert.equal(result.jobs.length, 1);
   assert.equal(result.jobs[0].post.id, 'tte-learning-v2-personal-01');
   assert.equal(result.jobs[0].request.contentQa, 'pass');
+});
+test('personal founder stories fail closed without the current story-first QA evidence', () => {
+  const founder = {
+    id: 'tte-founder-photo-new',
+    revision: 1,
+    category: 'founder_journey',
+    contentRole: 'founder_story',
+    targets: ['personal'],
+    mode: 'schedule',
+    scheduledAt: { personal: '2026-10-01T13:15:00+01:00' },
+    copy: { default: 'A real founder story.' },
+  };
+  assert.equal(requiresStoryFirstQa(founder), true);
+  assert.equal(storyFirstQaPassed(founder), false);
+  assert.throws(() => postBody(founder), /story-first QA pass/);
+
+  founder.qa = {
+    storyFirst: {
+      status: 'pass',
+      randomFounder: 'pass',
+      imageOnly: 'pass',
+      statusPerformance: 'pass',
+      story: 'pass',
+      saveableStory: 'pass',
+      sourceBasis: 'Chelston supplied the real event, current stake and specific operating detail.',
+    },
+  };
+  assert.equal(storyFirstQaPassed(founder), true);
+  assert.match(postBody(founder), /POST_ID: tte-founder-photo-new/);
+});
+
+test('non-founder personal posts are not forced through founder story QA', () => {
+  const post = {
+    id: 'tte-diagnostic-001',
+    revision: 1,
+    category: 'buyer_diagnostics',
+    contentRole: 'diagnosis',
+    targets: ['personal'],
+    mode: 'schedule',
+    scheduledAt: { personal: '2026-10-01T08:15:00+01:00' },
+    copy: { default: 'A diagnostic post.' },
+  };
+  assert.equal(requiresStoryFirstQa(post), false);
+  assert.equal(storyFirstQaPassed(post), true);
+  assert.match(postBody(post), /POST_ID: tte-diagnostic-001/);
 });
