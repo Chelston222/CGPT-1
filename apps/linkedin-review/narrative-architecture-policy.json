@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "effectiveDate": "2026-09-20",
   "status": "current_canonical",
   "parent": "docs/LINKEDIN_STORY_WORTH_READING_STANDARD.md",
@@ -171,5 +171,40 @@
     "slopmonster_and_chelston_originality_pass",
     "proof_and_commercial_truth_pass",
     "explicit_owner_approval"
-  ]
+  ],
+  "externalToolDataBoundary": {
+    "sensitiveSourcesRequireSeparateApproval": true,
+    "prohibitedByDefault": [
+      "confidential_client_data",
+      "private_prospect_or_customer_lists",
+      "private_call_recordings_or_transcripts",
+      "unreleased_commercial_information",
+      "credentials",
+      "personal_data"
+    ]
+  },
+  "authorityBoundary": {
+    "machineMayEnforce": [
+      "metadata",
+      "attribution",
+      "queue_state",
+      "revisions",
+      "proof_state",
+      "static_anti_template_rules"
+    ],
+    "machineCannotCertify": [
+      "genuinely_human",
+      "compelling",
+      "worth_reading"
+    ],
+    "humanAuthority": [
+      "story_worth_reading",
+      "chelston_originality",
+      "owner_approval"
+    ]
+  },
+  "changeControl": {
+    "canonicalUntil": "explicit_owner_change_or_verified_structural_defect",
+    "silentReplacementForbidden": true
+  }
 }
