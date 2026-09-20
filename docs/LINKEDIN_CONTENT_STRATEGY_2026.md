@@ -65,6 +65,18 @@ Five hard rejection tests apply before founder content can enter approval:
 
 If any of the first three answers is yes, or either of the final two answers is no, rewrite. If the missing ingredient is a fact only Chelston can supply, ask one precise question instead of inventing it. This gate mirrors the live 222E Command and cannot be weakened by cadence, format or queue pressure.
 
+## Narrative architecture and creator research
+
+The parent gate is Story Worth Reading. The child selector is `docs/LINKEDIN_NARRATIVE_ARCHITECTURE_OS.md`.
+
+Choose the content job first, then the lightest structure that fits. Do not decide “this will be a SLAY post” before identifying the real event or buyer problem.
+
+Lara Acosta's public SLAY framework is used as an attributed optional structure when a real story genuinely earns a lesson, practical action and reader handoff. Lara's public 8–10-word mobile-hook preference is a useful heuristic, not a hard word-count rule.
+
+Kleo's public creator-research method is used to study relevant creators, relative outliers, openings, body organisation, closings and connection mechanisms. Retain mechanisms in the Creator Pattern Bank, never copy wording, persona, visual identity or proprietary templates.
+
+External engagement does not certify a structure for Chelston. Our own verified commercial and audience outcomes outrank external likes or claims of virality.
+
 ## Frequency starting ranges
 
 Treat frequency as an experiment, not a quota:
@@ -105,6 +117,12 @@ Commercial metrics outrank vanity reach. Review performance by channel, format a
 Buffer post metrics may lag the source network by roughly a day. PDF/document posts also retain a native LinkedIn analytics check because Buffer's LinkedIn PDF-carousel analytics can be incomplete or unavailable.
 
 Review cohorts after enough observations rather than reacting to one post. Change the pillar, format or timing mix by no more than ten percentage points in one review cycle unless there is a clear operational failure.
+
+## Internal research assets
+
+- `apps/linkedin-review/creator-pattern-bank.json`
+- `apps/linkedin-review/narrative-architecture-policy.json`
+- `apps/linkedin-review/storytelling-policy.json`
 
 ## Current research base
 
