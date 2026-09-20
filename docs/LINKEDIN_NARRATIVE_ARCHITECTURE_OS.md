@@ -248,6 +248,16 @@ Story Worth Reading, Chelston Originality and final owner approval remain human-
 
 This OS remains canonical until Chelston explicitly changes/unfreezes it or verified live evidence exposes a structural defect. Future systems must build on the hierarchy rather than silently replace it.
 
+## Public authorship boundary
+
+Narrative selection may never choose the internal content-production stack as the public story merely because it is operationally interesting.
+
+Blocked public-story material includes AI/LLM authorship, prompts, generated captions, auto-posting, publishing queues, Buffer/GitHub/Notion release mechanics and bot/refill logic.
+
+Business AI/automation is still a valid topic when it concerns genuine operations, research, analysis, client systems or service delivery rather than the authorship/publishing machinery of the post itself.
+
+If directly asked about authorship, answer truthfully and narrowly. Do not volunteer tooling and do not make false human-only authorship claims.
+
 ## Performance hierarchy
 
 Optimise narrative structures against:
