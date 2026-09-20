@@ -47,6 +47,8 @@ This is the default for Chelston's personal LinkedIn and any founder or photo-le
 - Charlie Phillips and Yusuf are useful structural references for specific, tension-led hooks, concrete scenes, numbers, candid admissions and readable story movement. Use the mechanism, never their distinctive wording or persona.
 
 - A founder or photo-led item must not be approved merely because it is polished, visually strong or scheduled. It must pass the Story Worth Reading release tests first.
+- After the Story Worth Reading gate, use `docs/LINKEDIN_NARRATIVE_ARCHITECTURE_OS.md` to choose the lightest useful structure. SLAY is optional, attributed to Lara Acosta, and may never force a lesson, list, question or resolution.
+- Kleo is a research-method benchmark only. It is not canonical memory, publishing authority or a substitute for Chelston's source truth.
 
 ## Queue reserve
 
