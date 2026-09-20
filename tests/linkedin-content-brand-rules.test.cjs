@@ -66,3 +66,17 @@ test('main Triple Two Emails Page does not self-tag', () => {
   assert.deepEqual(tripleTwoPageAnnotations(channel), []);
   assert.doesNotMatch(buildCreatePostMutation(channel, 'schedule'), /annotations:/);
 });
+
+
+test('Story Worth Reading machine policy stays aligned with founder-content rules', () => {
+  const policy = JSON.parse(fs.readFileSync(path.join(reviewDir, 'storytelling-policy.json'), 'utf8'));
+  const standard = fs.readFileSync(path.join(root, 'docs', 'LINKEDIN_STORY_WORTH_READING_STANDARD.md'), 'utf8');
+  assert.equal(policy.queue.automaticRefillTargetPerChannel, 8);
+  assert.equal(policy.queue.bufferCeilingPerChannel, 10);
+  assert.equal(policy.queue.reservedInstantSlotsPerChannel, 2);
+  assert.equal(policy.missingFactRule, 'ask_one_precise_question_never_invent');
+  assert.match(standard, /WHAT HAPPENED\?/);
+  assert.match(standard, /current truth \+ specificity \+ tension \+ unfinished business/i);
+  assert.match(standard, /Saveable-story test/i);
+  assert.match(standard, /envy bait or success cosplay/i);
+});
