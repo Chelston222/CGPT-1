@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "effectiveDate": "2026-09-20",
+  "status": "current_canonical",
+  "parent": "docs/LINKEDIN_STORY_WORTH_READING_STANDARD.md",
+  "sequence": [
+    "source_truth",
+    "story_worth_reading",
+    "content_job",
+    "narrative_architecture",
+    "hook_os",
+    "voice_slopmonster",
+    "proof_commercial_truth",
+    "owner_approval",
+    "buffer",
+    "verified_performance_learning"
+  ],
+  "contentJobs": [
+    "founder_story",
+    "operator_build_in_public",
+    "teaching",
+    "diagnostic",
+    "observation_pov",
+    "proof_outcome",
+    "offer_route"
+  ],
+  "architectures": {
+    "raw_story": {
+      "eligible": [
+        "founder_story"
+      ],
+      "steps": [
+        "event",
+        "scene",
+        "friction",
+        "what_happened",
+        "current_truth",
+        "earned_ending"
+      ],
+      "lessonRequired": false
+    },
+    "slay_overlay": {
+      "attribution": "Lara Acosta",
+      "originalMeaning": [
+        "Story",
+        "Lesson",
+        "Actionable Advice",
+        "You"
+      ],
+      "eligible": [
+        "founder_story",
+        "teaching",
+        "proof_outcome"
+      ],
+      "requirements": [
+        "real_story_exists",
+        "earned_lesson_exists",
+        "genuinely_actionable_advice_exists",
+        "reader_handoff_adds_value"
+      ],
+      "questionRequired": false,
+      "ineligibleWhen": [
+        "truthful_ending_unresolved",
+        "lesson_requires_fake_hindsight",
+        "advice_forces_listicle",
+        "question_is_engagement_bait"
+      ]
+    },
+    "contrast_gap": {
+      "eligible": [
+        "founder_story",
+        "operator_build_in_public",
+        "proof_outcome"
+      ],
+      "steps": [
+        "visible_or_expected_outcome",
+        "current_reality",
+        "gap",
+        "work_underway",
+        "unproven"
+      ]
+    },
+    "failure_correction": {
+      "eligible": [
+        "founder_story",
+        "operator_build_in_public"
+      ],
+      "steps": [
+        "belief_or_plan",
+        "what_happened",
+        "break",
+        "consequence",
+        "change_now",
+        "open_proof"
+      ]
+    },
+    "operator_build_in_public": {
+      "eligible": [
+        "operator_build_in_public"
+      ],
+      "steps": [
+        "live_number_or_event",
+        "actions_taken",
+        "what_moved",
+        "what_did_not",
+        "next_proof_point"
+      ]
+    },
+    "teaching_diagnostic": {
+      "eligible": [
+        "teaching",
+        "diagnostic",
+        "offer_route"
+      ],
+      "steps": [
+        "problem",
+        "mechanism",
+        "practical_application",
+        "boundary_or_next_step"
+      ]
+    },
+    "observation_pov": {
+      "eligible": [
+        "observation_pov"
+      ],
+      "steps": [
+        "observed_pattern",
+        "stance",
+        "evidence_or_reasoning",
+        "implication"
+      ]
+    }
+  },
+  "heuristics": {
+    "laraMobileHookWords": {
+      "min": 8,
+      "max": 10,
+      "hardGate": false
+    },
+    "lessonFirstIdeationAllowed": true,
+    "lessonFirstMustReturnToSourceTruth": true,
+    "finalQuestionRequired": false
+  },
+  "antiTemplate": {
+    "detectFatigueAcross": [
+      "hook_family",
+      "two_line_contradiction",
+      "paragraph_rhythm",
+      "three_point_list",
+      "lesson_position",
+      "question_ending",
+      "emotional_arc",
+      "confession_pattern"
+    ],
+    "architectureMayBeBrokenWhenTruthReadsBetter": true
+  },
+  "externalResearch": {
+    "kleoRole": "research_method_benchmark_not_dependency",
+    "creatorPatternBank": "mechanisms_not_copy",
+    "externalEngagementIsProofOfOurPerformance": false
+  },
+  "releaseGate": [
+    "source_truth_complete_or_one_precise_question",
+    "story_worth_reading_pass",
+    "primary_content_job_identified",
+    "architecture_only_if_fit_improves",
+    "hook_os_pass",
+    "no_creator_imitation",
+    "no_forced_lesson_list_cta_or_question",
+    "no_borrowed_status_envy_bait_or_fake_vulnerability",
+    "slopmonster_and_chelston_originality_pass",
+    "proof_and_commercial_truth_pass",
+    "explicit_owner_approval"
+  ]
+}
