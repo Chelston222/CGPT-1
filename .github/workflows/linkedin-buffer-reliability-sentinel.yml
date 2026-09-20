@@ -63,6 +63,10 @@ jobs:
             const path = require('node:path');
             const { withQaReplenishment } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
             const { buildIntegrityReport } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-reliability.cjs'));
+            const {
+              parseAcceptanceEntries,
+              selectTrustedLedgerIssue,
+            } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -107,10 +111,24 @@ jobs:
             const ledgerEntries = [];
             try {
               const issues = await github.paginate(github.rest.issues.listForRepo, {
-                owner, repo, state: 'all', creator: owner, per_page: 100,
+                owner, repo, state: 'all', per_page: 100,
               });
-              const approvals = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
-              const rowPattern = /^-\s+([^@\n:]+)@([^\s·]+)\s+·\s+([^:]+):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
+              const approvals = issues.filter((issue) =>
+                !issue.pull_request
+                && issue.user?.login === owner
+                && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title)
+              );
+              const approvalIssueByQueueKey = new Map();
+              for (const issue of approvals) {
+                const oneShot = String(issue.title || '').match(/^\[(?:APPROVED|FAILED) LINKEDIN\]\s+([^@\s]+)@(\d+)/i);
+                if (oneShot) approvalIssueByQueueKey.set(`${oneShot[1]}@${oneShot[2]}`, issue.number);
+                const approvedItems = String(issue.body || '').match(/^APPROVED_ITEMS:\s*(.+)$/mi)?.[1] || '';
+                for (const item of approvedItems.split(',').map((value) => value.trim()).filter(Boolean)) {
+                  if (/^[a-z0-9-]+@\d+$/i.test(item)) approvalIssueByQueueKey.set(item, issue.number);
+                }
+              }
+
+              const rowPattern = /^-\s+([^@\n:]+)@([^\s·]+)\s+·\s+([^:]+):\s+Buffer post ID\s+`([^`]+)`(?:\s+(?:—|\|)\s+([^\s\n|]+))?/gm;
               for (const issue of approvals) {
                 const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
                 for (const comment of comments) {
@@ -128,8 +146,34 @@ jobs:
                   rowPattern.lastIndex = 0;
                 }
               }
+
+              const durableLedger = selectTrustedLedgerIssue(issues, owner);
+              if (!durableLedger) {
+                hardFailures.push('Trusted durable Buffer acceptance ledger does not exist.');
+              } else {
+                const durableComments = await github.paginate(github.rest.issues.listComments, {
+                  owner, repo, issue_number: durableLedger.number, per_page: 100,
+                });
+                const durableAccepted = parseAcceptanceEntries(durableComments);
+                for (const [key, entry] of durableAccepted) {
+                  const match = String(key).match(/^(.+)@([^:]+):([^:]+)$/);
+                  if (!match) {
+                    hardFailures.push(`Malformed durable Buffer acceptance key: ${key}.`);
+                    continue;
+                  }
+                  const queueId = match[1];
+                  const revision = match[2];
+                  ledgerEntries.push({
+                    bufferId: entry.bufferId,
+                    queueId,
+                    revision,
+                    approvalIssue: approvalIssueByQueueKey.get(`${queueId}@${revision}`) || null,
+                    acceptedDueAt: entry.dueAt || null,
+                  });
+                }
+              }
             } catch (error) {
-              hardFailures.push(`Approval ledger read failed: ${error.message}`);
+              hardFailures.push(`Approval / durable ledger read failed: ${error.message}`);
             }
 
             try {
