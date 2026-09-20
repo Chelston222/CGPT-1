@@ -334,7 +334,7 @@
         "personal": "2026-09-21T13:15:00+01:00"
       },
       "copy": {
-        "default": "£2.5k in a week would still feel like a big deal to me.\n\nI’m trying to get to the point where it doesn’t.\n\nBecause the danger with one good week is how quickly you start treating it like proof.\n\nA client lands. Someone pays. A warm conversation finally converts. Friday looks great.\n\nThen Monday opens at £0 and you realise you haven't built a repeatable week yet. You had a good one.\n\nThat's the part I'm working on now with Triple Two Emails.\n\nI don't need one £2.5k week. I need to understand what produced it well enough to do it again without needing the same bit of luck.\n\nCalls happening.\nAppointments actually landing.\nMe getting better at the sales conversation.\nThe £197 Revenue Recovery Check being asked for when it genuinely fits.\nThe right clients moving into the £995 Recovery Build.\nDelivery good enough that the whole thing deserves to keep growing.\n\nThen Monday again.\n\nI like this G-Wagon. I'd absolutely like to own one.\n\nBut I'm not interested in having one good month and using it to finance the appearance of being further ahead than I am.\n\nI want the boring bit first.\n\nA business that can do £2.5k this week, reset to £0 on Monday, and know how to go and find the next £2.5k.\n\nWhen that starts feeling normal, then I'll move the target."
+        "default": "I can stand next to a G-Wagon for a photo in 10 seconds.\n\nI cannot fake consistent £2.5k weeks.\n\nThat is the thing I am actually trying to build right now.\n\nFrancis can pick up the phone and book a business owner.\n\nI can take the call.\n\nWe can run the Revenue Recovery Check.\n\nWe can build the follow-up system.\n\nBut none of that matters because it exists on a diagram.\n\nIt matters when it produces revenue, then produces revenue again.\n\nThat is the gap I am trying to close.\n\nI do not want one good week I can screenshot and call momentum.\n\nI want £2.5k to stop feeling like a good week and start feeling like what the business does.\n\nWe are not there yet.\n\nAnd that is why this photo is useful to me in a completely different way than “manifest the car”.\n\nIt is easy to look at the visible outcome and skip over the boring repeatability underneath it.\n\nThe car can wait.\n\nI want the boring weeks first."
       },
       "sourceType": "qa_replenishment",
       "status": "review",
@@ -371,6 +371,12 @@
           "at": "2026-09-20T19:59:00Z",
           "actor": "ChatGPT owner-authorised",
           "note": "Personal-profile company reference aligned to the current LinkedIn public brand naming rule: Triple Two Emails."
+        },
+        {
+          "state": "story_standard_rewrite",
+          "at": "2026-09-20T21:20:00+01:00",
+          "actor": "Chelston222",
+          "note": "Owner-authorised rewrite under Story Worth Reading v1.0. Media and schedule preserved."
         }
       ],
       "format": "image",
@@ -395,7 +401,7 @@
         "personal": "2026-09-22T13:15:00+01:00"
       },
       "copy": {
-        "default": "I built an automated LinkedIn system so I could stop thinking about LinkedIn every day.\n\nThen I looked at what it was actually about to post and thought: this is shit.\n\nThe system was doing its job.\n\nPosts queued.\nImages attached.\nBuffer scheduled.\nDuplicate protection working.\nSpace left for something live if it happened.\n\nThe problem was the writing.\n\nA G-Wagon photo had become another vague ambition post.\nA normal photo had become a lesson about personal branding.\nEvery messy bit of life somehow became a clean little founder moral by the end.\n\nIt was exactly the AI-flavoured LinkedIn slop I keep saying I don't want.\n\nAnd I'd built a machine that could now publish it consistently.\n\nThat was the uncomfortable bit.\n\nThe automation wasn't the problem. The standard I'd given it permission to automate was.\n\nSo I changed the system before I changed the next caption.\n\nNow a founder post needs something real underneath it. A number I'm actually chasing. Something that went wrong. A decision I'm unsure about. Something I genuinely believe. Or something I still don't know the answer to.\n\nIf the picture is the whole story, it doesn't go.\n\nIf another founder could swap their name in and post it tomorrow, it doesn't go.\n\nIf it's mostly there to make me look successful, it definitely doesn't go.\n\nThe G-Wagon post was the first test.\n\nThe old version was basically ambition, discipline, nice car.\n\nThe real thing on my mind is much less impressive:\n\nCan I make £2.5k weeks repeat?\n\nThat is the post now.\n\nI still have no idea whether this change will improve reach, engagement or leads.\n\nBut if a post flops now, at least it'll be something I actually meant."
+        "default": "I built a LinkedIn auto-posting system that was doing exactly what I told it to do.\n\nThen I read the posts and thought:\n\nThese are shit.\n\nThat was uncomfortable because technically the system was working.\n\nThe queue was full.\nThe posts were scheduled.\nThe images were there.\nNothing was broken.\n\nExcept the part that actually mattered.\n\nI did not want to read them.\n\nThey were short, safe, tidy little founder captions.\n\nNo spark.\nNo conviction.\nNo real story.\n\nThe kind of thing that looks “consistent” on a content calendar and disappears from your head five seconds later.\n\nWorse, they did not sound like me.\n\nSo today I stopped treating that as a copy problem and treated it as a system problem.\n\nWe changed the rules the system works from.\n\nThe queue now only auto-refills to 8 so there is room for something real that happens today.\n\nFounder posts now need an actual event, number, contradiction, admission or unresolved stake before they get approved.\n\nIf the image is the only interesting thing, the post is not ready.\n\nIf the story could belong to any founder, it gets killed.\n\nThis is probably the least sexy kind of improvement I can post about.\n\nBut it feels more important than another week of “content”.\n\nAutomation is only useful when the standard underneath it is good.\n\nOtherwise you just produce shit faster."
       },
       "sourceType": "qa_replenishment",
       "status": "review",
@@ -426,6 +432,12 @@
           "at": "2026-09-20T19:44:00Z",
           "actor": "ChatGPT owner-authorised",
           "note": "Revision 2 replaces generic build-in-public copy with the real 20 Sep story: the LinkedIn automation worked technically but was automating weak, AI-sounding founder captions. Story-first QA passed on Chelston-supplied context. Media and target unchanged; schedule remains governed by rev3 override."
+        },
+        {
+          "state": "story_standard_rewrite",
+          "at": "2026-09-20T21:20:00+01:00",
+          "actor": "Chelston222",
+          "note": "Owner-authorised rewrite under Story Worth Reading v1.0. Media preserved; effective schedule remains governed by schedule override."
         }
       ],
       "format": "image",
