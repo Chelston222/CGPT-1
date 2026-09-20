@@ -33,6 +33,7 @@ jobs:
             const fs = require('node:fs');
             const path = require('node:path');
             const engine = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-performance-learning-v2.cjs'));
+            const { storyFirstQaPassed } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-week-batch.cjs'));
             const policy = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/performance-policy.json'), 'utf8'));
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -184,6 +185,7 @@ jobs:
                 if (post.status !== 'review') return false;
                 if (post.qa && (post.qa.status !== 'ready_for_human_review' || post.qa.approvalEligible !== true || post.qa.publishPermission !== false)) return false;
                 if (!(post.targets || []).includes(target)) return false;
+                if (target === 'personal' && !storyFirstQaPassed(post)) return false;
                 const due = Date.parse(scheduledFor(post, target) || '');
                 return Number.isFinite(due) && due > now + 30 * 60 * 1000 && due <= lookaheadEnd;
               }).map((post) => {
