@@ -35,9 +35,13 @@ Specificity should be high enough for the right buyer to recognise relevance wit
 
 ## LinkedIn founder-story hook branch
 
+Canonical narrative source: `docs/LINKEDIN_STORY_WORTH_READING_STANDARD.md`. Hook OS supplies the opening mechanism; the Story Worth Reading standard governs whether the full story deserves release.
+
 For Chelston personal founder/story posts, do not force the cross-channel buyer-callout formula onto a human story. The first impression may instead be built from a truthful event, number, contradiction, admission, failure, uncomfortable fact or unresolved stake.
 
 The governing question is: **what actually happened that makes this worth reading?**
+
+For founder narrative hooks, favour **current truth + specificity + tension + unfinished business** over generic punchiness.
 
 Strong founder-story hook inputs include:
 - a concrete number tied to a live goal or gap;
