@@ -56,6 +56,9 @@
     "Keep 15 percent of recommendations available for deliberate exploration so the system does not converge prematurely.",
     "Founder-story recommendations remain candidates only and must fail closed at approval if they do not pass the current story-first hard gates: Random-founder, Image-only, Status-performance, Story and Saveable-story. Performance score, queue deficit or prior engagement cannot rescue a failed story.",
     "Do not auto-publish or create owner approval on the basis of a performance score alone.",
-    "Founder and photo-led candidates that fail the Story Worth Reading standard are ineligible regardless of performance score or queue deficit."
+    "Founder and photo-led candidates that fail the Story Worth Reading standard are ineligible regardless of performance score or queue deficit.",
+    "External creator patterns and Kleo research evidence may generate hypotheses only. They never override 222E source truth, Story Worth Reading, Chelston Originality or commercial-truth gates.",
+    "Do not reward a founder candidate for matching a historically strong external framework if the framework is more visible than the story.",
+    "SLAY is an optional attributed architecture. Missing Lesson, Actionable Advice or a final question is not a defect when the truthful story does not earn them."
   ]
 }
