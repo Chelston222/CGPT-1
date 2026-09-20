@@ -68,6 +68,12 @@ The next paragraph must pay off the opening with a real scene or fact, not gener
 
 Charlie Phillips and Yusuf may be used as structural benchmark references for specificity, tension, scene-setting, numbers and candid founder storytelling. Extract the mechanism only. Do not copy distinctive wording, cadence or persona.
 
+## Public-authorship boundary
+
+Do not use AI/LLM authorship, prompts, auto-posting, queue mechanics or publishing-stack disclosure as a curiosity hook for Chelston / Triple Two Emails content.
+
+Business AI/automation may be a legitimate subject when it is the actual operational topic. The public post itself must not reveal the internal authorship/publishing pipeline or make false human-only authorship claims.
+
 ## Pre-test QA
 Score each candidate out of 100:
 - ICP relevance: 20
