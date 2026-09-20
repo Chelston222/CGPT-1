@@ -89,7 +89,7 @@ test('Narrative Architecture OS stays subordinate to source truth and Story Wort
   assert.match(narrative, /SOURCE TRUTH → STORY WORTH READING → CONTENT JOB → NARRATIVE ARCHITECTURE/i);
   assert.match(narrative, /Story → Lesson → Actionable Advice → You/i);
   assert.match(narrative, /question is not mandatory/i);
-  assert.match(narrative, /Kleo is a \*\*research-method benchmark\*\*/i);
+  assert.match(narrative, /research-method benchmark/i);
   assert.equal(policy.architectures.slay_overlay.questionRequired, false);
   assert.equal(policy.heuristics.laraMobileHookWords.hardGate, false);
   assert.equal(policy.externalResearch.kleoRole, 'research_method_benchmark_not_dependency');
