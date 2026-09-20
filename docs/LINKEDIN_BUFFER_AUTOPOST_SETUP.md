@@ -104,6 +104,12 @@ When the GitHub credential exists, the release workflow checks the live Notion r
 
 When the credential is absent, this live layer is skipped explicitly. Exact current-queue fingerprinting and repository-owner approval remain mandatory.
 
+## Founder-story release gate
+
+For Chelston personal LinkedIn, any `founder_story` post or `tte-founder-photo-*` item must carry the current story-first QA evidence before `postBody()` can produce an approval payload. Required checks are Random-founder, Image-only, Status-performance, Story and Saveable-story, plus a non-empty source basis grounded in Chelston-supplied context.
+
+This is fail-closed. Owner approval, performance score or spare Buffer capacity cannot bypass it.
+
 ## Media preflight
 
 All approved media selected for dispatch is remotely preflighted before the first Buffer write.
@@ -126,6 +132,8 @@ Canonical PDF and thumbnail URLs are revision-scoped and pinned to the same immu
 ## Capacity
 
 Capacity checks inspect the current scheduled Buffer inventory for configured LinkedIn channels. Duplicate channel IDs are normalised.
+
+The provider hard ceiling is **10 scheduled placements per LinkedIn channel**, but automatic replenishment targets **8** and stops there. Slots 9 and 10 are reserved for timely, owner-requested or in-the-moment content. A temporary owner-requested placement above 8 does not authorise automatic refill until occupancy falls below 8 again.
 
 If the provider response cannot represent the full inventory within the supported query, capacity fails closed instead of using a partial count.
 
