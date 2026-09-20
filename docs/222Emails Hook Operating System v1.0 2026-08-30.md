@@ -49,10 +49,14 @@ Strong founder-story hook inputs include:
 
 Do not use aspirational imagery as borrowed status. Do not manufacture confession, vulnerability or drama. Do not explain the photograph when the real story sits behind it.
 
-A founder-story hook must pass three tests:
+A founder-story hook must pass the current 222E Command story-first gate. At minimum:
 1. **Random-founder:** it should not remain equally valid after swapping Chelston's name for a random founder.
 2. **Image-only:** it should require real context beyond what can be inferred from the image.
-3. **Continuation:** the next paragraph must pay off the opening with a real scene or fact, not generic reflection.
+3. **Status-performance:** it must not use the hook mainly to make Chelston look successful or borrow status from an aspirational image.
+4. **Story:** the opening must lead into something that materially happens, changes, fails, conflicts or remains at stake.
+5. **Saveable-story:** the tension or sequence should be memorable enough that a reader could recall or retell it later.
+
+The next paragraph must pay off the opening with a real scene or fact, not generic reflection. If one missing fact would create the story, ask Chelston one precise question rather than manufacturing the missing context.
 
 Charlie Phillips and Yusuf may be used as structural benchmark references for specificity, tension, scene-setting, numbers and candid founder storytelling. Extract the mechanism only. Do not copy distinctive wording, cadence or persona.
 
