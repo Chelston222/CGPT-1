@@ -114,9 +114,10 @@
   "founderCapture": {
     "calendarTime": "08:00-08:15",
     "requiredHumanInput": [
-      "the real story or event",
-      "what happened",
-      "what changed or was learned",
+      "the real event or scene, not a description of the image",
+      "the current stake, tension, contradiction, failure, decision or unresolved truth",
+      "one or more concrete facts or numbers that only Chelston can supply where relevant",
+      "what actually happened next, or an explicit statement that the outcome is not known yet",
       "two real photos or screenshots where useful"
     ],
     "possibleRoutes": [
@@ -129,7 +130,16 @@
       "repurpose_later",
       "no_publish"
     ],
-    "rule": "Never manufacture a story to fill a slot."
+    "rule": "Never manufacture a story to fill a slot. The image is context, not the story. A founder-story candidate that fails any current story-first hard gate must remain unpublished even when the queue has capacity.",
+    "storyFirstHardGates": [
+      "random_founder",
+      "image_only",
+      "status_performance",
+      "story",
+      "saveable_story"
+    ],
+    "missingSourceRule": "If one missing fact would make the story real, ask Chelston one precise question. Never fill the gap with generic founder reflection.",
+    "benchmarkRule": "Charlie Phillips and Yusuf may inform hook tension, specificity, scene selection and story movement only. Do not imitate wording, cadence, persona or anecdotes."
   },
   "queueMigration": {
     "existingInventoryTreatment": [
