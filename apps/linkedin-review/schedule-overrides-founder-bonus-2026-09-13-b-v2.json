@@ -4,11 +4,11 @@
   "generatedAt": "2026-09-15T20:20:00+01:00",
   "windowStart": "2026-09-20",
   "windowEnd": "2026-09-26",
-  "reason": "Story Worth Reading v1.0 revision. Preserve the 23 September founder slot while incrementing the effective revision for the owner-authorised copy rewrite; media, target and due time remain unchanged.",
+  "reason": "Public Authorship & Content-Operations Trust Boundary revision. Preserve the 23 September founder slot while replacing the prior process-disclosure copy. Media, target and due time remain unchanged.",
   "posts": [
     {
       "id": "tte-founder-photo-10",
-      "revision": 3,
+      "revision": 4,
       "scheduledAt": {
         "personal": "2026-09-23T13:15:00+01:00"
       }
