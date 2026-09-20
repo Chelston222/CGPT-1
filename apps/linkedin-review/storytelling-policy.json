@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "effectiveDate": "2026-09-20",
+  "status": "current_canonical",
+  "appliesTo": [
+    "chelston_personal_founder",
+    "chelston_personal_photo_led",
+    "narrative_companion_copy"
+  ],
+  "governingQuestion": "What actually happened that makes this worth reading?",
+  "storySelectionHierarchy": [
+    "real_current_operating_tension",
+    "specific_event_or_scene",
+    "concrete_number_contradiction_admission_decision_or_failure",
+    "what_changed_or_remains_unproven",
+    "image_or_asset_support"
+  ],
+  "hookInputs": [
+    "event",
+    "number",
+    "contradiction",
+    "admission",
+    "failure",
+    "decision",
+    "unresolved_stake"
+  ],
+  "narrativeSpine": [
+    "hook",
+    "scene",
+    "friction",
+    "what_happened",
+    "current_truth",
+    "earned_ending"
+  ],
+  "missingFactRule": "ask_one_precise_question_never_invent",
+  "reject": [
+    "image_description_as_story",
+    "generic_founder_motivation",
+    "envy_bait",
+    "success_cosplay",
+    "polished_hindsight",
+    "fake_vulnerability",
+    "forced_moral",
+    "meta_authenticity_without_real_event",
+    "incidental_visible_trivia",
+    "interchangeable_founder_copy",
+    "padding_for_length"
+  ],
+  "releaseTests": {
+    "randomFounderMustBeFalse": true,
+    "imageOnlyMustBeFalse": true,
+    "statusPerformanceMustBeFalse": true,
+    "storyMustBeTrue": true,
+    "saveableStoryMustBeTrue": true
+  },
+  "creatorBenchmarks": {
+    "names": [
+      "Charlie Phillips",
+      "Yusuf"
+    ],
+    "use": "structure_only",
+    "imitateWordingPersonaCadence": false
+  },
+  "queue": {
+    "automaticRefillTargetPerChannel": 8,
+    "bufferCeilingPerChannel": 10,
+    "reservedInstantSlotsPerChannel": 2
+  },
+  "canonicalExampleMechanism": {
+    "line": "I’m trying to make £2.5k weeks boring.",
+    "note": "Use as a structural example of current truth plus specificity plus tension plus unfinished business. Do not repeat as a slogan or force into unrelated posts."
+  }
+}
