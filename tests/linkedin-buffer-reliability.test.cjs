@@ -2,6 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const { buildIntegrityReport, mediaIntegrity } = require('../scripts/linkedin-buffer-reliability.cjs');
 
 const channelIds = { personal: 'chan-personal', main: 'chan-main', secondary: 'chan-secondary' };
@@ -109,4 +111,13 @@ test('detects provider disconnection and recurring schedule overflow', () => {
   const text = result.failures.join('\n');
   assert.match(text, /disconnected, locked or paused/);
   assert.match(text, /above the governed 5\/week ceiling/);
+});
+
+test('reliability sentinel reads the trusted durable acceptance ledger', () => {
+  const workflow = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'linkedin-buffer-reliability-sentinel.yml'), 'utf8');
+  assert.match(workflow, /selectTrustedLedgerIssue/);
+  assert.match(workflow, /parseAcceptanceEntries/);
+  assert.match(workflow, /durableLedger/);
+  assert.match(workflow, /BUFFER acceptance ledger does not exist/);
+  assert.match(workflow, /approvalIssueByQueueKey/);
 });
