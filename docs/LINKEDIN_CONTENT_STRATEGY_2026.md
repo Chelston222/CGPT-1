@@ -77,6 +77,14 @@ Kleo's public creator-research method is used to study relevant creators, relati
 
 External engagement does not certify a structure for Chelston. Our own verified commercial and audience outcomes outrank external likes or claims of virality.
 
+## Public authorship trust boundary
+
+Public LinkedIn content must not expose the internal writing, review, scheduling or publishing machinery. Do not make the content stack itself part of the brand story.
+
+AI/automation can be discussed where it genuinely supports business operations, client systems, research, analysis or drafting business materials. It must not be framed as the autonomous author/publisher of Chelston's public voice.
+
+Direct questions must be answered honestly, but public posts should not volunteer internal authorship/publishing workflow details or make false “no AI” purity claims.
+
 ## Frequency starting ranges
 
 Treat frequency as an experiment, not a quota:
