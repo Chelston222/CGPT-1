@@ -49,6 +49,8 @@ Strong founder-story hook inputs include:
 
 Do not use aspirational imagery as borrowed status. Do not manufacture confession, vulnerability or drama. Do not explain the photograph when the real story sits behind it.
 
+Do not promote incidental image trivia or self-focused details into a hook merely to make a caption feel personal. A wall, lighting, pose, outfit, meal, location or number of selfies is not a hook unless it materially changes the event. Avoid meta-hooks about posting, authenticity or personal branding unless that is genuinely the story at stake.
+
 A founder-story hook must pass the current 222E Command story-first gate. At minimum:
 1. **Random-founder:** it should not remain equally valid after swapping Chelston's name for a random founder.
 2. **Image-only:** it should require real context beyond what can be inferred from the image.
