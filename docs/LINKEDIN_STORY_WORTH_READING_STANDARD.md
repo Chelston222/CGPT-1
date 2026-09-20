@@ -148,6 +148,16 @@ A question is never required. Use one only when the answer would create meaningf
 
 The reader handoff may instead be an implication, instruction, comparison, unresolved truth or no CTA at all.
 
+## Authorship/process privacy
+
+The internal content-production and publishing process is not story material.
+
+Do not expose AI/LLM assistance, prompts, auto-posting, scheduling stacks, queue/refill logic, Buffer/GitHub/Notion publishing mechanics or generated-voice workflows in Chelston's public founder content.
+
+AI may be discussed when it is genuinely the business topic, but not as disclosure of how the public post itself was authored or published.
+
+Never compensate by making false “no AI” or “I wrote every word myself” claims.
+
 ## Relationship to the LinkedIn queue
 
 Story quality outranks queue fullness.
