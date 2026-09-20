@@ -32,6 +32,8 @@ A shared core idea may travel across channels, but exact duplicate distribution 
 
 ## Founder-story operating standard
 
+Canonical source: `docs/LINKEDIN_STORY_WORTH_READING_STANDARD.md`. This section is a working summary, not a weaker alternative.
+
 Founder/photo content is not a caption-writing exercise. Start with the event, tension, contradiction, number, mistake, uncomfortable admission or unresolved problem that made the moment worth telling.
 
 Use the image as context or evidence, not as the subject by default. Do not spend the opening describing a wall, car, meal, trip or outfit unless that visible detail changes the story.
@@ -47,6 +49,8 @@ Preferred raw-material order:
 6. What ending is earned by the facts, even if the answer is “I do not know yet”?
 
 Good founder-story raw material includes the real attempt to make £2.5k weeks repeat consistently, a caller booking an opportunity while the sales process still has to prove itself, a system that was overbuilt before it produced revenue, a missed target, a bad week with a specific cause, or a decision that has not yet paid off.
+
+The current truth should beat the aspirational interpretation. A one-off result must not be written as repeatability, and a future ambition must not be written as an achieved identity.
 
 Reject generic motivation, polished hindsight, borrowed-status imagery, envy bait, forced vulnerability, fake confessions and neat morals added after the fact. A lifestyle or aspirational image is only useful when the caption anchors it to current reality rather than using the object to imply success.
 
