@@ -126,7 +126,26 @@ function imageSafeZonePassed(post) {
   return String(value || '').trim().toLowerCase() === 'pass';
 }
 
+const STORY_FIRST_QA_KEYS = ['randomFounder', 'imageOnly', 'statusPerformance', 'story', 'saveableStory'];
+
+function requiresStoryFirstQa(post = {}) {
+  return Array.isArray(post.targets)
+    && post.targets.includes('personal')
+    && (post.contentRole === 'founder_story' || /^tte-founder-photo-/i.test(String(post.id || '')));
+}
+
+function storyFirstQaPassed(post = {}) {
+  if (!requiresStoryFirstQa(post)) return true;
+  const gate = post.qa?.storyFirst;
+  return gate?.status === 'pass'
+    && STORY_FIRST_QA_KEYS.every((key) => gate?.[key] === 'pass')
+    && String(gate?.sourceBasis || '').trim().length > 0;
+}
+
 function postBody(post) {
+  if (!storyFirstQaPassed(post)) {
+    throw new Error(`${post.id} founder/story content is missing the current story-first QA pass. Random-founder, Image-only, Status-performance, Story and Saveable-story must all pass against real Chelston-supplied context before approval.`);
+  }
   const lines = [
     `POST_ID: ${post.id}`,
     `REVISION: ${post.revision}`,
