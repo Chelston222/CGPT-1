@@ -36,6 +36,8 @@ Founder/photo content is not a caption-writing exercise. Start with the event, t
 
 Use the image as context or evidence, not as the subject by default. Do not spend the opening describing a wall, car, meal, trip or outfit unless that visible detail changes the story.
 
+Do not substitute incidental self-focused detail for story. The number of selfies taken, lighting, pose, outfit or similar trivia should be ignored unless it materially affects what happened. Do not turn a normal photo into a post about posting, authenticity or personal branding unless that is the actual event with real stakes.
+
 Preferred raw-material order:
 1. What actually happened?
 2. What was at stake?
