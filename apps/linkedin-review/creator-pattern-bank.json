@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-09-20",
+  "purpose": "Retain transferable creator/content mechanisms without copying wording, persona or proprietary assets.",
+  "records": [
+    {
+      "id": "lara-acosta-slay",
+      "source": "Lara Acosta",
+      "sourceUrls": [
+        "https://www.linkedin.com/posts/laraacostar_my-4-step-storytelling-framework-is-unbeatable-activity-7287446692763742208-aC5s",
+        "https://www.linkedin.com/feed/update/urn%3Ali%3Aactivity%3A7208793120665145344/",
+        "https://www.linkedin.com/posts/laraacostar_my-4-step-writing-framework-is-unbeatable-activity-7320043078243737600-qKph"
+      ],
+      "observedDate": "2026-09-20",
+      "contentJob": [
+        "founder_story",
+        "teaching"
+      ],
+      "hookMechanism": "Real story as entry point, followed by useful education.",
+      "structure": [
+        "Story",
+        "Lesson",
+        "Actionable Advice",
+        "You"
+      ],
+      "transfer": [
+        "story_as_vehicle_for_value",
+        "earned_lesson",
+        "practical_application",
+        "reader_relevance"
+      ],
+      "doNotCopy": [
+        "distinctive_wording",
+        "persona",
+        "cadence",
+        "claim_of_virality",
+        "engagement_question_as_default"
+      ],
+      "evidenceConfidence": "primary_public_source",
+      "state": "EXPLORE"
+    },
+    {
+      "id": "kleo-creator-research-method",
+      "source": "Kleo public personal-brand guidance",
+      "sourceUrls": [
+        "https://kleo.so/blog/how-to-create-your-personal-brand",
+        "https://kleo.so/blog/linkedin-hook-templates",
+        "https://app.kleo.so/blog/lara-acosta"
+      ],
+      "observedDate": "2026-09-20",
+      "contentJob": [
+        "research"
+      ],
+      "hookMechanism": "Study high-performing creator posts and abstract structure rather than copying content.",
+      "structure": [
+        "identify_relevant_creators",
+        "find_relative_outliers",
+        "analyse_open_body_close",
+        "identify_connection_mechanism",
+        "transfer_structure_to_own_facts"
+      ],
+      "transfer": [
+        "pattern_research",
+        "relative_outlier_analysis",
+        "structure_abstraction"
+      ],
+      "doNotCopy": [
+        "wording",
+        "templates_verbatim",
+        "visual_identity",
+        "persona",
+        "vendor_performance_claims_as_fact"
+      ],
+      "evidenceConfidence": "vendor_public_guidance",
+      "state": "EXPLORE"
+    }
+  ]
+}
