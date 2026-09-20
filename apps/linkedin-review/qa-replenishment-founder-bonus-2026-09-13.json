@@ -322,7 +322,7 @@
     },
     {
       "id": "tte-founder-photo-09",
-      "revision": 1,
+      "revision": 2,
       "title": "G-Wagon aspiration",
       "category": "aspiration",
       "funnelStage": "tof",
@@ -334,7 +334,7 @@
         "personal": "2026-09-21T13:15:00+01:00"
       },
       "copy": {
-        "default": "I am not going to pretend material goals do not matter to me.\n\nThey do.\n\nI want to build real wealth. I want freedom. I want to help my family properly. I want to live well. And yes, I would love to own cars I genuinely admire.\n\nA G-Wagon has been one of my all-time favourites for a long time.\n\nBut the interesting part is not really the car.\n\nThe interesting part is becoming the type of person who can earn that level of life honestly.\n\nThe discipline. The skill. The resilience. The execution. The patience.\n\nAdmire the outcome, but build the person required to reach it."
+        "default": "£2.5k in a week would still feel like a big deal to me.\n\nI’m trying to get to the point where it doesn’t.\n\nBecause the danger with one good week is how quickly you start treating it like proof.\n\nA client lands. Someone pays. A warm conversation finally converts. Friday looks great.\n\nThen Monday opens at £0 and you realise you haven't built a repeatable week yet. You had a good one.\n\nThat's the part I'm working on now with 222Emails.\n\nI don't need one £2.5k week. I need to understand what produced it well enough to do it again without needing the same bit of luck.\n\nCalls happening.\nAppointments actually landing.\nMe getting better at the sales conversation.\nThe £197 Revenue Recovery Check being asked for when it genuinely fits.\nThe right clients moving into the £995 Recovery Build.\nDelivery good enough that the whole thing deserves to keep growing.\n\nThen Monday again.\n\nI like this G-Wagon. I'd absolutely like to own one.\n\nBut I'm not interested in having one good month and using it to finance the appearance of being further ahead than I am.\n\nI want the boring bit first.\n\nA business that can do £2.5k this week, reset to £0 on Monday, and know how to go and find the next £2.5k.\n\nWhen that starts feeling normal, then I'll move the target."
       },
       "sourceType": "qa_replenishment",
       "status": "review",
@@ -342,7 +342,16 @@
         "status": "ready_for_human_review",
         "approvalEligible": true,
         "publishPermission": false,
-        "safeZoneQa": "pass"
+        "safeZoneQa": "pass",
+        "storyFirst": {
+          "status": "pass",
+          "randomFounder": "pass",
+          "imageOnly": "pass",
+          "statusPerformance": "pass",
+          "story": "pass",
+          "saveableStory": "pass",
+          "sourceBasis": "Chelston supplied the live operating tension: make £2.5k weeks repeat consistently. Current £197 Revenue Recovery Check and optional £995 Recovery Build path verified against the active 222E Command."
+        }
       },
       "history": [
         {
@@ -350,6 +359,12 @@
           "at": "2026-09-13T14:34:36.341Z",
           "actor": "github-actions[bot]",
           "note": "Exact founder media pinned to b9bbad60afe212405cfa39908ab638101ba2417c"
+        },
+        {
+          "state": "copy_revised",
+          "at": "2026-09-20T19:57:00Z",
+          "actor": "ChatGPT owner-authorised",
+          "note": "Revision 2 replaces surface-level aspiration copy with the 20 Sep story-first standard. Media, target and due time remain unchanged."
         }
       ],
       "format": "image",
@@ -357,7 +372,8 @@
       "mediaAlt": "Chelston standing in front of a black Mercedes G-Class, one of his favourite cars.",
       "mediaBytes": 784152,
       "mediaSha256": "145469a2d885c49009978d8024de0389919315dab0abf9b0c75e1efc1693f19d",
-      "safeZoneQa": "pass"
+      "safeZoneQa": "pass",
+      "contentRole": "founder_story"
     },
     {
       "id": "tte-founder-photo-10",
