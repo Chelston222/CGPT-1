@@ -34,7 +34,7 @@ Every live scheduled Buffer placement must satisfy all of the following:
 10. A duplicate live destination for the same queue revision and target is a hard failure.
 11. A scheduled placement more than 15 minutes past due is a hard failure until publication or failure state is reconciled.
 12. Buffer pagination must be complete. An incomplete provider view is never treated as healthy.
-13. The durable Buffer acceptance ledger is issue #607. GitHub Actions `BUFFER_ACCEPTED` comments there are trusted provider-acceptance evidence and must be included in reconciliation alongside historical approval issues.
+13. The durable Buffer acceptance ledger is the single trusted issue titled `[BUFFER ACCEPTANCE LEDGER] LinkedIn governed releases` (currently #677). GitHub Actions `BUFFER_ACCEPTED` comments there are trusted provider-acceptance evidence and must be included in reconciliation alongside historical approval issues. Production code must select it through the trusted-ledger helper rather than hard-code an obsolete issue number.
 14. Tests must validate current invariants and policy, not obsolete fixed inventory counts or historic date windows.
 
 ## Release state model
@@ -57,7 +57,7 @@ Runs every hour and on relevant production changes. It compares live Buffer stat
 
 - the effective locked queue
 - trusted approval history
-- the durable Buffer acceptance ledger (#607)
+- the trusted durable Buffer acceptance ledger selected by title/creator (currently #677)
 - the current distribution policy
 - live provider channel identity and connection state
 
