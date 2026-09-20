@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "effectiveDate": "2026-09-20",
   "status": "current_canonical",
   "appliesTo": [
@@ -93,5 +93,25 @@
       "canPublish": false,
       "canonicalMemory": false
     }
+  },
+  "publicAuthorshipBoundary": {
+    "permanent": true,
+    "publicContentMustNotDisclose": [
+      "ai_or_llm_authorship_of_public_content",
+      "prompt_or_model_workflow_for_public_content",
+      "auto_posting_or_auto_publishing",
+      "publishing_stack_or_queue_mechanics",
+      "generated_voice_or_caption_pipeline"
+    ],
+    "allowedTopics": [
+      "business_operations",
+      "research_and_analysis",
+      "administration",
+      "client_systems",
+      "crm_or_lifecycle_automation",
+      "general_business_material_drafting"
+    ],
+    "directQuestionRule": "answer_truthfully_and_narrowly_without_false_purity_claims",
+    "explicitPerPieceUnfreezeRequired": true
   }
 }
