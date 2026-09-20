@@ -118,6 +118,6 @@ test('reliability sentinel reads the trusted durable acceptance ledger', () => {
   assert.match(workflow, /selectTrustedLedgerIssue/);
   assert.match(workflow, /parseAcceptanceEntries/);
   assert.match(workflow, /durableLedger/);
-  assert.match(workflow, /BUFFER acceptance ledger does not exist/);
+  assert.match(workflow, /Buffer acceptance ledger does not exist/);
   assert.match(workflow, /approvalIssueByQueueKey/);
 });
