@@ -232,6 +232,22 @@ If Kleo is trialled later:
 - do not allow it to override 222E Command, GitHub approval, Buffer authority, source truth or commercial truth;
 - do not import its generated copy without Story Worth Reading, SlopMonster and Chelston Originality review.
 
+## External-tool data boundary
+
+If Kleo or any third-party creator tool is trialled later, do not upload confidential client data, private prospect/customer lists, private call recordings/transcripts, unreleased commercial information, credentials or personal data merely to improve content generation. A separate explicit approval and data-handling review is required before any sensitive/private source is connected.
+
+## Machine / human boundary
+
+Machine checks may enforce metadata, attribution, queue state, revisions, proof state and static anti-template rules.
+
+They cannot certify that a story is genuinely human, compelling or worth reading.
+
+Story Worth Reading, Chelston Originality and final owner approval remain human-authority gates. A score may prioritise review but never certify release.
+
+## Change control
+
+This OS remains canonical until Chelston explicitly changes/unfreezes it or verified live evidence exposes a structural defect. Future systems must build on the hierarchy rather than silently replace it.
+
 ## Performance hierarchy
 
 Optimise narrative structures against:
