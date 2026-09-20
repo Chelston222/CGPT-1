@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "effectiveDate": "2026-09-20",
   "status": "current_canonical",
   "parent": "docs/LINKEDIN_STORY_WORTH_READING_STANDARD.md",
@@ -206,5 +206,12 @@
   "changeControl": {
     "canonicalUntil": "explicit_owner_change_or_verified_structural_defect",
     "silentReplacementForbidden": true
+  },
+  "publicAuthorshipBoundary": {
+    "internalContentStackIsEligibleStoryMaterial": false,
+    "businessAIAndAutomationMayBeTopic": true,
+    "publicPostAuthorshipPipelineMayBeDisclosed": false,
+    "falseHumanOnlyAuthorshipClaimsForbidden": true,
+    "explicitPerPieceUnfreezeRequired": true
   }
 }
