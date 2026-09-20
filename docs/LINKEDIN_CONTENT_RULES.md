@@ -21,6 +21,8 @@
 
 ## Founder story standard: real before polished
 
+Canonical source: `docs/LINKEDIN_STORY_WORTH_READING_STANDARD.md`. If a downstream template conflicts with it, the stricter story-quality rule wins.
+
 This is the default for Chelston's personal LinkedIn and any founder or photo-led post. It mirrors the live **222E Command §17.3A Story-first personal LinkedIn standard** and may not be weakened by a downstream content template.
 
 - Start from **what actually happened**, not from what can be said about the photograph.
@@ -43,6 +45,8 @@ This is the default for Chelston's personal LinkedIn and any founder or photo-le
 - **Saveable-story test:** would a reader remember or retell the tension tomorrow? If not, the story is not finished.
 - Length follows the story. A strong short post beats a padded 1,200-character post. Do not add words to hit a quota.
 - Charlie Phillips and Yusuf are useful structural references for specific, tension-led hooks, concrete scenes, numbers, candid admissions and readable story movement. Use the mechanism, never their distinctive wording or persona.
+
+- A founder or photo-led item must not be approved merely because it is polished, visually strong or scheduled. It must pass the Story Worth Reading release tests first.
 
 ## Queue reserve
 
