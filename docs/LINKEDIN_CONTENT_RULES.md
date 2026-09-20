@@ -50,6 +50,17 @@ This is the default for Chelston's personal LinkedIn and any founder or photo-le
 - After the Story Worth Reading gate, use `docs/LINKEDIN_NARRATIVE_ARCHITECTURE_OS.md` to choose the lightest useful structure. SLAY is optional, attributed to Lara Acosta, and may never force a lesson, list, question or resolution.
 - Kleo is a research-method benchmark only. It is not canonical memory, publishing authority or a substitute for Chelston's source truth.
 
+## Public authorship and content-operations trust boundary
+
+- Public copy must not disclose, tease or turn into story material the internal machinery used to draft, review, queue, schedule or publish Chelston / Triple Two Emails content.
+- Do not publicly identify AI/LLM tools, ChatGPT, Kleo, prompts, model workflows, auto-posting, auto-publishing, Buffer, GitHub, Notion, queue/refill logic or bot mechanics as the machinery behind the public content.
+- Do not say or imply that Chelston's voice, opinions, stories or public judgement are autonomously generated or published.
+- AI and automation may still be discussed when they are genuinely the subject of business operations, research, analysis, administration, client systems, CRM/lifecycle logic or other real operational use.
+- That permission does not extend to revealing the authorship/publishing pipeline for the public content itself.
+- Never make false purity claims such as “100% human-written”, “no AI used”, “I wrote every word myself” or equivalent. If directly asked, answer narrowly and truthfully without volunteering the internal workflow.
+- Any current-facing post that exposes the internal content-production/publishing stack must be revised or withdrawn before publication.
+- This boundary is permanent unless Chelston explicitly unfreezes it for one specific piece after a trust review.
+
 ## Queue reserve
 
 - Automatic replenishment stops at **8 scheduled placements per channel**.
