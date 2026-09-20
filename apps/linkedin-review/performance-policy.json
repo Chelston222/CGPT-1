@@ -55,6 +55,7 @@
     "When any commercial signals are captured, give them up to 50 percent of the observed performance score so DMs, enquiries, Revenue Recovery Check progression, proposals and paid outcomes outrank vanity engagement.",
     "Keep 15 percent of recommendations available for deliberate exploration so the system does not converge prematurely.",
     "Founder-story recommendations remain candidates only and must fail closed at approval if they do not pass the current story-first hard gates: Random-founder, Image-only, Status-performance, Story and Saveable-story. Performance score, queue deficit or prior engagement cannot rescue a failed story.",
-    "Do not auto-publish or create owner approval on the basis of a performance score alone."
+    "Do not auto-publish or create owner approval on the basis of a performance score alone.",
+    "Founder and photo-led candidates that fail the Story Worth Reading standard are ineligible regardless of performance score or queue deficit."
   ]
 }
