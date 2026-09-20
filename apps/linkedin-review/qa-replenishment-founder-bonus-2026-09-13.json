@@ -363,13 +363,13 @@
         {
           "state": "copy_revised",
           "at": "2026-09-20T19:57:00Z",
-          "actor": "ChatGPT owner-authorised",
+          "actor": "owner-authorised editorial review",
           "note": "Revision 2 replaces surface-level aspiration copy with the 20 Sep story-first standard. Media, target and due time remain unchanged."
         },
         {
           "state": "brand_name_reconciled",
           "at": "2026-09-20T19:59:00Z",
-          "actor": "ChatGPT owner-authorised",
+          "actor": "owner-authorised editorial review",
           "note": "Personal-profile company reference aligned to the current LinkedIn public brand naming rule: Triple Two Emails."
         },
         {
