@@ -229,4 +229,4 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
   return { batchId: header.BATCH_ID || `linkedin-window-${header.WEEK_START}`, weekStart: header.WEEK_START, weekEnd, windowMode: rollingWindow ? 'ROLLING_7_DAY' : 'MONDAY_WEEK', jobs, placementsByDay };
 }
 
-module.exports = { imageSafeZonePassed, parseHeaders, parseItems, postBody, qaReplenishmentPaths, scheduleOverridePaths, validateWeeklyBatch, withQaReplenishment };
+module.exports = { imageSafeZonePassed, parseHeaders, parseItems, postBody, qaReplenishmentPaths, requiresStoryFirstQa, scheduleOverridePaths, storyFirstQaPassed, validateWeeklyBatch, withQaReplenishment };
