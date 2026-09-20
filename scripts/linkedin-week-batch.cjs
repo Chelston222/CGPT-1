@@ -127,11 +127,18 @@ function imageSafeZonePassed(post) {
 }
 
 const STORY_FIRST_QA_KEYS = ['randomFounder', 'imageOnly', 'statusPerformance', 'story', 'saveableStory'];
+const STORY_FIRST_EFFECTIVE_AT = Date.parse('2026-09-20T00:00:00+01:00');
 
 function requiresStoryFirstQa(post = {}) {
-  return Array.isArray(post.targets)
+  const isFounder = Array.isArray(post.targets)
     && post.targets.includes('personal')
     && (post.contentRole === 'founder_story' || /^tte-founder-photo-/i.test(String(post.id || '')));
+  if (!isFounder) return false;
+  const scheduledTimes = Object.values(post.scheduledAt || {})
+    .map((value) => Date.parse(value))
+    .filter(Number.isFinite);
+  if (!scheduledTimes.length) return true;
+  return Math.max(...scheduledTimes) >= STORY_FIRST_EFFECTIVE_AT;
 }
 
 function storyFirstQaPassed(post = {}) {
