@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "effectiveDate": "2026-09-20",
   "status": "current_canonical",
   "appliesTo": [
@@ -69,5 +69,29 @@
   "canonicalExampleMechanism": {
     "line": "I’m trying to make £2.5k weeks boring.",
     "note": "Use as a structural example of current truth plus specificity plus tension plus unfinished business. Do not repeat as a slogan or force into unrelated posts."
+  },
+  "narrativeArchitecture": {
+    "canonicalDoc": "docs/LINKEDIN_NARRATIVE_ARCHITECTURE_OS.md",
+    "machinePolicy": "apps/linkedin-review/narrative-architecture-policy.json",
+    "chooseAfterSourceTruth": true,
+    "slay": {
+      "attribution": "Lara Acosta",
+      "originalMeaning": [
+        "Story",
+        "Lesson",
+        "Actionable Advice",
+        "You"
+      ],
+      "optional": true,
+      "questionRequired": false,
+      "forceLesson": false,
+      "forceActionableList": false
+    },
+    "kleo": {
+      "role": "research_method_benchmark_not_dependency",
+      "patternBank": "apps/linkedin-review/creator-pattern-bank.json",
+      "canPublish": false,
+      "canonicalMemory": false
+    }
   }
 }
