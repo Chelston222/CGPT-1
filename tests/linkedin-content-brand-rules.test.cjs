@@ -25,6 +25,20 @@ test('content rules lock Triple Two Emails as the public brand name', () => {
   assert.match(rules, /Never fake a native mention/i);
 });
 
+test('founder content rules reject generic AI-style founder stories', () => {
+  const rules = fs.readFileSync(path.join(root, 'docs', 'LINKEDIN_CONTENT_RULES.md'), 'utf8');
+  const strategy = fs.readFileSync(path.join(root, 'docs', 'LINKEDIN_CONTENT_STRATEGY_2026.md'), 'utf8');
+  assert.match(rules, /Start from \*\*what actually happened\*\*/i);
+  assert.match(rules, /Random-founder test/i);
+  assert.match(rules, /Image-only test/i);
+  assert.match(rules, /Status-performance test/i);
+  assert.match(rules, /Saveable-story test/i);
+  assert.match(rules, /£2\.5k weeks repeat consistently/i);
+  assert.match(strategy, /Founder-story operating standard/i);
+  assert.match(strategy, /could another founder post this/i);
+  assert.match(strategy, /ask one precise question/i);
+});
+
 test('personal copy mentioning Triple Two Emails becomes a native LinkedIn Page annotation', () => {
   const channel = {
     target: 'personal',
