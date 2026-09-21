@@ -41,7 +41,7 @@ function authorised(request: Request) {
   const dedicated = Netlify.env.get('TTE_LINKEDIN_MEDIA_UPLOAD_TOKEN') || '';
   const smtpDerived = deriveUploadToken(Netlify.env.get('TTE_SMTP_PASS') || '');
   const bridge = Netlify.env.get('TTE_BRIDGE_TOKEN') || '';
-  const token = dedicated.length >= 32 ? dedicated : (smtpDerived || bridge);
+  const token = dedicated.length >= 32 ? dedicated : (bridge || smtpDerived);
   const auth = request.headers.get('authorization') || '';
   return token.length >= 24 && safeEqual(auth, `Bearer ${token}`);
 }
