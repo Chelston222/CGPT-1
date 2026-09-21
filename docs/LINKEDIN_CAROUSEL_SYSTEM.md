@@ -4,7 +4,7 @@
 
 Use the promoted `Autonomous Carousel Drafts` library as the visual source of truth for LinkedIn PDF/document posts. Do not redraw promoted slides inside the Content Swiper and do not treat a cover preview as the publishable asset.
 
-The review queue owns scheduling intent, approval state and the immutable link to a carousel library ID. The local carousel folders remain the editorial masters. A publishable LinkedIn asset is a flattened PDF made from the promoted slides, visually verified against those slides and hosted at a stable public HTTPS URL.
+The review queue owns scheduling intent, approval state and the immutable link to a carousel library ID. The local carousel folders remain the editorial masters. A publishable LinkedIn asset is a flattened PDF made from the promoted slides, visually verified against those slides and served from a stable provider-reachable HTTPS media URL that is separate from the private operations repository.
 
 ## Verified carousel state
 
@@ -28,7 +28,7 @@ LinkedIn/Buffer document posts use one PDF document asset. The 222Emails release
 - no more than 100,000,000 bytes
 - no more than 300 pages
 - document title required
-- public thumbnail required by the current bridge
+- provider-reachable thumbnail required by the current release path
 - declared page count required
 - verified byte count and SHA-256 required for ready queue carousels
 
@@ -44,7 +44,7 @@ Before changing a carousel to `ready`:
 2. Confirm consistent page dimensions and no accidental extra pages.
 3. Confirm the PDF remains below the document byte/page limits.
 4. Visually compare every PDF page with its promoted source.
-5. Record source/library ID, slide count, PDF byte count, PDF SHA-256, document title, stable HTTPS PDF URL and public thumbnail URL.
+5. Record source/library ID, slide count, PDF byte count, PDF SHA-256, document title, stable provider-safe HTTPS PDF URL and provider-safe thumbnail URL.
 6. Verify that the queue revision points to exactly those immutable values.
 7. Pass static/unit tests for the document payload and the remote media integrity gate.
 8. Do not label Buffer acceptance as publication. The post-publication verifier must later confirm Buffer state `sent` and `sentAt`.
