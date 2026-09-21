@@ -59,7 +59,7 @@ test('carousel can receive an editorial YES while final dispatch stays guarded',
   assert.match(app, /awaiting final PDF/);
   const weekly = fs.readFileSync(path.join(root, 'scripts/linkedin-week-batch.cjs'), 'utf8');
   assert.match(weekly, /post\.format === 'carousel'/);
-  assert.match(weekly, /carousel PDF and public thumbnail are not verified and publishable/);
+  assert.match(weekly, /carousel PDF and provider-safe thumbnail are not verified and publishable/);
 });
 
 test('carousel previews use the promoted six-slide render gallery', () => {
