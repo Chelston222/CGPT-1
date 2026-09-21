@@ -53,24 +53,46 @@ jobs:
           for script in scripts/linkedin-*.cjs; do node --check "$script"; done
           node scripts/linkedin-qa-bank-audit.cjs
           node -e "import('./apps/linkedin-review/netlify/functions/review-decisions.mjs').then(() => console.log('decision sync function imports'))"
-      - name: Regression-test a real ready carousel through the remote media gate
+      - name: Regression-test a real ready carousel through the private-source or provider-media gate
         run: |
           node <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const path = require('node:path');
           const queue = require('./apps/linkedin-review/queue.json');
-          const { preflightMedia } = require('./scripts/linkedin-media-preflight.cjs');
+          const { isPrivateOpsMediaUrl, preflightMedia, repoRelativePathFromMediaUrl } = require('./scripts/linkedin-media-preflight.cjs');
           const post = queue.posts.find((item) => item.mode === 'schedule' && item.format === 'carousel' && item.carousel?.readiness === 'ready');
-          if (!post) throw new Error('No ready public carousel is available for remote regression testing.');
-          preflightMedia({
-            mediaUrl: post.mediaUrl,
-            mediaKind: 'document',
-            documentThumbnailUrl: post.documentThumbnailUrl,
-            documentPageCount: post.carousel.slideCount,
-            mediaBytes: post.carousel.pdfBytes,
-            mediaSha256: post.carousel.pdfSha256,
-          }).then((proof) => {
-            if (!proof?.media?.sha256 || proof.media.sha256 !== post.carousel.pdfSha256) throw new Error('Ready carousel integrity proof did not match queue metadata.');
-            console.log(`verified ${post.id}: ${proof.media.bytes} bytes / ${proof.media.sha256}`);
-          }).catch((error) => {
+          if (!post) throw new Error('No ready carousel is available for integrity regression testing.');
+
+          async function run() {
+            if (isPrivateOpsMediaUrl(post.mediaUrl)) {
+              const relative = repoRelativePathFromMediaUrl(post.mediaUrl);
+              if (!relative) throw new Error('Private-source carousel URL could not be mapped to a repository file.');
+              const absolute = path.resolve(relative);
+              if (!fs.existsSync(absolute)) throw new Error(`Private-source carousel file is missing: ${relative}`);
+              const bytes = fs.readFileSync(absolute);
+              const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+              if (bytes.length !== post.carousel.pdfBytes) throw new Error('Private-source carousel byte count did not match queue metadata.');
+              if (sha256 !== post.carousel.pdfSha256) throw new Error('Private-source carousel SHA-256 did not match queue metadata.');
+              console.log(`verified private source ${post.id}: ${bytes.length} bytes / ${sha256}`);
+              return;
+            }
+
+            const proof = await preflightMedia({
+              mediaUrl: post.mediaUrl,
+              mediaKind: 'document',
+              documentThumbnailUrl: post.documentThumbnailUrl,
+              documentPageCount: post.carousel.slideCount,
+              mediaBytes: post.carousel.pdfBytes,
+              mediaSha256: post.carousel.pdfSha256,
+            }, fetch, { forbidPrivateOpsMedia: true });
+            if (!proof?.media?.sha256 || proof.media.sha256 !== post.carousel.pdfSha256) {
+              throw new Error('Provider-safe carousel integrity proof did not match queue metadata.');
+            }
+            console.log(`verified provider media ${post.id}: ${proof.media.bytes} bytes / ${proof.media.sha256}`);
+          }
+
+          run().catch((error) => {
             console.error(error);
             process.exit(1);
           });
