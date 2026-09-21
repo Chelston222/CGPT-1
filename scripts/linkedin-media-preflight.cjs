@@ -179,6 +179,12 @@ function mediaContentTypeFromPath(filePath, kind) {
   throw new Error(`Unsupported local media extension for private hosting: ${path.basename(filePath)}.`);
 }
 
+function deriveMediaUploadToken(secret) {
+  const value = String(secret || '');
+  if (value.length < 16) return '';
+  return createHmac('sha256', value).update('tte-linkedin-media-upload-v1').digest('base64url');
+}
+
 function bridgeIdentity(bytes, token) {
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   const id = `li-${sha256.slice(0, 40)}`;
@@ -279,7 +285,10 @@ async function preflightMedia(request, fetchImpl = globalThis.fetch, options = {
   if (!request?.mediaUrl) return null;
 
   const localSource = repoRelativePathFromMediaUrl(request.mediaUrl);
-  const uploadToken = options.uploadToken || process.env.TTE_BRIDGE_TOKEN || '';
+  const uploadToken = options.uploadToken
+    || deriveMediaUploadToken(options.uploadSecret || process.env.TTE_SMTP_PASS || '')
+    || process.env.TTE_BRIDGE_TOKEN
+    || '';
   if (localSource && options.requirePrivateBridge === true && uploadToken.length < 24) {
     throw new Error('TTE_BRIDGE_TOKEN is required for private-repository LinkedIn media dispatch.');
   }
@@ -337,6 +346,7 @@ module.exports = {
   MEDIA_BRIDGE_BASE,
   REPO_MEDIA_BASE,
   bridgeIdentity,
+  deriveMediaUploadToken,
   canonicalMediaUrl,
   cleanContentType,
   ensurePrivateHostedMedia,
