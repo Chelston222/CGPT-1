@@ -13,6 +13,7 @@ const REPO_MEDIA_BASE = 'https://raw.githubusercontent.com/Chelston222/CGPT-1/ma
 const MEDIA_BRIDGE_BASE = 'https://222emails-mail-bridge.netlify.app/api/tte/linkedin-media-bridge';
 const PRIVATE_REPO_OWNER = 'Chelston222';
 const PRIVATE_REPO_NAME = 'CGPT-1';
+const PUBLIC_MEDIA_REPO = 'Chelston222/222emails-public-media';
 const BRIDGE_CHUNK_BYTES = 3_500_000;
 
 const ALLOWED_IMAGE_TYPES = new Set([
@@ -147,6 +148,29 @@ async function preflightOne(media, fetchImpl = globalThis.fetch) {
     bytes: measured.bytes,
     sha256: measured.sha256,
   };
+}
+
+function isPrivateOpsMediaUrl(value) {
+  try {
+    const parsed = validateHttps(value, 'MEDIA_URL');
+    if (parsed.hostname.toLowerCase() === LEGACY_REVIEW_HOST) return parsed.pathname.startsWith('/media/');
+    if (parsed.hostname.toLowerCase() !== 'raw.githubusercontent.com') return false;
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    return parts[0] === PRIVATE_REPO_OWNER && parts[1] === PRIVATE_REPO_NAME;
+  } catch {
+    return false;
+  }
+}
+
+function isDedicatedPublicMediaUrl(value) {
+  try {
+    const parsed = validateHttps(value, 'MEDIA_URL');
+    if (parsed.hostname.toLowerCase() !== 'raw.githubusercontent.com') return false;
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    return parts[0] === 'Chelston222' && parts[1] === '222emails-public-media' && /^[a-f0-9]{40}$/i.test(parts[2] || '');
+  } catch {
+    return false;
+  }
 }
 
 function repoRelativePathFromMediaUrl(value) {
@@ -284,6 +308,13 @@ async function ensurePrivateHostedMedia({
 async function preflightMedia(request, fetchImpl = globalThis.fetch, options = {}) {
   if (!request?.mediaUrl) return null;
 
+  if (options.forbidPrivateOpsMedia === true && isPrivateOpsMediaUrl(request.mediaUrl)) {
+    throw new Error('Private operations media must be promoted to a provider-safe media surface before Buffer dispatch.');
+  }
+  if (options.forbidPrivateOpsMedia === true && request.documentThumbnailUrl && isPrivateOpsMediaUrl(request.documentThumbnailUrl)) {
+    throw new Error('Private operations thumbnail must be promoted to a provider-safe media surface before Buffer dispatch.');
+  }
+
   const localSource = repoRelativePathFromMediaUrl(request.mediaUrl);
   const uploadToken = options.uploadToken
     || deriveMediaUploadToken(options.uploadSecret || process.env.TTE_SMTP_PASS || '')
@@ -344,12 +375,15 @@ module.exports = {
   MAX_DOCUMENT_PAGES,
   MAX_IMAGE_BYTES,
   MEDIA_BRIDGE_BASE,
+  PUBLIC_MEDIA_REPO,
   REPO_MEDIA_BASE,
   bridgeIdentity,
   deriveMediaUploadToken,
   canonicalMediaUrl,
   cleanContentType,
   ensurePrivateHostedMedia,
+  isDedicatedPublicMediaUrl,
+  isPrivateOpsMediaUrl,
   mediaContentTypeFromPath,
   preflightMedia,
   preflightOne,
