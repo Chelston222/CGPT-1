@@ -39,6 +39,19 @@ jobs:
             echo 'NOTION_API_KEY is not configured. Release remains governed by exact current-queue fingerprint plus repository-owner approval; live Notion defence is skipped and must not be reported as checked.'
           fi
 
+      - name: Load private LinkedIn media bridge credential
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: e531326d-60b8-4def-85b9-727a7f708547
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${NETLIFY_AUTH_TOKEN:-}" || { echo 'NETLIFY_AUTH_TOKEN is required for the private LinkedIn media bridge.'; exit 2; }
+          token="$(npx -y netlify-cli@27.0.1 env:get TTE_BRIDGE_TOKEN --context production --site "$NETLIFY_SITE_ID")"
+          test ${#token} -ge 24 || { echo 'TTE_BRIDGE_TOKEN is missing or invalid in Netlify production environment.'; exit 2; }
+          echo "::add-mask::$token"
+          printf 'TTE_BRIDGE_TOKEN=%s\n' "$token" >> "$GITHUB_ENV"
+
       - name: Validate approval, release within capacity and audit
         uses: actions/github-script@v7
         env:
