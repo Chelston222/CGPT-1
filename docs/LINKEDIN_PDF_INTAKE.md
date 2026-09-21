@@ -13,9 +13,10 @@ final approved PDF + caption
 -> PrivateEmail IMAP
 -> owner [IMAP PDF INTAKE] issue
 -> exact attachment proof
--> revision-scoped GitHub media
+-> revision-scoped private GitHub source media
 -> immutable commit pin for PDF and thumbnail
 -> governed queue
+-> provider-safe media promotion
 -> optional live Notion defence when GitHub credential exists
 -> owner [APPROVED LINKEDIN] issue
 -> exact current-queue fingerprint lock
@@ -110,11 +111,13 @@ The canonical IMAP route fails closed unless:
 
 The 90-day scheduling ceiling keeps canonical approvals safely inside the current 120-day publication-verifier horizon.
 
-## Public repository boundary
+## Private operations / public media boundary
 
-The repository and governed raw media URLs are public. The owner issue and queue can expose caption, schedule, target, title, Notion source URL and media identity before publication. Git history can retain those values afterwards.
+The operations repository is private. Queue state, captions, schedules, source URLs, automation logic and audit metadata are internal.
 
-Use this lane only when the media and release metadata are safe for public repository archival.
+Provider-facing media is a separate transport surface. Only exact approved binaries may be promoted there. The preferred dedicated public-media repository is `Chelston222/222emails-public-media`; a capability-gated media bridge may be used when separately verified. No operating code, prompts, AI/tooling metadata, queue state or approval logic belongs on the public media surface.
+
+The legacy fields `publicMediaApproved` and `publicReleaseMaterialApproved` remain schema-compatible acknowledgements that the exact release asset is safe to expose to the delivery provider. They do not authorise public archival of internal operational metadata.
 
 ## IMAP selection
 
@@ -155,21 +158,15 @@ This prevents PDF-thumbnail renderer changes from silently mutating a locked rev
 
 Before each media/queue push, the workflow refreshes current `main`, rebuilds the deterministic mutation and retries on concurrent advancement. It never forces a stale queue snapshot over newer state.
 
-## Immutable media proof
+## Immutable private source proof and provider export
 
-After promotion, both PDF and thumbnail are pinned to the same full 40-character Git commit that contains those files.
+After promotion, PDF and thumbnail are pinned to the same full 40-character Git commit containing the exact source bytes.
 
-The public pinned URLs are then fetched and verified again:
+The intake verifies those private source bytes locally against locked byte count, SHA-256, page count and thumbnail identity.
 
-- PDF bytes
-- PDF SHA-256
-- PDF page count
-- PDF type/signature
-- thumbnail bytes against the promoted local thumbnail
-- thumbnail SHA-256 against the promoted local thumbnail
-- thumbnail image type
+`[PDF INTAKE READY] <id>@<revision>` proves exact private-source media and queue readiness only. It is **not** Buffer-ready while the queue still points to a private operations URL.
 
-`[PDF INTAKE READY] <id>@<revision>` proves exact media and queue readiness only.
+Before owner Buffer approval, the exact PDF and thumbnail must be promoted to a provider-safe media surface and the governed queue must advance to a revision that locks those provider-facing URLs without changing the approved bytes.
 
 ## Notion operating record and optional live gate
 
@@ -203,7 +200,7 @@ After `[PDF INTAKE READY]`, create the owner approval:
 [APPROVED LINKEDIN] <id>@<revision>
 ```
 
-It must exactly match the current queue revision, target, schedule, caption, immutable media URLs, document metadata, byte count and SHA-256.
+It must exactly match the current queue revision, target, schedule, caption, provider-safe media URLs, document metadata, byte count and SHA-256. Raw URLs from the private operations repository are never valid provider release URLs.
 
 `BUFFER_API_KEY` is mandatory. Before Buffer mutation, all selected media is remotely preflighted. A durable `BUFFER_DISPATCH_INTENT` is written before the provider write. When Buffer returns a post ID, `BUFFER_ACCEPTED` is written to the trusted durable ledger first and then mirrored to the approval issue.
 
@@ -233,4 +230,4 @@ Do not create a parallel manifest, immediate-share or arbitrary-download product
 
 ## Definition of complete
 
-A canonical PDF revision is production-ready only when exact attachment identity is proven, revision-scoped media is promoted, replay rules pass, PDF and thumbnail are immutably pinned and publicly reverified, owner approval exactly matches the current queue, Buffer acceptance is durably recorded, and the later verifier independently proves the LinkedIn outcome. If the optional GitHub Notion credential is configured, its live quality checks must also pass. If it is absent, the audit must explicitly state the owner-approved current-queue fallback rather than implying Notion was checked.
+A canonical PDF revision is production-ready only when exact attachment identity is proven, revision-scoped private source media is promoted, replay rules pass, PDF and thumbnail are immutably pinned, exact approved binaries are promoted to a provider-safe media surface, owner approval exactly matches that provider-ready queue revision, Buffer acceptance is durably recorded, and the later verifier independently proves the LinkedIn outcome. If the optional GitHub Notion credential is configured, its live quality checks must also pass. If it is absent, the audit must explicitly state the owner-approved current-queue fallback rather than implying Notion was checked.
