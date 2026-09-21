@@ -29,7 +29,7 @@ The staging workflow never creates that approval issue itself.
 
 The private Google Drive `Source URL` is storage and provenance, not a Buffer delivery URL.
 
-Before staging, an approved asset needs a stable direct public `Media URL`. Public archival is therefore a separate consequential action and must happen only after the owner has approved that creative for release.
+Before Buffer release, an approved asset needs a stable provider-reachable `Media URL` that is separate from the private operations repository. Promotion to the media-only delivery surface is a separate consequential action and happens only after the owner has approved that creative for release.
 
 The bridge fetches and hashes the exact media, refuses unsupported or redirected delivery URLs, records byte count and SHA-256, and locks those values into both the GitHub candidate and Notion staging evidence.
 
@@ -65,4 +65,4 @@ A queue-capacity shortage is not a staging failure. Once separately approved, th
 
 ## Current flywheel boundary
 
-The bridge can be deployed without making any of the current 14 reserve assets public. Their private Drive originals remain private until explicit owner approval authorises media staging/public archival. This distinction is deliberate.
+The bridge can be deployed without exposing any current reserve source files or operating metadata. Private Drive originals remain private until explicit owner approval authorises exact-binary promotion to the provider media surface. This distinction is deliberate.
