@@ -229,12 +229,12 @@ jobs:
               `- SHA-256: \`${{ steps.intake.outputs.sha256 }}\``,
               `- Immutable media commit: \`${{ steps.pin.outputs.media_ref }}\``,
               '- Media source: **private repository immutable revision**',
-              '- Provider-safe media export: **REQUIRED BEFORE BUFFER APPROVAL**',
+              '- Provider-safe media export: **REQUIRED BEFORE BUFFER PROVIDER WRITE**',
               `- Source mailbox: ${{ steps.bridge.outputs.source_mailbox }}`,
               `- Source UID: ${{ steps.bridge.outputs.source_uid }}`,
               `- Intake replay: **${{ steps.intake.outputs.replay }}**`,
               `- Immutable pin replay: **${{ steps.pin.outputs.pin_replay }}**`,
-              '- Repository visibility dependency: **private ops only**. Raw private-source URLs are not provider release URLs.'
+              '- Repository visibility dependency: **private ops only**. Raw private-source URLs are not provider release URLs.',
               '',
               'This proves exact media and queue readiness only. It is not permission to publish.',
               'Publishing still requires the repository-owner `[APPROVED LINKEDIN]` gate.',
@@ -254,7 +254,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: [
-                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed private revision-scoped media, pinned to an immutable Git commit and locked into the LinkedIn queue. Provider-safe media export is still required before Buffer approval.',
+                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed private revision-scoped media, pinned to an immutable Git commit and locked into the LinkedIn queue. Provider-safe media export is still required before the Buffer provider write.',
                 '',
                 `Queue item: **${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}**`,
                 `Immutable media commit: \`${{ steps.pin.outputs.media_ref }}\``,
