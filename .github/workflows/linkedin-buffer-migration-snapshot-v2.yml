@@ -62,7 +62,7 @@ jobs:
             const account = await buffer('query MigrationAccount { account { organizations { id } } }');
             const organizationId = account.account?.organizations?.[0]?.id;
             if (!organizationId) throw new Error('Buffer returned no organisation ID.');
-            const scheduled = await buffer(`query MigrationScheduled { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(Object.values(channelIds))} } }) { edges { node { id channelId dueAt status } } pageInfo { hasNextPage } } }`);
+            const scheduled = await buffer(`query MigrationScheduled { posts(first: 100, input: { organizationId: ${JSON.stringify(organizationId)}, filter: { status: [scheduled], channelIds: ${JSON.stringify(Object.values(channelIds))} } }) { edges { node { id channelId dueAt status assets { source mimeType } } } pageInfo { hasNextPage } } }`);
             if (scheduled.posts?.pageInfo?.hasNextPage) throw new Error('Buffer snapshot pagination is incomplete.');
             const live = (scheduled.posts?.edges || []).map((edge) => edge.node);
 
@@ -92,6 +92,8 @@ jobs:
                 queueId: match?.queueId || null, revision: match?.revision || null, approvalIssue: match?.approvalIssue || null,
                 title: queuePost?.title || null, category: queuePost?.category || null, sourceType: queuePost?.sourceType || null,
                 mapped: Boolean(match && queuePost),
+                assetSources: (post.assets || []).map((asset) => asset.source).filter(Boolean),
+                assetTypes: (post.assets || []).map((asset) => asset.mimeType).filter(Boolean),
               };
             }).sort((a, b) => String(a.dueAt).localeCompare(String(b.dueAt)) || a.target.localeCompare(b.target));
 
@@ -115,7 +117,7 @@ jobs:
 
             const unmapped = rows.filter((row) => !row.mapped);
             const counts = Object.fromEntries(['personal', 'main', 'secondary'].map((target) => [target, rows.filter((row) => row.target === target).length]));
-            const table = rows.map((row) => `| ${row.target} | ${row.dueAt || ''} | ${row.queueId ? `${row.queueId}@${row.revision}` : 'UNMAPPED'} | ${String(row.title || '').replace(/\|/g, '\\|') || 'UNKNOWN'} | ${row.category || 'UNKNOWN'} | #${row.approvalIssue || '-'} |`).join('\n');
+            const table = rows.map((row) => `| ${row.target} | ${row.dueAt || ''} | ${row.queueId ? `${row.queueId}@${row.revision}` : 'UNMAPPED'} | ${String(row.title || '').replace(/\|/g, '\\|') || 'UNKNOWN'} | ${row.category || 'UNKNOWN'} | ${row.assetSources.length ? row.assetSources.map((source) => String(source).replace(/\|/g, '\\|')).join('<br>') : 'TEXT/NO SOURCE'} | ${row.assetTypes.join(', ') || '-'} | #${row.approvalIssue || '-'} |`).join('\n');
             const body = [
               '# Buffer migration snapshot v2', '',
               '**READ-ONLY. Effective queue = base queue + all eligible QA replenishment. No Buffer post, schedule or channel was changed.**', '',
@@ -127,9 +129,9 @@ jobs:
               `- Approval/effective-queue mapping: **${rows.length - unmapped.length}/${rows.length}**`,
               `- Cadence contract: **${cadenceFailures.length ? 'FAIL' : 'PASS'}**`,
               ...(cadenceFailures.length ? cadenceFailures.map((x) => `  - ${x}`) : []), '',
-              '| Target | Due | Queue record | Title | Category | Approval |',
-              '|---|---|---|---|---|---|',
-              table || '| - | - | - | - | - | - |', '',
+              '| Target | Due | Queue record | Title | Category | Buffer asset source | MIME | Approval |',
+              '|---|---|---|---|---|---|---|---|',
+              table || '| - | - | - | - | - | - | - | - |', '',
               ...(unmapped.length ? ['## Blocker', `${unmapped.length} live placement(s) still do not map to the effective locked queue. Do not reflow/delete until reconciled.`] : ['Every live Buffer placement maps to an effective locked queue revision and approval issue.']), '',
               'Next step: persist KEEP / MOVE / REPURPOSE / RETIRE classification before any recurring-schedule edit.',
             ].join('\n');
