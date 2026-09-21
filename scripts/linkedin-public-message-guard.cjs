@@ -32,6 +32,8 @@ function publicAuthorshipBoundaryReasons(text) {
     /\b(?:prompt|prompt\s+chain|model)\b[^\n.!?]{0,80}\b(?:linkedin|post|caption|content|copy)\b/i,
     /\b(?:linkedin|post|caption|content|copy)\b[^\n.!?]{0,80}\b(?:prompt|prompt\s+chain|model)\b/i,
     /\b(?:keep|fill|refill)\s+(?:the\s+)?(?:buffer|content\s+queue)\b/i,
+    /\b(?:linkedin|content|posts?)\b[^\n.!?]{0,140}\b(?:learning\s+pool|system\s+learns|automated\s+learning)\b/i,
+    /\b(?:learning\s+pool|system\s+learns|automated\s+learning)\b[^\n.!?]{0,140}\b(?:linkedin|content|posts?)\b/i,
     /\bqueue\s+(?:is|was|stays|remains)\s+(?:full|filled)\b/i,
   ];
   if (processDisclosurePatterns.some((pattern) => pattern.test(value))) {
