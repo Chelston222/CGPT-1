@@ -222,3 +222,15 @@ test('governed private-media dispatch fails closed without bridge credential', a
     /TTE_BRIDGE_TOKEN/,
   );
 });
+
+
+test('provider boundary rejects private ops media before network access', async () => {
+  const request = {
+    mediaUrl: 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/private.jpg',
+    mediaKind: 'image',
+  };
+  await assert.rejects(
+    preflightMedia(request, async () => { throw new Error('network should not be reached'); }, { forbidPrivateOpsMedia: true }),
+    /provider-safe media surface/,
+  );
+});
