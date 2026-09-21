@@ -196,6 +196,9 @@ jobs:
         env:
           POST_ID: ${{ steps.intake.outputs.post_id }}
           REVISION: ${{ steps.intake.outputs.revision }}
+          EXPECTED_BYTES: ${{ steps.intake.outputs.bytes }}
+          EXPECTED_SHA: ${{ steps.intake.outputs.sha256 }}
+          TTE_BRIDGE_TOKEN: ${{ secrets.TTE_BRIDGE_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -234,13 +237,6 @@ jobs:
           NODE
           cat /tmp/private-media-proof.json
           node -e "const p=require('/tmp/private-media-proof.json'); console.log('host='+p.host); console.log('pdf_sha256='+p.pdfSha256); console.log('private_media_ready=true');" >> "$GITHUB_OUTPUT"
-        env:
-          POST_ID: ${{ steps.intake.outputs.post_id }}
-          REVISION: ${{ steps.intake.outputs.revision }}
-          EXPECTED_BYTES: ${{ steps.intake.outputs.bytes }}
-          EXPECTED_SHA: ${{ steps.intake.outputs.sha256 }}
-          TTE_BRIDGE_TOKEN: ${{ secrets.TTE_BRIDGE_TOKEN }}
-
       - name: Record governed intake proof
         uses: actions/github-script@v7
         with:
