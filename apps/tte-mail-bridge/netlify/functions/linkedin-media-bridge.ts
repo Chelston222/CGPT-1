@@ -1,6 +1,6 @@
 import type { Config } from '@netlify/functions';
 import { getStore } from '@netlify/blobs';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 const STORE = 'tte-linkedin-media-bridge';
 const MAX_CHUNK_BYTES = 3_800_000;
@@ -31,10 +31,17 @@ function safeEqual(a: string, b: string) {
   return aa.length === bb.length && timingSafeEqual(aa, bb);
 }
 
+function deriveUploadToken(secret: string) {
+  return secret.length >= 16
+    ? createHmac('sha256', secret).update('tte-linkedin-media-upload-v1').digest('base64url')
+    : '';
+}
+
 function authorised(request: Request) {
   const dedicated = Netlify.env.get('TTE_LINKEDIN_MEDIA_UPLOAD_TOKEN') || '';
+  const smtpDerived = deriveUploadToken(Netlify.env.get('TTE_SMTP_PASS') || '');
   const bridge = Netlify.env.get('TTE_BRIDGE_TOKEN') || '';
-  const token = dedicated.length >= 32 ? dedicated : bridge;
+  const token = dedicated.length >= 32 ? dedicated : (smtpDerived || bridge);
   const auth = request.headers.get('authorization') || '';
   return token.length >= 24 && safeEqual(auth, `Bearer ${token}`);
 }
