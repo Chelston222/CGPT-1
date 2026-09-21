@@ -184,18 +184,16 @@ test('dispatch-intent reconciliation is owner-gated, shares the release lock and
   assert.match(reconcile, /Buffer write performed: \*\*NO\*\*/);
 });
 
-test('IMAP intake supports private repository media through the capability bridge', () => {
+test('IMAP intake keeps exact media private until provider-safe export', () => {
   assert.doesNotMatch(intake, /visibility.*public/s);
-  assert.match(intake, /Verify private media-hosting contract/);
-  assert.match(intake, /TTE_SMTP_PASS/);
+  assert.match(intake, /Verify private-source media contract/);
+  assert.match(intake, /Verify immutable private source media/);
+  assert.match(intake, /Provider-safe media export: \*\*REQUIRED BEFORE BUFFER APPROVAL\*\*/);
+  assert.match(intake, /Raw private-source URLs are not provider release URLs/);
   assert.match(intake, /revision-scoped media/);
   assert.match(intake, /id: pin/);
   assert.match(intake, /pinQueueMediaUrls/);
   assert.match(intake, /git rev-parse HEAD/);
   assert.match(intake, /Pinned media ref is not an immutable commit SHA/);
-  assert.match(intake, /preflightMedia/);
-  assert.match(intake, /requirePrivateBridge: true/);
-  assert.match(intake, /Private media host/);
-  assert.match(intake, /Repository visibility dependency/);
   assert.match(intake, /Immutable media commit/);
 });
