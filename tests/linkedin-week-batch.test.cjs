@@ -90,7 +90,7 @@ test('fails closed instead of sending a carousel as a text-only post', () => {
   };
   assert.throws(
     () => validateWeeklyBatch(body({ items: 'tte-li-001@3' }), carouselQueue, ENV, Date.parse('2026-08-09T00:00:00Z')),
-    /carousel PDF and public thumbnail are not verified and publishable/,
+    /carousel PDF and provider-safe thumbnail are not verified and publishable/,
   );
 });
 
@@ -168,9 +168,9 @@ test('rejects a second Main 222Emails placement on one day before Buffer is cont
 
 test('future QA banks are discovered automatically but remain review-only until explicit approval', () => {
   const paths = qaReplenishmentPaths();
-  assert.ok(paths.some((file) => file.endsWith('qa-replenishment-2026-09-07-learning-v2.json')));
+  assert.ok(paths.some((file) => file.endsWith('qa-replenishment-2026-09-21-learning-v2.json')));
   const effective = withQaReplenishment({ schemaVersion: 2, generatedAt: queue.generatedAt, posts: [] });
-  const post = effective.posts.find((item) => item.id === 'tte-learning-v2-personal-01');
+  const post = effective.posts.find((item) => item.id === 'tte-learning-v2-main-11');
   assert.ok(post);
   assert.equal(post.status, 'review');
   assert.equal(post.qa.approvalEligible, true);
@@ -181,14 +181,14 @@ test('an explicitly approved future QA item can pass the canonical weekly gate w
   const futureQueue = { schemaVersion: 2, generatedAt: queue.generatedAt, posts: [] };
   const futureBody = [
     'BATCH_ID: future-learning-v2-test',
-    'WEEK_START: 2026-09-07',
+    'WEEK_START: 2026-09-21',
     'QUEUE_SCHEMA: 2',
     `QUEUE_GENERATED_AT: ${queue.generatedAt}`,
-    'APPROVED_ITEMS: tte-learning-v2-personal-01@1',
+    'APPROVED_ITEMS: tte-learning-v2-main-11@1',
   ].join('\n');
   const result = validateWeeklyBatch(futureBody, futureQueue, ENV, Date.parse('2026-08-23T12:00:00Z'));
   assert.equal(result.jobs.length, 1);
-  assert.equal(result.jobs[0].post.id, 'tte-learning-v2-personal-01');
+  assert.equal(result.jobs[0].post.id, 'tte-learning-v2-main-11');
   assert.equal(result.jobs[0].request.contentQa, 'pass');
 });
 test('personal founder stories fail closed without the current story-first QA evidence', () => {
