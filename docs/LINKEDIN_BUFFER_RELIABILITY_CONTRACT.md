@@ -12,11 +12,11 @@ The design goal is **zero silent failure**, not the impossible promise that an e
 
 ## Canonical responsibilities
 
-- GitHub is the canonical machine state for locked queue revisions, release evidence and reliability checks.
+- The private GitHub operations repository is the canonical machine state for locked queue revisions, release evidence and reliability checks.
 - Notion is the editorial and quality-control layer.
 - Buffer is the delivery provider, never the source of truth.
 - Google Drive is archive/source storage, not publication authority.
-- Netlify and temporary transport mechanisms are not required production dependencies for LinkedIn PDF releases.
+- Provider-facing media transport is separate from canonical state. A dedicated public media-only surface or separately verified capability bridge may serve exact approved binaries, but neither is publication authority.
 
 ## Permanent release invariants
 
@@ -30,7 +30,7 @@ Every live scheduled Buffer placement must satisfy all of the following:
 6. The placement is fixed/custom scheduled so recurring Buffer slot edits cannot silently move it.
 7. The governed daily and weekly cadence ceiling is not exceeded.
 8. Buffer channel identity, connection state and Europe/London timezone remain valid.
-9. Any media placement keeps HTTPS media, exact SHA-256 metadata and a positive byte count in the locked queue record.
+9. Any media placement keeps a provider-reachable HTTPS media URL, exact SHA-256 metadata and a positive byte count in the locked queue record. A raw URL from the private operations repository is a hard failure before provider dispatch.
 10. A duplicate live destination for the same queue revision and target is a hard failure.
 11. A scheduled placement more than 15 minutes past due is a hard failure until publication or failure state is reconciled.
 12. Buffer pagination must be complete. An incomplete provider view is never treated as healthy.
