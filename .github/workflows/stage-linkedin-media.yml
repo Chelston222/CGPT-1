@@ -1,4 +1,4 @@
-name: Stage LinkedIn media to GitHub
+name: Stage LinkedIn media to private ops
 
 on:
   issues:
@@ -16,11 +16,23 @@ jobs:
   stage:
     if: startsWith(github.event.issue.title, '[STAGE LINKEDIN MEDIA]') && github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
+    env:
+      TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Require private operations repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.event.repository.private }}" = "true" || {
+            echo 'Refusing to stage new LinkedIn media while the operations repository is public.' >&2
+            exit 2
+          }
+          test -n "${TTE_SMTP_PASS:-}" || { echo 'TTE_SMTP_PASS is missing for derived private-media auth.' >&2; exit 2; }
 
       - name: Decode staged media
         shell: bash
@@ -85,7 +97,7 @@ jobs:
             printf '%s\n' "$filename" >> /tmp/staged-media.txt
           done
 
-      - name: Commit public media assets
+      - name: Commit private source media
         shell: bash
         run: |
           set -euo pipefail
@@ -97,17 +109,35 @@ jobs:
           git commit -m 'Stage approved LinkedIn media assets'
           git push origin HEAD:main
 
-      - name: Report staged URLs
+      - name: Host exact staged media through capability bridge and report
         uses: actions/github-script@v7
+        env:
+          TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
         with:
           script: |
             const fs = require('node:fs');
+            const path = require('node:path');
+            const { deriveMediaUploadToken, ensurePrivateHostedMedia } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-media-preflight.cjs'));
             const names = fs.readFileSync('/tmp/staged-media.txt', 'utf8').trim().split(/\n+/).filter(Boolean);
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const lines = names.map(name => `- https://raw.githubusercontent.com/${owner}/${repo}/main/assets/linkedin-generated/${encodeURIComponent(name)}`);
+            const token = deriveMediaUploadToken(process.env.TTE_SMTP_PASS || '');
+            if (!token) throw new Error('Derived private-media token is unavailable.');
+            const lines = [];
+            for (const name of names) {
+              const source = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/main/assets/linkedin-generated/${encodeURIComponent(name)}`;
+              const url = await ensurePrivateHostedMedia({
+                originalUrl: source,
+                kind: 'image',
+                fetchImpl: fetch,
+                workspace: process.env.GITHUB_WORKSPACE,
+                uploadToken: token,
+              });
+              if (!url) throw new Error(`Private media hosting failed for ${name}`);
+              lines.push(`- ${name}: ${url}`);
+            }
             await github.rest.issues.createComment({
-              owner, repo, issue_number: context.issue.number,
-              body: ['✅ LinkedIn media staged to stable public GitHub raw URLs.', '', ...lines].join('\n')
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: ['✅ LinkedIn media staged to the private operations repository and capability-hosted for provider delivery.', '', ...lines, '', 'Do not expose these provider-delivery URLs publicly.'].join('\n')
             });
-            await github.rest.issues.update({ owner, repo, issue_number: context.issue.number, state: 'closed' });
+            await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed' });
