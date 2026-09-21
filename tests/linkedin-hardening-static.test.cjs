@@ -20,10 +20,11 @@ const queueOverlay = read('apps/linkedin-review/queue-overlay.js');
 const strategy = read('docs/LINKEDIN_CONTENT_STRATEGY_2026.md');
 
 test('all approved media is preflighted before the first Buffer createPost mutation', () => {
-  const preflightIndex = autopost.indexOf('await preflightMedia(job.request, fetch)');
+  const preflightIndex = autopost.indexOf('await preflightMedia(job.request, fetch, {');
   const mutationIndex = autopost.indexOf('buildCreatePostMutation(channel, job.request.mode, media)');
   assert.ok(preflightIndex >= 0, 'media preflight call is missing');
   assert.ok(mutationIndex > preflightIndex, 'Buffer mutation can occur before media preflight');
+  assert.match(autopost, /forbidPrivateOpsMedia:\s*true/);
   assert.match(autopost, /MEDIA_SHA256|mediaProof\.sha256/);
 });
 
@@ -185,7 +186,8 @@ test('dispatch-intent reconciliation is owner-gated, shares the release lock and
 });
 
 test('IMAP intake keeps exact media private until provider-safe export', () => {
-  assert.doesNotMatch(intake, /visibility.*public/s);
+  assert.doesNotMatch(intake, /Verify public media-hosting contract/);
+  assert.doesNotMatch(intake, /Verify immutable public raw media reachability and digest/);
   assert.match(intake, /Verify private-source media contract/);
   assert.match(intake, /Verify immutable private source media/);
   assert.match(intake, /Provider-safe media export: \*\*REQUIRED BEFORE BUFFER APPROVAL\*\*/);
