@@ -21,13 +21,28 @@
       "contentRole": "operator_pov",
       "funnelStage": "tof",
       "format": "text",
-      "targets": ["personal"],
+      "targets": [
+        "personal"
+      ],
       "mode": "schedule",
-      "scheduledAt": {"personal": "2026-09-22T08:15:00+01:00"},
-      "copy": {"default": "Most local businesses do not need more software.\n\nThey often already have booking tools, inboxes, spreadsheets and customer data.\n\nThe gap is knowing what should happen next and making existing tools work together.\n\nAnother subscription cannot replace a clear operating decision.\n\nUse more of the system before buying more system."},
+      "scheduledAt": {
+        "personal": "2026-09-22T08:15:00+01:00"
+      },
+      "copy": {
+        "default": "Most local businesses do not need more software.\n\nThey often already have booking tools, inboxes, spreadsheets and customer data.\n\nThe gap is knowing what should happen next and making existing tools work together.\n\nAnother subscription cannot replace a clear operating decision.\n\nUse more of the system before buying more system."
+      },
       "sourceUrl": "https://app.notion.com/3b0e72eb858781d6a587d2476307f050",
-      "status": "review",
-      "qa": {"status": "ready_for_human_review", "contextPass": true, "evidenceSafe": true, "distinctFromActiveBatch": true, "publishable": true, "approvalEligible": true, "publishPermission": false}
+      "status": "retired",
+      "qa": {
+        "status": "retired",
+        "contextPass": true,
+        "evidenceSafe": true,
+        "distinctFromActiveBatch": true,
+        "publishable": false,
+        "approvalEligible": false,
+        "publishPermission": false,
+        "storyWorthReading": false
+      }
     },
     {
       "id": "tte-context-pass-personal-002",
@@ -38,13 +53,28 @@
       "contentRole": "operator_pov",
       "funnelStage": "tof",
       "format": "text",
-      "targets": ["personal"],
+      "targets": [
+        "personal"
+      ],
       "mode": "schedule",
-      "scheduledAt": {"personal": "2026-09-22T13:15:00+01:00"},
-      "copy": {"default": "Some businesses are addicted to acquisition.\n\nNew leads create visible activity.\n\nRetention work is quieter: cleaner data, better timing, clearer journeys and consistent follow-up.\n\nThe excitement of acquisition can distract from customers already won.\n\nGrowth needs a front door and a reason to return."},
+      "scheduledAt": {
+        "personal": "2026-09-22T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "Some businesses are addicted to acquisition.\n\nNew leads create visible activity.\n\nRetention work is quieter: cleaner data, better timing, clearer journeys and consistent follow-up.\n\nThe excitement of acquisition can distract from customers already won.\n\nGrowth needs a front door and a reason to return."
+      },
       "sourceUrl": "https://app.notion.com/3b0e72eb85878176bb13eda29d991705",
-      "status": "review",
-      "qa": {"status": "ready_for_human_review", "contextPass": true, "evidenceSafe": true, "distinctFromActiveBatch": true, "publishable": true, "approvalEligible": true, "publishPermission": false}
+      "status": "retired",
+      "qa": {
+        "status": "retired",
+        "contextPass": true,
+        "evidenceSafe": true,
+        "distinctFromActiveBatch": true,
+        "publishable": false,
+        "approvalEligible": false,
+        "publishPermission": false,
+        "storyWorthReading": false
+      }
     },
     {
       "id": "tte-context-pass-personal-003",
@@ -55,13 +85,30 @@
       "contentRole": "business_lesson",
       "funnelStage": "mof",
       "format": "text",
-      "targets": ["personal"],
+      "targets": [
+        "personal"
+      ],
       "mode": "schedule",
-      "scheduledAt": {"personal": "2026-09-22T18:15:00+01:00"},
-      "copy": {"default": "Your best marketing copy is hiding in customer replies.\n\nCustomers already tell you what they want, fear, misunderstand and value.\n\nIt appears in enquiries, reviews, objections, support questions and replies.\n\nThe language is usually clearer than the words created in a brainstorming session.\n\nBefore writing more copy, listen to the copy your customers are giving you."},
+      "scheduledAt": {
+        "personal": "2026-09-22T18:15:00+01:00"
+      },
+      "copy": {
+        "default": "Your best marketing copy is hiding in customer replies.\n\nCustomers already tell you what they want, fear, misunderstand and value.\n\nIt appears in enquiries, reviews, objections, support questions and replies.\n\nThe language is usually clearer than the words created in a brainstorming session.\n\nBefore writing more copy, listen to the copy your customers are giving you."
+      },
       "sourceUrl": "https://app.notion.com/3ace72eb8587810080ccc8419d3e119a",
-      "status": "review",
-      "qa": {"status": "ready_for_human_review", "contextPass": true, "evidenceSafe": true, "distinctFromActiveBatch": true, "publishable": true, "approvalEligible": true, "publishPermission": false}
+      "status": "retired",
+      "qa": {
+        "status": "retired",
+        "contextPass": true,
+        "evidenceSafe": true,
+        "distinctFromActiveBatch": true,
+        "publishable": false,
+        "approvalEligible": false,
+        "publishPermission": false,
+        "storyWorthReading": false
+      }
     }
-  ]
+  ],
+  "status": "retired_by_story_worth_reading_2026-09-21",
+  "retirementReason": "Owner-authorised full LinkedIn content-bank review. These legacy short-form personal posts no longer meet the Story Worth Reading / current originality standard and must not be replenished or recreated."
 }
