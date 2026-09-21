@@ -61,6 +61,8 @@ function evaluateNotionQualityGate(page, expectedPageId = null, queuePost = null
   const decision = readSelect(page, 'Content Decision');
   const approval = readSelect(page, 'Approval');
   const antiDnaPass = readCheckbox(page, 'Anti-DNA | Pass');
+  const publicTrustBoundaryPass = readCheckbox(page, 'Public Trust Boundary Pass');
+  const storyGate = readSelect(page, 'Story Gate');
   const automationStatus = readSelect(page, 'Automation Status');
   const bufferStatus = readSelect(page, 'Buffer Status');
   const assetReady = readCheckbox(page, 'Asset Ready');
@@ -75,6 +77,8 @@ function evaluateNotionQualityGate(page, expectedPageId = null, queuePost = null
   if (decision !== REQUIRED_DECISION) reasons.push(`Content Decision is ${decision || 'unset'}, not ${REQUIRED_DECISION}`);
   if (approval !== REQUIRED_APPROVAL) reasons.push(`Approval is ${approval || 'unset'}, not ${REQUIRED_APPROVAL}`);
   if (!antiDnaPass) reasons.push('Anti-DNA | Pass is not checked');
+  if (!publicTrustBoundaryPass) reasons.push('Public Trust Boundary Pass is not checked');
+  if (!new Set(['Pass', 'Not Applicable']).has(storyGate)) reasons.push(`Story Gate is ${storyGate || 'unset'}, not Pass or Not Applicable`);
   if (!REQUIRED_AUTOMATION.has(automationStatus)) reasons.push(`Automation Status is ${automationStatus || 'unset'}`);
   if (BLOCKED_BUFFER.has(bufferStatus)) reasons.push(`Buffer Status is ${bufferStatus}`);
   if (!ALLOWED_BUFFER.has(bufferStatus)) reasons.push(`Buffer Status is ${bufferStatus || 'unset'}, not Ready for Buffer or Queued in Buffer`);
@@ -133,6 +137,8 @@ function evaluateNotionQualityGate(page, expectedPageId = null, queuePost = null
       decision,
       approval,
       antiDnaPass,
+      publicTrustBoundaryPass,
+      storyGate,
       automationStatus,
       bufferStatus,
       assetReady,
