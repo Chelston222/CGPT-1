@@ -21,7 +21,6 @@ jobs:
       TTE_SMTP_USER: hello@222emails.com
       TTE_IMAP_HOST: mail.privateemail.com
       TTE_IMAP_PORT: '993'
-      TTE_BRIDGE_TOKEN: ${{ secrets.TTE_BRIDGE_TOKEN }}
 
     steps:
       - name: Check out latest main
@@ -41,8 +40,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "${TTE_BRIDGE_TOKEN:-}" || { echo 'TTE_BRIDGE_TOKEN is missing'; exit 2; }
-          test ${#TTE_BRIDGE_TOKEN} -ge 24 || { echo 'TTE_BRIDGE_TOKEN must be at least 24 characters'; exit 2; }
+          test -n "${TTE_SMTP_PASS:-}" || { echo 'TTE_SMTP_PASS is missing for derived private-media auth'; exit 2; }
+          test ${#TTE_SMTP_PASS} -ge 16 || { echo 'TTE_SMTP_PASS is too short for derived private-media auth'; exit 2; }
           echo 'Private repository media transport is available through the Netlify capability bridge.'
 
       - name: Verify existing PrivateEmail credential
@@ -198,7 +197,6 @@ jobs:
           REVISION: ${{ steps.intake.outputs.revision }}
           EXPECTED_BYTES: ${{ steps.intake.outputs.bytes }}
           EXPECTED_SHA: ${{ steps.intake.outputs.sha256 }}
-          TTE_BRIDGE_TOKEN: ${{ secrets.TTE_BRIDGE_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -219,7 +217,7 @@ jobs:
               mediaSha256: String(post.carousel?.pdfSha256 || post.mediaSha256 || ''),
             };
             const proof = await preflightMedia(request, fetch, {
-              uploadToken: process.env.TTE_BRIDGE_TOKEN,
+              uploadSecret: process.env.TTE_SMTP_PASS,
               requirePrivateBridge: true,
             });
             if (!request.mediaUrl.startsWith(MEDIA_BRIDGE_BASE)) throw new Error('PDF did not move onto the private media bridge.');
