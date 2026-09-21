@@ -1085,12 +1085,13 @@
         "default": "I have changed one rule in how I think about content:\n\nAn empty slot is better than a weak post.\n\nFor a while, the tempting goal was simple.\n\nKeep Buffer full.\nKeep publishing.\nKeep the machine moving.\n\nBut volume can hide a quality problem.\n\nIf the only reason a post exists is because there was space on the calendar, the calendar has started making the strategy.\n\nI would rather the system say:\n\n“We have room, but nothing here is strong enough yet.”\n\nThen create something better.\n\nThat is the same principle I increasingly like in client work too.\n\nAutomation should remove avoidable effort.\n\nIt should not remove judgement."
       },
       "sourceType": "performance_learning_v2",
-      "status": "review",
+      "status": "retired",
       "qa": {
         "status": "ready_for_human_review",
-        "publishable": true,
-        "approvalEligible": true,
-        "publishPermission": false
+        "publishable": false,
+        "approvalEligible": false,
+        "publishPermission": false,
+        "retiredReason": "Public Authorship & Content-Operations Trust Boundary: internal content-learning or publishing mechanics are not public story material."
       }
     },
     {
