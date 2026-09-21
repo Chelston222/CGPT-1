@@ -1,8 +1,6 @@
-name: TTE LinkedIn Media Publish
+name: Retired standalone LinkedIn media deploy
 
 on:
-  # Media changes no longer publish to production merely because they are merged.
-  # Release explicitly by workflow dispatch or the existing owner-only deploy issue.
   workflow_dispatch:
   issues:
     types: [opened]
@@ -11,68 +9,26 @@ permissions:
   contents: read
   issues: write
 
-concurrency:
-  group: tte-linkedin-media-publish
-  cancel-in-progress: false
-
 jobs:
-  deploy:
-    if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[DEPLOY LINKEDIN MEDIA]') && github.event.issue.user.login == github.repository_owner)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    env:
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      NETLIFY_SITE_ID: e531326d-60b8-4def-85b9-727a7f708547
-    defaults:
-      run:
-        working-directory: apps/tte-mail-bridge
+  retired:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'issues' && startsWith(github.event.issue.title, '[DEPLOY LINKEDIN MEDIA]') && github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          package-manager-cache: false
-
-      - name: Verify Netlify auth is available
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "${NETLIFY_AUTH_TOKEN:-}" || { echo 'NETLIFY_AUTH_TOKEN is not configured'; exit 2; }
-
-      - name: Install app dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Publish current mail bridge plus LinkedIn media
-        run: npx netlify deploy --prod --dir=public --functions=netlify/functions --site "$NETLIFY_SITE_ID"
-
-      - name: Verify LinkedIn media is public
-        shell: bash
-        run: |
-          set -euo pipefail
-          for file in 2026-08-20-calling.jpg 2026-08-20-stay-focused.jpg 2026-08-20-ego-bottleneck.jpg; do
-            url="https://222emails-mail-bridge.netlify.app/linkedin-media/$file"
-            curl --fail --silent --show-error --location --retry 5 --retry-delay 2 --output "/tmp/$file" "$url"
-            test -s "/tmp/$file"
-            file --brief --mime-type "/tmp/$file" | grep -Eq '^image/(jpeg|png)$'
-          done
-
-      - name: Report issue-triggered deploy
-        if: always() && github.event_name == 'issues'
+      - name: Stop duplicate public-media deploy route
         uses: actions/github-script@v7
-        env:
-          JOB_STATUS: ${{ job.status }}
         with:
           script: |
-            const ok = process.env.JOB_STATUS === 'success';
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: ok
-                ? '✅ LinkedIn media is publicly deployed and image-read verification passed for all three files.'
-                : `❌ LinkedIn media deploy failed. Job status: **${process.env.JOB_STATUS}**. Check the workflow run before resubmitting Buffer posts.`
-            });
-            if (ok) await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed' });
+            const message = [
+              '⛔ The standalone public LinkedIn media deploy route is retired.',
+              '',
+              'Canonical media transport is now:',
+              'private CGPT-1 source bytes → exact SHA/byte preflight → capability-gated 222Emails Netlify media bridge → Buffer.',
+              '',
+              'Use the normal governed LinkedIn approval path. Do not recreate a separate public-media deployment lane.'
+            ].join('\n');
+            if (context.eventName === 'issues') {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: message });
+              await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, state: 'closed', state_reason: 'not_planned' });
+            } else {
+              core.notice(message);
+            }
