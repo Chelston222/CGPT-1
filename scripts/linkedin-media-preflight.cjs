@@ -1,15 +1,20 @@
 'use strict';
 
-const { createHash } = require('node:crypto');
+const fs = require('node:fs');
+const path = require('node:path');
+const { createHash, createHmac } = require('node:crypto');
 
 // Buffer/LinkedIn publish limits are expressed in decimal megabytes.
-// Use the stricter decimal byte values so an edge-case asset cannot pass here
-// and then be rejected by Buffer for being slightly over 10/100 MB.
 const MAX_IMAGE_BYTES = 10_000_000;
 const MAX_DOCUMENT_BYTES = 100_000_000;
 const MAX_DOCUMENT_PAGES = 300;
 const LEGACY_REVIEW_HOST = '222emails-review-desk.netlify.app';
 const REPO_MEDIA_BASE = 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review';
+const MEDIA_BRIDGE_BASE = 'https://222emails-mail-bridge.netlify.app/api/tte/linkedin-media-bridge';
+const PRIVATE_REPO_OWNER = 'Chelston222';
+const PRIVATE_REPO_NAME = 'CGPT-1';
+const BRIDGE_CHUNK_BYTES = 3_500_000;
+
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
   'image/png',
@@ -144,17 +149,157 @@ async function preflightOne(media, fetchImpl = globalThis.fetch) {
   };
 }
 
-async function preflightMedia(request, fetchImpl = globalThis.fetch) {
+function repoRelativePathFromMediaUrl(value) {
+  const parsed = validateHttps(value, 'MEDIA_URL');
+  const host = parsed.hostname.toLowerCase();
+
+  if (host === LEGACY_REVIEW_HOST) {
+    if (!parsed.pathname.startsWith('/media/')) return null;
+    if (parsed.search || parsed.hash) return null;
+    return `apps/linkedin-review${parsed.pathname}`;
+  }
+
+  if (host !== 'raw.githubusercontent.com') return null;
+  const segments = parsed.pathname.split('/').filter(Boolean);
+  if (segments.length < 4) return null;
+  if (segments[0] !== PRIVATE_REPO_OWNER || segments[1] !== PRIVATE_REPO_NAME) return null;
+  const relative = segments.slice(3).join('/');
+  if (!relative.startsWith('apps/linkedin-review/media/') && !relative.startsWith('assets/linkedin-generated/')) return null;
+  return relative;
+}
+
+function mediaContentTypeFromPath(filePath, kind) {
+  if (kind === 'document' || /\.pdf$/i.test(filePath)) return 'application/pdf';
+  if (/\.(?:jpg|jpeg)$/i.test(filePath)) return 'image/jpeg';
+  if (/\.png$/i.test(filePath)) return 'image/png';
+  if (/\.webp$/i.test(filePath)) return 'image/webp';
+  if (/\.gif$/i.test(filePath)) return 'image/gif';
+  if (/\.heic$/i.test(filePath)) return 'image/heic';
+  if (/\.heif$/i.test(filePath)) return 'image/heif';
+  throw new Error(`Unsupported local media extension for private hosting: ${path.basename(filePath)}.`);
+}
+
+function bridgeIdentity(bytes, token) {
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const id = `li-${sha256.slice(0, 40)}`;
+  const capability = createHmac('sha256', token).update(`linkedin-media:${sha256}`).digest('base64url');
+  const url = `${MEDIA_BRIDGE_BASE}?id=${encodeURIComponent(id)}&cap=${encodeURIComponent(capability)}`;
+  return { sha256, id, capability, url };
+}
+
+async function responseJson(response) {
+  try { return await response.json(); } catch { return {}; }
+}
+
+async function ensurePrivateHostedMedia({
+  originalUrl,
+  kind,
+  expectedBytes = null,
+  expectedSha256 = null,
+  fetchImpl = globalThis.fetch,
+  workspace = process.env.GITHUB_WORKSPACE || process.cwd(),
+  uploadToken = process.env.TTE_BRIDGE_TOKEN || '',
+}) {
+  const relative = repoRelativePathFromMediaUrl(originalUrl);
+  if (!relative) return null;
+
+  const absolute = path.resolve(workspace, relative);
+  const root = path.resolve(workspace) + path.sep;
+  if (!absolute.startsWith(root) || !fs.existsSync(absolute) || !fs.statSync(absolute).isFile()) {
+    return null;
+  }
+  if (!uploadToken || uploadToken.length < 24) {
+    throw new Error('TTE_BRIDGE_TOKEN is required to privately host repository LinkedIn media.');
+  }
+
+  const bytes = fs.readFileSync(absolute);
+  const limit = expectedLimit(kind);
+  if (!bytes.length || bytes.length > limit) throw new Error(`Local media exceeds the ${limit} byte limit.`);
+
+  const identity = bridgeIdentity(bytes, uploadToken);
+  if (expectedBytes != null && bytes.length !== expectedBytes) {
+    throw new Error(`Local media byte count changed after approval: expected ${expectedBytes}, received ${bytes.length}.`);
+  }
+  if (expectedSha256 && identity.sha256.toLowerCase() !== String(expectedSha256).toLowerCase()) {
+    throw new Error('Local media SHA-256 changed after approval.');
+  }
+
+  const existing = await fetchWithTimeout(identity.url, { method: 'GET' }, fetchImpl);
+  if (existing.ok) {
+    const remoteSha = String(existing.headers.get('x-file-sha256') || '').toLowerCase();
+    if (remoteSha && remoteSha !== identity.sha256) throw new Error('Private media bridge returned a conflicting SHA-256.');
+    return identity.url;
+  }
+  if (existing.status !== 404) throw new Error(`Private media bridge lookup returned HTTP ${existing.status}.`);
+
+  const parts = Math.ceil(bytes.length / BRIDGE_CHUNK_BYTES);
+  for (let part = 1; part <= parts; part += 1) {
+    const start = (part - 1) * BRIDGE_CHUNK_BYTES;
+    const chunk = bytes.subarray(start, Math.min(bytes.length, start + BRIDGE_CHUNK_BYTES));
+    const uploadUrl = `${MEDIA_BRIDGE_BASE}?id=${encodeURIComponent(identity.id)}&part=${part}`;
+    const response = await fetchWithTimeout(uploadUrl, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${uploadToken}` },
+      body: chunk,
+    }, fetchImpl, 30_000);
+    if (!response.ok) {
+      const payload = await responseJson(response);
+      throw new Error(`Private media bridge chunk upload failed: HTTP ${response.status} ${JSON.stringify(payload)}`);
+    }
+  }
+
+  const type = mediaContentTypeFromPath(absolute, kind);
+  const finalise = await fetchWithTimeout(`${MEDIA_BRIDGE_BASE}?id=${encodeURIComponent(identity.id)}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${uploadToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      parts,
+      expectedBytes: bytes.length,
+      expectedSha256: identity.sha256,
+      capability: identity.capability,
+      contentType: type,
+      filename: path.basename(absolute).replace(/[^a-zA-Z0-9._-]/g, '-').slice(0, 120),
+    }),
+  }, fetchImpl, 45_000);
+  if (!finalise.ok) {
+    const payload = await responseJson(finalise);
+    throw new Error(`Private media bridge finalise failed: HTTP ${finalise.status} ${JSON.stringify(payload)}`);
+  }
+
+  const verify = await fetchWithTimeout(identity.url, { method: 'GET' }, fetchImpl, 30_000);
+  if (!verify.ok) throw new Error(`Private media bridge verification returned HTTP ${verify.status}.`);
+  const remoteSha = String(verify.headers.get('x-file-sha256') || '').toLowerCase();
+  if (remoteSha !== identity.sha256) throw new Error('Private media bridge verification SHA-256 mismatch.');
+
+  return identity.url;
+}
+
+async function preflightMedia(request, fetchImpl = globalThis.fetch, options = {}) {
   if (!request?.mediaUrl) return null;
 
-  // The original review desk was a manual upload and can drift from the locked
-  // repository assets. Canonicalise only its governed /media/ paths to the
-  // current main-branch repository bytes, then verify byte count/hash as usual.
-  // Mutating the request is intentional: downstream Buffer dispatch must use
-  // the exact transport URL that passed preflight, never the stale legacy host.
-  request.mediaUrl = canonicalMediaUrl(request.mediaUrl, 'MEDIA_URL');
+  const privatelyHosted = await ensurePrivateHostedMedia({
+    originalUrl: request.mediaUrl,
+    kind: request.mediaKind,
+    expectedBytes: request.mediaBytes,
+    expectedSha256: request.mediaSha256,
+    fetchImpl,
+    workspace: options.workspace,
+    uploadToken: options.uploadToken,
+  });
+  request.mediaUrl = privatelyHosted || canonicalMediaUrl(request.mediaUrl, 'MEDIA_URL');
+
   if (request.documentThumbnailUrl) {
-    request.documentThumbnailUrl = canonicalMediaUrl(request.documentThumbnailUrl, 'DOCUMENT_THUMBNAIL_URL');
+    const privateThumb = await ensurePrivateHostedMedia({
+      originalUrl: request.documentThumbnailUrl,
+      kind: 'image',
+      fetchImpl,
+      workspace: options.workspace,
+      uploadToken: options.uploadToken,
+    });
+    request.documentThumbnailUrl = privateThumb || canonicalMediaUrl(request.documentThumbnailUrl, 'DOCUMENT_THUMBNAIL_URL');
   }
 
   const media = await preflightOne({
@@ -180,14 +325,20 @@ async function preflightMedia(request, fetchImpl = globalThis.fetch) {
 
 module.exports = {
   ALLOWED_IMAGE_TYPES,
+  BRIDGE_CHUNK_BYTES,
   LEGACY_REVIEW_HOST,
   MAX_DOCUMENT_BYTES,
   MAX_DOCUMENT_PAGES,
   MAX_IMAGE_BYTES,
+  MEDIA_BRIDGE_BASE,
   REPO_MEDIA_BASE,
+  bridgeIdentity,
   canonicalMediaUrl,
   cleanContentType,
+  ensurePrivateHostedMedia,
+  mediaContentTypeFromPath,
   preflightMedia,
   preflightOne,
+  repoRelativePathFromMediaUrl,
   validateDeclaredMetadata,
 };
