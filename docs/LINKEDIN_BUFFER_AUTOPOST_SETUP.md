@@ -112,7 +112,7 @@ This is fail-closed. Owner approval, performance score or spare Buffer capacity 
 
 ## Media preflight
 
-All approved media selected for dispatch is remotely preflighted before the first Buffer write.
+All approved media selected for dispatch is remotely preflighted before the first Buffer write. The private operations repository is never a provider media host.
 
 As applicable it verifies:
 
@@ -127,7 +127,7 @@ As applicable it verifies:
 - page count
 - image alt text
 
-Canonical PDF and thumbnail URLs are revision-scoped and pinned to the same immutable Git commit. The intake also publicly re-verifies the PDF bytes/SHA/pages and exact promoted thumbnail bytes/SHA before approval can proceed.
+Canonical private source PDF and thumbnail bytes remain revision-scoped and pinned to the same immutable Git commit. Before Buffer approval, those exact bytes must be promoted to a separate provider-safe media surface. Dispatch fails closed on raw URLs from the private operations repository and remotely re-verifies the provider-facing PDF/image bytes and SHA before Buffer mutation.
 
 ## Capacity
 
@@ -193,10 +193,10 @@ TARGETS: <single target>
 MODE: schedule
 CONTENT_QA: PASS
 SCHEDULE_AT: <ISO with explicit offset or Z>
-MEDIA_URL: https://raw.githubusercontent.com/<owner>/<repo>/<40-character-commit>/apps/linkedin-review/media/intake/<id>/r<revision>/<id>.pdf
+MEDIA_URL: https://raw.githubusercontent.com/Chelston222/222emails-public-media/<40-character-commit>/linkedin/<id>/r<revision>/<id>.pdf
 MEDIA_KIND: document
 DOCUMENT_TITLE: <document title>
-DOCUMENT_THUMBNAIL_URL: https://raw.githubusercontent.com/<owner>/<repo>/<40-character-commit>/apps/linkedin-review/media/intake/<id>/r<revision>/thumbnail.jpg
+DOCUMENT_THUMBNAIL_URL: https://raw.githubusercontent.com/Chelston222/222emails-public-media/<40-character-commit>/linkedin/<id>/r<revision>/thumbnail.jpg
 DOCUMENT_PAGE_COUNT: <page count>
 MEDIA_BYTES: <exact bytes>
 MEDIA_SHA256: <exact SHA-256>
