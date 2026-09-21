@@ -36,13 +36,11 @@ jobs:
           git fetch origin main
           git checkout -B main origin/main
 
-      - name: Verify private media-hosting contract
+      - name: Verify private-source media contract
         shell: bash
         run: |
           set -euo pipefail
-          test -n "${TTE_SMTP_PASS:-}" || { echo 'TTE_SMTP_PASS is missing for derived private-media auth'; exit 2; }
-          test ${#TTE_SMTP_PASS} -ge 16 || { echo 'TTE_SMTP_PASS is too short for derived private-media auth'; exit 2; }
-          echo 'Private repository media transport is available through the Netlify capability bridge.'
+          echo 'Governed intake stores exact source media privately. Provider-safe media promotion is a separate release step.'
 
       - name: Verify existing PrivateEmail credential
         shell: bash
@@ -190,7 +188,7 @@ jobs:
           echo 'Unable to pin governed media URLs after three latest-main rebuild attempts.' >&2
           exit 1
 
-      - name: Verify private hosted media reachability and digest
+      - name: Verify immutable private source media
         id: private_media
         env:
           POST_ID: ${{ steps.intake.outputs.post_id }}
@@ -200,41 +198,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node <<'NODE' > /tmp/private-media-proof.json
-          const fs = require('node:fs');
-          const { preflightMedia, MEDIA_BRIDGE_BASE } = require('./scripts/linkedin-media-preflight.cjs');
+          pdf_path="apps/linkedin-review/media/intake/${POST_ID}/r${REVISION}/${POST_ID}.pdf"
+          thumb_path="apps/linkedin-review/media/intake/${POST_ID}/r${REVISION}/thumbnail.jpg"
+          test -f "$pdf_path" || { echo "Missing private PDF source: $pdf_path" >&2; exit 2; }
+          test -f "$thumb_path" || { echo "Missing private thumbnail source: $thumb_path" >&2; exit 2; }
+          actual_bytes="$(wc -c < "$pdf_path" | tr -d ' ')"
+          actual_sha="$(sha256sum "$pdf_path" | awk '{print $1}')"
+          test "$actual_bytes" = "$EXPECTED_BYTES" || { echo "Private PDF byte mismatch" >&2; exit 2; }
+          test "$actual_sha" = "$EXPECTED_SHA" || { echo "Private PDF SHA mismatch" >&2; exit 2; }
+          thumb_bytes="$(wc -c < "$thumb_path" | tr -d ' ')"
+          thumb_sha="$(sha256sum "$thumb_path" | awk '{print $1}')"
+          test "$thumb_bytes" -gt 0 || { echo "Private thumbnail is empty" >&2; exit 2; }
+          echo "pdf_sha256=$actual_sha" >> "$GITHUB_OUTPUT"
+          echo "thumbnail_sha256=$thumb_sha" >> "$GITHUB_OUTPUT"
+          echo "private_source_ready=true" >> "$GITHUB_OUTPUT"
 
-          (async () => {
-            const queue = JSON.parse(fs.readFileSync('apps/linkedin-review/queue.json', 'utf8'));
-            const post = (queue.posts || []).find((item) => item.id === process.env.POST_ID && String(item.revision) === String(process.env.REVISION));
-            if (!post) throw new Error('Pinned queue revision is missing before private-media verification.');
-            const request = {
-              mediaUrl: post.mediaUrl,
-              mediaKind: 'document',
-              documentThumbnailUrl: post.documentThumbnailUrl || post.mediaPreviewUrl,
-              documentPageCount: Number(post.carousel?.slideCount || post.documentPageCount || 0),
-              mediaBytes: Number(post.carousel?.pdfBytes || post.mediaBytes || 0),
-              mediaSha256: String(post.carousel?.pdfSha256 || post.mediaSha256 || ''),
-            };
-            const proof = await preflightMedia(request, fetch, {
-              uploadSecret: process.env.TTE_SMTP_PASS,
-              requirePrivateBridge: true,
-            });
-            if (!request.mediaUrl.startsWith(MEDIA_BRIDGE_BASE)) throw new Error('PDF did not move onto the private media bridge.');
-            if (!request.documentThumbnailUrl.startsWith(MEDIA_BRIDGE_BASE)) throw new Error('Thumbnail did not move onto the private media bridge.');
-            if (proof.media.bytes !== Number(process.env.EXPECTED_BYTES || request.mediaBytes)) throw new Error('Private bridge PDF byte mismatch.');
-            if (proof.media.sha256 !== String(process.env.EXPECTED_SHA || request.mediaSha256)) throw new Error('Private bridge PDF SHA mismatch.');
-            process.stdout.write(JSON.stringify({
-              host: new URL(request.mediaUrl).host,
-              pdfBytes: proof.media.bytes,
-              pdfSha256: proof.media.sha256,
-              thumbnailBytes: proof.thumbnail?.bytes || null,
-              thumbnailSha256: proof.thumbnail?.sha256 || null,
-            }, null, 2));
-          })().catch((error) => { console.error(error); process.exit(1); });
-          NODE
-          cat /tmp/private-media-proof.json
-          node -e "const p=require('/tmp/private-media-proof.json'); console.log('host='+p.host); console.log('pdf_sha256='+p.pdfSha256); console.log('private_media_ready=true');" >> "$GITHUB_OUTPUT"
       - name: Record governed intake proof
         uses: actions/github-script@v7
         with:
@@ -250,13 +228,13 @@ jobs:
               `- Bytes: **${{ steps.intake.outputs.bytes }}**`,
               `- SHA-256: \`${{ steps.intake.outputs.sha256 }}\``,
               `- Immutable media commit: \`${{ steps.pin.outputs.media_ref }}\``,
-              '- Media transport: **private repository → capability-gated Netlify bridge**',
-              `- Private media host: **${{ steps.private_media.outputs.host }}**`,
+              '- Media source: **private repository immutable revision**',
+              '- Provider-safe media export: **REQUIRED BEFORE BUFFER APPROVAL**',
               `- Source mailbox: ${{ steps.bridge.outputs.source_mailbox }}`,
               `- Source UID: ${{ steps.bridge.outputs.source_uid }}`,
               `- Intake replay: **${{ steps.intake.outputs.replay }}**`,
               `- Immutable pin replay: **${{ steps.pin.outputs.pin_replay }}**`,
-              '- Repository visibility dependency: **none**. Buffer-facing media is served from the verified private-media bridge.'
+              '- Repository visibility dependency: **private ops only**. Raw private-source URLs are not provider release URLs.'
               '',
               'This proves exact media and queue readiness only. It is not permission to publish.',
               'Publishing still requires the repository-owner `[APPROVED LINKEDIN]` gate.',
@@ -276,7 +254,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: [
-                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed revision-scoped media, privately bridge-hosted, pinned to an immutable Git commit and locked into the LinkedIn queue.',
+                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed private revision-scoped media, pinned to an immutable Git commit and locked into the LinkedIn queue. Provider-safe media export is still required before Buffer approval.',
                 '',
                 `Queue item: **${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}**`,
                 `Immutable media commit: \`${{ steps.pin.outputs.media_ref }}\``,
