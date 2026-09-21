@@ -4,6 +4,8 @@ on:
   # Production deployment is deliberately explicit. Code changes are verified
   # before release and do not consume a Netlify production deploy automatically.
   workflow_dispatch:
+  issues:
+    types: [opened]
 
 permissions:
   contents: read
@@ -14,6 +16,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'issues' && startsWith(github.event.issue.title, '[DEPLOY TTE MAIL BRIDGE]') && github.event.issue.user.login == github.repository_owner)
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
