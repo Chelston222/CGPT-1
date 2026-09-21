@@ -2,10 +2,14 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { createHash } = require('node:crypto');
 const {
   MAX_DOCUMENT_PAGES,
   MAX_IMAGE_BYTES,
+  MEDIA_BRIDGE_BASE,
   REPO_MEDIA_BASE,
   canonicalMediaUrl,
   preflightMedia,
@@ -144,5 +148,89 @@ test('rejects non-HTTPS media', async () => {
   await assert.rejects(
     preflightOne({ url: 'http://example.com/a.png', fieldName: 'MEDIA_URL', kind: 'image' }, async () => responseFor('x')),
     /must use HTTPS/,
+  );
+});
+
+
+test('privately bridges repository media before provider preflight', async () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'li-private-media-'));
+  const relative = 'apps/linkedin-review/media/test/private.jpg';
+  const absolute = path.join(workspace, relative);
+  fs.mkdirSync(path.dirname(absolute), { recursive: true });
+  const bytes = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0xff, 0xd9]);
+  fs.writeFileSync(absolute, bytes);
+  const sha = createHash('sha256').update(bytes).digest('hex');
+  const request = {
+    mediaUrl: 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/test/private.jpg',
+    mediaKind: 'image',
+    mediaBytes: bytes.length,
+    mediaSha256: sha,
+  };
+  let firstLookup = true;
+  let puts = 0;
+  let posts = 0;
+  const fetchImpl = async (url, options = {}) => {
+    const value = String(url);
+    const method = options.method || 'GET';
+    if (value.startsWith(MEDIA_BRIDGE_BASE) && method === 'GET') {
+      if (firstLookup) {
+        firstLookup = false;
+        return new Response(JSON.stringify({ error: 'not_found' }), { status: 404, headers: { 'content-type': 'application/json' } });
+      }
+      const response = responseFor(bytes, 'image/jpeg', 200, value);
+      response.headers.set('x-file-sha256', sha);
+      return response;
+    }
+    if (value.startsWith(MEDIA_BRIDGE_BASE) && method === 'PUT') {
+      puts += 1;
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    if (value.startsWith(MEDIA_BRIDGE_BASE) && method === 'POST') {
+      posts += 1;
+      return new Response(JSON.stringify({ ok: true, sha256: sha }), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    throw new Error(`unexpected fetch ${method} ${value}`);
+  };
+
+  const proof = await preflightMedia(request, fetchImpl, {
+    workspace,
+    uploadToken: 'x'.repeat(32),
+    requirePrivateBridge: true,
+  });
+  assert.equal(request.mediaUrl.startsWith(MEDIA_BRIDGE_BASE), true);
+  assert.equal(proof.media.sha256, sha);
+  assert.equal(puts, 1);
+  assert.equal(posts, 1);
+});
+
+test('governed private-media dispatch fails closed without bridge credential', async () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'li-private-media-missing-token-'));
+  const relative = 'apps/linkedin-review/media/test/private.jpg';
+  const absolute = path.join(workspace, relative);
+  fs.mkdirSync(path.dirname(absolute), { recursive: true });
+  fs.writeFileSync(absolute, Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+  const request = {
+    mediaUrl: 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/test/private.jpg',
+    mediaKind: 'image',
+  };
+  await assert.rejects(
+    preflightMedia(request, async () => { throw new Error('network should not be reached'); }, {
+      workspace,
+      uploadToken: '',
+      requirePrivateBridge: true,
+    }),
+    /TTE_BRIDGE_TOKEN/,
+  );
+});
+
+
+test('provider boundary rejects private ops media before network access', async () => {
+  const request = {
+    mediaUrl: 'https://raw.githubusercontent.com/Chelston222/CGPT-1/main/apps/linkedin-review/media/private.jpg',
+    mediaKind: 'image',
+  };
+  await assert.rejects(
+    preflightMedia(request, async () => { throw new Error('network should not be reached'); }, { forbidPrivateOpsMedia: true }),
+    /provider-safe media surface/,
   );
 });
