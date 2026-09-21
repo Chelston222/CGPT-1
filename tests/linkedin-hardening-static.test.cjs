@@ -191,7 +191,7 @@ test('IMAP intake keeps exact media private until provider-safe export', () => {
   assert.doesNotMatch(intake, /Verify immutable public raw media reachability and digest/);
   assert.match(intake, /Verify private-source media contract/);
   assert.match(intake, /Verify immutable private source media/);
-  assert.match(intake, /Provider-safe media export: \*\*REQUIRED BEFORE BUFFER APPROVAL\*\*/);
+  assert.match(intake, /Provider-safe media export: \*\*REQUIRED BEFORE BUFFER PROVIDER WRITE\*\*/);
   assert.match(intake, /Raw private-source URLs are not provider release URLs/);
   assert.match(intake, /revision-scoped media/);
   assert.match(intake, /id: pin/);
