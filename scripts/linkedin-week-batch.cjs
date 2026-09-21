@@ -216,7 +216,7 @@ function validateWeeklyBatch(body, queue, env = {}, now = Date.now(), options = 
     if (Number(post.revision) !== locked.revision) throw new Error(`${locked.id} changed revision after review. Review it again.`);
     if (!['schedule', 'queue'].includes(post.mode)) throw new Error(`${locked.id} is not configured for live scheduling.`);
     if (post.format === 'carousel') {
-      if (post.carousel?.readiness !== 'ready' || !post.mediaUrl || !post.documentThumbnailUrl) throw new Error(`${locked.id} carousel PDF and public thumbnail are not verified and publishable.`);
+      if (post.carousel?.readiness !== 'ready' || !post.mediaUrl || !post.documentThumbnailUrl) throw new Error(`${locked.id} carousel PDF and provider-safe thumbnail are not verified and publishable.`);
       if (!Number.isInteger(post.carousel?.slideCount) || post.carousel.slideCount < 1 || post.carousel.slideCount > 300) throw new Error(`${locked.id} carousel page count is missing or outside the LinkedIn limit.`);
       if (!Number.isInteger(post.carousel?.pdfBytes) || post.carousel.pdfBytes < 1) throw new Error(`${locked.id} carousel byte count is missing.`);
       if (!/^[a-f0-9]{64}$/i.test(post.carousel?.pdfSha256 || '')) throw new Error(`${locked.id} carousel SHA-256 is missing or invalid.`);
