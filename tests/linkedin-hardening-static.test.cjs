@@ -187,7 +187,7 @@ test('dispatch-intent reconciliation is owner-gated, shares the release lock and
 test('IMAP intake supports private repository media through the capability bridge', () => {
   assert.doesNotMatch(intake, /visibility.*public/s);
   assert.match(intake, /Verify private media-hosting contract/);
-  assert.match(intake, /TTE_BRIDGE_TOKEN/);
+  assert.match(intake, /TTE_SMTP_PASS/);
   assert.match(intake, /revision-scoped media/);
   assert.match(intake, /id: pin/);
   assert.match(intake, /pinQueueMediaUrls/);
