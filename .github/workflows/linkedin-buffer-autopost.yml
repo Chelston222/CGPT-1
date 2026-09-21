@@ -47,7 +47,7 @@ jobs:
           BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
           BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          TTE_BRIDGE_TOKEN: ${{ secrets.TTE_BRIDGE_TOKEN }}
+          TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
         with:
           script: |
             const path = require('node:path');
@@ -219,7 +219,7 @@ jobs:
                 for (const { job } of plan.dispatch) {
                   const proofKey = `${job.post.id}@${job.post.revision}`;
                   if (!job.request.mediaUrl || mediaProofs.has(proofKey)) continue;
-                  mediaProofs.set(proofKey, await preflightMedia(job.request, fetch, { uploadToken: process.env.TTE_BRIDGE_TOKEN, requirePrivateBridge: true }));
+                  mediaProofs.set(proofKey, await preflightMedia(job.request, fetch, { uploadSecret: process.env.TTE_SMTP_PASS, requirePrivateBridge: true }));
                 }
 
                 for (const { job, channel, key } of plan.dispatch) {
