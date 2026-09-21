@@ -26,6 +26,8 @@ function row(overrides = {}) {
       'Automation Ready': { checkbox: true },
       'Automation Status': select('Ready to Sync'),
       'Anti-DNA | Pass': { checkbox: true },
+      'Public Trust Boundary Pass': { checkbox: true },
+      'Story Gate': select('Not Applicable'),
       'Buffer Status': select('Ready for Buffer'),
       'Publication Route': select('Buffer'),
       'Reserve Enabled': { checkbox: true },
@@ -161,4 +163,17 @@ test('secondary identity is supported only on the company platform', () => {
   const result = bridge.evaluateReserveEligibility(secondary, NOW);
   assert.equal(result.pass, true);
   assert.equal(result.snapshot.target, 'secondary');
+});
+
+test('public trust and story gates fail closed before staging', () => {
+  const noTrust = bridge.evaluateReserveEligibility(row({ properties: { 'Public Trust Boundary Pass': { checkbox: false } } }), NOW);
+  assert.equal(noTrust.pass, false);
+  assert.match(noTrust.reasons.join(' '), /Public Trust Boundary/);
+
+  const badStory = bridge.evaluateReserveEligibility(row({ properties: { 'Story Gate': select('Needs Review') } }), NOW);
+  assert.equal(badStory.pass, false);
+  assert.match(badStory.reasons.join(' '), /Story Gate/);
+
+  const passStory = bridge.evaluateReserveEligibility(row({ properties: { 'Story Gate': select('Pass') } }), NOW);
+  assert.equal(passStory.pass, true);
 });
