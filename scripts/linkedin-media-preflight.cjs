@@ -161,17 +161,6 @@ function isPrivateOpsMediaUrl(value) {
   }
 }
 
-function isDedicatedPublicMediaUrl(value) {
-  try {
-    const parsed = validateHttps(value, 'MEDIA_URL');
-    if (parsed.hostname.toLowerCase() !== 'raw.githubusercontent.com') return false;
-    const parts = parsed.pathname.split('/').filter(Boolean);
-    return parts[0] === 'Chelston222' && parts[1] === '222emails-public-media' && /^[a-f0-9]{40}$/i.test(parts[2] || '');
-  } catch {
-    return false;
-  }
-}
-
 function repoRelativePathFromMediaUrl(value) {
   const parsed = validateHttps(value, 'MEDIA_URL');
   const host = parsed.hostname.toLowerCase();
@@ -380,7 +369,6 @@ module.exports = {
   canonicalMediaUrl,
   cleanContentType,
   ensurePrivateHostedMedia,
-  isDedicatedPublicMediaUrl,
   isPrivateOpsMediaUrl,
   mediaContentTypeFromPath,
   preflightMedia,
