@@ -21,6 +21,8 @@ function page(overrides = {}) {
       'Content Decision': { select: { name: 'Keep' } },
       Approval: { select: { name: 'Approved' } },
       'Anti-DNA | Pass': { checkbox: true },
+      'Public Trust Boundary Pass': { checkbox: true },
+      'Story Gate': { select: { name: 'Not Applicable' } },
       'Automation Status': { select: { name: 'Ready to Sync' } },
       'Buffer Status': { select: { name: 'Ready for Buffer' } },
       'Asset Ready': { checkbox: true },
@@ -160,4 +162,18 @@ test('accepts Queued in Buffer as a valid live state for retry checks after part
     'Buffer Status': { select: { name: 'Queued in Buffer' } },
   } }), '3ace72eb85878183a413d264211cab80', queuePost());
   assert.equal(result.pass, true);
+});
+
+
+test('fails closed when public trust or story gate is uncleared', () => {
+  const noTrust = evaluateNotionQualityGate(page({ properties: { 'Public Trust Boundary Pass': { checkbox: false } } }));
+  assert.equal(noTrust.pass, false);
+  assert.match(noTrust.reasons.join(' '), /Public Trust Boundary/);
+
+  const storyReview = evaluateNotionQualityGate(page({ properties: { 'Story Gate': { select: { name: 'Needs Review' } } } }));
+  assert.equal(storyReview.pass, false);
+  assert.match(storyReview.reasons.join(' '), /Story Gate/);
+
+  const storyPass = evaluateNotionQualityGate(page({ properties: { 'Story Gate': { select: { name: 'Pass' } } } }));
+  assert.equal(storyPass.pass, true);
 });
