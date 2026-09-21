@@ -20,5 +20,5 @@ Rules:
 - SCHEDULE_AT is required only for schedule mode and should include a timezone offset
 - Multi-channel posts may use SCHEDULE_AT_PERSONAL, SCHEDULE_AT_MAIN and SCHEDULE_AT_SECONDARY
 - Channel-specific copy may be placed below ---PERSONAL---, ---MAIN--- or ---SECONDARY--- markers
-- MEDIA_URL is optional and must be a publicly accessible HTTPS image URL
+- MEDIA_URL is optional and must be a provider-reachable HTTPS media URL. Raw URLs from the private operations repository are not release URLs
 - Creating this issue is treated as explicit publishing approval
