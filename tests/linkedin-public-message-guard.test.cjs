@@ -156,3 +156,12 @@ test('central validateRequest blocks content-production disclosure before provid
     /content-production|publishing machinery/i,
   );
 });
+
+
+test('internal LinkedIn learning machinery fails closed', () => {
+  const result = evaluateCurrentPublicMessageGuard(post(
+    'While rebuilding how I learn from LinkedIn, the learning pool taught the system from posts before they were published.'
+  ));
+  assert.equal(result.pass, false);
+  assert.match(result.reasons.join(' | '), /content-production|publishing machinery/i);
+});
