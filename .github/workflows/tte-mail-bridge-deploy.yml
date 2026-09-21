@@ -162,6 +162,51 @@ jobs:
           npx -y @netlify/mcp@latest --site-id "$NETLIFY_SITE_ID" --proxy-path "$PROXY_PATH"
 
           cd - >/dev/null
+      - name: Verify LinkedIn private media bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRIDGE_TOKEN="$(npx netlify env:get TTE_BRIDGE_TOKEN --context production --site "$NETLIFY_SITE_ID")"
+          test ${#BRIDGE_TOKEN} -ge 24 || { echo 'Production bridge token is unavailable'; exit 2; }
+          echo "::add-mask::$BRIDGE_TOKEN"
+          export BRIDGE_TOKEN
+
+          printf '%%PDF-1.4\n%% 222Emails LinkedIn media bridge canary\n' > /tmp/linkedin-media-canary.pdf
+          SHA="$(sha256sum /tmp/linkedin-media-canary.pdf | awk '{print $1}')"
+          BYTES="$(stat -c%s /tmp/linkedin-media-canary.pdf)"
+          ID="li-smoke-${GITHUB_RUN_ID}"
+          CAP="$(SHA_VALUE="$SHA" node -e "const c=require('node:crypto');process.stdout.write(c.createHmac('sha256',process.env.BRIDGE_TOKEN).update('linkedin-media:'+process.env.SHA_VALUE).digest('base64url'))")"
+          BASE='https://222emails-mail-bridge.netlify.app/api/tte/linkedin-media-bridge'
+
+          curl --fail --silent --show-error --request PUT \
+            -H "Authorization: Bearer $BRIDGE_TOKEN" \
+            --data-binary @/tmp/linkedin-media-canary.pdf \
+            "$BASE?id=$ID&part=1" >/tmp/media-put.json
+
+          jq -n \
+            --argjson bytes "$BYTES" \
+            --arg sha "$SHA" \
+            --arg cap "$CAP" \
+            '{parts:1,expectedBytes:$bytes,expectedSha256:$sha,capability:$cap,contentType:"application/pdf",filename:"linkedin-media-canary.pdf"}' >/tmp/media-finalise.json
+
+          curl --fail --silent --show-error --request POST \
+            -H "Authorization: Bearer $BRIDGE_TOKEN" \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/media-finalise.json \
+            "$BASE?id=$ID" >/tmp/media-post.json
+
+          curl --fail --silent --show-error --location \
+            "$BASE?id=$ID&cap=$CAP" -o /tmp/linkedin-media-canary-returned.pdf
+
+          test "$(sha256sum /tmp/linkedin-media-canary-returned.pdf | awk '{print $1}')" = "$SHA"
+          test "$(stat -c%s /tmp/linkedin-media-canary-returned.pdf)" = "$BYTES"
+
+          curl --fail --silent --show-error --request DELETE \
+            -H "Authorization: Bearer $BRIDGE_TOKEN" \
+            "$BASE?id=$ID" >/tmp/media-delete.json
+
+          echo 'LinkedIn private media bridge canary PASS'
+
       - name: Verify production health surface
         shell: bash
         run: |
