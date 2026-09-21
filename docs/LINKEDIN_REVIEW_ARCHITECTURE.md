@@ -36,7 +36,7 @@ Snapshot verified 9 August 2026 from Buffer's official documentation:
 - three connected channels;
 - 10 scheduled posts per channel at one time (30 total), not 10 per day;
 - one API key, 100 requests per 15 minutes, 250 per day and 3,000 per 30 days;
-- one PDF document per LinkedIn post, maximum 100 MB and 300 pages, with a required document title; the API additionally requires a public thumbnail URL;
+- one PDF document per LinkedIn post, maximum 100 MB and 300 pages, with a required document title; the API additionally requires a provider-reachable thumbnail URL;
 - Buffer does not provide PDF carousel analytics.
 
 The editorial ceiling is **five placements per account per calendar day**, maximum 15 per day and 105 per week across all three accounts. A single post targeting three accounts consumes three placements. This protects audience quality and makes the load explicit; it does not claim Buffer can hold the full week simultaneously.
