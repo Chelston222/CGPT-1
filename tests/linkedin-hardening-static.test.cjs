@@ -24,8 +24,9 @@ test('all approved media is preflighted before the first Buffer createPost mutat
   const mutationIndex = autopost.indexOf('buildCreatePostMutation(channel, job.request.mode, media)');
   assert.ok(preflightIndex >= 0, 'media preflight call is missing');
   assert.ok(mutationIndex > preflightIndex, 'Buffer mutation can occur before media preflight');
-  assert.match(autopost, /forbidPrivateOpsMedia:\s*true/);
+  assert.match(autopost, /requirePrivateBridge:\s*true/);
   assert.match(autopost, /MEDIA_SHA256|mediaProof\.sha256/);
+  assert.match(autopost, /Load private LinkedIn media bridge credential/);
 });
 
 test('live Notion is rechecked immediately before dispatch when the optional credential exists', () => {
