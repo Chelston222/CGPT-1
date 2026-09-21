@@ -6,7 +6,7 @@ const rich = (value) => ({ rich_text: [{ plain_text: value, text: { content: val
 const select = (value) => ({ select: { name: value } });
 function page(overrides = {}) {
   return { object:'page', id:'3dbe72eb-8587-81e1-8d17-d7a1725ba008', archived:false, in_trash:false, properties:{
-    'Content Decision':select('Keep'), Approval:select('Approved'), 'Anti-DNA | Pass':{checkbox:true},
+    'Content Decision':select('Keep'), Approval:select('Approved'), 'Anti-DNA | Pass':{checkbox:true}, 'Public Trust Boundary Pass':{checkbox:true}, 'Story Gate':select('Not Applicable'),
     'Automation Status':select('Ready to Sync'), 'Buffer Status':select('Ready for Buffer'), 'Asset Ready':{checkbox:true}, 'Automation Ready':{checkbox:true},
     'Final Copy':rich('Locked reserve caption'), 'Publish Payload':rich('Locked reserve caption'), 'Scheduled At':{date:{start:'2026-09-18T08:15:00+01:00'}},
     'Reserve Enabled':{checkbox:true}, 'Publication State':select('Approved for Publish'), 'Publication Route':select('Buffer'), 'Manual Review Required':{checkbox:false}, 'Source Needed':{checkbox:false},
