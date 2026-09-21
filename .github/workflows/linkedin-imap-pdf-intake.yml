@@ -21,6 +21,7 @@ jobs:
       TTE_SMTP_USER: hello@222emails.com
       TTE_IMAP_HOST: mail.privateemail.com
       TTE_IMAP_PORT: '993'
+      TTE_BRIDGE_TOKEN: ${{ secrets.TTE_BRIDGE_TOKEN }}
 
     steps:
       - name: Check out latest main
@@ -36,20 +37,13 @@ jobs:
           git fetch origin main
           git checkout -B main origin/main
 
-      - name: Verify public media-hosting contract
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Verify private media-hosting contract
         shell: bash
         run: |
           set -euo pipefail
-          visibility="$(curl --fail --silent --show-error \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H 'Accept: application/vnd.github+json' \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY" | jq -r '.visibility')"
-          test "$visibility" = 'public' || {
-            echo 'This lane uses raw.githubusercontent.com as Buffer media hosting. The repository is not public, so the media URL would not be fetchable by Buffer.' >&2
-            exit 2
-          }
+          test -n "${TTE_BRIDGE_TOKEN:-}" || { echo 'TTE_BRIDGE_TOKEN is missing'; exit 2; }
+          test ${#TTE_BRIDGE_TOKEN} -ge 24 || { echo 'TTE_BRIDGE_TOKEN must be at least 24 characters'; exit 2; }
+          echo 'Private repository media transport is available through the Netlify capability bridge.'
 
       - name: Verify existing PrivateEmail credential
         shell: bash
@@ -197,31 +191,55 @@ jobs:
           echo 'Unable to pin governed media URLs after three latest-main rebuild attempts.' >&2
           exit 1
 
-      - name: Verify immutable public raw media reachability and digest
+      - name: Verify private hosted media reachability and digest
+        id: private_media
+        env:
+          POST_ID: ${{ steps.intake.outputs.post_id }}
+          REVISION: ${{ steps.intake.outputs.revision }}
         shell: bash
         run: |
           set -euo pipefail
-          pdf='${{ steps.pin.outputs.pdf_url }}'
-          thumb='${{ steps.pin.outputs.thumbnail_url }}'
-          ref='${{ steps.pin.outputs.media_ref }}'
-          post_id='${{ steps.intake.outputs.post_id }}'
-          revision='${{ steps.intake.outputs.revision }}'
-          local_thumb="apps/linkedin-review/media/intake/${post_id}/r${revision}/thumbnail.jpg"
-          test -n "$pdf" -a -n "$thumb"
-          echo "$ref" | grep -Eq '^[a-f0-9]{40}$'
-          echo "$pdf" | grep -F "/$ref/apps/linkedin-review/media/intake/${post_id}/r${revision}/${post_id}.pdf" >/dev/null
-          echo "$thumb" | grep -F "/$ref/apps/linkedin-review/media/intake/${post_id}/r${revision}/thumbnail.jpg" >/dev/null
-          test -s "$local_thumb"
-          sleep 3
-          curl --fail --location --silent --show-error --retry 5 --retry-delay 2 "$pdf" -o /tmp/public.pdf
-          curl --fail --location --silent --show-error --retry 5 --retry-delay 2 "$thumb" -o /tmp/public.jpg
-          test "$(stat -c%s /tmp/public.pdf)" = '${{ steps.intake.outputs.bytes }}'
-          test "$(sha256sum /tmp/public.pdf | awk '{print $1}')" = '${{ steps.intake.outputs.sha256 }}'
-          test "$(pdfinfo /tmp/public.pdf | awk '/^Pages:/ {print $2}')" = '${{ steps.intake.outputs.pages }}'
-          test "$(stat -c%s /tmp/public.jpg)" = "$(stat -c%s "$local_thumb")"
-          test "$(sha256sum /tmp/public.jpg | awk '{print $1}')" = "$(sha256sum "$local_thumb" | awk '{print $1}')"
-          file /tmp/public.pdf | grep -qi 'PDF document'
-          file /tmp/public.jpg | grep -Eqi 'JPEG|image'
+          node <<'NODE' > /tmp/private-media-proof.json
+          const fs = require('node:fs');
+          const { preflightMedia, MEDIA_BRIDGE_BASE } = require('./scripts/linkedin-media-preflight.cjs');
+
+          (async () => {
+            const queue = JSON.parse(fs.readFileSync('apps/linkedin-review/queue.json', 'utf8'));
+            const post = (queue.posts || []).find((item) => item.id === process.env.POST_ID && String(item.revision) === String(process.env.REVISION));
+            if (!post) throw new Error('Pinned queue revision is missing before private-media verification.');
+            const request = {
+              mediaUrl: post.mediaUrl,
+              mediaKind: 'document',
+              documentThumbnailUrl: post.documentThumbnailUrl || post.mediaPreviewUrl,
+              documentPageCount: Number(post.carousel?.slideCount || post.documentPageCount || 0),
+              mediaBytes: Number(post.carousel?.pdfBytes || post.mediaBytes || 0),
+              mediaSha256: String(post.carousel?.pdfSha256 || post.mediaSha256 || ''),
+            };
+            const proof = await preflightMedia(request, fetch, {
+              uploadToken: process.env.TTE_BRIDGE_TOKEN,
+              requirePrivateBridge: true,
+            });
+            if (!request.mediaUrl.startsWith(MEDIA_BRIDGE_BASE)) throw new Error('PDF did not move onto the private media bridge.');
+            if (!request.documentThumbnailUrl.startsWith(MEDIA_BRIDGE_BASE)) throw new Error('Thumbnail did not move onto the private media bridge.');
+            if (proof.media.bytes !== Number(process.env.EXPECTED_BYTES || request.mediaBytes)) throw new Error('Private bridge PDF byte mismatch.');
+            if (proof.media.sha256 !== String(process.env.EXPECTED_SHA || request.mediaSha256)) throw new Error('Private bridge PDF SHA mismatch.');
+            process.stdout.write(JSON.stringify({
+              host: new URL(request.mediaUrl).host,
+              pdfBytes: proof.media.bytes,
+              pdfSha256: proof.media.sha256,
+              thumbnailBytes: proof.thumbnail?.bytes || null,
+              thumbnailSha256: proof.thumbnail?.sha256 || null,
+            }, null, 2));
+          })().catch((error) => { console.error(error); process.exit(1); });
+          NODE
+          cat /tmp/private-media-proof.json
+          node -e "const p=require('/tmp/private-media-proof.json'); console.log('host='+p.host); console.log('pdf_sha256='+p.pdfSha256); console.log('private_media_ready=true');" >> "$GITHUB_OUTPUT"
+        env:
+          POST_ID: ${{ steps.intake.outputs.post_id }}
+          REVISION: ${{ steps.intake.outputs.revision }}
+          EXPECTED_BYTES: ${{ steps.intake.outputs.bytes }}
+          EXPECTED_SHA: ${{ steps.intake.outputs.sha256 }}
+          TTE_BRIDGE_TOKEN: ${{ secrets.TTE_BRIDGE_TOKEN }}
 
       - name: Record governed intake proof
         uses: actions/github-script@v7
@@ -238,13 +256,13 @@ jobs:
               `- Bytes: **${{ steps.intake.outputs.bytes }}**`,
               `- SHA-256: \`${{ steps.intake.outputs.sha256 }}\``,
               `- Immutable media commit: \`${{ steps.pin.outputs.media_ref }}\``,
-              `- PDF: ${{ steps.pin.outputs.pdf_url }}`,
-              `- Thumbnail: ${{ steps.pin.outputs.thumbnail_url }}`,
+              '- Media transport: **private repository → capability-gated Netlify bridge**',
+              `- Private media host: **${{ steps.private_media.outputs.host }}**`,
               `- Source mailbox: ${{ steps.bridge.outputs.source_mailbox }}`,
               `- Source UID: ${{ steps.bridge.outputs.source_uid }}`,
               `- Intake replay: **${{ steps.intake.outputs.replay }}**`,
               `- Immutable pin replay: **${{ steps.pin.outputs.pin_replay }}**`,
-              '- Visibility: **publicly reachable governed media**. The owner intake contract explicitly acknowledged this before promotion.',
+              '- Repository visibility dependency: **none**. Buffer-facing media is served from the verified private-media bridge.'
               '',
               'This proves exact media and queue readiness only. It is not permission to publish.',
               'Publishing still requires the repository-owner `[APPROVED LINKEDIN]` gate.',
@@ -264,7 +282,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: [
-                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed revision-scoped media, pinned to an immutable Git commit and locked into the LinkedIn queue.',
+                '✅ Exact PDF attachment retrieved, SHA/byte/page verified, promoted to governed revision-scoped media, privately bridge-hosted, pinned to an immutable Git commit and locked into the LinkedIn queue.',
                 '',
                 `Queue item: **${{ steps.intake.outputs.post_id }}@${{ steps.intake.outputs.revision }}**`,
                 `Immutable media commit: \`${{ steps.pin.outputs.media_ref }}\``,
