@@ -115,7 +115,7 @@ The 90-day scheduling ceiling keeps canonical approvals safely inside the curren
 
 The operations repository is private. Queue state, captions, schedules, source URLs, automation logic and audit metadata are internal.
 
-Provider-facing media is a separate transport surface. Only exact approved binaries may be promoted there. The preferred dedicated public-media repository is `Chelston222/222emails-public-media`; a capability-gated media bridge may be used when separately verified. No operating code, prompts, AI/tooling metadata, queue state or approval logic belongs on the public media surface.
+Provider-facing media is exported through the capability-gated 222Emails media bridge only at governed dispatch. The bridge exposes the exact approved binary required by Buffer, protected by an unguessable capability URL, without exposing the operations repository, queue state, prompts, AI/tooling metadata, approval logic or workflow internals.
 
 The legacy fields `publicMediaApproved` and `publicReleaseMaterialApproved` remain schema-compatible acknowledgements that the exact release asset is safe to expose to the delivery provider. They do not authorise public archival of internal operational metadata.
 
@@ -166,7 +166,7 @@ The intake verifies those private source bytes locally against locked byte count
 
 `[PDF INTAKE READY] <id>@<revision>` proves exact private-source media and queue readiness only. It is **not** Buffer-ready while the queue still points to a private operations URL.
 
-Before owner Buffer approval, the exact PDF and thumbnail must be promoted to a provider-safe media surface and the governed queue must advance to a revision that locks those provider-facing URLs without changing the approved bytes.
+Before Buffer mutation, the exact PDF and thumbnail are exported from the locked private source through the capability-gated media bridge. The dispatch path re-verifies bytes and SHA-256 on the bridge response before Buffer receives the provider-facing URL. The governed queue keeps the immutable private-source identity; provider export is deterministic from that locked binary and is not a second editorial revision.
 
 ## Notion operating record and optional live gate
 
@@ -200,7 +200,7 @@ After `[PDF INTAKE READY]`, create the owner approval:
 [APPROVED LINKEDIN] <id>@<revision>
 ```
 
-It must exactly match the current queue revision, target, schedule, caption, provider-safe media URLs, document metadata, byte count and SHA-256. Raw URLs from the private operations repository are never valid provider release URLs.
+It must exactly match the current queue revision, target, schedule, caption, private-source media identity, document metadata, byte count and SHA-256. Raw private-source URLs are never sent to Buffer. The release workflow converts them to a capability-gated provider URL only after approval and integrity preflight.
 
 `BUFFER_API_KEY` is mandatory. Before Buffer mutation, all selected media is remotely preflighted. A durable `BUFFER_DISPATCH_INTENT` is written before the provider write. When Buffer returns a post ID, `BUFFER_ACCEPTED` is written to the trusted durable ledger first and then mirrored to the approval issue.
 
@@ -230,4 +230,4 @@ Do not create a parallel manifest, immediate-share or arbitrary-download product
 
 ## Definition of complete
 
-A canonical PDF revision is production-ready only when exact attachment identity is proven, revision-scoped private source media is promoted, replay rules pass, PDF and thumbnail are immutably pinned, exact approved binaries are promoted to a provider-safe media surface, owner approval exactly matches that provider-ready queue revision, Buffer acceptance is durably recorded, and the later verifier independently proves the LinkedIn outcome. If the optional GitHub Notion credential is configured, its live quality checks must also pass. If it is absent, the audit must explicitly state the owner-approved current-queue fallback rather than implying Notion was checked.
+A canonical PDF revision is production-ready only when exact attachment identity is proven, revision-scoped private source media is promoted, replay rules pass, PDF and thumbnail are immutably pinned, the exact approved binaries can be exported through the verified capability-gated media bridge, owner approval exactly matches the governed queue revision, Buffer acceptance is durably recorded, and the later verifier independently proves the LinkedIn outcome. If the optional GitHub Notion credential is configured, its live quality checks must also pass. If it is absent, the audit must explicitly state the owner-approved current-queue fallback rather than implying Notion was checked.
