@@ -231,7 +231,7 @@ jobs:
                 for (const { job } of plan.dispatch) {
                   const proofKey = `${job.post.id}@${job.post.revision}`;
                   if (!job.request.mediaUrl || mediaProofs.has(proofKey)) continue;
-                  mediaProofs.set(proofKey, await preflightMedia(job.request, fetch, { forbidPrivateOpsMedia: true }));
+                  mediaProofs.set(proofKey, await preflightMedia(job.request, fetch, { uploadToken: process.env.TTE_BRIDGE_TOKEN, requirePrivateBridge: true }));
                 }
 
                 for (const { job, channel, key } of plan.dispatch) {
