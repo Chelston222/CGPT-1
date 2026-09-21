@@ -278,6 +278,12 @@ async function ensurePrivateHostedMedia({
 async function preflightMedia(request, fetchImpl = globalThis.fetch, options = {}) {
   if (!request?.mediaUrl) return null;
 
+  const localSource = repoRelativePathFromMediaUrl(request.mediaUrl);
+  const uploadToken = options.uploadToken || process.env.TTE_BRIDGE_TOKEN || '';
+  if (localSource && options.requirePrivateBridge === true && uploadToken.length < 24) {
+    throw new Error('TTE_BRIDGE_TOKEN is required for private-repository LinkedIn media dispatch.');
+  }
+
   const privatelyHosted = await ensurePrivateHostedMedia({
     originalUrl: request.mediaUrl,
     kind: request.mediaKind,
@@ -285,7 +291,7 @@ async function preflightMedia(request, fetchImpl = globalThis.fetch, options = {
     expectedSha256: request.mediaSha256,
     fetchImpl,
     workspace: options.workspace,
-    uploadToken: options.uploadToken,
+    uploadToken,
   });
   request.mediaUrl = privatelyHosted || canonicalMediaUrl(request.mediaUrl, 'MEDIA_URL');
 
@@ -295,7 +301,7 @@ async function preflightMedia(request, fetchImpl = globalThis.fetch, options = {
       kind: 'image',
       fetchImpl,
       workspace: options.workspace,
-      uploadToken: options.uploadToken,
+      uploadToken,
     });
     request.documentThumbnailUrl = privateThumb || canonicalMediaUrl(request.documentThumbnailUrl, 'DOCUMENT_THUMBNAIL_URL');
   }
