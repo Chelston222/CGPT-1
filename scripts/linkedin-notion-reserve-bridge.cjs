@@ -115,6 +115,9 @@ function evaluateReserveEligibility(page, now = Date.now()) {
   if (!readCheckbox(page, 'Automation Ready')) reasons.push('Automation Ready must be checked');
   if (automationStatus !== REQUIRED.automationStatus) reasons.push(`Automation Status must be ${REQUIRED.automationStatus}`);
   if (!readCheckbox(page, 'Anti-DNA | Pass')) reasons.push('Anti-DNA | Pass must be checked');
+  if (!readCheckbox(page, 'Public Trust Boundary Pass')) reasons.push('Public Trust Boundary Pass must be checked');
+  const storyGate = readSelect(page, 'Story Gate');
+  if (!new Set(['Pass', 'Not Applicable']).has(storyGate)) reasons.push(`Story Gate is ${storyGate || 'unset'}, not Pass or Not Applicable`);
   if (bufferStatus !== REQUIRED.bufferStatus) reasons.push(`Buffer Status must be ${REQUIRED.bufferStatus}`);
   if (publicationRoute !== REQUIRED.publicationRoute) reasons.push(`Publication Route must be ${REQUIRED.publicationRoute}`);
   if (!readCheckbox(page, 'Reserve Enabled')) reasons.push('Reserve Enabled must be checked');
@@ -163,6 +166,8 @@ function evaluateReserveEligibility(page, now = Date.now()) {
       scheduledAt,
       reviewDue,
       reserveOrder: readNumber(page, 'Reserve Order'),
+      storyGate,
+      publicTrustBoundaryPass: readCheckbox(page, 'Public Trust Boundary Pass'),
     },
   };
 }
