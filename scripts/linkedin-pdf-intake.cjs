@@ -78,7 +78,7 @@ function loadManifest(filePath) {
   assert(Array.isArray(manifest.targets) && manifest.targets.length, 'manifest.targets must contain at least one destination.');
   assert(manifest.targets.every((target) => ALLOWED_TARGETS.has(target)), 'manifest.targets contains an unsupported destination.');
   assert(new Set(manifest.targets).size === manifest.targets.length, 'manifest.targets must not contain duplicate destinations.');
-  assert(manifest.publicMediaApproved === true, 'manifest.publicMediaApproved must be true because promoted media is publicly reachable before publication.');
+  assert(manifest.publicMediaApproved === true, 'manifest.publicMediaApproved must be true because the exact approved media may be promoted to a provider-facing delivery surface.');
 
   const hasChunks = Array.isArray(manifest.chunks) && manifest.chunks.length > 0;
   const hasDownloadUrl = Boolean(String(manifest.downloadUrl || '').trim());
@@ -222,7 +222,7 @@ function buildQueuePost(manifest, metadata, urls, nowIso) {
       pdfBytes: metadata.bytes,
       pdfSha256: metadata.sha256,
       verifiedAt: nowIso,
-      sourceFolder: manifest.sourceFolder || `ChatGPT PDF intake ${manifest.id}`,
+      sourceFolder: manifest.sourceFolder || `Governed PDF intake ${manifest.id}`,
       publicMediaApproved: true,
     },
     sourceUrl: manifest.sourceUrl || 'https://github.com/Chelston222/CGPT-1/issues/514',
