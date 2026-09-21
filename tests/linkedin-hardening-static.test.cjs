@@ -184,17 +184,18 @@ test('dispatch-intent reconciliation is owner-gated, shares the release lock and
   assert.match(reconcile, /Buffer write performed: \*\*NO\*\*/);
 });
 
-test('IMAP intake checks public hosting and verifies immutable PDF plus thumbnail bytes', () => {
-  assert.match(intake, /visibility.*public/s);
+test('IMAP intake supports private repository media through the capability bridge', () => {
+  assert.doesNotMatch(intake, /visibility.*public/s);
+  assert.match(intake, /Verify private media-hosting contract/);
+  assert.match(intake, /TTE_BRIDGE_TOKEN/);
   assert.match(intake, /revision-scoped media/);
   assert.match(intake, /id: pin/);
   assert.match(intake, /pinQueueMediaUrls/);
   assert.match(intake, /git rev-parse HEAD/);
   assert.match(intake, /Pinned media ref is not an immutable commit SHA/);
-  assert.match(intake, /steps\.pin\.outputs\.pdf_url/);
-  assert.match(intake, /steps\.pin\.outputs\.thumbnail_url/);
-  assert.match(intake, /steps\.pin\.outputs\.media_ref/);
-  assert.match(intake, /sha256sum \/tmp\/public\.jpg/);
-  assert.match(intake, /sha256sum "\$local_thumb"/);
+  assert.match(intake, /preflightMedia/);
+  assert.match(intake, /requirePrivateBridge: true/);
+  assert.match(intake, /Private media host/);
+  assert.match(intake, /Repository visibility dependency/);
   assert.match(intake, /Immutable media commit/);
 });
