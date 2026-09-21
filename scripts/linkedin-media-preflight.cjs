@@ -208,9 +208,7 @@ async function ensurePrivateHostedMedia({
   if (!absolute.startsWith(root) || !fs.existsSync(absolute) || !fs.statSync(absolute).isFile()) {
     return null;
   }
-  if (!uploadToken || uploadToken.length < 24) {
-    throw new Error('TTE_BRIDGE_TOKEN is required to privately host repository LinkedIn media.');
-  }
+  if (!uploadToken || uploadToken.length < 24) return null;
 
   const bytes = fs.readFileSync(absolute);
   const limit = expectedLimit(kind);
