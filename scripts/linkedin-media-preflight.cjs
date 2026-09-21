@@ -13,7 +13,6 @@ const REPO_MEDIA_BASE = 'https://raw.githubusercontent.com/Chelston222/CGPT-1/ma
 const MEDIA_BRIDGE_BASE = 'https://222emails-mail-bridge.netlify.app/api/tte/linkedin-media-bridge';
 const PRIVATE_REPO_OWNER = 'Chelston222';
 const PRIVATE_REPO_NAME = 'CGPT-1';
-const PUBLIC_MEDIA_REPO = 'Chelston222/222emails-public-media';
 const BRIDGE_CHUNK_BYTES = 3_500_000;
 
 const ALLOWED_IMAGE_TYPES = new Set([
@@ -375,7 +374,6 @@ module.exports = {
   MAX_DOCUMENT_PAGES,
   MAX_IMAGE_BYTES,
   MEDIA_BRIDGE_BASE,
-  PUBLIC_MEDIA_REPO,
   REPO_MEDIA_BASE,
   bridgeIdentity,
   deriveMediaUploadToken,
