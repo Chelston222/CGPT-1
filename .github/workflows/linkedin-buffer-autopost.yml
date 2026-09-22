@@ -39,18 +39,6 @@ jobs:
             echo 'NOTION_API_KEY is not configured. Release remains governed by exact current-queue fingerprint plus repository-owner approval; live Notion defence is skipped and must not be reported as checked.'
           fi
 
-      - name: Load private LinkedIn media bridge credential
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: e531326d-60b8-4def-85b9-727a7f708547
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "${NETLIFY_AUTH_TOKEN:-}" || { echo 'NETLIFY_AUTH_TOKEN is required for the private LinkedIn media bridge.'; exit 2; }
-          token="$(npx -y netlify-cli@27.0.1 env:get TTE_BRIDGE_TOKEN --context production --site "$NETLIFY_SITE_ID")"
-          test ${#token} -ge 24 || { echo 'TTE_BRIDGE_TOKEN is missing or invalid in Netlify production environment.'; exit 2; }
-          echo "::add-mask::$token"
-          printf 'TTE_BRIDGE_TOKEN=%s\n' "$token" >> "$GITHUB_ENV"
 
       - name: Validate approval, release within capacity and audit
         uses: actions/github-script@v7
@@ -60,6 +48,7 @@ jobs:
           BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_BUSINESS_CHANNEL_ID }}
           BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
         with:
           script: |
             const path = require('node:path');
@@ -80,6 +69,14 @@ jobs:
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+            const repository = await github.rest.repos.get({ owner, repo });
+            const requirePrivateBridge = repository.data.private === true;
+            const mediaPreflightOptions = requirePrivateBridge
+              ? { uploadSecret: process.env.TTE_SMTP_PASS || '', requirePrivateBridge: true }
+              : { requirePrivateBridge: false };
+            if (requirePrivateBridge && String(process.env.TTE_SMTP_PASS || '').length < 16) {
+              throw new Error('Private-repository LinkedIn media dispatch requires the configured bridge derivation secret.');
+            }
             const baseQueue = JSON.parse(fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'apps/linkedin-review/queue.json'), 'utf8'));
             const queue = withQaReplenishment(baseQueue);
 
@@ -231,7 +228,7 @@ jobs:
                 for (const { job } of plan.dispatch) {
                   const proofKey = `${job.post.id}@${job.post.revision}`;
                   if (!job.request.mediaUrl || mediaProofs.has(proofKey)) continue;
-                  mediaProofs.set(proofKey, await preflightMedia(job.request, fetch, { uploadToken: process.env.TTE_BRIDGE_TOKEN, requirePrivateBridge: true }));
+                  mediaProofs.set(proofKey, await preflightMedia(job.request, fetch, mediaPreflightOptions));
                 }
 
                 for (const { job, channel, key } of plan.dispatch) {
