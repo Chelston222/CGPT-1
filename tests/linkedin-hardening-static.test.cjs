@@ -20,7 +20,7 @@ const queueOverlay = read('apps/linkedin-review/queue-overlay.js');
 const strategy = read('docs/LINKEDIN_CONTENT_STRATEGY_2026.md');
 
 test('all approved media is preflighted before the first Buffer createPost mutation', () => {
-  const preflightIndex = autopost.indexOf('await preflightMedia(job.request, fetch, {');
+  const preflightIndex = autopost.indexOf('await preflightMedia(job.request, fetch, mediaPreflightOptions)');
   const mutationIndex = autopost.indexOf('buildCreatePostMutation(channel, job.request.mode, media)');
   assert.ok(preflightIndex >= 0, 'media preflight call is missing');
   assert.ok(mutationIndex > preflightIndex, 'Buffer mutation can occur before media preflight');
