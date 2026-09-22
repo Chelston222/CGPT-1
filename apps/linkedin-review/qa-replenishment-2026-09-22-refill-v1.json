@@ -1,0 +1,741 @@
+{
+  "schemaVersion": 1,
+  "batchId": "linkedin-refill-2026-09-22-v1",
+  "generatedAt": "2026-09-22T07:06:00+01:00",
+  "sourceBasis": {
+    "command": "222E Command + LINKEDIN Project Canonical State",
+    "purpose": "Restore governed Buffer runway to the 8-placement automatic target while preserving two instant-content slots per channel.",
+    "standards": [
+      "Story Worth Reading",
+      "Narrative Architecture OS",
+      "Public Authorship & Content-Operations Trust Boundary",
+      "8/10/2 queue reserve"
+    ],
+    "media": "text-only replenishment to avoid unnecessary media dependency while the public-media/private-ops migration remains open"
+  },
+  "approvalRule": "Review-only records until the repository owner explicitly approves the locked revisions through the governed LinkedIn release gate.",
+  "posts": [
+    {
+      "id": "tte-refill-2026-09-22-personal-01",
+      "revision": 1,
+      "title": "Most businesses do not have a lead problem first",
+      "rating": 97,
+      "category": "state_change_gap",
+      "contentRole": "diagnosis",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-22T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "Most appointment-led businesses do not have a lead problem first.\n\nThey have a state-change problem.\n\nSomeone enquires.\nThen nothing happens.\n\nSomeone cancels.\nThen they quietly disappear.\n\nA client leaves without rebooking.\nNobody notices until months later.\n\nA regular falls outside their normal pattern.\nThe system still treats them like everyone else.\n\nThat is the gap I keep looking for.\n\nNot “are you sending emails?”\n\nBut:\n\nWhat changed?\nWho should know?\nWhat should happen next?\nWhen should it stop?\n\nMore leads can absolutely help.\n\nBut if the business cannot reliably react when a customer moves from one state to another, more acquisition just sends more people into the same gaps."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-personal-02",
+      "revision": 1,
+      "title": "A no-show should change the system immediately",
+      "rating": 96,
+      "category": "no_show_recovery",
+      "contentRole": "teaching",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-22T18:15:00+01:00"
+      },
+      "copy": {
+        "default": "A no-show is not just a missed appointment.\n\nIt is a change in customer state.\n\nThat should change what happens next.\n\nThe reminder journey should stop.\n\nThe recovery journey should begin.\n\nIf they rebook, that journey should stop too.\n\nIf they reply with a genuine issue, a human may need to own it.\n\nAnd if the business decides the person should no longer be contacted, the system needs to respect that.\n\nThe mistake is treating every missed appointment like a reason to “send another message”.\n\nThe useful question is:\n\nWhat is the correct next state now?\n\nGood follow-up is not more communication.\n\nIt is the right action after the status changes."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-personal-03",
+      "revision": 1,
+      "title": "The most expensive follow-up can be the unnecessary one",
+      "rating": 95,
+      "category": "stop_conditions",
+      "contentRole": "authority",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-23T18:15:00+01:00"
+      },
+      "copy": {
+        "default": "One of the easiest ways to make follow-up feel sloppy is to keep messaging after the customer has already acted.\n\nThey booked.\n\nBut the reminder still lands.\n\nThey replied.\n\nBut the sequence keeps running.\n\nThey cancelled for a genuine reason.\n\nBut the system carries on as if nothing changed.\n\nThat is why I care so much about stop conditions.\n\nEvery journey should know what success looks like.\n\nEvery journey should also know what makes it irrelevant.\n\nBooked.\nReplied.\nOpted out.\nMoved to human ownership.\nNo longer eligible.\n\nAutomation without stop logic is not efficient.\n\nIt is just fast repetition."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-personal-04",
+      "revision": 1,
+      "title": "If return depends on memory, it is not a system",
+      "rating": 96,
+      "category": "operational_ownership",
+      "contentRole": "authority",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-24T08:15:00+01:00"
+      },
+      "copy": {
+        "default": "If every client return depends on somebody remembering, you do not have a retention system.\n\nYou have good intentions.\n\nSomeone remembers to chase the cancellation.\n\nSomeone notices a regular has not been back.\n\nSomeone happens to check the old enquiry list.\n\nSomeone spots an empty hour and starts messaging people.\n\nThat can work.\n\nUntil the team gets busy.\n\nA real return system should make the important change visible before somebody has to remember it.\n\nWho has gone quiet?\nWho is due back?\nWho cancelled?\nWho never completed the next step?\nWho has already acted and should be left alone?\n\nThe goal is not to remove people.\n\nIt is to stop making memory the only trigger."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-personal-05",
+      "revision": 1,
+      "title": "Silence needs a defined next step",
+      "rating": 95,
+      "category": "silence_protocol",
+      "contentRole": "diagnosis",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-24T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "“We followed up.”\n\nThat sentence tells me almost nothing.\n\nHow many times?\n\nAfter what event?\n\nFor how long?\n\nWhat happened after silence?\n\nDid the next message change when the person opened but did not book?\n\nDid somebody take over when they replied?\n\nDid the journey stop when they converted?\n\nSilence is where a lot of customer journeys become vague.\n\nThe first message exists.\n\nThe second decision often does not.\n\nA useful system defines what happens when the obvious first attempt does not work.\n\nNot because every person should be chased forever.\n\nBecause “nothing happened” is still a state the business needs to handle deliberately."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-personal-06",
+      "revision": 1,
+      "title": "Reactivation is not one blast to an old database",
+      "rating": 96,
+      "category": "reactivation_eligibility",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-25T08:15:00+01:00"
+      },
+      "copy": {
+        "default": "Reactivation is not sending one campaign to everyone who has not booked recently.\n\nThat is the easy version.\n\nThe harder part is deciding who actually belongs in the journey.\n\nA client who used to visit every four weeks is different from somebody who came once two years ago.\n\nA cancelled appointment is different from a completed service with no next booking.\n\nA cold enquiry is different from a previously loyal client.\n\nThe timing, message and next step should reflect that.\n\nBefore writing the campaign, define the states.\n\nThen define eligibility.\n\nThen define the stop rules.\n\nThe copy comes after the logic.\n\nOtherwise “win-back” becomes a very polished way of treating completely different customers as if they are the same."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-personal-07",
+      "revision": 1,
+      "title": "The metric I care about is whether the customer state changed",
+      "rating": 95,
+      "category": "commercial_measurement",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-25T13:15:00+01:00"
+      },
+      "copy": {
+        "default": "Open rate can tell you whether someone looked.\n\nIt cannot tell you whether the business moved.\n\nFor a Client Return System, I care much more about state change.\n\nDid the enquiry become a booking?\n\nDid the cancellation become a rebook?\n\nDid the no-show recover?\n\nDid the overdue client return?\n\nDid the dormant client reply with genuine intent?\n\nDid the journey stop when it should?\n\nThose are harder questions than “did the email perform?”\n\nBut they are much closer to the commercial job.\n\nThe message matters.\n\nThe metric should still reflect what the business actually wanted to happen next."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-main-01",
+      "revision": 1,
+      "title": "Four revenue leaks we inspect first",
+      "rating": 97,
+      "category": "revenue_leak_map",
+      "contentRole": "diagnosis",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-22T15:30:00+01:00"
+      },
+      "copy": {
+        "default": "Four places we look first when an appointment-led business says it wants more bookings:\n\n1. Enquiries that never reached a booking.\n2. Cancellations and no-shows that were never recovered.\n3. Clients who completed a visit but left without a defined return path.\n4. Previously active clients who have quietly become overdue.\n\nNone of these automatically means the business has a “marketing problem”.\n\nThey are customer-state gaps.\n\nThe commercial opportunity is finding which gaps exist, which people are still genuinely eligible to hear from you, and what the clearest next step should be.\n\nThat is the foundation of a Client Return System."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-main-02",
+      "revision": 1,
+      "title": "A Client Return System in five states",
+      "rating": 96,
+      "category": "client_return_system",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-24T08:30:00+01:00"
+      },
+      "copy": {
+        "default": "A simple Client Return System can be understood as five states:\n\nInterested.\nBooked.\nCompleted.\nDue back.\nReturned.\n\nThe exact labels change by business.\n\nThe principle does not.\n\nEach state should answer:\n\nWhat just happened?\nWhat should happen next?\nWho owns it?\nWhat makes the customer eligible?\nWhat should stop the journey?\n\nThat is the difference between a collection of reminders and an operating system for customer return.\n\nThe software can vary.\n\nThe state logic is the part that makes it usable."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-main-03",
+      "revision": 1,
+      "title": "A cancellation should trigger a decision, not silence",
+      "rating": 96,
+      "category": "cancellation_recovery",
+      "contentRole": "diagnosis",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-25T08:30:00+01:00"
+      },
+      "copy": {
+        "default": "A cancellation should trigger a decision.\n\nNot silence.\n\nThe business needs to know:\n\nWas another appointment already booked?\nShould the customer be offered a simple rebooking route?\nDoes a staff member need to take over?\nIs the person still eligible for automated follow-up?\nWhen should the recovery journey stop?\n\nThe right answer depends on the business.\n\nBut “the diary moved on” should not be the default operating rule.\n\nA cancellation changes the commercial state.\n\nA Client Return System makes that change visible and gives it an owner."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-main-04",
+      "revision": 1,
+      "title": "Booking software is not automatically a return system",
+      "rating": 95,
+      "category": "booking_software_contrast",
+      "contentRole": "authority",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-28T08:30:00+01:00"
+      },
+      "copy": {
+        "default": "Booking software can tell you what is in the diary.\n\nA Client Return System asks what should happen when the diary changes.\n\nA new enquiry arrives but does not book.\n\nA client cancels.\n\nA no-show occurs.\n\nA completed appointment has no next booking.\n\nA regular becomes overdue.\n\nThe booking platform may already contain most of the data needed.\n\nThe commercial advantage comes from defining the next action around those states.\n\nSoftware records events.\n\nA return system decides what those events should trigger."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-main-05",
+      "revision": 1,
+      "title": "Clean the dormant list before you reactivate it",
+      "rating": 96,
+      "category": "reactivation_hygiene",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-29T08:30:00+01:00"
+      },
+      "copy": {
+        "default": "Before reactivating a dormant client list, clean the logic.\n\nNot everyone who has gone quiet should receive the same message.\n\nSeparate:\n\nrecently overdue clients,\npreviously regular clients,\none-time customers,\nold enquiries,\ncancelled appointments,\npeople who have already rebooked elsewhere in the system,\nand anyone who should no longer be contacted.\n\nThen define the next step for each group.\n\nReactivation works better when the list reflects real customer history.\n\nThe campaign is only the visible part.\n\nEligibility is the part that keeps it relevant."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-main-06",
+      "revision": 1,
+      "title": "What the Revenue Recovery Check is for",
+      "rating": 97,
+      "category": "offer_clarity",
+      "contentRole": "offer",
+      "funnelStage": "bof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-30T08:30:00+01:00"
+      },
+      "copy": {
+        "default": "The £197 Revenue Recovery Check is designed to answer one question:\n\nWhere is qualified potential booking value already leaking from the customer journey?\n\nWe look at areas such as:\n\nenquiries,\nno-shows,\ncancellations,\nrebooking,\noverdue clients,\nand win-back opportunities.\n\nThe goal is not to sell you “more emails”.\n\nIt is to identify specific recovery opportunities and show what would need to change operationally.\n\nIf we do not identify at least £985 in qualified potential booking value, the £197 is refunded.\n\nIf you later choose the £995 Client Return System Build, the £197 is credited, leaving £798.\n\nClear diagnosis first.\n\nBuild only if the opportunity justifies it."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-main-07",
+      "revision": 1,
+      "title": "Every recovery journey needs a stop rule",
+      "rating": 95,
+      "category": "journey_stop_rules",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-10-01T08:30:00+01:00"
+      },
+      "copy": {
+        "default": "Every recovery journey needs a stop rule.\n\nBooked.\nReplied.\nOpted out.\nMoved to human ownership.\nNo longer eligible.\n\nWithout those conditions, a well-intentioned sequence can become noise.\n\nThe purpose of follow-up is not to maximise message count.\n\nIt is to move the right person towards the right next step and stop when that step is no longer appropriate.\n\nGood automation knows when to act.\n\nA good Client Return System also knows when to leave the customer alone."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-secondary-01",
+      "revision": 1,
+      "title": "Lesson 11: define customer states before automations",
+      "rating": 96,
+      "category": "journey_design",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-22T17:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Journey Design",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 11"
+      },
+      "copy": {
+        "default": "Retention School · Lesson 11\n\nDefine the customer states before you build the automation.\n\nStart with simple labels:\n\nEnquired.\nBooked.\nCompleted.\nCancelled.\nNo-show.\nDue back.\nOverdue.\nReturned.\n\nThen decide what should move someone from one state to another.\n\nOnly after that should you build messages or triggers.\n\nWhy?\n\nBecause automation is much easier to debug when the system is responding to a clear change in customer state.\n\nStart with the journey map.\n\nThe messages come later."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-secondary-02",
+      "revision": 1,
+      "title": "Lesson 12: cancellation and no-show are not the same state",
+      "rating": 96,
+      "category": "state_design",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-23T08:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Journey Design",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 12"
+      },
+      "copy": {
+        "default": "Retention School · Lesson 12\n\nA cancellation and a no-show are not automatically the same customer state.\n\nA cancellation may include a reason, notice and an intention to rebook.\n\nA no-show may require a different operational response.\n\nTreating both as “missed appointments” can blur the next step.\n\nFor each state, define:\n\neligibility,\ntiming,\nowner,\nmessage,\nhuman handoff,\nand stop condition.\n\nThe more precise the state, the easier it becomes to make the follow-up relevant."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-secondary-03",
+      "revision": 1,
+      "title": "Lesson 13: the business defines the due-back window",
+      "rating": 95,
+      "category": "return_timing",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-24T08:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Timing",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 13"
+      },
+      "copy": {
+        "default": "Retention School · Lesson 13\n\nThe marketer should not invent the due-back window.\n\nThe business should define it.\n\nFor a salon, clinic, training provider or other appointment-led business, the appropriate return timing depends on the real service model.\n\nUse:\n\nbooking history,\nbusiness rules,\nservice cadence,\ncustomer expectations,\nand any professional or operational constraints that apply.\n\nThen let the system watch for the point when a client becomes genuinely due back.\n\nGood retention timing starts with the business reality, not a random campaign calendar."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-secondary-04",
+      "revision": 1,
+      "title": "Lesson 14: stop the journey after the customer acts",
+      "rating": 96,
+      "category": "suppression_logic",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-25T08:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Automation",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 14"
+      },
+      "copy": {
+        "default": "Retention School · Lesson 14\n\nOne of the most important automation rules is also one of the simplest:\n\nStop when the customer acts.\n\nIf they book, stop the booking journey.\n\nIf they reply, route the reply.\n\nIf they opt out, suppress them.\n\nIf a staff member takes ownership, pause the automated path.\n\nIf eligibility changes, remove them.\n\nThe goal is not to keep the sequence running.\n\nThe goal is to respond correctly to the latest customer state."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-secondary-05",
+      "revision": 1,
+      "title": "Lesson 15: audit one journey manually before automating it",
+      "rating": 96,
+      "category": "manual_audit",
+      "contentRole": "resource",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-28T08:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Audit",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 15"
+      },
+      "copy": {
+        "default": "Retention School · Lesson 15\n\nBefore automating a customer journey, audit one version manually.\n\nPick one state.\n\nFor example: enquiry received but not booked.\n\nThen write down:\n\nWhat starts the journey?\nWhat information is available?\nWhat should happen first?\nHow long should the business wait?\nWhat happens after silence?\nWhen does a human take over?\nWhat ends the journey?\n\nIf those answers are unclear on paper, automation will not make them clearer.\n\nMap the decision first.\n\nThen automate the repeatable parts."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-secondary-06",
+      "revision": 1,
+      "title": "Lesson 16: measure the state change, not only the message",
+      "rating": 95,
+      "category": "measurement",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-29T08:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Measurement",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 16"
+      },
+      "copy": {
+        "default": "Retention School · Lesson 16\n\nDo not measure the message without measuring the state change.\n\nUseful questions include:\n\nDid the enquiry book?\nDid the cancellation rebook?\nDid the overdue client return?\nDid the dormant client reply?\nDid the journey stop at the right point?\n\nOpens and clicks can still be useful diagnostic signals.\n\nThey are not the commercial outcome.\n\nMatch the metric to the job the journey was designed to do."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-secondary-07",
+      "revision": 1,
+      "title": "Lesson 17: define exception ownership",
+      "rating": 95,
+      "category": "human_handoff",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-30T08:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Operations",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 17"
+      },
+      "copy": {
+        "default": "Retention School · Lesson 17\n\nEvery automated journey needs an exception owner.\n\nWhat happens when:\n\nthe customer replies with a question,\nthe booking link fails,\nthe requested time is unavailable,\nthe customer disputes the message,\nthe record is incomplete,\nor the next step needs human judgement?\n\nDo not leave exceptions sitting between “the automation sent” and “someone will probably notice”.\n\nDefine who owns the exception.\n\nDefine where it appears.\n\nDefine how quickly it should be reviewed.\n\nAutomation is strongest when the human handoff is designed too."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-22-secondary-08",
+      "revision": 1,
+      "title": "Lesson 18: win-back starts with eligibility",
+      "rating": 96,
+      "category": "winback_eligibility",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-10-01T08:45:00+01:00"
+      },
+      "taxonomy": {
+        "category": "Reactivation",
+        "season": "Season 1",
+        "lesson_or_resource": "Lesson 18"
+      },
+      "copy": {
+        "default": "Retention School · Lesson 18\n\nWin-back starts with eligibility, not copy.\n\nBefore writing the message, decide who belongs in the audience.\n\nSeparate:\n\npreviously regular clients,\none-time clients,\nrecently overdue clients,\nold enquiries,\ncancelled appointments,\npeople who already returned,\nand people who should no longer be contacted.\n\nThen define the next step for each group.\n\nThe best win-back message cannot fix a list that ignores customer history.\n\nEligibility first.\n\nCopy second."
+      },
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    }
+  ]
+}
