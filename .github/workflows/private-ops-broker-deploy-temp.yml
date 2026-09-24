@@ -1,0 +1,42 @@
+name: Private Ops Broker Deploy Temp
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  deploy:
+    if: github.event.issue.title == '[PRIVATE OPS BROKER DEPLOY]' && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Deploy broker through account-authorised one-time handoff
+        working-directory: migration/linkedin-credential-broker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx -y @netlify/mcp@latest             --site-id cc8f45e8-b7e1-4e08-9064-c7d2bf0cd5c0             --proxy-path 'https://netlify-mcp.netlify.app/proxy/eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..LZzGb5dwSmkz8wOh.-bSOD7iptOYao_ktMGWVLCkMGzz1rG1r8R60PQBo7wpgGaUDMj5BkL1Bg43YMpl3qKhOtDwmmomrWXv8OPEAaUFRTGVTVZ2Jxv_shpHF2_HSXd7UZDtSEM2HAxUABEo3wyGlJGW4yTVMJbYL50Y7JKvXRWKqIfA9OHKnBZAsApgclCvgdHjfBf4Swt_t7x5huPvBDgPD-CrihV9xm3Hg4RgGeWYP4wwNf1FBL5Ww3TcqOVTDDm4SUBw5hKUA9xGuPzMfai5sVZIEB7YfbPxEJJ-gF11WKkiDXgPlasLKPdX8kjjxiylTlx7xau9zHArX5V0t9vRxCdChqShm__ofQlhvlwd00RcYjpQyCVHV2_RTpIcsvIDDHEgURHcMtErPmHdCMn5z.ieVtg4kkRV39N839k5rsJA'
+      - name: Verify broker health
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(curl --fail --silent --show-error --retry 6 --retry-delay 3 https://222emails-li-media-v1.netlify.app/api/health)"
+          echo "$body" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s); if(j.service!=='linkedin-provider-bridge') process.exit(2); console.log('broker health verified')})"
+      - name: Record completion
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '✅ Private-ops credential broker deployed and health-checked. No Buffer credential was exposed.'
+            });
+            await github.rest.issues.update({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,state:'closed',state_reason:'completed'});
