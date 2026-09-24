@@ -1,0 +1,11 @@
+{
+  "name": "222emails-linkedin-credential-broker",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=24"},
+  "dependencies": {
+    "@netlify/blobs": "^10.7.10",
+    "@netlify/functions": "^5.3.0",
+    "jose": "^6.1.0"
+  }
+}
