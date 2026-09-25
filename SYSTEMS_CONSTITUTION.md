@@ -1,20 +1,20 @@
 # 222Emails Systems Constitution
 
 Status: CURRENT ENGINEERING CONSTITUTION
-Commercial context release: v1.18.0
-Effective date: 2026-08-31
+Commercial context release: 2026-09-25 controlled
+Effective date: 2026-09-25
 
 ## Authority
 This repository is an implementation and automation layer beneath the current 222Emails Master Operating Context.
 
 Current durable pointers:
-- Google Drive master: `222Emails Master Operating Context v1.18.0 2026-08-31`
-- Google Drive machine mirror: `222Emails Machine Context v1.18.0 2026-08-31`
-- Repository pointer: `context/222Emails Master Context Pointer v1.18.0 2026-08-31.md`
-- Current repository contract: `context/222Emails Current Context Contract v1.18.0 2026-08-31.json`
-- Hook OS machine contract: `context/222Emails Hook OS v1.0.1 2026-08-31.json`
-- Hook OS operating doctrine: `docs/222Emails Hook Operating System v1.0 2026-08-30.md`
-- Email Revenue OS contract: `context/222Emails Email Revenue OS v1.0 2026-08-31.json`
+- Sprint control: `222Emails 30 Day Command Centre v1.1 LIVE` (Drive ID `1fKwKu5j6rw1kKPxu-PcjGEgbrdSfIK9E2L7c6vNQlH0`)
+- Google Drive master: `222Emails Master Operating Context v1.31.0 2026-09-13` (Drive ID `1AmqGFc7rDvOzI4LARDiTedwO5DNLjknVA8KmHjoD8XA`)
+- Commercial Command Centre: Drive ID `1J1XwoAIVfC4v8Zcr-D4KEN0Q0ZGfKFfxeXoheDx3nc4`
+- Approved Productisation Delta: Drive ID `1PMOOskahfo4l7n8cD5tDC2xqjwUCB1UpKzORgTZL9bY`
+- Current Client Return Product OS: Drive ID `1yZUCR7P3zXB9nuWh6Ay-r4GkLrufEz5W9_NIk2dlA7k`
+- Current repository contract: `context/222Emails Current Context Contract 2026-09-25.json`
+- Hook OS and Email Revenue OS remain subordinate channel systems and cannot override the current commercial sources above.
 
 Older context files are preserved snapshots. They must not outrank a newer CURRENT CANONICAL context merely because they are present in the repository.
 
@@ -32,22 +32,25 @@ Current market-facing category: **Turnkey Client Return Systems for appointment-
 
 Formal system name: **Client Return System**.
 
-Revenue recovery is the commercial outcome and diagnostic language, including the **Free Revenue Recovery Check**. It is not a competing formal system name.
+Revenue recovery is the commercial outcome and diagnostic language. The current paid diagnostic is the **£197 Revenue Recovery Check**; the optional free **Revenue Recovery Fit Check** is qualification only. Neither is a competing formal system name.
 
 Primary market: United Kingdom.
-Primary proving ground: Lancashire salons and barbers, then suitable appointment-led UK SMEs.
+Primary proving ground: Lancashire and the wider UK, prioritising appointment-led SMEs with enough existing enquiry/client volume for recovery economics to matter.
 
 Retention School remains an education-first media/learning layer and does not replace 222Emails.
 
-## Current offer ladder
-- Free Revenue Recovery Check - £0
-- Client Return Growth Check - £197
-- 7-Day Client Return System Sprint - £997
-- Client Return Accelerator - £1,297
-- Optimisation - £595/month
-- Growth Partner - £1,495/month
+## Current commercial route
+- Revenue Recovery Fit Check - £0, optional light qualification where useful.
+- Revenue Recovery Check - £197, with the controlled £985+ qualified potential booking value / refund promise.
+- Recovery Build / Turnkey Client Return System - £995 total, separately scoped. A retained £197 Check is credited in full, leaving £798; a refunded Check creates no credit.
+- 14-Day Reactivation Pilot - £0 selected-business acquisition route only, not a universal free-trial entitlement and not a campaign-send authority.
+- Ongoing optimisation or wider work - separately prescribed and scoped only where justified.
 
-Do not revive retired Fit Check, Repeat-Booking Engine, Revenue Recovery System as a formal system name, Jotform routing, or other superseded commercial language from older repository files.
+Approved Client Return System modules: **Enquiry Rescue, Cancellation Recovery, Rebooking, Client Reactivation**.
+
+Productisation rule: **STANDARDISE THE MECHANISM. PRESCRIBE THE SCOPE.** Use only the smallest module set justified by the verified leak. Do not publicly lock a universal module/message/channel/integration count into £995 until at least the first three Builds provide fulfilment evidence.
+
+Retired for current-facing execution unless a newer explicit owner decision reactivates them: Free Revenue Recovery Check as the current offer name, Client Return Growth Check as the £197 offer name, £997 7-Day Sprint, default Accelerator, default £595/month Optimisation and default Growth Partner.
 
 ## Golden operating rules
 1. Revenue and qualified commercial progress before vanity activity.
@@ -55,7 +58,7 @@ Do not revive retired Fit Check, Repeat-Booking Engine, Revenue Recovery System 
 3. Compliance and deliverability before scale.
 4. Lead identification before prospect-facing outreach.
 5. Personalisation and grounded observation before generic automation.
-6. Draft/review before send unless a narrower explicit standing authorisation exists.
+6. Draft/review before send. External sends, publishing, invites, launches and charges require the current explicit owner release at the consequential action point; no automation or stale standing rule may silently widen that authority.
 7. Human strategy and authority remain above machine execution.
 8. Preserve history and auditability. Supersede stale routes instead of silently erasing evidence.
 9. Two-way-door changes can move quickly when safe. One-way-door changes require explicit authority and stronger verification.
@@ -126,7 +129,7 @@ Quality gates:
 - repurposed ideas require fresh channel QA;
 - a winner in another channel is a candidate, not proof, in email.
 
-Email Revenue OS does not authorise live sends and does not replace Hook OS, Client Return System positioning, the Free Revenue Recovery Check, Lead Identification Gate, proof rules, sender or suppression controls, human authority, LinkedIn cadence or Retention School.
+Email Revenue OS does not authorise live sends and does not replace Hook OS, Client Return System positioning, the current Fit Check / £197 Revenue Recovery Check / £995 Build route, Lead Identification Gate, proof rules, sender or suppression controls, human authority, LinkedIn cadence or Retention School.
 
 ## Visual and brand authority
 Use only the actual supplied TTE V3 logo assets from the canonical pack. Never redraw, generate, approximate or substitute the logo.
@@ -200,8 +203,8 @@ Required fields:
 - verification evidence where material
 
 ## Human authority
-Explicit human authority remains required for:
-- sends and publishing unless covered by a narrower standing authorisation;
+Explicit current owner authority remains required for:
+- external sends, publishing, invites, launches and charges at the consequential action point;
 - pricing;
 - public claims;
 - scope changes;
@@ -214,16 +217,19 @@ Explicit human authority remains required for:
 No documentation update may silently grant authority in another domain.
 
 ## Compliance rails
-Allowed by default only when all current gates are satisfied:
-- lawful corporate B2B outreach with truthful identity and current opt-out handling;
-- retention messaging to client-owned lists under the appropriate client/legal basis and platform rules.
+Current acquisition control:
+- unsolicited cold-email acquisition cap is **0/day** under the current provider-permission policy;
+- email is reserved for permission-qualified, relationship, internal, requested-response or other currently authorised routes;
+- manual LinkedIn actions remain human-only;
+- phone outreach runs only from currently cleared routes and current calling controls;
+- retention messaging to client-owned lists requires the appropriate client/legal basis, suppression handling, data minimisation and the current release gates.
 
 Not allowed by default:
-- blind auto-send to uncertain legal categories;
+- blind or background auto-send;
 - using client retention platforms as raw cold-acquisition systems where inappropriate;
 - hidden or misleading identity;
 - fabricated evidence, results, scarcity, urgency or guarantees;
-- bypassing Lead Identification Gate, suppression or dedupe controls.
+- bypassing Lead Identification Gate, suppression, dedupe, provider permission or owner release controls.
 
 ## Review gates
 A prospect-facing message can become sendable only when the current relevant gates pass, including:
@@ -294,7 +300,7 @@ Prioritise:
 - client results and retention;
 - reliable fulfilment;
 - qualified conversations;
-- Free Revenue Recovery Checks;
+- paid Revenue Recovery Checks;
 - paid progression;
 - buyers;
 - attributable revenue;
