@@ -1,0 +1,127 @@
+{
+  "effective_date": "2026-09-25",
+  "status": "CURRENT_CANONICAL_REPOSITORY_CONTRACT",
+  "authority_order": [
+    "newer_explicit_owner_instruction",
+    "current_law_platform_provider_fact",
+    "222Emails_30_Day_Command_Centre_v1_1",
+    "approved_Productisation_Source_Control_Delta",
+    "current_Client_Return_Product_OS",
+    "Master_Operating_Context_v1_31",
+    "live_operational_system_state",
+    "historical_repository_snapshots"
+  ],
+  "canonical_sources": {
+    "command_centre_document_id": "1fKwKu5j6rw1kKPxu-PcjGEgbrdSfIK9E2L7c6vNQlH0",
+    "master_operating_context_id": "1AmqGFc7rDvOzI4LARDiTedwO5DNLjknVA8KmHjoD8XA",
+    "commercial_command_centre_spreadsheet_id": "1J1XwoAIVfC4v8Zcr-D4KEN0Q0ZGfKFfxeXoheDx3nc4",
+    "productisation_delta_id": "1PMOOskahfo4l7n8cD5tDC2xqjwUCB1UpKzORgTZL9bY",
+    "client_return_product_os_id": "1yZUCR7P3zXB9nuWh6Ay-r4GkLrufEz5W9_NIk2dlA7k"
+  },
+  "brand": {
+    "written_name": "222Emails",
+    "spoken_expansion": "Triple Two Emails",
+    "language": "en-GB",
+    "no_em_dash": true,
+    "palette": {
+      "navy": "#06173D",
+      "orange": "#FF6600",
+      "bone": "#F7F3EC"
+    },
+    "logo_rule": "Use only the approved handwritten Triple Two + EMAILS mark and exact T2T monogram assets; omit rather than invent."
+  },
+  "positioning": {
+    "formal_system_name": "Client Return System",
+    "category": "Client Return Systems / Revenue Recovery for appointment-led businesses",
+    "primary_market": "United Kingdom"
+  },
+  "commercial_route": [
+    {
+      "name": "Revenue Recovery Fit Check",
+      "price_gbp": 0,
+      "role": "optional light qualification where useful"
+    },
+    {
+      "name": "Revenue Recovery Check",
+      "price_gbp": 197,
+      "promise": "identify and document at least £985 in qualified potential booking value or refund the £197"
+    },
+    {
+      "name": "Recovery Build / Turnkey Client Return System",
+      "price_gbp": 995,
+      "credit_rule": "retained £197 Check credits £197, leaving £798; refunded Check creates no credit",
+      "scope": "separately scoped; no revenue guarantee"
+    }
+  ],
+  "approved_product_architecture": {
+    "principle": "STANDARDISE THE MECHANISM. PRESCRIBE THE SCOPE.",
+    "modules": [
+      "Enquiry Rescue",
+      "Cancellation Recovery",
+      "Rebooking",
+      "Client Reactivation"
+    ],
+    "scope_rule": "Use only the smallest module set justified by the verified leak.",
+    "standardisation_gate": "Do not publicly lock a universal module/message/channel/integration count into £995 until at least the first three Builds provide fulfilment evidence."
+  },
+  "pilot": {
+    "name": "14-Day Reactivation Pilot",
+    "public_state": "approved selected-business acquisition route",
+    "price_gbp": 0,
+    "universal_entitlement": false,
+    "default_scope": {
+      "objectives": 1,
+      "segments": 1,
+      "campaigns": 1,
+      "max_eligible_contacts": 250
+    },
+    "clock_starts": "first approved live send",
+    "auto_charge": false,
+    "auto_renewal": false,
+    "booking_or_revenue_guarantee": false,
+    "francis_may_invent_or_change_terms": false
+  },
+  "client_friction": {
+    "rule": "FRONT-LOAD ONCE",
+    "journey": "qualify lightly -> one prefilled onboarding after commitment -> 222Emails executes -> material approval where required -> results",
+    "never_ask_twice": true,
+    "client_only_inputs_only": true
+  },
+  "release_authority": {
+    "external_send_default": "HOLD",
+    "campaign_send_requires": "applicable client approval plus explicit Chelston release",
+    "active_pipeline_send_requires": "current recipient/conversation/suppression/dedupe check plus exact owner send approval unless the current instruction itself explicitly directs that send",
+    "linkedin_actions": "human-only",
+    "form_or_connection_never_grants_send": true,
+    "calendar_zoom_calendly_are_infrastructure": true
+  },
+  "acquisition": {
+    "cold_email_cap_per_day": 0,
+    "cold_email_state": "POLICY BLOCKED",
+    "manual_linkedin": "human-only",
+    "calls": "only from currently cleared phone routes",
+    "email_allowed": "permission-qualified, relationship, internal, requested-response or other currently authorised routes only"
+  },
+  "appointment_communications": {
+    "owner": "222Emails",
+    "default": "one controlled draft/message built from live booking state; Chelston reviews/sends",
+    "no_prospect_calendar_attendee_just_for_notification": true,
+    "no_duplicate_calendly_zoom_confirmation": true
+  },
+  "truth_rules": [
+    "configured is not live",
+    "sent is not delivered",
+    "scheduled is not published",
+    "potential booking value is not recovered revenue",
+    "booked value is not collected revenue",
+    "no unsupported revenue or ROI claim"
+  ],
+  "retired_for_current_execution": [
+    "Free Revenue Recovery Check as the current offer name",
+    "Client Return Growth Check as the current £197 offer name",
+    "7-Day Client Return System Sprint at £997",
+    "Client Return Accelerator as a default current tier",
+    "automatic £595/month optimisation as a default stage",
+    "Growth Partner as a default current tier"
+  ]
+}
