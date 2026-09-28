@@ -61,6 +61,17 @@ This is the default for Chelston's personal LinkedIn and any founder or photo-le
 - Any current-facing post that exposes the internal content-production/publishing stack must be revised or withdrawn before publication.
 - This boundary is permanent unless Chelston explicitly unfreezes it for one specific piece after a trust review.
 
+## ICP Direct Callout lane
+
+- Maintain a deliberate **ICP Direct Callout** lane alongside founder, diagnostic, system, proof, offer and broader appointment-led content.
+- Use explicit role or vertical recognition when the underlying problem is genuinely specific enough, for example: aesthetic nurses and clinic owners, dental practice managers and owners, salon/beauty owners, physiotherapy/recovery clinic owners and other verified appointment-led operators.
+- The first line should make the intended reader recognise themselves quickly, but the body must still deliver a real mechanism, diagnostic, decision rule or useful action.
+- Do not create fake specificity by swapping the industry noun inside generic copy.
+- Do not invent treatment, clinical, patient, regulatory or professional claims to sound niche.
+- Rotate direct callouts across high-fit segments rather than narrowing the whole feed to one vertical.
+- Every normal replenishment review should check whether the batch contains enough explicit ICP recognition. If it does not, either add a strong direct-callout asset or record why the broader content mix is intentionally stronger.
+- Judge this lane by qualified ICP replies, conversations, Pilot progression and other commercial signals rather than impressions alone.
+
 ## Queue reserve
 
 - Automatic replenishment stops at **8 scheduled placements per channel**.
