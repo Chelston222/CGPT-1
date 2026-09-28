@@ -1,0 +1,544 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-28T11:02:00+01:00",
+  "weekStart": "2026-09-28",
+  "weekEnd": "2026-10-04",
+  "sourceBasis": {
+    "governingCommand": "222E Command v1.2",
+    "linkedinAuthority": "TTE LinkedIn Command Centre current 27 Sep 2026 override",
+    "ownerApproval": "Chelston approved all 17 exact copy drafts and then instructed to push all content where needed.",
+    "bufferState": "Verified empty immediately before replenishment",
+    "mediaDecision": "Text-only release for this batch. Real-photo ideas remain available for future derivative posts rather than delaying this owner-approved schedule."
+  },
+  "approvalRule": "Exact revisions remain non-publishable until the owner approval issue passes the governed GitHub weekly release gate.",
+  "posts": [
+    {
+      "id": "tte-refill-2026-09-27-personal-01",
+      "revision": 1,
+      "title": "You might not need more leads first",
+      "category": "buyer_diagnostics",
+      "contentRole": "diagnosis",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-28T21:17:00+01:00"
+      },
+      "copy": {
+        "default": "Most appointment-led businesses do not have a lead problem first.\n\nThey have gaps after the lead arrives.\n\nSomeone enquires but never books.\n\nSomeone cancels and never rearranges.\n\nA client finishes their appointment without a clear next step.\n\nA regular quietly stops coming back.\n\nThose are very different problems.\n\nBut the response is often the same:\n\n“Get more leads.”\n\nSometimes that is exactly what the business needs.\n\nBut before paying to put more people into the front of the journey, I would check where the people already inside it are disappearing.\n\nMore demand is useful.\n\nKeeping more of the demand you already earned can be useful first."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-02",
+      "revision": 1,
+      "title": "I am getting more comfortable telling prospects not yet",
+      "category": "founder_operator_pov",
+      "contentRole": "founder_story",
+      "funnelStage": "trust",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-29T21:13:00+01:00"
+      },
+      "copy": {
+        "default": "One thing I am getting more comfortable with in 222Emails:\n\nNot every interested business should become a client.\n\nIf the database is tiny, there may not be enough opportunity.\n\nIf they cannot handle additional appointments, creating more demand is not automatically useful.\n\nIf the contact permissions are unclear, we stop there.\n\nIf there is no sensible segment to test, forcing a campaign makes no sense.\n\nThat means sometimes the recommendation is:\n\nDo something manually first.\n\nBuild the customer base further.\n\nFix another part of the journey.\n\nThen come back.\n\nIt is slower than trying to close everybody.\n\nBut I would rather qualify someone out than build a system whose economics I do not believe in."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "storyFirst": {
+          "status": "pass",
+          "randomFounder": "pass",
+          "imageOnly": "pass",
+          "statusPerformance": "pass",
+          "story": "pass",
+          "saveableStory": "pass",
+          "sourceBasis": "Chelston explicitly approved the fit-first founder angle after reviewing the exact copy; it reflects his current 222Emails practice of qualifying prospects out when fit, permissions, capacity or economics are weak."
+        }
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-03",
+      "revision": 1,
+      "title": "Four places I check before recommending more leads",
+      "category": "buyer_diagnostics",
+      "contentRole": "framework",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-30T16:01:00+01:00"
+      },
+      "copy": {
+        "default": "Before telling an appointment-led business it needs more leads, I would look in four places:\n\n1. Enquiries that never booked\n\nInterest existed. What happened next?\n\n2. Cancellations and no-shows\n\nWas there a sensible route back?\n\n3. Clients who left without rebooking\n\nWas the next step ever made clear?\n\n4. Previously active clients who went quiet\n\nDid anyone notice when their normal pattern changed?\n\nNone automatically means “send more emails”.\n\nThey are diagnostic points.\n\nFind where the journey is leaking first.\n\nThen decide whether the answer is follow-up, process, capacity, booking experience, acquisition, or something else entirely."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-04",
+      "revision": 1,
+      "title": "Reactivation is not email the old database",
+      "category": "reactivation_eligibility",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-01T13:33:00+01:00"
+      },
+      "copy": {
+        "default": "Reactivation sounds simple until you ask:\n\nWho exactly are we reactivating?\n\nA regular client who is slightly overdue is not the same as someone who visited once three years ago.\n\nA cancelled appointment is not the same as an enquiry that never booked.\n\nSomeone who has already returned should not still be inside the win-back journey.\n\nAnd somebody who should no longer be contacted needs to be excluded completely.\n\nSo the copy is not where I start.\n\nI start with:\n\nWho belongs in the group?\n\nWhy would returning make sense?\n\nWhat should happen next?\n\nWhat makes the journey stop?\n\nEligibility first.\n\nMessage second."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-05",
+      "revision": 1,
+      "title": "Why our reactivation pilot lasts 14 days",
+      "category": "offer_education",
+      "contentRole": "offer_education",
+      "funnelStage": "bof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-02T14:23:00+01:00"
+      },
+      "copy": {
+        "default": "Fourteen days is not enough time to “transform” somebody's business.\n\nThat is not what I want it to do.\n\nThe point of our Reactivation Pilot is much narrower.\n\nTake one eligible group of previous clients or enquiries.\n\nChoose one clear reason to return.\n\nRun one controlled campaign.\n\nWatch what actually happens.\n\nReplies.\n\nInterest.\n\nBookings where evidenced.\n\nObjections.\n\nSilence.\n\nOperational problems.\n\nThen make the next decision using something more useful than theory.\n\nA pilot should reduce uncertainty.\n\nNot disguise a sales pitch as a guaranteed result."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-06",
+      "revision": 1,
+      "title": "The metric I care about is whether the customer state changed",
+      "category": "commercial_measurement",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-03T08:17:00+01:00"
+      },
+      "copy": {
+        "default": "Open rate can tell me someone looked.\n\nIt cannot tell me whether the business moved.\n\nFor a client-return journey, I care much more about what happened afterwards.\n\nDid the enquiry book?\n\nDid the cancellation rearrange?\n\nDid the overdue client return?\n\nDid the dormant client reply with genuine intent?\n\nDid the journey stop when it should?\n\nOpens and clicks can still help diagnose the message.\n\nBut the commercial job usually sits further down the journey.\n\nThe measurement should follow the outcome the system was actually built to create."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-07",
+      "revision": 1,
+      "title": "If the business stops whenever I am busy I have built myself a job",
+      "category": "founder_operator_pov",
+      "contentRole": "founder_story",
+      "funnelStage": "trust",
+      "format": "text",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-04T06:00:00+01:00"
+      },
+      "copy": {
+        "default": "I am studying, selling, building 222Emails and trying to make the business move faster at the same time.\n\nThat creates an uncomfortable test.\n\nWhat stops working when I get busy?\n\nIf every follow-up waits for me...\n\nEvery decision waits for me...\n\nEvery lead handoff waits for me...\n\nThen I have not really built leverage yet.\n\nI have just created more things that depend on my attention.\n\nThat is one reason I have become obsessed with clear ownership and systems.\n\nNot to remove people.\n\nNot to automate everything.\n\nTo make sure the next useful action does not disappear because one person had a busy day."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "storyFirst": {
+          "status": "pass",
+          "randomFounder": "pass",
+          "imageOnly": "pass",
+          "statusPerformance": "pass",
+          "story": "pass",
+          "saveableStory": "pass",
+          "sourceBasis": "Chelston explicitly approved the university-and-business capacity story after reviewing the exact copy; the university/business tension and need for handoffs are current owner-supplied context."
+        }
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-main-01",
+      "revision": 1,
+      "title": "Four revenue leaks we inspect first",
+      "category": "revenue_leak_map",
+      "contentRole": "diagnosis",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-28T21:32:00+01:00"
+      },
+      "copy": {
+        "default": "Four places we look first when an appointment-led business says it wants more bookings:\n\n1. Enquiries that never became bookings.\n2. Cancellations or no-shows with no sensible recovery route.\n3. Completed appointments with no defined return path.\n4. Previously active clients who quietly became overdue.\n\nThe question is not simply:\n\n“Should we email them?”\n\nThe question is:\n\nWhat happened, who is genuinely eligible, and what should happen next?\n\nThat diagnosis comes before the campaign."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-main-02",
+      "revision": 1,
+      "title": "What the 14-Day Reactivation Pilot actually tests",
+      "category": "pilot_clarity",
+      "contentRole": "offer",
+      "funnelStage": "bof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-29T21:58:00+01:00"
+      },
+      "copy": {
+        "default": "The 14-Day Reactivation Pilot is deliberately narrow.\n\nOne eligible group.\n\nOne objective.\n\nOne campaign.\n\nA controlled starting audience.\n\nNo automatic charge afterwards.\n\nThe purpose is to find out whether dormant demand inside the business responds when the right people receive a relevant reason to return.\n\nIt is not a promise of a particular number of bookings.\n\nIt is a structured way to replace assumptions with evidence."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-main-03",
+      "revision": 1,
+      "title": "Booking software is not automatically a return system",
+      "category": "booking_software_contrast",
+      "contentRole": "authority",
+      "funnelStage": "tof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-30T16:15:00+01:00"
+      },
+      "copy": {
+        "default": "Booking software can tell you what is in the diary.\n\nA Client Return System asks what should happen when the diary changes.\n\nAn enquiry does not book.\n\nA client cancels.\n\nA no-show occurs.\n\nA completed appointment has no next booking.\n\nA regular becomes overdue.\n\nThe booking platform may already contain much of the information.\n\nThe commercial layer is deciding what those events should trigger, who owns the next action and when the journey should stop."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-main-04",
+      "revision": 1,
+      "title": "Clean the dormant list before reactivating it",
+      "category": "reactivation_hygiene",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-10-01T13:18:00+01:00"
+      },
+      "copy": {
+        "default": "Before reactivating a dormant client list, separate the customer states.\n\nRecently overdue.\n\nPreviously regular.\n\nOne-time client.\n\nPast enquiry.\n\nCancelled appointment.\n\nAlready returned.\n\nNo longer eligible for contact.\n\nThose groups should not automatically receive the same message.\n\nThe campaign is the visible part.\n\nEligibility is what keeps it relevant."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-main-05",
+      "revision": 1,
+      "title": "Every recovery journey needs a stop rule",
+      "category": "journey_stop_rules",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "format": "text",
+      "targets": [
+        "main"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-10-02T14:09:00+01:00"
+      },
+      "copy": {
+        "default": "Booked.\n\nReplied.\n\nOpted out.\n\nMoved to a person.\n\nNo longer eligible.\n\nEvery follow-up journey needs clear stop conditions.\n\nWithout them, automation eventually becomes noise.\n\nGood automation knows when to act.\n\nA good Client Return System also knows when to leave the customer alone."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-secondary-01",
+      "revision": 1,
+      "title": "Define customer states before automation",
+      "category": "journey_design",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-28T21:24:00+01:00"
+      },
+      "copy": {
+        "default": "Retention School\n\nDefine customer states before automation.\n\nEnquired.\nBooked.\nCompleted.\nCancelled.\nNo-show.\nDue back.\nOverdue.\nReturned.\n\nDefine the states first.\n\nThen define what moves someone from one state to another.\n\nOnly then build messages and automation.\n\nClear customer states make systems easier to understand, test and fix."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-secondary-02",
+      "revision": 1,
+      "title": "Cancellation and no-show are different states",
+      "category": "state_design",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-29T21:53:00+01:00"
+      },
+      "copy": {
+        "default": "Retention School\n\nA cancellation may come with notice and an intention to rearrange.\n\nA no-show may require a completely different operational response.\n\nTreating both as “missed appointments” can blur the next action.\n\nFor each state, define:\n\neligibility,\ntiming,\nowner,\nmessage,\nhuman handoff,\nand stop condition.\n\nPrecision makes follow-up more relevant."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-secondary-03",
+      "revision": 1,
+      "title": "The business defines when somebody is due back",
+      "category": "return_timing",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-30T16:08:00+01:00"
+      },
+      "copy": {
+        "default": "Retention School\n\nThe marketer should not invent the return window.\n\nUse the reality of the service.\n\nBooking history.\n\nBusiness rules.\n\nNormal service cadence.\n\nCustomer expectations.\n\nProfessional or operational constraints.\n\nThen let the system identify when somebody genuinely moves from “active” to “due back”."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-secondary-04",
+      "revision": 1,
+      "title": "Audit one journey manually before automating it",
+      "category": "manual_audit",
+      "contentRole": "resource",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-10-01T13:25:00+01:00"
+      },
+      "copy": {
+        "default": "Retention School\n\nPick one journey.\n\nFor example:\n\nEnquired but did not book.\n\nThen answer:\n\nWhat starts it?\nWhat information exists?\nWhat happens first?\nHow long do we wait?\nWhat happens after silence?\nWhen does a person take over?\nWhat ends it?\n\nIf those decisions are unclear on paper, automation will not make them clearer."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-secondary-05",
+      "revision": 1,
+      "title": "Measure the state change not only the message",
+      "category": "measurement",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "format": "text",
+      "targets": [
+        "secondary"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-10-02T14:16:00+01:00"
+      },
+      "copy": {
+        "default": "Retention School\n\nDid the enquiry book?\n\nDid the cancellation rearrange?\n\nDid the overdue client return?\n\nDid the dormant client respond?\n\nDid the journey stop correctly?\n\nOpens and clicks can help diagnose a message.\n\nThey are not usually the final commercial outcome.\n\nMeasure the job the journey was built to perform."
+      },
+      "sourceType": "qa_replenishment_2026_09_28_owner_approved",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      }
+    }
+  ]
+}
