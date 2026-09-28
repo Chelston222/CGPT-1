@@ -1,0 +1,567 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-28T14:40:00+01:00",
+  "weekStart": "2026-09-28",
+  "weekEnd": "2026-10-04",
+  "sourceBasis": {
+    "governingCommand": "222E Command v1.2",
+    "linkedinAuthority": "TTE LinkedIn Command Centre current 27 Sep 2026 override",
+    "ownerInstruction": "Pull all scheduled content back, strengthen it substantially, add a direct-to-ICP callout group, and post it back out.",
+    "strategicChange": "Introduced explicit ICP Direct Callout lane with named appointment-led verticals while preserving founder, system, offer and education lanes.",
+    "offerHierarchy": "14-Day Reactivation Pilot clean-fit front-end; £197 deeper diagnostic only when broader or unclear; £995 implementation downstream when justified.",
+    "publicSafety": "No treatment claims, clinical advice, guaranteed bookings or invented results."
+  },
+  "approvalRule": "Owner authorised the rebuild and repost. Exact revision 2 records remain governed by GitHub weekly release and Buffer acceptance evidence.",
+  "posts": [
+    {
+      "id": "tte-refill-2026-09-27-personal-01",
+      "title": "Aesthetic clinic owners: check this before buying more leads",
+      "category": "icp_direct_callout",
+      "subCategory": "buyer_diagnostics",
+      "contentRole": "diagnosis",
+      "funnelStage": "tof",
+      "targets": [
+        "personal"
+      ],
+      "icpSegment": "aesthetic clinic owners and nurse-led aesthetics clinics",
+      "copy": "Aesthetic clinic owners: before you spend more on leads, check what is already leaking.\n\nSomeone enquires about treatment and never books.\n\nA client cancels and never rearranges.\n\nA patient finishes a suitable treatment journey and there is no clear next step.\n\nA previously active client quietly disappears.\n\nThose are four different commercial problems.\n\nBut they often get one answer:\n\n“Run more ads.”\n\nSometimes more acquisition is right.\n\nBut if warm demand is already falling out of the journey, adding more people to the top can simply make the leak bigger.\n\nI would check the existing enquiry-to-return path first.\n\nThen decide whether the next pound should go into acquisition or recovery.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-28T21:17:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-02",
+      "title": "I am getting more comfortable telling prospects not yet",
+      "category": "founder_operator_pov",
+      "contentRole": "founder_story",
+      "funnelStage": "trust",
+      "targets": [
+        "personal"
+      ],
+      "copy": "One thing I am getting more comfortable with in 222Emails:\n\ntelling a prospect “not yet”.\n\nIf the contact pool is too small, the upside may not justify the work.\n\nIf they cannot handle extra appointments, creating more demand is not automatically useful.\n\nIf permissions are unclear, we stop.\n\nIf there is no sensible segment to test, forcing a campaign makes no sense.\n\nSometimes the better recommendation is:\n\nfollow up manually first,\nfix the booking path,\nbuild the customer base further,\nor come back when the economics are stronger.\n\nThat may cost me a sale today.\n\nI am fine with that.\n\nI would rather qualify somebody out than build a system I do not believe has enough room to pay for itself.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-29T21:13:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass",
+        "storyFirst": {
+          "status": "pass",
+          "randomFounder": "pass",
+          "imageOnly": "pass",
+          "statusPerformance": "pass",
+          "story": "pass",
+          "saveableStory": "pass",
+          "sourceBasis": "Owner-approved current operating reality: Chelston qualifies prospects out when volume, capacity, permissions or economics are insufficient."
+        }
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-03",
+      "title": "Dental practice owners: four places I would check before more acquisition",
+      "category": "icp_direct_callout",
+      "subCategory": "buyer_diagnostics",
+      "contentRole": "framework",
+      "funnelStage": "mof",
+      "targets": [
+        "personal"
+      ],
+      "icpSegment": "dental practice owners and managers",
+      "copy": "Dental practice owners and managers: before increasing acquisition, I would check four places.\n\n1. Enquiries that never became booked consultations.\n\n2. Cancellations and no-shows that never found a route back.\n\n3. Patients who completed an appointment but had no clearly owned next step where another visit was appropriate.\n\n4. Previously active patients whose normal pattern changed and nobody noticed.\n\nThe point is not “send more emails”.\n\nThe point is to find where an otherwise valuable patient journey stops.\n\nThen decide whether the fix is follow-up, booking friction, capacity, team ownership or acquisition.\n\nMore leads should solve a demand problem.\n\nThey should not be used to hide a journey problem.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-09-30T16:01:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-04",
+      "title": "Salon and beauty owners: your dormant database is not one audience",
+      "category": "icp_direct_callout",
+      "subCategory": "reactivation_eligibility",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "targets": [
+        "personal"
+      ],
+      "icpSegment": "salon, beauty and aesthetics owners",
+      "copy": "Salon, beauty and aesthetics owners: your dormant database is not one audience.\n\nA regular who is slightly overdue is different from somebody who visited once two years ago.\n\nA cancelled appointment is different from an enquiry that never booked.\n\nA client who has already returned should not still be in a win-back journey.\n\nAnd anyone who should no longer be contacted needs to be excluded completely.\n\nThat is why I do not start reactivation with copy.\n\nI start with the list.\n\nWho belongs?\n\nWhy would returning make sense?\n\nWhat is the next useful action?\n\nWhat makes the journey stop?\n\nEligibility first.\n\nMessage second.\n\nOtherwise “win-back” becomes a polished way of treating completely different customers as if they are the same.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-01T13:33:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-05",
+      "title": "Clinic owners: what our 14-Day Reactivation Pilot is actually for",
+      "category": "icp_direct_callout",
+      "subCategory": "offer_education",
+      "contentRole": "offer_education",
+      "funnelStage": "bof",
+      "targets": [
+        "personal"
+      ],
+      "icpSegment": "appointment-led clinic owners",
+      "copy": "Clinic owners with a usable pool of past clients or enquiries:\n\nour 14-Day Reactivation Pilot is not designed to “transform” the whole business in two weeks.\n\nIt is designed to answer a smaller, more useful question.\n\nCan one eligible group of people who already know the business be given a relevant reason to return or restart the conversation?\n\nOne segment.\n\nOne objective.\n\nOne controlled campaign.\n\nThen we look at what actually happened:\n\nreplies,\npositive intent,\nbookings where evidenced,\nobjections,\nsilence,\nand any operational friction that gets in the way.\n\nThe purpose of the pilot is to reduce uncertainty.\n\nIf the signal is weak, that matters.\n\nIf the signal is strong, that matters too.\n\nEither way, we learn from real behaviour rather than assuming the database is valuable because it is large.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-02T14:23:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-06",
+      "title": "Physio and recovery clinic owners: measure the state change",
+      "category": "icp_direct_callout",
+      "subCategory": "commercial_measurement",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "targets": [
+        "personal"
+      ],
+      "icpSegment": "physio, recovery and wellness clinics",
+      "copy": "Physio and recovery clinic owners: an open rate cannot tell you whether the patient journey moved.\n\nFor a client-return system, I care much more about the state change.\n\nDid the enquiry book?\n\nDid the cancellation rearrange?\n\nDid the overdue client return?\n\nDid the dormant client reply with genuine intent?\n\nDid the automated journey stop when a person took over?\n\nOpens and clicks can still help diagnose a message.\n\nBut the commercial job sits further down the journey.\n\nThe metric should match the outcome the system was built to create.\n\nMessage activity is useful.\n\nPatient movement is the point.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-03T08:17:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-personal-07",
+      "title": "If the business stops whenever I am busy I have built myself a job",
+      "category": "founder_operator_pov",
+      "contentRole": "founder_story",
+      "funnelStage": "trust",
+      "targets": [
+        "personal"
+      ],
+      "copy": "I am studying, selling, building 222Emails and trying to make the business move faster at the same time.\n\nThat creates a fairly brutal test:\n\nwhat stops working when I get busy?\n\nIf every follow-up waits for me...\n\nevery decision waits for me...\n\nevery lead handoff waits for me...\n\nthen I have not really built leverage.\n\nI have just created more things that depend on my attention.\n\nThat is one reason I have become obsessed with clear ownership and systems.\n\nNot to remove people.\n\nNot to automate everything.\n\nTo make sure the next useful action does not disappear because one person had a busy day.\n\nA business that only works when the founder is looking at it is not yet a system.\n\nThat is something I am actively building away from.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-04T06:00:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass",
+        "storyFirst": {
+          "status": "pass",
+          "randomFounder": "pass",
+          "imageOnly": "pass",
+          "statusPerformance": "pass",
+          "story": "pass",
+          "saveableStory": "pass",
+          "sourceBasis": "Owner-approved current founder reality: Chelston is balancing university and 222Emails while deliberately building handoffs and systems that reduce founder dependency."
+        }
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-main-01",
+      "title": "Aesthetic clinics: four revenue leaks we inspect first",
+      "category": "icp_direct_callout",
+      "subCategory": "revenue_leak_map",
+      "contentRole": "diagnosis",
+      "funnelStage": "tof",
+      "targets": [
+        "main"
+      ],
+      "icpSegment": "aesthetic clinics",
+      "copy": "Aesthetic clinics: four places we inspect before assuming the answer is more leads.\n\n1. Enquiries that never became bookings.\n2. Cancellations or no-shows with no sensible recovery route.\n3. Clients who completed a visit without a clearly owned next step where a return is appropriate.\n4. Previously active clients who quietly became overdue.\n\nThe question is not simply:\n\n“Should we message them?”\n\nThe question is:\n\nWhat happened?\n\nWho is genuinely eligible?\n\nWhat would be a relevant next step?\n\nWhat should stop the journey?\n\nDiagnosis comes before campaign.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-28T21:32:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-main-02",
+      "title": "For appointment-led clinics: what the 14-Day Reactivation Pilot tests",
+      "category": "icp_direct_callout",
+      "subCategory": "pilot_clarity",
+      "contentRole": "offer",
+      "funnelStage": "bof",
+      "targets": [
+        "main"
+      ],
+      "icpSegment": "appointment-led clinics",
+      "copy": "For appointment-led clinics with a usable pool of past clients or enquiries, the 14-Day Reactivation Pilot is deliberately narrow.\n\nOne eligible group.\n\nOne objective.\n\nOne campaign.\n\nA controlled starting audience.\n\nNo automatic charge afterwards.\n\nWe measure what actually happens rather than promising a particular number of bookings.\n\nThe test is simple:\n\ndoes eligible dormant demand respond when the right people receive a relevant reason to return or restart the conversation?\n\nThe pilot is not the end state.\n\nIt is a controlled way to decide what deserves to happen next.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-29T21:58:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-main-03",
+      "title": "Booking software is not automatically a Client Return System",
+      "category": "system_contrast",
+      "contentRole": "authority",
+      "funnelStage": "tof",
+      "targets": [
+        "main"
+      ],
+      "copy": "Booking software can tell an appointment-led business what is in the diary.\n\nA Client Return System asks what should happen when the diary changes.\n\nAn enquiry arrives but does not book.\n\nA client cancels.\n\nA no-show occurs.\n\nA completed appointment has no next booking.\n\nA regular becomes overdue.\n\nThe booking platform may already contain much of the information.\n\nThe missing layer is often the decision:\n\nwhat should this event trigger,\nwho owns the next action,\nwhen should a person take over,\nand what should stop the journey?\n\nSoftware records events.\n\nA return system turns the right events into owned next actions.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-09-30T16:15:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-main-04",
+      "title": "Clinic owners: clean the dormant list before reactivating it",
+      "category": "icp_direct_callout",
+      "subCategory": "reactivation_hygiene",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "targets": [
+        "main"
+      ],
+      "icpSegment": "clinic owners",
+      "copy": "Clinic owners: before reactivating a dormant list, separate the customer states.\n\nRecently overdue.\n\nPreviously regular.\n\nOne-time client.\n\nPast enquiry.\n\nCancelled appointment.\n\nAlready returned.\n\nNo longer eligible for contact.\n\nThose groups should not automatically receive the same message or the same timing.\n\nThe visible campaign is only one part of the job.\n\nThe harder part is deciding who belongs in the journey and what a relevant next action looks like.\n\nClean eligibility creates better reactivation.\n\nCopy cannot rescue a badly defined audience.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-10-01T13:18:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-main-05",
+      "title": "Every recovery journey needs a stop rule",
+      "category": "journey_stop_rules",
+      "contentRole": "teaching",
+      "funnelStage": "mof",
+      "targets": [
+        "main"
+      ],
+      "copy": "Every recovery journey needs a stop rule.\n\nBooked.\n\nReplied.\n\nOpted out.\n\nMoved to a person.\n\nNo longer eligible.\n\nWithout those conditions, a well-intentioned sequence eventually becomes noise.\n\nThe objective is not to maximise the number of messages sent.\n\nIt is to help the right person reach the right next step and stop when the journey is no longer appropriate.\n\nGood automation knows when to act.\n\nA good Client Return System also knows when to leave somebody alone.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "main": "2026-10-02T14:09:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-secondary-01",
+      "title": "Aesthetic clinic example: define customer states before automation",
+      "category": "icp_direct_callout",
+      "subCategory": "journey_design",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "targets": [
+        "secondary"
+      ],
+      "icpSegment": "aesthetic clinics",
+      "copy": "Retention School\n\nAesthetic clinic example:\n\nbefore building automation, define the customer states.\n\nEnquired.\n\nBooked.\n\nCompleted.\n\nCancelled.\n\nNo-show.\n\nDue back where appropriate.\n\nOverdue.\n\nReturned.\n\nThen decide what moves somebody from one state to another.\n\nOnly after that should you build messages and triggers.\n\nClear states make the system easier to understand, test and fix.\n\nAutomation should respond to a real change in the customer journey, not guess what happened.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-28T21:24:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-secondary-02",
+      "title": "Dental example: cancellation and no-show are different states",
+      "category": "icp_direct_callout",
+      "subCategory": "state_design",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "targets": [
+        "secondary"
+      ],
+      "icpSegment": "dental practices",
+      "copy": "Retention School\n\nDental practice example:\n\na cancellation and a no-show are not automatically the same patient state.\n\nA cancellation may come with notice and an intention to rearrange.\n\nA no-show may require a different operational response.\n\nTreating both as “missed appointments” can blur the next action.\n\nFor each state, define:\n\neligibility,\ntiming,\nowner,\nmessage,\nhuman handoff,\nand stop condition.\n\nThe more precise the state, the easier it becomes to make the next step relevant.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-29T21:53:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-secondary-03",
+      "title": "Salon example: the business defines when somebody is due back",
+      "category": "icp_direct_callout",
+      "subCategory": "return_timing",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "targets": [
+        "secondary"
+      ],
+      "icpSegment": "salons and beauty businesses",
+      "copy": "Retention School\n\nSalon and beauty example:\n\nthe marketer should not invent when somebody is “due back”.\n\nThe business should define it from the real service model.\n\nUse:\n\nbooking history,\nnormal service cadence,\nbusiness rules,\ncustomer expectations,\nand any professional or operational constraints.\n\nThen let the system identify when somebody has genuinely moved from active to due back.\n\nRetention timing should come from business reality.\n\nNot a random campaign calendar.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-09-30T16:08:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-secondary-04",
+      "title": "Audit one enquiry journey manually before automating it",
+      "category": "manual_audit",
+      "contentRole": "resource",
+      "funnelStage": "education",
+      "targets": [
+        "secondary"
+      ],
+      "copy": "Retention School\n\nBefore automating an enquiry journey, audit one version manually.\n\nTake:\n\n“Enquired but did not book.”\n\nThen answer:\n\nWhat starts the journey?\n\nWhat information is available?\n\nWhat should happen first?\n\nHow long should the business wait?\n\nWhat happens after silence?\n\nWhen does a person take over?\n\nWhat ends the journey?\n\nIf those answers are unclear on paper, automation will not make them clearer.\n\nMap the decision first.\n\nThen automate the repeatable parts.",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-10-01T13:25:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    },
+    {
+      "id": "tte-refill-2026-09-27-secondary-05",
+      "title": "Measure the state change not only the message",
+      "category": "measurement",
+      "contentRole": "teaching",
+      "funnelStage": "education",
+      "targets": [
+        "secondary"
+      ],
+      "copy": "Retention School\n\nDo not measure the message without measuring the state change.\n\nDid the enquiry book?\n\nDid the cancellation rearrange?\n\nDid the overdue client return?\n\nDid the dormant client respond?\n\nDid the journey stop when it should?\n\nOpens and clicks can still help diagnose a message.\n\nThey are not usually the commercial outcome.\n\nMatch the metric to the job the journey was designed to do.\n\nThe question is not only “did they engage?”\n\nIt is “did the customer journey move?”",
+      "revision": 2,
+      "format": "text",
+      "mode": "schedule",
+      "scheduledAt": {
+        "secondary": "2026-10-02T14:16:00+01:00"
+      },
+      "sourceType": "qa_replenishment_2026_09_28_icp_callout_v2",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true,
+        "icpSpecificity": "pass",
+        "claimEvidenceMatch": "pass"
+      }
+    }
+  ]
+}
