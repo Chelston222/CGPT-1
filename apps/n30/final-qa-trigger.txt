@@ -1,0 +1,4 @@
+Final N30 release QA gate.
+Release commit: 26e4fc06aaeca20d9992ebb82a8d058e7683890c
+Canonical SHA-256: 27502d6d020f72635bad9afbec3c9dd9c36aef649747a18ed956be1def682225
+Checks: cryptographic boot, desktop, tablet, mobile, navigation, runtime errors, failed requests.
