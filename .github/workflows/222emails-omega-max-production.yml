@@ -47,13 +47,16 @@ jobs:
           test -f dist/patient-reactivation-dental-lancashire/index.html
           test -f dist/client-return-opportunity-calculator/index.html
           test -f dist/about-222emails/index.html
+          test -f dist/14-day-reactivation-pilot/index.html
+          test -f dist/customer-retention-blackburn/index.html
+          test -f dist/e7a3c5b8d1f94a6c2e0b7d5f8a4c1e9b.txt
 
       - name: Run canonical content gates
         working-directory: apps/222emails-omega-max
         run: |
           set -euo pipefail
           grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
-          grep -R -q 'Free Revenue Recovery Check' dist/assets
+          grep -R -q '14-Day Reactivation Pilot' dist/assets
           grep -R -q 'Client Return System' dist/assets
           grep -R -q 'Existing tools first' dist/assets
           grep -R -q 'Evidence-led diagnosis' dist/assets
@@ -69,7 +72,15 @@ jobs:
           ! grep -R -q 'Retention Lab' src index.html public
           grep -R -q 'utm_source' src/main.tsx
           grep -R -q 'sessionStorage' src/main.tsx
-          grep -q '/fit-check /revenue-recovery-check 301' dist/_redirects
+          grep -q '/fit-check /14-day-reactivation-pilot/ 301' dist/_redirects
+          grep -q '/revenue-recovery-check /14-day-reactivation-pilot/ 301' dist/_redirects
+          grep -q 'https://222emails.com/customer-retention-blackburn/' dist/sitemap.xml
+          grep -q 'https://222emails.com/14-day-reactivation-pilot/' dist/sitemap.xml
+          ! grep -R -q 'Client Return Growth Check' src index.html public
+          ! grep -R -q '7-Day Client Return System Sprint' src index.html public
+          ! grep -R -q '£997' src index.html public
+          ! grep -R -q '£595/mo' src index.html public
+          ! grep -R -q 'tally.so/r/44057b' src index.html public
 
       - name: Install Netlify CLI
         run: npm install -g netlify-cli@latest
@@ -91,13 +102,15 @@ jobs:
       - name: Smoke test isolated draft
         run: |
           set -euo pipefail
-          for path in / /revenue-recovery-check /revenue-recovery-check/thank-you /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /privacy/ /terms/ /cookies/ /accessibility/ /robots.txt /sitemap.xml /llms.txt; do
+          for path in / /14-day-reactivation-pilot/ /customer-retention-blackburn/ /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /privacy/ /terms/ /cookies/ /accessibility/ /robots.txt /sitemap.xml /llms.txt /e7a3c5b8d1f94a6c2e0b7d5f8a4c1e9b.txt; do
             code=$(curl -L --retry 4 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${DRAFT_URL}${path}")
             test "$code" = "200" || { echo "Draft ${path} returned ${code}"; exit 1; }
           done
           code=$(curl -L --retry 4 --retry-delay 2 -sS -o /tmp/legacy -w '%{http_code}' "${DRAFT_URL}/fit-check")
           test "$code" = "200" || { echo "Legacy redirect failed: $code"; exit 1; }
           curl -fsSL --retry 4 "$DRAFT_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
+          curl -fsSL --retry 4 "$DRAFT_URL/14-day-reactivation-pilot/" | grep -q '14-Day Reactivation Pilot'
+          curl -fsSL --retry 4 "$DRAFT_URL/customer-retention-blackburn/" | grep -q 'Customer retention for Blackburn appointment-led businesses'
           curl -fsSL --retry 4 "$DRAFT_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
           curl -fsSL --retry 4 "$DRAFT_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
           curl -fsSL --retry 4 "$DRAFT_URL/privacy/" | grep -q 'How 222Emails collects and uses personal data'
@@ -119,13 +132,34 @@ jobs:
       - name: Production smoke tests
         run: |
           set -euo pipefail
-          for path in / /revenue-recovery-check /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /privacy/ /terms/ /cookies/ /accessibility/; do
+          for path in / /14-day-reactivation-pilot/ /customer-retention-blackburn/ /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /privacy/ /terms/ /cookies/ /accessibility/; do
             code=$(curl -L --retry 6 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${PROD_URL}${path}")
             test "$code" = "200" || { echo "Production ${path} returned ${code}"; exit 1; }
           done
           curl -fsSL --retry 6 "$PROD_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
+          curl -fsSL --retry 6 "$PROD_URL/14-day-reactivation-pilot/" | grep -q '14-Day Reactivation Pilot'
+          curl -fsSL --retry 6 "$PROD_URL/customer-retention-blackburn/" | grep -q 'Customer retention for Blackburn appointment-led businesses'
           curl -fsSL --retry 6 "$PROD_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
           curl -fsSL --retry 6 "$PROD_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
+
+      - name: Notify IndexNow of changed authority URLs
+        run: |
+          set -euo pipefail
+          curl --fail-with-body -sS -X POST "https://api.indexnow.org/indexnow" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            --data '{
+              "host": "222emails.com",
+              "key": "e7a3c5b8d1f94a6c2e0b7d5f8a4c1e9b",
+              "keyLocation": "https://222emails.com/e7a3c5b8d1f94a6c2e0b7d5f8a4c1e9b.txt",
+              "urlList": [
+                "https://222emails.com/",
+                "https://222emails.com/14-day-reactivation-pilot/",
+                "https://222emails.com/customer-retention-blackburn/",
+                "https://222emails.com/client-return-systems/",
+                "https://222emails.com/retention-marketing-lancashire/",
+                "https://222emails.com/about-222emails/"
+              ]
+            }'
 
       - name: Release summary
         run: |
