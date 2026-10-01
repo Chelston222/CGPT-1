@@ -144,6 +144,8 @@ jobs:
           curl -fsSL --retry 6 "$PROD_URL/customer-retention-blackburn/" | grep -q 'Customer retention for Blackburn appointment-led businesses'
           curl -fsSL --retry 6 "$PROD_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
           curl -fsSL --retry 6 "$PROD_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
+          oai_code=$(curl -L --retry 6 --retry-delay 2 -A 'Mozilla/5.0 (compatible; OAI-SearchBot/1.4; +https://openai.com/searchbot)' -sS -o /tmp/oai-page -w '%{http_code}' "$PROD_URL/")
+          test "$oai_code" = "200" || { echo "OAI-SearchBot-style request returned $oai_code"; exit 1; }
 
       - name: Notify IndexNow of changed authority URLs
         run: |
