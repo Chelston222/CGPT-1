@@ -47,22 +47,28 @@ jobs:
           test -f dist/patient-reactivation-dental-lancashire/index.html
           test -f dist/client-return-opportunity-calculator/index.html
           test -f dist/about-222emails/index.html
+          test -f dist/14-day-reactivation-pilot/index.html
+          test -f dist/customer-retention-blackburn/index.html
+          test -f dist/e7a3c5b8d1f94a6c2e0b7d5f8a4c1e9b.txt
           grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
-          grep -R -q 'Free Revenue Recovery Check' dist/assets
+          grep -R -q '14-Day Reactivation Pilot' dist/assets
           grep -R -q 'Client Return System' dist/assets
           grep -R -q 'Evidence-led diagnosis' dist/assets
           grep -q 'Great Harwood' dist/index.html
           grep -q 'Retention Marketing Lancashire' dist/retention-marketing-lancashire/index.html
           grep -q 'Illustrative rate, not a benchmark' dist/client-return-opportunity-calculator/index.html
           grep -q 'aria-live="polite"' dist/client-return-opportunity-calculator/index.html
-          for page in client-return-systems retention-marketing-lancashire client-retention-salons-barbers-lancashire client-reactivation-aesthetics-lancashire patient-reactivation-dental-lancashire client-return-opportunity-calculator about-222emails; do
+          for page in 14-day-reactivation-pilot customer-retention-blackburn client-return-systems retention-marketing-lancashire client-retention-salons-barbers-lancashire client-reactivation-aesthetics-lancashire patient-reactivation-dental-lancashire client-return-opportunity-calculator about-222emails; do
             grep -q 'class="skip-link"' "dist/${page}/index.html"
             grep -q '<main id="main"' "dist/${page}/index.html"
           done
           ! grep -R -q 'RecoveryDashboard' dist/assets
           ! grep -R -q 'Start your free Fit Check' dist/assets
           ! grep -R -q 'client-return-fit-check' dist/index.html
-          grep -q '/fit-check /revenue-recovery-check 301' dist/_redirects
+          grep -q '/fit-check /14-day-reactivation-pilot/ 301' dist/_redirects
+          grep -q '/revenue-recovery-check /14-day-reactivation-pilot/ 301' dist/_redirects
+          grep -q 'https://222emails.com/customer-retention-blackburn/' dist/sitemap.xml
+          grep -q 'https://222emails.com/14-day-reactivation-pilot/' dist/sitemap.xml
           grep -q 'https://222emails.com/sitemap.xml' dist/robots.txt
           grep -q 'OAI-SearchBot' dist/robots.txt
           grep -q 'PerplexityBot' dist/robots.txt
@@ -78,8 +84,13 @@ jobs:
           ! grep -R -q 'Human-reviewed' src index.html public
           ! grep -R -q 'Retention Lab' src index.html public
           grep -R -q 'Existing tools first' src
-          grep -R -q 'No mandatory discovery call' src
           grep -R -q 'utm_source' src/main.tsx
           grep -R -q 'sessionStorage' src/main.tsx
+          ! grep -R -q 'Client Return Growth Check' src index.html public
+          ! grep -R -q '7-Day Client Return System Sprint' src index.html public
+          ! grep -R -q '£997' src index.html public
+          ! grep -R -q '£595/mo' src index.html public
+          ! grep -R -q 'tally.so/r/44057b' src index.html public
+          grep -q 'tally.so/r/GxWdRL' public/14-day-reactivation-pilot/index.html
           grep -R -q 'does not invent clinical timing' public/client-reactivation-aesthetics-lancashire
           grep -R -q 'does not set clinical recall intervals' public/patient-reactivation-dental-lancashire
