@@ -59,6 +59,8 @@ jobs:
           curl -fsSL --retry 5 "$DRAFT_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
           curl -fsSL --retry 5 "$DRAFT_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
           curl -fsSL --retry 5 "$DRAFT_URL/about-222emails/" | grep -q 'Chelston Phillip'
+          oai_code=$(curl -L --retry 5 --retry-delay 2 -A 'Mozilla/5.0 (compatible; OAI-SearchBot/1.4; +https://openai.com/searchbot)' -sS -o /tmp/oai-page -w '%{http_code}' "$DRAFT_URL/")
+          test "$oai_code" = "200" || { echo "OAI-SearchBot-style request returned $oai_code"; exit 1; }
       - name: Preview summary
         run: |
           echo "222Emails isolated preview passed smoke tests."
