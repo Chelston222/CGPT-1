@@ -81,6 +81,9 @@ jobs:
           ! grep -R -q '£997' src index.html public
           ! grep -R -q '£595/mo' src index.html public
           ! grep -R -q 'tally.so/r/44057b' src index.html public
+          ! grep -R -q 'Free Revenue Recovery Check' src index.html public
+          ! grep -R -q 'Free Recovery Check' src index.html public
+          ! grep -R -q 'href="/revenue-recovery-check"' src index.html public
 
       - name: Install Netlify CLI
         run: npm install -g netlify-cli@latest
