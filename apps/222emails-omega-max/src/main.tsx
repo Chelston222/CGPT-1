@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 
-const TALLY_URL = 'https://tally.so/r/44057b';
+const PILOT_URL = '/14-day-reactivation-pilot/';
 const ATTRIBUTION_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ref'];
 
 function getAttributionParams() {
@@ -53,11 +53,12 @@ function Shell({ children }: { children: React.ReactNode }) {
       <div className="wrap nav-wrap">
         <a className="brand" href="/" aria-label="222Emails home">222Emails</a>
         <nav aria-label="Primary navigation">
+          <a href="/customer-retention-blackburn/">Blackburn retention</a>
           <a href="/retention-marketing-lancashire/">Retention marketing</a>
           <a href="/#how-it-works">How it works</a>
           <a href="/#proof">Proof</a>
           <a href="/#pricing">Pricing</a>
-          <a className="nav-cta" href="/revenue-recovery-check">Free Recovery Check</a>
+          <a className="nav-cta" href={PILOT_URL}>14-Day Pilot</a>
         </nav>
       </div>
     </header>
@@ -70,6 +71,8 @@ function Shell({ children }: { children: React.ReactNode }) {
           <p>Based in Great Harwood, Lancashire. Serving appointment-led SMEs across the UK.</p>
         </div>
         <div>
+          <a href="/14-day-reactivation-pilot/">14-Day Reactivation Pilot</a>
+          <a href="/customer-retention-blackburn/">Customer Retention Blackburn</a>
           <a href="/retention-marketing-lancashire/">Retention marketing Lancashire</a>
           <a href="/client-return-systems/">Client Return Systems</a>
           <a href="/about-222emails/">About 222Emails</a>
@@ -141,10 +144,10 @@ function Home() {
           <h1>Bring more clients back before you spend more on finding new ones.</h1>
           <p className="hero-copy">222Emails builds turnkey Client Return Systems for appointment-led businesses. We tighten the gaps around cold enquiries, no-shows, rebooking and lapsed clients, then install the follow-up, automation, handoffs and measurement needed to keep more of the demand you already worked to create.</p>
           <div className="cta-row">
-            <a className="button primary" href="/revenue-recovery-check">Get my Free Revenue Recovery Check</a>
+            <a className="button primary" href={PILOT_URL}>See the £0 14-Day Reactivation Pilot</a>
             <a className="text-link" href="#how-it-works">See the system</a>
           </div>
-          <div className="trust-line"><span>Based in Great Harwood, Lancashire</span><span>Founder-led</span><span>Evidence-led diagnosis</span><span>No mandatory discovery call</span></div>
+          <div className="trust-line"><span>Based in Great Harwood, Lancashire</span><span>Founder-led</span><span>£0 Pilot</span><span>No card or automatic charge</span></div>
         </div>
         <SystemPreview />
       </div>
@@ -264,13 +267,12 @@ function Home() {
 
     <section id="pricing" className="section">
       <div className="wrap">
-        <p className="eyebrow">THE OFFER PATH</p>
-        <h2 className="section-title">Start with diagnosis. Pay for depth only when the evidence justifies it.</h2>
-        <div className="offer-grid offer-grid-four">
-          <article className="offer featured"><span>START HERE</span><h3>Free Revenue Recovery Check</h3><p>A focused, evidence-led first diagnosis of the strongest identifiable issue and the first sensible next step.</p><strong>Free</strong><a className="button primary" href="/revenue-recovery-check">Start free</a></article>
-          <article className="offer"><span>DEEPER DIAGNOSIS</span><h3>Client Return Growth Check</h3><p>Evidence-led diagnosis when the opportunity deserves deeper investigation before implementation.</p><strong>£197</strong><p className="small-note">Recommended only when the initial finding justifies it.</p></article>
-          <article className="offer"><span>IMPLEMENTATION</span><h3>7-Day Client Return System Sprint</h3><p>Install two focused repeat-booking or reactivation assets within the agreed scope, subject to access, readiness and approvals.</p><strong>£997</strong><p className="small-note">Scope and dependencies are agreed before the seven-working-day build begins.</p></article>
-          <article className="offer"><span>ONGOING</span><h3>Optimisation</h3><p>Monitor, repair, test and improve suitable live systems, including Revenue Recovery Watch where scoped.</p><strong>£595/mo</strong><p className="small-note">Prescribed after diagnosis or implementation when ongoing work is justified.</p></article>
+        <p className="eyebrow">THE CURRENT OFFER PATH</p>
+        <h2 className="section-title">Test the cleanest opportunity first. Diagnose deeper only when the evidence says to.</h2>
+        <div className="offer-grid">
+          <article className="offer featured"><span>PRIMARY CLEAN-FIT ROUTE</span><h3>14-Day Reactivation Pilot</h3><p>One eligible segment, one focused campaign and initially up to 250 eligible contacts. Built to test whether suitable past demand contains a genuine return opportunity.</p><strong>£0</strong><p className="small-note">No card. No automatic charge. No booking or revenue guarantee.</p><a className="button primary" href={PILOT_URL}>See the Pilot</a></article>
+          <article className="offer"><span>DEEPER DIAGNOSIS</span><h3>Revenue Recovery Check</h3><p>Used when the leakage is broader, unclear or needs a deeper evidence-led diagnosis before implementation.</p><strong>£197</strong><p className="small-note">The controlled qualified-potential-booking-value and refund methodology applies when this route is prescribed.</p></article>
+          <article className="offer"><span>IMPLEMENTATION</span><h3>Client Return System Build</h3><p>A focused implementation route where fit and written scope justify building the system.</p><strong>£995</strong><p className="small-note">Scope, access, dependencies and approvals are agreed before implementation.</p></article>
         </div>
       </div>
     </section>
@@ -289,70 +291,28 @@ function Home() {
         <details><summary>Is this just email marketing?</summary><p>No. Email can be one part of a Client Return System, but the diagnosis starts with the commercial journey. Depending on the gap, that can include booking software, CRM fields, SMS, email, human handoffs, permissions, reporting or a simpler operational fix.</p></details>
         <details><summary>Do I need to change my software?</summary><p>Not by default. We prefer to use your existing technology wherever it can do the job properly. Changing tools is a recommendation of last resort, not the starting point.</p></details>
         <details><summary>Do you only work in Lancashire?</summary><p>No. 222Emails is based in Great Harwood, Lancashire and works with suitable appointment-led businesses across the UK. Most system work can be delivered remotely.</p></details>
-        <details><summary>Do I need a sales call?</summary><p>No mandatory discovery call is required to start the Free Revenue Recovery Check. A short call can be used later when it genuinely helps clarify a higher-value or more complex opportunity.</p></details>
+        <details><summary>How do I start?</summary><p>For a clean reactivation opportunity, start with the £0 14-Day Reactivation Pilot. The application checks whether there is a suitable audience, return opportunity and capacity before anything is launched.</p></details>
         <details><summary>Do you guarantee revenue?</summary><p>No. Revenue depends on factors no responsible operator can control completely. We can define and QA the deliverables we control, but we do not fabricate certainty around commercial outcomes.</p></details>
       </div>
     </section>
 
     <section className="final-cta">
-      <div className="wrap final-cta-inner"><div><p className="eyebrow light">START WITH THE EVIDENCE</p><h2>Find the strongest gap between the client you already earned and the booking that never came back.</h2></div><a className="button light-button" href="/revenue-recovery-check">Get my Free Revenue Recovery Check</a></div>
+      <div className="wrap final-cta-inner"><div><p className="eyebrow light">START WITH A CONTROLLED TEST</p><h2>See whether one eligible group of past customers or enquiries contains a genuine return opportunity.</h2></div><a className="button light-button" href={PILOT_URL}>See the 14-Day Pilot</a></div>
     </section>
   </Shell>;
 }
 
 function RevenueRecoveryCheck() {
-  useEffect(() => setMeta(
-    'Free Revenue Recovery Check | 222Emails',
-    'An evidence-led diagnostic for appointment-led businesses. Find the strongest identifiable revenue-recovery issue and the first sensible next step.',
-    'https://222emails.com/revenue-recovery-check'
-  ), []);
+  useEffect(() => {
+    setMeta(
+      '14-Day Reactivation Pilot | 222Emails',
+      'The current clean-fit public starting point for suitable appointment-led businesses is the £0 14-Day Reactivation Pilot.',
+      'https://222emails.com/14-day-reactivation-pilot/'
+    );
+    window.location.replace(PILOT_URL);
+  }, []);
 
-  const attribution = getAttributionParams();
-  attribution.set('cta_location', 'revenue_recovery_check_page');
-  attribution.set('form_version', '2026-09-14');
-  const formUrl = `${TALLY_URL}?${attribution.toString()}`;
-
-  return <Shell>
-    <section className="rrc-hero section">
-      <div className="wrap two-col rrc-grid">
-        <div>
-          <p className="eyebrow">FREE REVENUE RECOVERY CHECK</p>
-          <h1>Find the strongest leak in the journey you already paid to create.</h1>
-          <p className="hero-copy">For appointment-led businesses that want a clearer view of what may be happening after an enquiry arrives or a client finishes their appointment.</p>
-          <ul className="check-list"><li>About 3 minutes to start</li><li>Evidence-led diagnosis</li><li>No platform access required</li><li>No mandatory discovery call</li><li>No obligation to buy</li></ul>
-        </div>
-        <div className="rrc-summary"><h2>What you receive</h2><ol><li>The strongest identifiable issue from the information provided</li><li>Why that issue matters commercially</li><li>Any material unknowns that limit certainty</li><li>The first sensible move we would recommend</li><li>An honest view on whether paid work appears justified</li></ol><p className="boundary">This is a focused diagnostic, not a disguised consultancy project and not a promise of recovered revenue.</p></div>
-      </div>
-    </section>
-
-    <section className="section muted">
-      <div className="wrap">
-        <p className="eyebrow">WHAT WE LOOK FOR</p>
-        <div className="problem-grid"><article><h3>Enquiry response</h3><p>Where useful demand can stall before a booking happens.</p></article><article><h3>Follow-up</h3><p>Where a quote or conversation can fade without a sensible next step.</p></article><article><h3>No-show recovery</h3><p>Whether missed appointments have a defined recovery path.</p></article><article><h3>Rebooking and win-back</h3><p>Whether due-to-return and lapsed clients are identified and handled.</p></article></div>
-      </div>
-    </section>
-
-    <section className="section form-section">
-      <div className="wrap narrow">
-        <p className="eyebrow">START THE CHECK</p>
-        <h2 className="section-title">Tell us enough to diagnose the journey.</h2>
-        <p className="section-copy">The form opens securely in Tally. Your diagnostic submission does not automatically subscribe you to marketing.</p>
-        <div className="form-card">
-          <a className="button primary large" href={formUrl} target="_blank" rel="noreferrer">Start my Free Revenue Recovery Check</a>
-          <p>Prefer a direct link? <a href={formUrl} target="_blank" rel="noreferrer">Open the form here.</a></p>
-          <small>Do not include passwords, payment details or unnecessary sensitive personal information.</small>
-        </div>
-      </div>
-    </section>
-
-    <section className="section">
-      <div className="wrap narrow">
-        <p className="eyebrow">WHAT HAPPENS NEXT</p>
-        <h2 className="section-title">Prescription after diagnosis.</h2>
-        <ol className="next-steps"><li>We review the client journey you describe.</li><li>We identify the strongest issue we can support from the evidence available.</li><li>We return the finding, the boundary and a practical next action.</li><li>If deeper work looks justified, we explain the relevant paid route. If it does not, we say so.</li></ol>
-      </div>
-    </section>
-  </Shell>;
+  return <Shell><section className="section thank-you"><div className="wrap narrow"><p className="eyebrow">CURRENT PUBLIC ROUTE</p><h1>The 14-Day Reactivation Pilot is now the clean-fit starting point.</h1><p className="hero-copy">This legacy URL now routes to the current £0 Pilot. Broader or unclear leakage can still be diagnosed through the £197 Revenue Recovery Check when that route is justified.</p><a className="button primary" href={PILOT_URL}>Continue to the 14-Day Pilot</a></div></section></Shell>;
 }
 
 function ThankYou() {
@@ -366,7 +326,7 @@ function ThankYou() {
 
 function NotFound() {
   useEffect(() => setMeta('Page not found | 222Emails', 'The page you requested could not be found.', 'https://222emails.com/404'), []);
-  return <Shell><section className="section thank-you"><div className="wrap narrow"><p className="eyebrow">404</p><h1>This page is not part of the current 222Emails journey.</h1><p className="hero-copy">Return to the homepage or start the Free Revenue Recovery Check.</p><div className="cta-row"><a className="button dark" href="/">Homepage</a><a className="button primary" href="/revenue-recovery-check">Free Recovery Check</a></div></div></section></Shell>;
+  return <Shell><section className="section thank-you"><div className="wrap narrow"><p className="eyebrow">404</p><h1>This page is not part of the current 222Emails journey.</h1><p className="hero-copy">Return to the homepage or see the current 14-Day Reactivation Pilot.</p><div className="cta-row"><a className="button dark" href="/">Homepage</a><a className="button primary" href={PILOT_URL}>14-Day Pilot</a></div></div></section></Shell>;
 }
 
 function App() {
