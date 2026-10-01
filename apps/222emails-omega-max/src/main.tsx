@@ -73,6 +73,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div>
           <a href="/14-day-reactivation-pilot/">14-Day Reactivation Pilot</a>
           <a href="/customer-retention-blackburn/">Customer Retention Blackburn</a>
+          <a href="/retention-school/">Retention School</a>
           <a href="/retention-marketing-lancashire/">Retention marketing Lancashire</a>
           <a href="/client-return-systems/">Client Return Systems</a>
           <a href="/about-222emails/">About 222Emails</a>
