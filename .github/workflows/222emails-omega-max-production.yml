@@ -59,7 +59,7 @@ jobs:
           grep -R -q '14-Day Reactivation Pilot' dist/assets
           grep -R -q 'Client Return System' dist/assets
           grep -R -q 'Existing tools first' dist/assets
-          grep -R -q 'Evidence-led diagnosis' dist/assets
+          grep -R -q 'No card. No automatic charge.' dist/assets
           grep -q 'Great Harwood' dist/index.html
           grep -q 'OAI-SearchBot' dist/robots.txt
           grep -q 'Retention Marketing Lancashire' dist/retention-marketing-lancashire/index.html
