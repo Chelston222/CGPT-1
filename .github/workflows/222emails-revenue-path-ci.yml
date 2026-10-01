@@ -53,7 +53,7 @@ jobs:
           grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
           grep -R -q '14-Day Reactivation Pilot' dist/assets
           grep -R -q 'Client Return System' dist/assets
-          grep -R -q 'Evidence-led diagnosis' dist/assets
+          grep -R -q 'No card. No automatic charge.' dist/assets
           grep -q 'Great Harwood' dist/index.html
           grep -q 'Retention Marketing Lancashire' dist/retention-marketing-lancashire/index.html
           grep -q 'Illustrative rate, not a benchmark' dist/client-return-opportunity-calculator/index.html
