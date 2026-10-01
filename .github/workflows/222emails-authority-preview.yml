@@ -53,15 +53,25 @@ jobs:
             code=$(curl -L --retry 5 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${DRAFT_URL}${path}")
             test "$code" = "200" || { echo "Draft ${path} returned ${code}"; exit 1; }
           done
-          curl -fsSL --retry 5 "$DRAFT_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
-          curl -fsSL --retry 5 "$DRAFT_URL/14-day-reactivation-pilot/" | grep -q '14-Day Reactivation Pilot'
-          curl -fsSL --retry 5 "$DRAFT_URL/customer-retention-blackburn/" | grep -q 'Customer retention for Blackburn appointment-led businesses'
-          curl -fsSL --retry 5 "$DRAFT_URL/retention-school/" | grep -q 'Customer retention for appointment-led businesses, explained as an operating system'
-          curl -fsSL --retry 5 "$DRAFT_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
-          curl -fsSL --retry 5 "$DRAFT_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
-          curl -fsSL --retry 5 "$DRAFT_URL/about-222emails/" | grep -q 'Chelston Phillip'
+          check_contains() {
+            local url="$1"
+            local needle="$2"
+            local tmp
+            tmp=$(mktemp)
+            curl -fsSL --retry 5 "$url" -o "$tmp"
+            grep -q "$needle" "$tmp"
+            rm -f "$tmp"
+          }
+          check_contains "$DRAFT_URL/" 'Client Return Systems for appointment-led businesses'
+          check_contains "$DRAFT_URL/14-day-reactivation-pilot/" '14-Day Reactivation Pilot'
+          check_contains "$DRAFT_URL/customer-retention-blackburn/" 'Customer retention for Blackburn appointment-led businesses'
+          check_contains "$DRAFT_URL/retention-school/" 'Customer retention for appointment-led businesses, explained as an operating system'
+          check_contains "$DRAFT_URL/retention-marketing-lancashire/" 'Retention marketing built around getting appointment-led clients to come back'
+          check_contains "$DRAFT_URL/client-return-opportunity-calculator/" 'Illustrative rate, not a benchmark'
+          check_contains "$DRAFT_URL/about-222emails/" 'Chelston Phillip'
           oai_code=$(curl -L --retry 5 --retry-delay 2 -A 'Mozilla/5.0 (compatible; OAI-SearchBot/1.4; +https://openai.com/searchbot)' -sS -o /tmp/oai-page -w '%{http_code}' "$DRAFT_URL/")
           test "$oai_code" = "200" || { echo "OAI-SearchBot-style request returned $oai_code"; exit 1; }
+
       - name: Preview summary
         run: |
           echo "222Emails isolated preview passed smoke tests."
