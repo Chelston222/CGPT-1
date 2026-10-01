@@ -91,6 +91,9 @@ jobs:
           ! grep -R -q '£997' src index.html public
           ! grep -R -q '£595/mo' src index.html public
           ! grep -R -q 'tally.so/r/44057b' src index.html public
+          ! grep -R -q 'Free Revenue Recovery Check' src index.html public
+          ! grep -R -q 'Free Recovery Check' src index.html public
+          ! grep -R -q 'href="/revenue-recovery-check"' src index.html public
           grep -q 'tally.so/r/GxWdRL' public/14-day-reactivation-pilot/index.html
           grep -R -q 'does not invent clinical timing' public/client-reactivation-aesthetics-lancashire
           grep -R -q 'does not set clinical recall intervals' public/patient-reactivation-dental-lancashire
