@@ -11,6 +11,7 @@ import {
   setIdempotency, setLeadRoute,
 } from './store.mjs';
 import { boundedNumber, nowIso, shortHash } from './util.mjs';
+import { validateEmailGate } from './validation.mjs';
 
 function configNumber(name, fallback, min = 0, max = 100000) {
   return boundedNumber(Netlify.env.get(name), fallback, min, max);
@@ -84,6 +85,18 @@ async function recoverHealthAfterSuccess(account) {
 
 export async function deliverApproved(payload, { queueId = null, trigger = 'api' } = {}) {
   const now = new Date();
+  const gateErrors = [];
+  const gate = validateEmailGate(payload, gateErrors);
+  if (gateErrors.length) {
+    await audit('EMAIL_GATE_BLOCKED_AT_DELIVERY', {
+      queueId,
+      trigger,
+      gateProfile:gate?.profile || null,
+      deliverabilityGateRef:gate?.deliverabilityGateRef || null,
+      errors:gateErrors.slice(0, 12),
+    });
+    return { ok:false, state:'BLOCKED', code:'EMAIL_GATE_INVALID_AT_DELIVERY', retryable:false, errors:gateErrors };
+  }
   const to = payload.to[0]; const leadHash = shortHash(payload.leadId, 48);
   const emergency = await getEmergencyStop();
   if (emergency.stopped) return { ok:false, state:'BLOCKED', code:'EMERGENCY_STOP', retryable:false };
@@ -117,20 +130,20 @@ export async function deliverApproved(payload, { queueId = null, trigger = 'api'
   if (!choice.selected) return { ok:false, state:'BLOCKED', code:'NO_HEALTHY_SENDER', retryable:true, retryAfterMinutes:15, diagnostics:choice.diagnostics };
   const account = accounts.find((a) => a.id === choice.selected.accountId);
 
-  const inFlight = { ok:false, state:'IN_FLIGHT', idempotencyKey:payload.idempotencyKey, queueId, leadHash, accountId:account.id, recipientHash:shortHash(to, 48), reservedAt:nowIso(), trigger };
+  const inFlight = { ok:false, state:'IN_FLIGHT', idempotencyKey:payload.idempotencyKey, queueId, leadHash, accountId:account.id, recipientHash:shortHash(to, 48), reservedAt:nowIso(), trigger, gateProfile:gate.profile, deliverabilityGateRef:gate.deliverabilityGateRef, finalEmailPermission:gate.finalEmailPermission, gateVerifiedAt:gate.verifiedAt };
   await setIdempotency(payload.idempotencyKey, inFlight);
-  await audit('SEND_RESERVED', { queueId, leadHash, accountId:account.id, touchNo:Number(payload.touchNo), trigger });
+  await audit('SEND_RESERVED', { queueId, leadHash, accountId:account.id, touchNo:Number(payload.touchNo), trigger, gateProfile:gate.profile, deliverabilityGateRef:gate.deliverabilityGateRef, finalEmailPermission:gate.finalEmailPermission });
 
   try {
     const sent = account.provider === 'gmail'
       ? await gmailSend({ account, to, subject:payload.subject, text:payload.text, leadId:payload.leadId, touchNo:payload.touchNo, idempotencyKey:payload.idempotencyKey, route: route?.accountId === account.id ? route : null })
       : await smtpSend({ account, to, subject:payload.subject, text:payload.text, leadId:payload.leadId, touchNo:payload.touchNo, idempotencyKey:payload.idempotencyKey });
-    const result = { ok:true, state:'SENT', idempotencyKey:payload.idempotencyKey, queueId, leadHash, senderAccountId:account.id, sender:account.email, recipientHash:shortHash(to,48), touchNo:Number(payload.touchNo), sentAt:nowIso(), ...sent };
+    const result = { ok:true, state:'SENT', idempotencyKey:payload.idempotencyKey, queueId, leadHash, senderAccountId:account.id, sender:account.email, recipientHash:shortHash(to,48), touchNo:Number(payload.touchNo), sentAt:nowIso(), gateProfile:gate.profile, deliverabilityGateRef:gate.deliverabilityGateRef, finalEmailPermission:gate.finalEmailPermission, gateVerifiedAt:gate.verifiedAt, ...sent };
     await recordSent({ accountId:account.id, recipientEmail:to, messageRef:sent.messageId, at:new Date() });
     await recoverHealthAfterSuccess(account);
     await setLeadRoute(leadHash, { accountId:account.id, provider:account.provider, threadId:sent.threadId || route?.threadId || null, rfcMessageId:sent.rfcMessageId || route?.rfcMessageId || null, references:sent.references || route?.references || sent.rfcMessageId || null, lastTouchNo:Number(payload.touchNo) });
     await setIdempotency(payload.idempotencyKey, result);
-    await audit('SEND_CONFIRMED', { queueId, leadHash, accountId:account.id, touchNo:Number(payload.touchNo), provider:account.provider, providerMessageId:sent.messageId });
+    await audit('SEND_CONFIRMED', { queueId, leadHash, accountId:account.id, touchNo:Number(payload.touchNo), provider:account.provider, providerMessageId:sent.messageId, gateProfile:gate.profile, deliverabilityGateRef:gate.deliverabilityGateRef, finalEmailPermission:gate.finalEmailPermission });
     return result;
   } catch (err) {
     const disposition = failureDisposition(err);
@@ -148,7 +161,7 @@ export async function deliverApproved(payload, { queueId = null, trigger = 'api'
       }
     }
     const retryAfterAt = disposition.retryable ? new Date(Date.now() + Number(disposition.cooldownMinutes || 15) * 60000).toISOString() : null;
-    const failed = { ok:false, state:disposition.state, code:disposition.code, idempotencyKey:payload.idempotencyKey, queueId, leadHash, accountId:account.id, failedAt:nowIso(), retryable:Boolean(disposition.retryable), retryAfterAt, retryAfterMinutes:Number(disposition.cooldownMinutes || 15) };
+    const failed = { ok:false, state:disposition.state, code:disposition.code, idempotencyKey:payload.idempotencyKey, queueId, leadHash, accountId:account.id, failedAt:nowIso(), retryable:Boolean(disposition.retryable), retryAfterAt, retryAfterMinutes:Number(disposition.cooldownMinutes || 15), gateProfile:gate.profile, deliverabilityGateRef:gate.deliverabilityGateRef, finalEmailPermission:gate.finalEmailPermission, gateVerifiedAt:gate.verifiedAt };
     await setIdempotency(payload.idempotencyKey, failed);
     await audit(disposition.state === 'DELIVERY_UNKNOWN' ? 'DELIVERY_UNKNOWN' : 'SEND_FAILED', { queueId, leadHash, accountId:account.id, code:disposition.code, touchNo:Number(payload.touchNo) });
     return failed;
