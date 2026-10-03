@@ -1,6 +1,6 @@
 # 222Emails
 
-222Emails is the canonical written name of a founder-led UK business that builds turnkey Client Return Systems for appointment-led businesses.
+222Emails is the canonical written name of a founder-led UK business that builds Client Return Systems for appointment-led businesses.
 
 ## Entity
 
@@ -8,27 +8,44 @@
 - Spoken / expanded name: Triple Two Emails
 - Founder: Chelston Phillip
 - Base: Great Harwood, Lancashire, United Kingdom
-- Service area: Lancashire and suitable appointment-led businesses across the UK
+- Service area: Blackburn, Hyndburn, wider Lancashire and suitable appointment-led businesses across the UK
 - Website: https://222emails.com/
 - Email: hello@222emails.com
-- Phone / WhatsApp: +44 7516 389 856
+- LinkedIn company: https://uk.linkedin.com/company/222emails
+- Founder LinkedIn: https://uk.linkedin.com/in/chelstonspeaks
 
 Retention School is an educational content series produced by 222Emails. It is not a separate delivery company.
 
 ## Core category
 
-222Emails builds Client Return Systems. A Client Return System defines what should happen after customer states such as an enquiry, booking, attended appointment, cancellation, due-back window or lapsed-client state. It can combine CRM or booking data, email, SMS, automation and human handoffs where appropriate.
+222Emails builds Client Return Systems.
 
-Revenue recovery describes the commercial outcome and diagnostic lens. The formal system being installed is a Client Return System.
+A Client Return System defines what should happen after customer states such as an enquiry, booking, attended appointment, cancellation, due-back window or genuinely lapsed-client state. It can combine CRM or booking data, email, SMS, automation and human handoffs where appropriate.
 
-## Public entry offer
+Revenue Recovery describes the commercial outcome and diagnostic lens. The formal system being installed is a Client Return System.
 
-Free Revenue Recovery Check: https://222emails.com/revenue-recovery-check
+## Current public starting point
 
-The check is a focused evidence-led diagnosis. It does not guarantee recovered revenue and does not require a mandatory discovery call.
+14-Day Reactivation Pilot: https://222emails.com/14-day-reactivation-pilot/
+
+For suitable appointment-led businesses, the current clean-fit front-end route is a £0 pilot with:
+- 14 consecutive calendar days from the first approved live send
+- one eligible segment
+- one focused campaign
+- initially up to 250 eligible contacts
+- no card required
+- no automatic charge afterwards
+- no booking or revenue guarantee
+
+Public application: https://tally.so/r/GxWdRL
+
+The £197 Revenue Recovery Check is the deeper diagnostic route when leakage is broader or unclear. A £995 Client Return System Build is downstream where fit and written scope justify implementation.
 
 ## Primary authority pages
 
+- 14-Day Reactivation Pilot: https://222emails.com/14-day-reactivation-pilot/
+- Customer Retention Blackburn: https://222emails.com/customer-retention-blackburn/
+- Retention School customer retention guide: https://222emails.com/retention-school/
 - Client Return Systems: https://222emails.com/client-return-systems/
 - Retention Marketing Lancashire: https://222emails.com/retention-marketing-lancashire/
 - Salon and barber client retention: https://222emails.com/client-retention-salons-barbers-lancashire/
@@ -45,6 +62,8 @@ Calculator percentages are mathematical illustrations only, not benchmarks, typi
 
 222Emails distinguishes capability evidence, verified outcomes, estimates, illustrations and unknowns.
 
-## Clinical boundaries
+## Local and clinical boundaries
+
+222Emails is based in Great Harwood and does not claim a public walk-in office where one does not exist.
 
 For aesthetics and dental businesses, qualified clinical professionals remain responsible for treatment suitability, clinical timing, diagnosis and patient-specific decisions. 222Emails builds commercial communication and workflow around approved business and clinical rules rather than inventing them.
