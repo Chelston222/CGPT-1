@@ -21,7 +21,7 @@ export async function enqueueOutbound(input) {
   const payloadCipher = encryptJson(check.normalized, encryptionKey(), `queue:${id}`);
   const item = await saveQueueItem({ id, state, dueAt, createdAt:nowIso(), leadHash:shortHash(check.normalized.leadId,48), touchNo:Number(check.normalized.touchNo), idempotencyHash:shortHash(check.normalized.idempotencyKey,48), recipientHash:shortHash(check.normalized.to[0],48), campaignName:String(check.normalized.campaignName || '').slice(0,120), payloadCipher });
   await setQueueDedupe(check.normalized.idempotencyKey, { queueId:id, state, createdAt:nowIso() });
-  await audit('QUEUE_CREATED', { queueId:id, state, leadHash:item.leadHash, touchNo:item.touchNo });
+  await audit('QUEUE_CREATED', { queueId:id, state, leadHash:item.leadHash, touchNo:item.touchNo, gateProfile:check.normalized.emailGate?.profile || null, deliverabilityGateRef:check.normalized.emailGate?.deliverabilityGateRef || null, finalEmailPermission:check.normalized.emailGate?.finalEmailPermission || null });
   return { ok:true, status:202, queueId:id, state, dueAt };
 }
 export async function queueView(states = []) {
@@ -29,7 +29,7 @@ export async function queueView(states = []) {
   return items.slice(0, 200).map((item) => {
     let payload = null;
     try { payload = decryptQueuePayload(item); } catch {}
-    return { id:item.id, state:item.state, dueAt:item.dueAt, createdAt:item.createdAt, updatedAt:item.updatedAt, campaignName:item.campaignName, touchNo:item.touchNo, leadId:payload?.leadId || null, to:payload?.to?.[0] || null, subject:payload?.subject || null, text:payload?.text || null, compliance:payload?.compliance || null, reviewedBy:payload?.reviewedBy || null, lastResult:item.lastResult || null, payloadReadable:Boolean(payload) };
+    return { id:item.id, state:item.state, dueAt:item.dueAt, createdAt:item.createdAt, updatedAt:item.updatedAt, campaignName:item.campaignName, touchNo:item.touchNo, leadId:payload?.leadId || null, to:payload?.to?.[0] || null, subject:payload?.subject || null, text:payload?.text || null, compliance:payload?.compliance || null, emailGate:payload?.emailGate || null, reviewedBy:payload?.reviewedBy || null, lastResult:item.lastResult || null, payloadReadable:Boolean(payload) };
   });
 }
 export async function queueAction({ id, action, actor }) {
@@ -51,7 +51,7 @@ export async function queueAction({ id, action, actor }) {
     const check = validateOutbound(payload);
     if (!check.ok) return { ok:false, status:400, error:'approval_validation_failed', errors:check.errors };
     const updated = await saveQueueItem({ ...item, state:'READY', payloadCipher:encryptJson(check.normalized,encryptionKey(),`queue:${item.id}`), approvedAt:nowIso(), approvedBy:actor });
-    await audit('QUEUE_APPROVED', { queueId:id, actor }); return { ok:true, status:200, state:updated.state };
+    await audit('QUEUE_APPROVED', { queueId:id, actor, gateProfile:check.normalized.emailGate?.profile || null, deliverabilityGateRef:check.normalized.emailGate?.deliverabilityGateRef || null, finalEmailPermission:check.normalized.emailGate?.finalEmailPermission || null }); return { ok:true, status:200, state:updated.state };
   }
   return { ok:false, status:400, error:'unsupported_action' };
 }
