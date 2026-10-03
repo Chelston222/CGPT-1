@@ -21,7 +21,9 @@ const MAX_JOBS_PER_CONTROL = 5;
 const LOOKBACK_MS = 36 * 60 * 60 * 1000;
 const DEFAULT_RAMP_CAP = 2;
 const DEFAULT_HARD_CAP = 20;
-const VERSION = '2026-08-18-github-direct-v3';
+const VERSION = '2026-10-03-deliverability-gate-v4';
+const EMAIL_GATE_VERSION = 'DELIVERABILITY-1.0-20261003';
+const COLD_GATE_MAX_AGE_MS = 72 * 60 * 60 * 1000;
 const REPO_ROOT = resolve(process.cwd(), '../..');
 const LEDGER_RELATIVE = 'apps/tte-mail-bridge/state/direct-ledger.json';
 const LEDGER_PATH = resolve(REPO_ROOT, LEDGER_RELATIVE);
@@ -60,6 +62,47 @@ function expandJobs(control) {
   }
   return [{ ...control }];
 }
+function validateGateSnapshot(job) {
+  const recipients = Array.isArray(job?.to) ? job.to : [job?.to].filter(Boolean);
+  const recipient = String(recipients[0] || '').trim().toLowerCase();
+  const isInternal = recipients.length === 1 && recipient === INTERNAL_RECEIPT && String(job?.leadId || '').startsWith('INTERNAL-');
+  const gate = job?.emailGate || {};
+  const profile = String(gate.profile || '').toUpperCase();
+  const gateVersion = String(gate.gateVersion || '');
+  const finalPermission = String(gate.finalEmailPermission || '').toUpperCase();
+  const addressGate = String(gate.addressGate || '').toUpperCase();
+  const senderGate = String(gate.senderGate || '').toUpperCase();
+  const gateRef = String(gate.deliverabilityGateRef || '').trim();
+  const verifiedAtMs = Date.parse(String(gate.verifiedAt || ''));
+
+  if (gateVersion !== EMAIL_GATE_VERSION) return 'email_gate_version_mismatch';
+  if (gateRef.length < 3) return 'deliverability_gate_ref_required';
+  if (!Number.isFinite(verifiedAtMs)) return 'email_gate_verified_at_required';
+  const age = Date.now() - verifiedAtMs;
+  if (age < -5 * 60 * 1000) return 'email_gate_verified_at_in_future';
+
+  if (isInternal) {
+    if (profile !== 'INTERNAL_OPERATIONAL') return 'internal_email_gate_profile_required';
+    if (finalPermission !== 'INTERNAL ONLY') return 'internal_email_permission_required';
+    if (addressGate !== 'INTERNAL' || senderGate !== 'INTERNAL') return 'internal_email_gate_state_required';
+    if (age > 24 * 60 * 60 * 1000) return 'email_gate_stale';
+    return null;
+  }
+
+  if (profile !== 'COLD_B2B') return 'direct_worker_cold_b2b_profile_required';
+  if (finalPermission !== 'EMAIL ALLOWED') return 'final_email_permission_not_authorised';
+  if (addressGate !== 'PASS') return 'email_address_gate_not_pass';
+  if (senderGate !== 'PASS') return 'email_sender_gate_not_pass';
+  if (!Number.isFinite(Number(gate.evidenceScore)) || Number(gate.evidenceScore) < 90) return 'cold_b2b_evidence_score_below_90';
+  if (age > COLD_GATE_MAX_AGE_MS) return 'email_gate_stale';
+  if (job?.allowSenderSwitch === true) return 'sender_switch_bypass_forbidden';
+  if (gate.expiresAt) {
+    const expiresAtMs = Date.parse(String(gate.expiresAt));
+    if (!Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now()) return 'email_gate_expired';
+  }
+  return null;
+}
+
 function loadLedger() {
   if (!existsSync(LEDGER_PATH)) return { version: 1, updatedAt: null, idempotency: {}, daily: {} };
   try {
@@ -81,6 +124,8 @@ function persistLedger(reason) {
 }
 function validateJob(job) {
   if (!job || typeof job !== 'object' || !dispatchAuthValid(job.dispatchAuth)) return 'unauthorised_control';
+  const gateError = validateGateSnapshot(job);
+  if (gateError) return gateError;
   const recipients = Array.isArray(job.to) ? job.to : [job.to];
   if (recipients.length !== 1 || typeof recipients[0] !== 'string' || !recipients[0].includes('@')) return 'exactly_one_recipient_required';
   if (!job.subject || typeof job.subject !== 'string' || job.subject.length > 180) return 'invalid_subject';
@@ -93,7 +138,7 @@ function validateJob(job) {
 const transporter = nodemailer.createTransport({ host: SMTP_HOST, port: SMTP_PORT, secure: SMTP_PORT === 465, auth: { user: USER, pass: PASS }, requireTLS: SMTP_PORT !== 465 });
 async function sendReceipt(result, sentToday, rampCap) {
   try {
-    await transporter.sendMail({ from: `TTE Direct SMTP Receipt <${USER}>`, to: [INTERNAL_RECEIPT], subject: `TTE DIRECT RECEIPT ${result.idempotencyKey}`, text: ['Internal TTE direct SMTP execution receipt.', `State: ${result.state}`, `Route: ${result.route}`, `Lead: ${result.leadId}`, `Touch: ${result.touchNo}`, `Recipient: ${result.recipient}`, `Provider message ID: ${result.messageId}`, `Sent at: ${result.sentAt}`, `Direct cold ramp: ${sentToday}/${rampCap}`, `Handler: ${VERSION}`].join('\n') });
+    await transporter.sendMail({ from: `TTE Direct SMTP Receipt <${USER}>`, to: [INTERNAL_RECEIPT], subject: `TTE DIRECT RECEIPT ${result.idempotencyKey}`, text: ['Internal TTE direct SMTP execution receipt.', `State: ${result.state}`, `Route: ${result.route}`, `Lead: ${result.leadId}`, `Touch: ${result.touchNo}`, `Recipient: ${result.recipient}`, `Provider message ID: ${result.messageId}`, `Sent at: ${result.sentAt}`, `Direct cold ramp: ${sentToday}/${rampCap}`, `Gate profile: ${result.gateProfile}`, `Gate ref: ${result.deliverabilityGateRef}`, `Final permission: ${result.finalEmailPermission}`, `Handler: ${VERSION}`].join('\n') });
   } catch (error) { console.warn(`TTE queue: receipt send failed: ${error?.message || error}`); }
 }
 async function executeJob(job, location) {
@@ -116,7 +161,7 @@ async function executeJob(job, location) {
   const rampCap = Math.max(0, Math.min(configuredRamp, hardCap));
   const sentToday = Number(ledger.daily[dateKey]?.sent || 0);
   if (!isInternal && sentToday >= rampCap) return { status: 'HELD_CAP' };
-  ledger.idempotency[job.idempotencyKey] = { state: 'IN_FLIGHT', idempotencyKey: job.idempotencyKey, leadId: job.leadId, touchNo: job.touchNo, recipient, reservedAt: new Date().toISOString(), route: 'MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL', version: VERSION };
+  ledger.idempotency[job.idempotencyKey] = { state: 'IN_FLIGHT', idempotencyKey: job.idempotencyKey, leadId: job.leadId, touchNo: job.touchNo, recipient, reservedAt: new Date().toISOString(), route: 'MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL', version: VERSION, gateProfile:job.emailGate?.profile || null, deliverabilityGateRef:job.emailGate?.deliverabilityGateRef || null, finalEmailPermission:job.emailGate?.finalEmailPermission || null, gateVerifiedAt:job.emailGate?.verifiedAt || null };
   try { persistLedger(`reserve ${job.idempotencyKey}`); } catch (error) { console.error(`TTE queue ${location} reservation persistence failed; send aborted: ${error?.message || error}`); return { status: 'HELD_LEDGER' }; }
   let info;
   try {
@@ -135,7 +180,7 @@ async function executeJob(job, location) {
     return { status: 'DELIVERY_PENDING' };
   }
   const sentAt = new Date().toISOString();
-  const result = { state: 'SENT_CONFIRMED', route: 'MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL', idempotencyKey: job.idempotencyKey, leadId: job.leadId, touchNo: job.touchNo, sender: USER, recipient, messageId: info.messageId, accepted, rejected, sentAt, version: VERSION };
+  const result = { state: 'SENT_CONFIRMED', route: 'MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL', idempotencyKey: job.idempotencyKey, leadId: job.leadId, touchNo: job.touchNo, sender: USER, recipient, messageId: info.messageId, accepted, rejected, sentAt, version: VERSION, gateProfile:job.emailGate?.profile || null, deliverabilityGateRef:job.emailGate?.deliverabilityGateRef || null, finalEmailPermission:job.emailGate?.finalEmailPermission || null, gateVerifiedAt:job.emailGate?.verifiedAt || null };
   ledger.idempotency[job.idempotencyKey] = result;
   let resultingDaily = sentToday;
   if (!isInternal) { resultingDaily = sentToday + 1; ledger.daily[dateKey] = { sent: resultingDaily, updatedAt: sentAt, rampCap }; }
