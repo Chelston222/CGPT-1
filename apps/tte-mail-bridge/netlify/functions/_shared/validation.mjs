@@ -25,7 +25,7 @@ export function validateEmail(value) {
   return email.length <= 254 && EMAIL_RE.test(email) ? email : null;
 }
 
-function validateEmailGate(input, errors) {
+export function validateEmailGate(input, errors = []) {
   const gate = input?.emailGate || {};
   const profile = String(gate.profile || '').toUpperCase();
   const gateVersion = String(gate.gateVersion || '');
