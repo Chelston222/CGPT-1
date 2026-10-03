@@ -3,10 +3,91 @@ import { validateEmailRevenueOs } from './email-revenue-os.mjs';
 import { normalizeEmail, safeText } from './util.mjs';
 
 const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+const EMAIL_GATE_VERSION = 'DELIVERABILITY-1.0-20261003';
+const EMAIL_GATE_PROFILES = new Set(['COLD_B2B','WARM_REQUESTED','APPOINTMENT','CLIENT_LIFECYCLE','INTERNAL_OPERATIONAL']);
+const EMAIL_GATE_FINAL = {
+  COLD_B2B: 'EMAIL ALLOWED',
+  WARM_REQUESTED: 'REQUESTED EMAIL ALLOWED',
+  APPOINTMENT: 'APPOINTMENT EMAIL ALLOWED',
+  CLIENT_LIFECYCLE: 'CLIENT SEND ALLOWED',
+  INTERNAL_OPERATIONAL: 'INTERNAL ONLY',
+};
+const EMAIL_GATE_MAX_AGE_MS = {
+  COLD_B2B: 72 * 60 * 60 * 1000,
+  WARM_REQUESTED: 72 * 60 * 60 * 1000,
+  APPOINTMENT: 24 * 60 * 60 * 1000,
+  CLIENT_LIFECYCLE: 24 * 60 * 60 * 1000,
+  INTERNAL_OPERATIONAL: 24 * 60 * 60 * 1000,
+};
 
 export function validateEmail(value) {
   const email = normalizeEmail(value);
   return email.length <= 254 && EMAIL_RE.test(email) ? email : null;
+}
+
+function validateEmailGate(input, errors) {
+  const gate = input?.emailGate || {};
+  const profile = String(gate.profile || '').toUpperCase();
+  const gateVersion = String(gate.gateVersion || '');
+  const deliverabilityGateRef = safeText(gate.deliverabilityGateRef, 240);
+  const addressGate = String(gate.addressGate || '').toUpperCase();
+  const senderGate = String(gate.senderGate || '').toUpperCase();
+  const finalEmailPermission = String(gate.finalEmailPermission || '').toUpperCase();
+  const verifiedAtRaw = String(gate.verifiedAt || '');
+  const verifiedAtMs = Date.parse(verifiedAtRaw);
+  const expiresAtRaw = String(gate.expiresAt || '');
+  const expiresAtMs = expiresAtRaw ? Date.parse(expiresAtRaw) : NaN;
+  const evidenceScore = Number(gate.evidenceScore);
+
+  if (!EMAIL_GATE_PROFILES.has(profile)) errors.push('email_gate_profile_required');
+  if (gateVersion !== EMAIL_GATE_VERSION) errors.push('email_gate_version_mismatch');
+  if (!deliverabilityGateRef || deliverabilityGateRef.length < 3) errors.push('deliverability_gate_ref_required');
+
+  if (profile === 'INTERNAL_OPERATIONAL') {
+    if (addressGate !== 'INTERNAL') errors.push('internal_email_gate_requires_internal_address_state');
+    if (senderGate !== 'INTERNAL') errors.push('internal_email_gate_requires_internal_sender_state');
+  } else if (EMAIL_GATE_PROFILES.has(profile)) {
+    if (addressGate !== 'PASS') errors.push('email_address_gate_not_pass');
+    if (senderGate !== 'PASS') errors.push('email_sender_gate_not_pass');
+  }
+
+  if (EMAIL_GATE_PROFILES.has(profile) && finalEmailPermission !== EMAIL_GATE_FINAL[profile]) {
+    errors.push('final_email_permission_not_authorised');
+  }
+
+  if (!Number.isFinite(verifiedAtMs)) errors.push('email_gate_verified_at_required');
+  else {
+    const age = Date.now() - verifiedAtMs;
+    if (age < -5 * 60 * 1000) errors.push('email_gate_verified_at_in_future');
+    const maxAge = EMAIL_GATE_MAX_AGE_MS[profile];
+    if (Number.isFinite(maxAge) && age > maxAge) errors.push('email_gate_stale');
+  }
+
+  if (expiresAtRaw) {
+    if (!Number.isFinite(expiresAtMs)) errors.push('email_gate_expires_at_invalid');
+    else if (expiresAtMs <= Date.now()) errors.push('email_gate_expired');
+  }
+
+  if (profile === 'COLD_B2B' && (!Number.isFinite(evidenceScore) || evidenceScore < 90)) {
+    errors.push('cold_b2b_evidence_score_below_90');
+  }
+
+  if (input?.allowSenderSwitch === true && profile !== 'INTERNAL_OPERATIONAL') {
+    errors.push('sender_switch_bypass_forbidden');
+  }
+
+  return {
+    ...gate,
+    profile,
+    gateVersion,
+    deliverabilityGateRef,
+    addressGate,
+    senderGate,
+    finalEmailPermission,
+    verifiedAt: Number.isFinite(verifiedAtMs) ? new Date(verifiedAtMs).toISOString() : verifiedAtRaw,
+    expiresAt: Number.isFinite(expiresAtMs) ? new Date(expiresAtMs).toISOString() : expiresAtRaw,
+    evidenceScore: Number.isFinite(evidenceScore) ? evidenceScore : gate.evidenceScore,
+  };
 }
 
 export function validateOutbound(input, opts = {}) {
@@ -24,6 +105,7 @@ export function validateOutbound(input, opts = {}) {
   if (!Number.isInteger(Number(input?.touchNo)) || Number(input.touchNo) < 1) errors.push('valid_touch_no_required');
   if (!input?.idempotencyKey) errors.push('idempotency_key_required');
 
+  const emailGate = validateEmailGate(input, errors);
   const compliance = input?.compliance || {};
   const companyType = String(compliance.companyType || '').toLowerCase();
   const legalBasis = String(compliance.legalBasis || '').toLowerCase();
@@ -63,6 +145,7 @@ export function validateOutbound(input, opts = {}) {
     to: to ? [to] : [],
     subject,
     text,
+    emailGate,
     compliance: {
       ...compliance,
       companyType,
