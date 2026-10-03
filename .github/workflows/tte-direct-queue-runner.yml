@@ -34,7 +34,9 @@ jobs:
       TTE_SMTP_PORT: '465'
       TTE_IMAP_HOST: mail.privateemail.com
       TTE_IMAP_PORT: '993'
-      TTE_DIRECT_RAMP_CAP: '2'
+      # GLOBAL SAFETY HOLD 2026-10-03: external queue dispatch remains at zero until
+      # DELIVERABILITY-1.0 canonical gate enforcement is merged, verified and owner-released.
+      TTE_DIRECT_RAMP_CAP: '0'
       TTE_DIRECT_DAILY_CAP: '20'
     steps:
       - name: Checkout
