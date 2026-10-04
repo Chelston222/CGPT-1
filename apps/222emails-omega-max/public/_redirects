@@ -1,5 +1,5 @@
-/fit-check /revenue-recovery-check 301
-/client-return-fit-check /revenue-recovery-check 301
+/fit-check /14-day-reactivation-pilot/ 301
+/client-return-fit-check /14-day-reactivation-pilot/ 301
+/revenue-recovery-check /14-day-reactivation-pilot/ 301
 /revenue-recovery-check/thank-you /index.html 200
-/revenue-recovery-check /index.html 200
 /* /index.html 200
