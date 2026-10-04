@@ -59,6 +59,20 @@ function verifyPng(buf) {
 if (stage === 'retrieve') {
   rmSync(mediaDir, { recursive: true, force: true });
   mkdirSync(mediaDir, { recursive: true });
+  const sourceUrl = String(config.sourceUrl || '').trim();
+  if (sourceUrl) {
+    const parsed = new URL(sourceUrl);
+    if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('.oaiusercontent.com')) throw new Error('Unsupported signed source host');
+    const response = await fetch(sourceUrl, { redirect: 'follow' });
+    if (!response.ok) throw new Error(`Signed source download failed: HTTP ${response.status}`);
+    const buf = Buffer.from(await response.arrayBuffer());
+    if (buf.length !== config.expectedBytes) throw new Error(`Signed source byte mismatch: ${buf.length}`);
+    if (sha(buf) !== String(config.expectedSha256).toLowerCase()) throw new Error('Signed source SHA mismatch');
+    const dimensions = verifyPng(buf);
+    writeFileSync(mediaPath, buf);
+    console.log(JSON.stringify({ ok: true, stage, mediaPath: relative(repoRoot, mediaPath), source: 'signed_file_reference', ...dimensions }, null, 2));
+    process.exit(0);
+  }
   const user = process.env.TTE_SMTP_USER || 'hello@222emails.com';
   const pass = process.env.TTE_SMTP_PASS;
   if (!pass) throw new Error('TTE_SMTP_PASS is required');
