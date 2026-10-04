@@ -1,0 +1,143 @@
+name: LinkedIn IMAP Image Intake
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: linkedin-imap-image-intake
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    if: github.event.issue.user.login == github.repository_owner && startsWith(github.event.issue.title, '[IMAP IMAGE INTAKE] ')
+    runs-on: ubuntu-latest
+    env:
+      TTE_SMTP_PASS: ${{ secrets.TTE_SMTP_PASS }}
+      TTE_SMTP_USER: hello@222emails.com
+      TTE_IMAP_HOST: mail.privateemail.com
+      TTE_IMAP_PORT: '993'
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Refresh latest governed main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout -B main origin/main
+
+      - name: Verify credential and install mail tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$TTE_SMTP_PASS" || { echo 'TTE_SMTP_PASS missing'; exit 2; }
+          npm install --no-audit --no-fund --prefix apps/tte-mail-bridge
+
+      - name: Retrieve and verify exact image
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/linkedin-imap-image-intake.mjs retrieve
+
+      - name: Commit exact media bytes
+        id: media
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          id="$(node -e "const e=require(process.env.GITHUB_EVENT_PATH); const b=String(e.issue.body); const a='<!-- IMAGE_INTAKE_CONFIG_START -->'; const z='<!-- IMAGE_INTAKE_CONFIG_END -->'; console.log(JSON.parse(b.slice(b.indexOf(a)+a.length,b.indexOf(z)).trim()).id)")"
+          git add "apps/linkedin-review/media/intake-image/$id"
+          git commit -m "Promote LinkedIn image $id exact media"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && break
+            test "$attempt" -lt 3 || exit 1
+            sleep $((attempt * 2))
+          done
+          media_commit="$(git rev-parse HEAD)"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "media_commit=$media_commit" >> "$GITHUB_OUTPUT"
+
+      - name: Build governed review-only queue record
+        env:
+          MEDIA_COMMIT: ${{ steps.media.outputs.media_commit }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/linkedin-imap-image-intake.mjs build
+
+      - name: Validate queue record through canonical release parser
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { withQaReplenishment, postBody } = require('./scripts/linkedin-week-batch.cjs');
+          const { validateRequest } = require('./scripts/linkedin-review-core.cjs');
+          const queue = JSON.parse(fs.readFileSync('apps/linkedin-review/queue.json','utf8'));
+          const effective = withQaReplenishment(queue);
+          const id = '${{ steps.media.outputs.id }}';
+          const item = effective.posts.find((p) => p.sourceType === 'qa_replenishment' && p.id === id.replace(/^client-return-structures-2026-10-05$/, 'tte-client-return-structures-2026-10-05'));
+          if (!item) throw new Error('New image post not found in effective governed queue');
+          const env = { BUFFER_API_KEY: 'test', BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: 'test-personal' };
+          validateRequest(postBody(item), env, Date.now());
+          if (item.mediaBytes !== 1445934) throw new Error('Media byte lock drift');
+          if (item.mediaSha256 !== '7903afd211d16cb23510d8f9a7f18783572582450169934d23223cbc26b50580') throw new Error('Media SHA lock drift');
+          console.log('Canonical queue validation PASS');
+          NODE
+
+      - name: Commit review queue
+        id: queue
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "apps/linkedin-review/qa-replenishment-${{ steps.media.outputs.id }}.json"
+          git commit -m "Queue LinkedIn image ${{ steps.media.outputs.id }} for governed release"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && break
+            test "$attempt" -lt 3 || exit 1
+            sleep $((attempt * 2))
+          done
+          echo "queue_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Record exact-media readiness
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                '✅ Exact single-image LinkedIn intake completed.',
+                '',
+                '- Media: **1254 × 1254 PNG**',
+                '- Bytes: **1,445,934**',
+                '- SHA-256: `7903afd211d16cb23510d8f9a7f18783572582450169934d23223cbc26b50580`',
+                `- Immutable media commit: \`${{ steps.media.outputs.media_commit }}\``,
+                `- Queue commit: \`${{ steps.queue.outputs.queue_commit }}\``,
+                '',
+                'This is exact-media and queue readiness only. Buffer release still requires the repository-owner [APPROVED LINKEDIN] gate.',
+              ].join('\n'),
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed',
+              state_reason: 'completed',
+            });
