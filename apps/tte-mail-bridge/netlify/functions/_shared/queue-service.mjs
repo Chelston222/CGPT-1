@@ -11,7 +11,7 @@ function isApproved(payload) { return String(payload.reviewState || '').toUpperC
 function decryptQueuePayload(item) { return decryptJsonAny(item.payloadCipher, decryptionKeys(), `queue:${item.id}`); }
 
 export async function enqueueOutbound(input) {
-  const check = validateOutbound(input, { requireFirstTouchReview:false, requireSequenceApproval:false });
+  const check = validateOutbound(input, { requireFirstTouchReview:false, requireSequenceApproval:false, requireEmailGate:true });
   if (!check.ok) return { ok:false, status:400, error:'validation_failed', errors:check.errors };
   if (await getQueueDedupe(check.normalized.idempotencyKey)) return { ok:false, status:409, error:'duplicate_queue_item' };
   const existing = await listQueue(['PENDING_REVIEW','READY','IN_FLIGHT']);
@@ -48,7 +48,7 @@ export async function queueAction({ id, action, actor }) {
       return { ok:false, status:409, error:'payload_decrypt_failed', state:blocked.state };
     }
     payload.reviewState = 'APPROVED'; payload.reviewedBy = actor; payload.reviewedAt = nowIso();
-    const check = validateOutbound(payload);
+    const check = validateOutbound(payload, { requireEmailGate:true });
     if (!check.ok) return { ok:false, status:400, error:'approval_validation_failed', errors:check.errors };
     const updated = await saveQueueItem({ ...item, state:'READY', payloadCipher:encryptJson(check.normalized,encryptionKey(),`queue:${item.id}`), approvedAt:nowIso(), approvedBy:actor });
     await audit('QUEUE_APPROVED', { queueId:id, actor, gateProfile:check.normalized.emailGate?.profile || null, gateRef:check.normalized.emailGate?.gateRef || null, finalPermission:check.normalized.emailGate?.finalPermission || null }); return { ok:true, status:200, state:updated.state };
@@ -93,7 +93,7 @@ export async function dispatchReady({ max = DEFAULTS.queueBatchSize, trigger = '
         results.push({ queueId:item.id, state:blocked.state, code:'PAYLOAD_DECRYPT_FAILED' });
         continue;
       }
-      const finalCheck = validateOutbound(payload);
+      const finalCheck = validateOutbound(payload, { requireEmailGate:true });
       if (!finalCheck.ok) {
         const blocked = await saveQueueItem({ ...item, state:'BLOCKED', lastResult:{ code:'FINAL_VALIDATION_FAILED', errors:finalCheck.errors } });
         await audit('QUEUE_FINAL_GATE_BLOCKED', { queueId:item.id, trigger, errors:finalCheck.errors, gateProfile:payload?.emailGate?.profile || null, gateRef:payload?.emailGate?.gateRef || null });
