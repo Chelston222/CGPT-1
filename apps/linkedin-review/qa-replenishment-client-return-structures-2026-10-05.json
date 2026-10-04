@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "batchId": "client-return-structures-2026-10-05",
+  "generatedAt": "2026-10-04T04:59:05.179Z",
+  "sourceBasis": {
+    "command": "222E governed single-image intake",
+    "purpose": "Exact-media LinkedIn scheduling through GitHub -> Buffer",
+    "media": "lossless PNG, immutable SHA/byte/dimension locked"
+  },
+  "approvalRule": "Review-only until repository-owner [APPROVED LINKEDIN] approval.",
+  "posts": [
+    {
+      "id": "tte-client-return-structures-2026-10-05",
+      "revision": 1,
+      "title": "Five Client Return Structures",
+      "rating": 97,
+      "category": "client_return_systems",
+      "contentRole": "diagnosis",
+      "funnelStage": "tof",
+      "format": "image",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-05T08:15:00+01:00"
+      },
+      "copy": {
+        "default": "Most appointment-led businesses do not have one retention problem.\n\nThey usually have a few small gaps across the client journey.\n\nA past client never gets followed up.\n\nAn enquiry goes quiet before booking.\n\nSomeone finishes an appointment without their next one in the diary.\n\nA no-show never gets recovered.\n\nA regular client simply drifts past the point they would normally return.\n\nThat is why we built 222Emails around Client Return Systems.\n\nThe aim is simple: make it easier for more of the people who already know the business to come back.\n\nThe five areas we keep coming back to are:\n→ Reactivation\n→ Enquiry follow-up\n→ Rebooking\n→ No-show recovery\n→ Retention nurture\n\nMost businesses will already be doing some of these well.\n\nThe interesting part is finding the gaps where clients are quietly being lost.\n\nWhere do you think most appointment-led businesses lose the most clients: enquiries, rebooking, no-shows or dormant clients?\n\n222Emails | Client Return Systems"
+      },
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/0fe322c12386108d561b0ce4d4aa1693aab33d25/apps/linkedin-review/media/intake-image/client-return-structures-2026-10-05/r1/client_return_structures_infographic_lossless.png",
+      "mediaAlt": "222Emails infographic showing five client return structures for appointment-led businesses: reactivation, enquiry follow-up, rebooking, no-show recovery and retention nurture.",
+      "mediaBytes": 1445934,
+      "mediaSha256": "7903afd211d16cb23510d8f9a7f18783572582450169934d23223cbc26b50580",
+      "safeZoneQa": "pass",
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-10-04T04:59:05.179Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact PNG media pinned to immutable commit 0fe322c12386108d561b0ce4d4aa1693aab33d25"
+        }
+      ]
+    }
+  ]
+}
