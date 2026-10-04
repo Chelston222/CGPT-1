@@ -76,7 +76,7 @@ if (stage === 'retrieve') {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     mailboxLoop: for (const mailbox of mailboxes) {
       const special = String(mailbox.specialUse || '').toLowerCase();
-      if (['\\sent','\\drafts','\\trash','\\junk'].includes(special)) continue;
+      if (['\\sent','\\drafts','\\trash'].includes(special)) continue;
       await client.mailboxOpen(mailbox.path, { readOnly: true });
       const uids = (await client.search({ since }, { uid: true })).slice(-300).reverse();
       if (!uids.length) continue;
