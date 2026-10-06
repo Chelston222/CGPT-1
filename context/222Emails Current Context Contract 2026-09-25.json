@@ -1,5 +1,5 @@
 {
-  "effective_date": "2026-09-25",
+  "effective_date": "2026-10-06",
   "status": "CURRENT_CANONICAL_REPOSITORY_CONTRACT",
   "authority_order": [
     "newer_explicit_owner_instruction",
@@ -11,6 +11,42 @@
     "live_operational_system_state",
     "historical_repository_snapshots"
   ],
+  "owner_overrides": {
+    "francis_offboard": {
+      "effective_date": "2026-10-06",
+      "state": "FULLY_RETIRED_FROM_CURRENT_OPERATIONS",
+      "person": "Francis Niño Del Oeste",
+      "rule": "No current 222Emails workflow may assign, route, schedule, hand off, supply leads to, depend on, or reactivate Francis without a newer explicit Chelston instruction.",
+      "retired_lanes": [
+        "outbound calling",
+        "call feedback ownership",
+        "lead supply entitlement",
+        "calling windows",
+        "appointment and reminder ownership",
+        "requested-information handoffs",
+        "Francis CRM as a live execution source",
+        "Francis-specific Apollo lists as execution queues",
+        "Francis-specific calendar inventory",
+        "Francis-specific automation"
+      ],
+      "historical_evidence_rule": "Francis-era call notes, prospect outcomes, contracts, compliance records and messages are archive evidence only. They may be consulted to preserve legal or financial records, understand an existing prospect relationship, honour a commitment or prevent duplicate contact. They never create current contact or execution authority.",
+      "prospect_ownership_rule": "Commercially useful prospects and relationships touched by Francis belong to 222Emails. Reconcile them into owner-controlled systems using current first-party evidence and current suppression and dedupe controls before further action.",
+      "preserve": [
+        "signed DPA and IDTA evidence",
+        "Upwork contract, timesheets, transactions and payment evidence",
+        "historical call and CRM records",
+        "prospect contact history required for dedupe and relationship continuity",
+        "audit and incident evidence"
+      ],
+      "remove_or_revoke": [
+        "Francis external Drive access",
+        "Francis dialler and VoIP access",
+        "future Francis calendar series",
+        "active Francis automations and handoff dependencies",
+        "Francis-labelled prospect views as active execution queues"
+      ]
+    }
+  },
   "canonical_sources": {
     "command_centre_document_id": "1fKwKu5j6rw1kKPxu-PcjGEgbrdSfIK9E2L7c6vNQlH0",
     "master_operating_context_id": "1AmqGFc7rDvOzI4LARDiTedwO5DNLjknVA8KmHjoD8XA",
@@ -78,8 +114,7 @@
     "clock_starts": "first approved live send",
     "auto_charge": false,
     "auto_renewal": false,
-    "booking_or_revenue_guarantee": false,
-    "francis_may_invent_or_change_terms": false
+    "booking_or_revenue_guarantee": false
   },
   "client_friction": {
     "rule": "FRONT-LOAD ONCE",
@@ -117,6 +152,7 @@
     "no unsupported revenue or ROI claim"
   ],
   "retired_for_current_execution": [
+    "Francis caller workstream and all Francis-specific operational lanes",
     "Free Revenue Recovery Check as the current offer name",
     "Client Return Growth Check as the current £197 offer name",
     "7-Day Client Return System Sprint at £997",
