@@ -57,7 +57,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <a href="/#how-it-works">How it works</a>
           <a href="/#proof">Proof</a>
           <a href="/#pricing">Pricing</a>
-          <a className="nav-cta" href="/revenue-recovery-check">Free Recovery Check</a>
+          <a className="nav-cta" href="/14-day-reactivation-pilot/">14-Day Pilot</a>
         </nav>
       </div>
     </header>
@@ -302,44 +302,44 @@ function Home() {
 
 function RevenueRecoveryCheck() {
   useEffect(() => setMeta(
-    'Free Revenue Recovery Check | 222Emails',
-    'An evidence-led diagnostic for appointment-led businesses. Find the strongest identifiable revenue-recovery issue and the first sensible next step.',
+    '£197 Revenue Recovery Check | 222Emails',
+    'A deeper evidence-led diagnosis for appointment-led businesses when the leakage is broader or unclear. Identify and document qualified potential booking value before implementation.',
     'https://222emails.com/revenue-recovery-check'
   ), []);
 
   const attribution = getAttributionParams();
   attribution.set('cta_location', 'revenue_recovery_check_page');
-  attribution.set('form_version', '2026-09-14');
+  attribution.set('form_version', '2026-10-07-paid-diagnostic');
   const formUrl = `${TALLY_URL}?${attribution.toString()}`;
 
   return <Shell>
     <section className="rrc-hero section">
       <div className="wrap two-col rrc-grid">
         <div>
-          <p className="eyebrow">FREE REVENUE RECOVERY CHECK</p>
-          <h1>Find the strongest leak in the journey you already paid to create.</h1>
-          <p className="hero-copy">For appointment-led businesses that want a clearer view of what may be happening after an enquiry arrives or a client finishes their appointment.</p>
-          <ul className="check-list"><li>About 3 minutes to start</li><li>Evidence-led diagnosis</li><li>No platform access required</li><li>No mandatory discovery call</li><li>No obligation to buy</li></ul>
+          <p className="eyebrow">£197 REVENUE RECOVERY CHECK</p>
+          <h1>Quantify the leak before you pay to build the fix.</h1>
+          <p className="hero-copy">This is the deeper diagnostic route for appointment-led businesses where the commercial leakage is broader, unclear or not suitable for a clean 14-Day Reactivation Pilot.</p>
+          <ul className="check-list"><li>Evidence-led diagnosis</li><li>Qualified potential booking value documented</li><li>No platform access required to start</li><li>No mandatory discovery call</li><li>£197 credited to a £995 Client Return System Build if you proceed and the Check is retained</li></ul>
         </div>
-        <div className="rrc-summary"><h2>What you receive</h2><ol><li>The strongest identifiable issue from the information provided</li><li>Why that issue matters commercially</li><li>Any material unknowns that limit certainty</li><li>The first sensible move we would recommend</li><li>An honest view on whether paid work appears justified</li></ol><p className="boundary">This is a focused diagnostic, not a disguised consultancy project and not a promise of recovered revenue.</p></div>
+        <div className="rrc-summary"><h2>The controlled promise</h2><p><strong>We identify and document at least £985 in qualified potential booking value or refund the £197.</strong></p><ol><li>The strongest supportable leakage we can identify</li><li>The evidence and assumptions behind the opportunity</li><li>Material unknowns that limit certainty</li><li>The first sensible system or operational move</li><li>An honest view on whether implementation is justified</li></ol><p className="boundary">Qualified potential booking value is an evidence-led opportunity estimate, not guaranteed revenue. Booked value and completed revenue are different outcomes.</p></div>
       </div>
     </section>
 
     <section className="section muted">
       <div className="wrap">
-        <p className="eyebrow">WHAT WE LOOK FOR</p>
-        <div className="problem-grid"><article><h3>Enquiry response</h3><p>Where useful demand can stall before a booking happens.</p></article><article><h3>Follow-up</h3><p>Where a quote or conversation can fade without a sensible next step.</p></article><article><h3>No-show recovery</h3><p>Whether missed appointments have a defined recovery path.</p></article><article><h3>Rebooking and win-back</h3><p>Whether due-to-return and lapsed clients are identified and handled.</p></article></div>
+        <p className="eyebrow">WHEN THIS ROUTE FITS</p>
+        <div className="problem-grid"><article><h3>Several leaks overlap</h3><p>Enquiry follow-up, cancellations, rebooking and dormant-client return may all be contributing.</p></article><article><h3>The data is unclear</h3><p>The business needs the opportunity quantified before choosing what to build.</p></article><article><h3>The Pilot is too narrow</h3><p>There is not one clean reactivation segment that can answer the commercial question on its own.</p></article><article><h3>Implementation needs a case</h3><p>The business wants evidence for where a £995 Build should focus before committing to it.</p></article></div>
       </div>
     </section>
 
     <section className="section form-section">
       <div className="wrap narrow">
-        <p className="eyebrow">START THE CHECK</p>
-        <h2 className="section-title">Tell us enough to diagnose the journey.</h2>
-        <p className="section-copy">The form opens securely in Tally. Your diagnostic submission does not automatically subscribe you to marketing.</p>
+        <p className="eyebrow">REQUEST THE CHECK</p>
+        <h2 className="section-title">Give us enough context to establish whether the paid diagnostic is appropriate.</h2>
+        <p className="section-copy">The intake opens securely in Tally. Submitting it does not automatically subscribe you to marketing or create a charge. 222Emails confirms scope and payment before the £197 Check begins.</p>
         <div className="form-card">
-          <a className="button primary large" href={formUrl} target="_blank" rel="noreferrer">Start my Free Revenue Recovery Check</a>
-          <p>Prefer a direct link? <a href={formUrl} target="_blank" rel="noreferrer">Open the form here.</a></p>
+          <a className="button primary large" href={formUrl} target="_blank" rel="noreferrer">Request the £197 Revenue Recovery Check</a>
+          <p>Prefer a direct link? <a href={formUrl} target="_blank" rel="noreferrer">Open the intake here.</a></p>
           <small>Do not include passwords, payment details or unnecessary sensitive personal information.</small>
         </div>
       </div>
@@ -348,13 +348,12 @@ function RevenueRecoveryCheck() {
     <section className="section">
       <div className="wrap narrow">
         <p className="eyebrow">WHAT HAPPENS NEXT</p>
-        <h2 className="section-title">Prescription after diagnosis.</h2>
-        <ol className="next-steps"><li>We review the client journey you describe.</li><li>We identify the strongest issue we can support from the evidence available.</li><li>We return the finding, the boundary and a practical next action.</li><li>If deeper work looks justified, we explain the relevant paid route. If it does not, we say so.</li></ol>
+        <h2 className="section-title">Diagnosis before implementation.</h2>
+        <ol className="next-steps"><li>We review the journey, data context and problem you describe.</li><li>We confirm whether the £197 Check is the right route before payment is taken.</li><li>The completed Check documents the qualified potential booking value we can support, the limits of the evidence and the recommended next action.</li><li>If the Check does not identify at least £985 in qualified potential booking value, the £197 is refunded under the controlled promise.</li><li>If a £995 Client Return System Build is then agreed and the Check was retained, the £197 is credited in full, leaving £798.</li></ol>
       </div>
     </section>
   </Shell>;
 }
-
 function ThankYou() {
   useEffect(() => setMeta(
     'Revenue Recovery Check Received | 222Emails',
@@ -366,7 +365,7 @@ function ThankYou() {
 
 function NotFound() {
   useEffect(() => setMeta('Page not found | 222Emails', 'The page you requested could not be found.', 'https://222emails.com/404'), []);
-  return <Shell><section className="section thank-you"><div className="wrap narrow"><p className="eyebrow">404</p><h1>This page is not part of the current 222Emails journey.</h1><p className="hero-copy">Return to the homepage or start the Free Revenue Recovery Check.</p><div className="cta-row"><a className="button dark" href="/">Homepage</a><a className="button primary" href="/revenue-recovery-check">Free Recovery Check</a></div></div></section></Shell>;
+  return <Shell><section className="section thank-you"><div className="wrap narrow"><p className="eyebrow">404</p><h1>This page is not part of the current 222Emails journey.</h1><p className="hero-copy">Return to the homepage, choose a Client Return field guide or check whether the 14-Day Reactivation Pilot fits.</p><div className="cta-row"><a className="button dark" href="/">Homepage</a><a className="button primary" href="/14-day-reactivation-pilot/">14-Day Pilot</a></div></div></section></Shell>;
 }
 
 function App() {

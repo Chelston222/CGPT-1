@@ -63,7 +63,8 @@ jobs:
           test -f dist/field-guide-attribution.js
           test -f dist/about-222emails/index.html
           grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
-          grep -R -q 'Free Revenue Recovery Check' dist/assets
+          grep -R -q '14-Day Reactivation Pilot' dist/assets
+          grep -R -q '£197 REVENUE RECOVERY CHECK' dist/assets
           grep -R -q 'Client Return System' dist/assets
           grep -R -q 'Evidence-led diagnosis' dist/assets
           grep -q 'Great Harwood' dist/index.html
@@ -86,6 +87,11 @@ jobs:
           grep -q 'client-return-guide-request' dist/client-return-guides/salons/index.html
           grep -q 'client-return-guide-request' dist/client-return-guides/training-academies/index.html
           grep -q 'reactivation-pilot-interest' dist/14-day-reactivation-pilot/index.html
+          grep -q 'name="utm_source"' dist/client-return-guides/aesthetics/index.html
+          grep -q 'name="utm_source"' dist/client-return-guides/dental/index.html
+          grep -q 'name="utm_source"' dist/client-return-guides/salons/index.html
+          grep -q 'name="utm_source"' dist/client-return-guides/training-academies/index.html
+          grep -q 'name="utm_source"' dist/14-day-reactivation-pilot/index.html
           grep -q 'No card, no automatic charge' dist/14-day-reactivation-pilot/index.html
           grep -q 'does not set recall intervals' dist/client-return-guides/dental/read/index.html
           grep -q 'admissions decisions' dist/client-return-guides/training-academies/read/index.html
@@ -100,6 +106,9 @@ jobs:
           ! grep -R -q '£20K–£50K' src index.html public
           ! grep -R -q 'Human-reviewed' src index.html public
           ! grep -R -q 'Retention Lab' src index.html public
+          ! grep -R -q 'Free Revenue Recovery Check' src index.html public
+          ! grep -R -q 'Free Recovery Check' src index.html public
+          ! grep -q 'sessionStorage' public/field-guide-attribution.js
           grep -R -q 'Existing tools first' src
           grep -R -q 'No mandatory discovery call' src
           grep -R -q 'utm_source' src/main.tsx

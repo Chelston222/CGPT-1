@@ -60,7 +60,8 @@ jobs:
         run: |
           set -euo pipefail
           grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
-          grep -R -q 'Free Revenue Recovery Check' dist/assets
+          grep -R -q '14-Day Reactivation Pilot' dist/assets
+          grep -R -q '£197 REVENUE RECOVERY CHECK' dist/assets
           grep -R -q 'Client Return System' dist/assets
           grep -R -q 'Existing tools first' dist/assets
           grep -R -q 'Evidence-led diagnosis' dist/assets
@@ -74,6 +75,9 @@ jobs:
           ! grep -R -q 'client-return-fit-check' dist/index.html
           ! grep -R -q 'Human-reviewed' src index.html public
           ! grep -R -q 'Retention Lab' src index.html public
+          ! grep -R -q 'Free Revenue Recovery Check' src index.html public
+          ! grep -R -q 'Free Recovery Check' src index.html public
+          ! grep -q 'sessionStorage' public/field-guide-attribution.js
           grep -R -q 'utm_source' src/main.tsx
           grep -R -q 'sessionStorage' src/main.tsx
           grep -q '/fit-check /revenue-recovery-check 301' dist/_redirects
@@ -104,10 +108,18 @@ jobs:
           done
           code=$(curl -L --retry 4 --retry-delay 2 -sS -o /tmp/legacy -w '%{http_code}' "${DRAFT_URL}/fit-check")
           test "$code" = "200" || { echo "Legacy redirect failed: $code"; exit 1; }
-          curl -fsSL --retry 4 "$DRAFT_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
-          curl -fsSL --retry 4 "$DRAFT_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
-          curl -fsSL --retry 4 "$DRAFT_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
-          curl -fsSL --retry 4 "$DRAFT_URL/privacy/" | grep -q 'How 222Emails collects and uses personal data'
+          curl -fsSL --retry 4 "$DRAFT_URL/" -o /tmp/draft-home
+          grep -q 'Client Return Systems for appointment-led businesses' /tmp/draft-home
+          curl -fsSL --retry 4 "$DRAFT_URL/retention-marketing-lancashire/" -o /tmp/draft-retention
+          grep -q 'Retention marketing built around getting appointment-led clients to come back' /tmp/draft-retention
+          curl -fsSL --retry 4 "$DRAFT_URL/client-return-opportunity-calculator/" -o /tmp/draft-calculator
+          grep -q 'Illustrative rate, not a benchmark' /tmp/draft-calculator
+          curl -fsSL --retry 4 "$DRAFT_URL/privacy/" -o /tmp/draft-privacy
+          grep -q 'How 222Emails collects and uses personal data' /tmp/draft-privacy
+          curl -fsSL --retry 4 "$DRAFT_URL/14-day-reactivation-pilot/" -o /tmp/draft-pilot
+          grep -q 'No card, no automatic charge' /tmp/draft-pilot
+          curl -fsSL --retry 4 "$DRAFT_URL/client-return-guides/" -o /tmp/draft-guides
+          grep -q 'Client Return, Made Simple' /tmp/draft-guides
 
       - name: Publish verified build to production
         working-directory: apps/222emails-omega-max
@@ -130,9 +142,16 @@ jobs:
             code=$(curl -L --retry 6 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${PROD_URL}${path}")
             test "$code" = "200" || { echo "Production ${path} returned ${code}"; exit 1; }
           done
-          curl -fsSL --retry 6 "$PROD_URL/" | grep -q 'Client Return Systems for appointment-led businesses'
-          curl -fsSL --retry 6 "$PROD_URL/retention-marketing-lancashire/" | grep -q 'Retention marketing built around getting appointment-led clients to come back'
-          curl -fsSL --retry 6 "$PROD_URL/client-return-opportunity-calculator/" | grep -q 'Illustrative rate, not a benchmark'
+          curl -fsSL --retry 6 "$PROD_URL/" -o /tmp/prod-home
+          grep -q 'Client Return Systems for appointment-led businesses' /tmp/prod-home
+          curl -fsSL --retry 6 "$PROD_URL/retention-marketing-lancashire/" -o /tmp/prod-retention
+          grep -q 'Retention marketing built around getting appointment-led clients to come back' /tmp/prod-retention
+          curl -fsSL --retry 6 "$PROD_URL/client-return-opportunity-calculator/" -o /tmp/prod-calculator
+          grep -q 'Illustrative rate, not a benchmark' /tmp/prod-calculator
+          curl -fsSL --retry 6 "$PROD_URL/14-day-reactivation-pilot/" -o /tmp/prod-pilot
+          grep -q 'No card, no automatic charge' /tmp/prod-pilot
+          curl -fsSL --retry 6 "$PROD_URL/client-return-guides/" -o /tmp/prod-guides
+          grep -q 'Client Return, Made Simple' /tmp/prod-guides
 
       - name: Release summary
         run: |
