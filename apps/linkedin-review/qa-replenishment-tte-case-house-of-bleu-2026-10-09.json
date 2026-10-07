@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "batchId": "tte-case-house-of-bleu-2026-10-09",
+  "generatedAt": "2026-10-07T08:38:51.945Z",
+  "sourceBasis": {
+    "command": "222E governed single-image intake",
+    "purpose": "Exact-media LinkedIn scheduling through GitHub -> Buffer",
+    "media": "lossless PNG, immutable SHA/byte/dimension locked"
+  },
+  "approvalRule": "Review-only until repository-owner [APPROVED LINKEDIN] approval.",
+  "posts": [
+    {
+      "id": "tte-case-house-of-bleu-2026-10-09",
+      "revision": 1,
+      "title": "House of Bleu | Premium client reactivation",
+      "rating": 99,
+      "category": "client_return_systems",
+      "contentRole": "proof",
+      "funnelStage": "mof",
+      "format": "image",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-09T08:20:00+01:00"
+      },
+      "copy": {
+        "default": "Premium reactivation works differently from cold acquisition.\n\nThe people behind this result had already trusted the clinic once.\n\nThat changes the job.\n\nInside 222Emails, we treated the existing relationship as the starting point: identify the right dormant clients, reopen the conversation with context, then make the return path easy.\n\nThe result shown in the case study came from one dormant treatment-client segment over 14 days.\n\nWhat I like most about this type of work is how little noise it needs. Strong prior trust means the follow-up can feel like service, not advertising.\n\nFor clinic owners, the useful question is simple:\n\nWhere does your current rebooking process actually stop?"
+      },
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/e4986b77fcf7bee93f42acd759e932b15b0b26ab/apps/linkedin-review/media/intake-image/tte-case-house-of-bleu-2026-10-09/r1/house-of-bleu-case-study.png",
+      "mediaAlt": "222Emails client case study for House of Bleu showing a 14-day reactivation campaign, client re-engagement, treatment conversations, appointments booked and attributable potential booking value.",
+      "mediaBytes": 3506276,
+      "mediaSha256": "19bc733c3b7d5dcbc4ea1ab4f886344167a5210157bc1942d8d95809a1a19c1e",
+      "safeZoneQa": "pass",
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-10-07T08:38:51.945Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact PNG media pinned to immutable commit e4986b77fcf7bee93f42acd759e932b15b0b26ab"
+        }
+      ]
+    }
+  ]
+}
