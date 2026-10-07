@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "batchId": "tte-case-emma-jay-aesthetics-2026-10-30",
+  "generatedAt": "2026-10-07T08:51:58.574Z",
+  "sourceBasis": {
+    "command": "222E governed single-image intake",
+    "purpose": "Exact-media LinkedIn scheduling through GitHub -> Buffer",
+    "media": "lossless PNG, immutable SHA/byte/dimension locked"
+  },
+  "approvalRule": "Review-only until repository-owner [APPROVED LINKEDIN] approval.",
+  "posts": [
+    {
+      "id": "tte-case-emma-jay-aesthetics-2026-10-30",
+      "revision": 1,
+      "title": "Emma Jay Aesthetics | Working existing demand first",
+      "rating": 99,
+      "category": "client_return_systems",
+      "contentRole": "proof",
+      "funnelStage": "mof",
+      "format": "image",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-30T08:20:00+00:00"
+      },
+      "copy": {
+        "default": "When the diary goes quiet, the fastest reaction is usually: we need more leads.\n\nSometimes that's correct.\n\nBut Emma Jay Aesthetics is a good example of why we don't start there automatically.\n\nExisting clients had already shown trust, treatment interest and prior buying behaviour. The missed opportunity was in the return path.\n\n222Emails focused on the people who should have come back, reopened the right treatment conversations and made rebooking easy.\n\nNew leads still matter.\n\nWorking the demand you've already earned before buying more attention is often the more efficient first move."
+      },
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/90cb1c3178ca631a3418a25650c95ddb5e7c513f/apps/linkedin-review/media/intake-image/tte-case-emma-jay-aesthetics-2026-10-30/r1/emma-jay-aesthetics-case-study.png",
+      "mediaAlt": "222Emails client case study for Emma Jay Aesthetics showing a 14-day dormant-client reactivation campaign, treatment conversations, appointments booked and attributable potential booking value.",
+      "mediaBytes": 3886206,
+      "mediaSha256": "746c3a912760de10f0c37a760b6a0daca599750785de57a92212e28770262892",
+      "safeZoneQa": "pass",
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-10-07T08:51:58.574Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact PNG media pinned to immutable commit 90cb1c3178ca631a3418a25650c95ddb5e7c513f"
+        }
+      ]
+    }
+  ]
+}
