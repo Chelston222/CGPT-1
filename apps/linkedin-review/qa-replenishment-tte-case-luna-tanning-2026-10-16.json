@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "batchId": "tte-case-luna-tanning-2026-10-16",
+  "generatedAt": "2026-10-07T08:42:01.705Z",
+  "sourceBasis": {
+    "command": "222E governed single-image intake",
+    "purpose": "Exact-media LinkedIn scheduling through GitHub -> Buffer",
+    "media": "lossless PNG, immutable SHA/byte/dimension locked"
+  },
+  "approvalRule": "Review-only until repository-owner [APPROVED LINKEDIN] approval.",
+  "posts": [
+    {
+      "id": "tte-case-luna-tanning-2026-10-16",
+      "revision": 1,
+      "title": "Luna Tanning | Restarting repeat-visit behaviour",
+      "rating": 99,
+      "category": "client_return_systems",
+      "contentRole": "proof",
+      "funnelStage": "mof",
+      "format": "image",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-16T08:20:00+01:00"
+      },
+      "copy": {
+        "default": "A regular customer can disappear without ever becoming dissatisfied.\n\nThat matters for repeat-visit businesses.\n\nThe useful signal here wasn't just “has this person bought before?” It was whether their normal visit rhythm had broken.\n\nThat changed the reactivation strategy.\n\n222Emails identified customers outside their usual pattern, gave them an easy reason to return, and focused on restarting the habit rather than overselling the next visit.\n\nThis is one of the cleaner examples of why retention isn't always a persuasion problem.\n\nSometimes the customer simply needs a route back into the routine."
+      },
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/d13ca4664b65a4b0d94a94afec53831972c229e0/apps/linkedin-review/media/intake-image/tte-case-luna-tanning-2026-10-16/r1/luna-tanning-case-study.png",
+      "mediaAlt": "222Emails client case study for Luna Tanning showing a 14-day repeat-visit reactivation campaign, re-engaged clients, package conversations, booked visits and attributable potential booking value.",
+      "mediaBytes": 3775125,
+      "mediaSha256": "86c339b22ef85ba9d9daa5f2778b87ff35164919877934bc72641fea62bce8db",
+      "safeZoneQa": "pass",
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-10-07T08:42:01.705Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact PNG media pinned to immutable commit d13ca4664b65a4b0d94a94afec53831972c229e0"
+        }
+      ]
+    }
+  ]
+}
