@@ -46,6 +46,21 @@ jobs:
           test -f dist/client-reactivation-aesthetics-lancashire/index.html
           test -f dist/patient-reactivation-dental-lancashire/index.html
           test -f dist/client-return-opportunity-calculator/index.html
+          test -f dist/client-return-guides/index.html
+          test -f dist/client-return-guides/aesthetics/index.html
+          test -f dist/client-return-guides/aesthetics/read/index.html
+          test -f dist/client-return-guides/dental/index.html
+          test -f dist/client-return-guides/dental/read/index.html
+          test -f dist/client-return-guides/salons/index.html
+          test -f dist/client-return-guides/salons/read/index.html
+          test -f dist/client-return-guides/training-academies/index.html
+          test -f dist/client-return-guides/training-academies/read/index.html
+          test -f dist/client-return-training-academies/index.html
+          test -f dist/14-day-reactivation-pilot/index.html
+          test -f dist/14-day-reactivation-pilot/thank-you/index.html
+          test -f dist/field-guides.css
+          test -f dist/field-guide-scorecard.js
+          test -f dist/field-guide-attribution.js
           test -f dist/about-222emails/index.html
           grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
           grep -R -q 'Free Revenue Recovery Check' dist/assets
@@ -55,7 +70,7 @@ jobs:
           grep -q 'Retention Marketing Lancashire' dist/retention-marketing-lancashire/index.html
           grep -q 'Illustrative rate, not a benchmark' dist/client-return-opportunity-calculator/index.html
           grep -q 'aria-live="polite"' dist/client-return-opportunity-calculator/index.html
-          for page in client-return-systems retention-marketing-lancashire client-retention-salons-barbers-lancashire client-reactivation-aesthetics-lancashire patient-reactivation-dental-lancashire client-return-opportunity-calculator about-222emails; do
+          for page in client-return-systems retention-marketing-lancashire client-retention-salons-barbers-lancashire client-reactivation-aesthetics-lancashire patient-reactivation-dental-lancashire client-return-training-academies client-return-opportunity-calculator client-return-guides client-return-guides/aesthetics client-return-guides/aesthetics/read client-return-guides/dental client-return-guides/dental/read client-return-guides/salons client-return-guides/salons/read client-return-guides/training-academies client-return-guides/training-academies/read 14-day-reactivation-pilot 14-day-reactivation-pilot/thank-you about-222emails; do
             grep -q 'class="skip-link"' "dist/${page}/index.html"
             grep -q '<main id="main"' "dist/${page}/index.html"
           done
@@ -66,6 +81,14 @@ jobs:
           grep -q 'https://222emails.com/sitemap.xml' dist/robots.txt
           grep -q 'OAI-SearchBot' dist/robots.txt
           grep -q 'PerplexityBot' dist/robots.txt
+          grep -q 'client-return-guide-request' dist/client-return-guides/aesthetics/index.html
+          grep -q 'client-return-guide-request' dist/client-return-guides/dental/index.html
+          grep -q 'client-return-guide-request' dist/client-return-guides/salons/index.html
+          grep -q 'client-return-guide-request' dist/client-return-guides/training-academies/index.html
+          grep -q 'reactivation-pilot-interest' dist/14-day-reactivation-pilot/index.html
+          grep -q 'No card, no automatic charge' dist/14-day-reactivation-pilot/index.html
+          grep -q 'does not set recall intervals' dist/client-return-guides/dental/read/index.html
+          grep -q 'admissions decisions' dist/client-return-guides/training-academies/read/index.html
       - name: Verify public source truthfulness gates
         working-directory: apps/222emails-omega-max
         run: |

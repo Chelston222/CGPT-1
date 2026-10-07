@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "campaign": "client-return-field-guides-launch",
+  "generatedAt": "2026-10-07",
+  "timezone": "Europe/London",
+  "releaseState": "review_only",
+  "approvalRequired": true,
+  "approvalRule": "Do not schedule or publish from this file alone. Existing LinkedIn owner-approval locks remain binding.",
+  "objective": "Turn the Client Return field-guide series into qualified attention, self-diagnosis and clean 14-Day Reactivation Pilot interest without keyword-DM bait or inflated claims.",
+  "measurement": [
+    "qualified ICP comments",
+    "guide landing-page visits by UTM content",
+    "guide request submissions",
+    "guide reader opens",
+    "Pilot fit-check submissions",
+    "content-assisted sales conversations"
+  ],
+  "posts": [
+    {
+      "id": "field-guides-launch-01",
+      "title": "I turned our retention diagnosis into something clinic owners can use without us",
+      "funnelStage": "tof",
+      "format": "text",
+      "target": "personal",
+      "status": "review",
+      "url": "https://222emails.com/client-return-guides/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=founder_why_free",
+      "copy": "I have been thinking about a problem with how retention services are usually sold.\n\nThe business often has to book a call before it can even understand what might be wrong.\n\nSo we have put the diagnosis into the buyer's hands first.\n\n222Emails now has four free Client Return field guides for:\n\n→ beauty and aesthetics clinics\n→ dental practices\n→ salons\n→ training providers and academies\n\nThey are built around the actual moment where the customer journey becomes fragile. An enquiry that never books. A client who leaves without rebooking. A recall that becomes overdue. An application that stalls.\n\nEach guide includes the scorecard, the commercial leak map, the system logic and a practical 30-day plan.\n\nIf the guide shows that the business can fix the problem internally, good. That is a useful outcome too.\n\nIf it exposes a clean pool of recoverable demand, that is where our 14-Day Reactivation Pilot may make sense.\n\nWhich of those four journeys do you think businesses understand least well today?\n\nhttps://222emails.com/client-return-guides/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=founder_why_free"
+    },
+    {
+      "id": "field-guides-launch-02",
+      "title": "Aesthetics: not yet needs a next step",
+      "funnelStage": "mof",
+      "format": "text",
+      "target": "personal",
+      "status": "review",
+      "url": "https://222emails.com/client-return-guides/aesthetics/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=aesthetics_not_yet",
+      "copy": "One phrase I keep coming back to in aesthetics is: \"not yet\".\n\nA consultation can go well. The client can understand the treatment. They can genuinely be interested.\n\nAnd still not be ready to book that day.\n\nThe commercial question is what the clinic does next.\n\nIf the answer is \"someone will probably follow up\", the opportunity is living in staff memory rather than a system.\n\nOur new Beauty & Aesthetics Client Return field guide maps that gap alongside enquiry follow-up, first-to-second visits, overdue clients, cancellations and lapsed-client return.\n\nIt also keeps the clinical line where it belongs. Treatment suitability and timing stay with qualified clinic professionals.\n\nFor clinic owners: which point is hardest to keep consistent when the week gets busy?\n\nhttps://222emails.com/client-return-guides/aesthetics/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=aesthetics_not_yet"
+    },
+    {
+      "id": "field-guides-launch-03",
+      "title": "Dental: a recall list is not a follow-up system",
+      "funnelStage": "mof",
+      "format": "text",
+      "target": "personal",
+      "status": "review",
+      "url": "https://222emails.com/client-return-guides/dental/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=dental_recall_ownership",
+      "copy": "A dental practice can know that a patient is overdue and still have an operational gap.\n\nThe useful questions are more specific:\n\nWho owns the next action?\nWhat happens after no response?\nWhat stops the sequence?\nWhen does a reply need reception, a coordinator or a clinician?\n\nThat is the difference between having recall data and having a return process the practice can actually see and improve.\n\nWe have built a free Dental Practice Client Return field guide around recall, missed appointments, new-patient enquiries, treatment-plan progression and dormant-patient return.\n\nIt does not set clinical intervals or make treatment decisions. It helps make the operational layer explicit around practice-approved rules.\n\nWhere does follow-up ownership become least clear in a typical practice?\n\nhttps://222emails.com/client-return-guides/dental/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=dental_recall_ownership"
+    },
+    {
+      "id": "field-guides-launch-04",
+      "title": "Salon: regular clients rarely announce that they are lapsing",
+      "funnelStage": "mof",
+      "format": "text",
+      "target": "personal",
+      "status": "review",
+      "url": "https://222emails.com/client-return-guides/salons/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=salon_regulars",
+      "copy": "A good salon client usually does not send a message saying, \"I am now a lapsed client.\"\n\nThey simply leave without rebooking.\nA cancellation happens.\nTheir normal service window passes.\nThen another few weeks go by.\n\nBy the time the diary notices, the relationship has already cooled.\n\nThat is why our Salon Client Return field guide starts with behaviour and timing rather than promotions.\n\nIt helps map first-to-second visit retention, rebooking, due-back clients, cancellation recovery and lapsed regulars, then asks the salon to fix one leak first.\n\nFor salon owners and managers, do you know how many clients leave each week without their next appointment booked?\n\nhttps://222emails.com/client-return-guides/salons/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=salon_regulars"
+    },
+    {
+      "id": "field-guides-launch-05",
+      "title": "Training providers need a different retention map",
+      "funnelStage": "mof",
+      "format": "text",
+      "target": "personal",
+      "status": "review",
+      "url": "https://222emails.com/client-return-guides/training-academies/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=academy_enrolment",
+      "copy": "I nearly made a mistake with the Training & Academy edition of our Client Return guide.\n\nThe first version was too close to appointment-led language.\n\nBut a training provider does not have a rebooking problem in the same way a salon does.\n\nIts commercial breakpoints can be:\n\n→ an enquiry that never reaches an application\n→ an application that stalls\n→ a deposit or enrolment step that never completes\n→ a learner who does not start\n→ a completed learner with no visible progression route\n\nSo we rebuilt the edition around the learner journey instead of swapping nouns in a clinic template.\n\nThat sounds obvious, but it is exactly how generic automation advice becomes useless.\n\nIf you run training or an academy, which stage creates the most avoidable drop-off for you?\n\nhttps://222emails.com/client-return-guides/training-academies/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=academy_enrolment"
+    },
+    {
+      "id": "field-guides-launch-06",
+      "title": "The 10-question Client Return scorecard",
+      "funnelStage": "mof",
+      "format": "text",
+      "target": "personal",
+      "status": "review",
+      "url": "https://222emails.com/client-return-guides/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=scorecard",
+      "copy": "A useful retention audit should be able to survive ten basic questions.\n\nCan you see who did not take the next step?\nCan you distinguish due from genuinely lapsed?\nIs there a defined recovery path after a cancellation?\nDoes someone clearly own replies and exceptions?\nCan you connect return activity to booked and completed value?\n\nThe uncomfortable answer is often not \"no\".\n\nIt is \"we do not know\".\n\nThat is why Unknown is a valid answer in the Client Return scorecard we built into each of the new 222Emails field guides.\n\nYou cannot actively manage a commercial stage you cannot see.\n\nIf you had to score your current return process from 0 to 10 without checking first, what number would you give it?\n\nhttps://222emails.com/client-return-guides/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=scorecard"
+    },
+    {
+      "id": "field-guides-launch-07",
+      "title": "What the 14-Day Pilot actually tests",
+      "funnelStage": "bof",
+      "format": "text",
+      "target": "personal",
+      "status": "review",
+      "url": "https://222emails.com/14-day-reactivation-pilot/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=pilot_scope",
+      "copy": "Our 14-Day Reactivation Pilot is deliberately narrow.\n\nIt is not a promise to transform a business in two weeks.\n\nWe take one suitable segment of previous clients or past enquiries, build one controlled return journey and measure what actually happens.\n\nThe useful evidence is not just bookings.\n\nWe want to see the replies, positive intent, objections, silence, booking friction and where human ownership breaks down.\n\nFor suitable selected businesses, the Pilot fee is £0. No card. No automatic charge afterwards. Initially up to 250 eligible contacts.\n\nThere is no booking or revenue guarantee. The point is to reduce uncertainty with real behaviour before deciding whether a larger system deserves to be built.\n\nWhat would you want a 14-day test to prove before investing further?\n\nhttps://222emails.com/14-day-reactivation-pilot/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=pilot_scope"
+    },
+    {
+      "id": "field-guides-launch-08",
+      "title": "The client return question",
+      "funnelStage": "tof",
+      "format": "text",
+      "target": "personal",
+      "status": "review",
+      "url": "https://222emails.com/client-return-systems/?utm_source=linkedin&utm_medium=organic&utm_campaign=client_return_guides_launch&utm_content=master_question",
+      "copy": "You run an appointment-led business.\n\nIf someone does not book, rebook or reply, does your system know what happens next?\n\nThat question has become one of the cleanest ways I know to audit a return journey.\n\nThe answer does not have to be automation.\n\nSometimes it is a better reception process. A CRM field. A clearer owner. A useful reminder. A human follow-up at the right point.\n\nThe important part is that the next action is designed rather than accidental.\n\nThat is the idea underneath the new 222Emails Client Return field guides and the systems we build afterwards.\n\nWhere in your customer journey is the next step still most dependent on somebody remembering?"
+    }
+  ]
+}

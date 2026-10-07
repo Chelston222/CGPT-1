@@ -46,6 +46,13 @@ jobs:
           test -f dist/client-reactivation-aesthetics-lancashire/index.html
           test -f dist/patient-reactivation-dental-lancashire/index.html
           test -f dist/client-return-opportunity-calculator/index.html
+          test -f dist/client-return-guides/index.html
+          test -f dist/client-return-guides/aesthetics/index.html
+          test -f dist/client-return-guides/dental/index.html
+          test -f dist/client-return-guides/salons/index.html
+          test -f dist/client-return-guides/training-academies/index.html
+          test -f dist/client-return-training-academies/index.html
+          test -f dist/14-day-reactivation-pilot/index.html
           test -f dist/about-222emails/index.html
 
       - name: Run canonical content gates
@@ -91,7 +98,7 @@ jobs:
       - name: Smoke test isolated draft
         run: |
           set -euo pipefail
-          for path in / /revenue-recovery-check /revenue-recovery-check/thank-you /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /privacy/ /terms/ /cookies/ /accessibility/ /robots.txt /sitemap.xml /llms.txt; do
+          for path in / /revenue-recovery-check /revenue-recovery-check/thank-you /14-day-reactivation-pilot/ /14-day-reactivation-pilot/thank-you/ /client-return-guides/ /client-return-guides/aesthetics/ /client-return-guides/aesthetics/read/ /client-return-guides/dental/ /client-return-guides/dental/read/ /client-return-guides/salons/ /client-return-guides/salons/read/ /client-return-guides/training-academies/ /client-return-guides/training-academies/read/ /client-return-training-academies/ /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /privacy/ /terms/ /cookies/ /accessibility/ /robots.txt /sitemap.xml /llms.txt; do
             code=$(curl -L --retry 4 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${DRAFT_URL}${path}")
             test "$code" = "200" || { echo "Draft ${path} returned ${code}"; exit 1; }
           done
@@ -119,7 +126,7 @@ jobs:
       - name: Production smoke tests
         run: |
           set -euo pipefail
-          for path in / /revenue-recovery-check /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /privacy/ /terms/ /cookies/ /accessibility/; do
+          for path in / /revenue-recovery-check /14-day-reactivation-pilot/ /client-return-guides/ /client-return-guides/aesthetics/ /client-return-guides/dental/ /client-return-guides/salons/ /client-return-guides/training-academies/ /client-return-training-academies/ /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /privacy/ /terms/ /cookies/ /accessibility/; do
             code=$(curl -L --retry 6 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${PROD_URL}${path}")
             test "$code" = "200" || { echo "Production ${path} returned ${code}"; exit 1; }
           done
