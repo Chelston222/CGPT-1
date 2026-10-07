@@ -63,7 +63,8 @@ jobs:
           test -f dist/field-guide-attribution.js
           test -f dist/about-222emails/index.html
           grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
-          grep -R -q 'Free Revenue Recovery Check' dist/assets
+          grep -R -q '14-Day Reactivation Pilot' dist/assets
+          grep -R -q '£197 REVENUE RECOVERY CHECK' dist/assets
           grep -R -q 'Client Return System' dist/assets
           grep -R -q 'Evidence-led diagnosis' dist/assets
           grep -q 'Great Harwood' dist/index.html
