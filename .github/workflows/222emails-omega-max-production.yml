@@ -60,7 +60,8 @@ jobs:
         run: |
           set -euo pipefail
           grep -R -q 'Bring more clients back before you spend more on finding new ones' dist/assets
-          grep -R -q 'Free Revenue Recovery Check' dist/assets
+          grep -R -q '14-Day Reactivation Pilot' dist/assets
+          grep -R -q '£197 REVENUE RECOVERY CHECK' dist/assets
           grep -R -q 'Client Return System' dist/assets
           grep -R -q 'Existing tools first' dist/assets
           grep -R -q 'Evidence-led diagnosis' dist/assets
