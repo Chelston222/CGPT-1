@@ -77,6 +77,7 @@ jobs:
           ! grep -R -q 'Retention Lab' src index.html public
           ! grep -R -q 'Free Revenue Recovery Check' src index.html public
           ! grep -R -q 'Free Recovery Check' src index.html public
+          ! grep -q 'sessionStorage' public/field-guide-attribution.js
           grep -R -q 'utm_source' src/main.tsx
           grep -R -q 'sessionStorage' src/main.tsx
           grep -q '/fit-check /revenue-recovery-check 301' dist/_redirects
