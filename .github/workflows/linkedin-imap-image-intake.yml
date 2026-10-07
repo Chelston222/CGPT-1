@@ -86,15 +86,22 @@ jobs:
           const fs = require('node:fs');
           const { withQaReplenishment, postBody } = require('./scripts/linkedin-week-batch.cjs');
           const { validateRequest } = require('./scripts/linkedin-review-core.cjs');
+          const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+          const issueBody = String(event.issue?.body || '');
+          const START = '<!-- IMAGE_INTAKE_CONFIG_START -->';
+          const END = '<!-- IMAGE_INTAKE_CONFIG_END -->';
+          const start = issueBody.indexOf(START);
+          const end = issueBody.indexOf(END);
+          if (start < 0 || end <= start) throw new Error('Missing image intake config block');
+          const cfg = JSON.parse(issueBody.slice(start + START.length, end).trim());
           const queue = JSON.parse(fs.readFileSync('apps/linkedin-review/queue.json','utf8'));
           const effective = withQaReplenishment(queue);
-          const id = '${{ steps.media.outputs.id }}';
-          const item = effective.posts.find((p) => p.sourceType === 'qa_replenishment' && p.id === id.replace(/^client-return-structures-2026-10-05$/, 'tte-client-return-structures-2026-10-05'));
+          const item = effective.posts.find((p) => p.sourceType === 'qa_replenishment' && p.id === String(cfg.post.id));
           if (!item) throw new Error('New image post not found in effective governed queue');
           const env = { BUFFER_API_KEY: 'test', BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID: 'test-personal' };
           validateRequest(postBody(item), env, Date.now());
-          if (item.mediaBytes !== 1445934) throw new Error('Media byte lock drift');
-          if (item.mediaSha256 !== '7903afd211d16cb23510d8f9a7f18783572582450169934d23223cbc26b50580') throw new Error('Media SHA lock drift');
+          if (item.mediaBytes !== Number(cfg.expectedBytes)) throw new Error('Media byte lock drift');
+          if (item.mediaSha256 !== String(cfg.expectedSha256).toLowerCase()) throw new Error('Media SHA lock drift');
           console.log('Canonical queue validation PASS');
           NODE
 
@@ -118,6 +125,13 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const issueBody = String(context.payload.issue?.body || '');
+            const START = '<!-- IMAGE_INTAKE_CONFIG_START -->';
+            const END = '<!-- IMAGE_INTAKE_CONFIG_END -->';
+            const start = issueBody.indexOf(START);
+            const end = issueBody.indexOf(END);
+            if (start < 0 || end <= start) throw new Error('Missing image intake config block');
+            const cfg = JSON.parse(issueBody.slice(start + START.length, end).trim());
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -125,9 +139,9 @@ jobs:
               body: [
                 '✅ Exact single-image LinkedIn intake completed.',
                 '',
-                '- Media: **1254 × 1254 PNG**',
-                '- Bytes: **1,445,934**',
-                '- SHA-256: `7903afd211d16cb23510d8f9a7f18783572582450169934d23223cbc26b50580`',
+                `- Media: **${cfg.expectedWidth} × ${cfg.expectedHeight} PNG**`,
+                `- Bytes: **${Number(cfg.expectedBytes).toLocaleString('en-GB')}**`,
+                `- SHA-256: \`${String(cfg.expectedSha256).toLowerCase()}\``,
                 `- Immutable media commit: \`${{ steps.media.outputs.media_commit }}\``,
                 `- Queue commit: \`${{ steps.queue.outputs.queue_commit }}\``,
                 '',
