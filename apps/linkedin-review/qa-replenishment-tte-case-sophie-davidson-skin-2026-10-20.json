@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "batchId": "tte-case-sophie-davidson-skin-2026-10-20",
+  "generatedAt": "2026-10-07T08:47:23.720Z",
+  "sourceBasis": {
+    "command": "222E governed single-image intake",
+    "purpose": "Exact-media LinkedIn scheduling through GitHub -> Buffer",
+    "media": "lossless PNG, immutable SHA/byte/dimension locked"
+  },
+  "approvalRule": "Review-only until repository-owner [APPROVED LINKEDIN] approval.",
+  "posts": [
+    {
+      "id": "tte-case-sophie-davidson-skin-2026-10-20",
+      "revision": 1,
+      "title": "Sophie Davidson Skin | Treatment-journey reactivation",
+      "rating": 99,
+      "category": "client_return_systems",
+      "contentRole": "proof",
+      "funnelStage": "mof",
+      "format": "image",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-20T08:20:00+01:00"
+      },
+      "copy": {
+        "default": "In skin, retention lives across the treatment journey.\n\nA client can start with good intent, make progress, then disappear somewhere between plan, review and the next appointment.\n\nThat creates more than one missed booking. It breaks the continuity of the whole journey.\n\nFor Sophie Davidson Skin, the 222Emails process focused on finding those breaks, reopening useful skin-plan conversations and giving the client a clear next step.\n\nThe commercial result matters.\n\nThe system lesson matters more: when the service is a journey, follow-up has to understand the journey too."
+      },
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/2dda1317d9bd840554154157f7ad8f2278289705/apps/linkedin-review/media/intake-image/tte-case-sophie-davidson-skin-2026-10-20/r1/sophie-davidson-skin-case-study.png",
+      "mediaAlt": "222Emails client case study for Sophie Davidson Skin showing a 14-day treatment-journey reactivation campaign, re-engaged clients, skin-plan conversations, appointments and attributable potential booking value.",
+      "mediaBytes": 3682283,
+      "mediaSha256": "945e1719e2cc047290c65dbbde400ee40869ab42415c67c8c0ae5dbe938e92d3",
+      "safeZoneQa": "pass",
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-10-07T08:47:23.720Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact PNG media pinned to immutable commit 2dda1317d9bd840554154157f7ad8f2278289705"
+        }
+      ]
+    }
+  ]
+}
