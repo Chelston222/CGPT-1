@@ -141,8 +141,8 @@ function Home() {
           <h1>Bring more clients back before you spend more on finding new ones.</h1>
           <p className="hero-copy">222Emails builds turnkey Client Return Systems for appointment-led businesses. We tighten the gaps around cold enquiries, no-shows, rebooking and lapsed clients, then install the follow-up, automation, handoffs and measurement needed to keep more of the demand you already worked to create.</p>
           <div className="cta-row">
-            <a className="button primary" href="/revenue-recovery-check">Get my Free Revenue Recovery Check</a>
-            <a className="text-link" href="#how-it-works">See the system</a>
+            <a className="button primary" href="/14-day-reactivation-pilot/">See the 14-Day Reactivation Pilot</a>
+            <a className="text-link" href="/client-return-guides/">Get a free Client Return field guide</a>
           </div>
           <div className="trust-line"><span>Based in Great Harwood, Lancashire</span><span>Founder-led</span><span>Evidence-led diagnosis</span><span>No mandatory discovery call</span></div>
         </div>
@@ -265,12 +265,12 @@ function Home() {
     <section id="pricing" className="section">
       <div className="wrap">
         <p className="eyebrow">THE OFFER PATH</p>
-        <h2 className="section-title">Start with diagnosis. Pay for depth only when the evidence justifies it.</h2>
+        <h2 className="section-title">Use the smallest route that can answer the next commercial question.</h2>
         <div className="offer-grid offer-grid-four">
-          <article className="offer featured"><span>START HERE</span><h3>Free Revenue Recovery Check</h3><p>A focused, evidence-led first diagnosis of the strongest identifiable issue and the first sensible next step.</p><strong>Free</strong><a className="button primary" href="/revenue-recovery-check">Start free</a></article>
-          <article className="offer"><span>DEEPER DIAGNOSIS</span><h3>Client Return Growth Check</h3><p>Evidence-led diagnosis when the opportunity deserves deeper investigation before implementation.</p><strong>£197</strong><p className="small-note">Recommended only when the initial finding justifies it.</p></article>
-          <article className="offer"><span>IMPLEMENTATION</span><h3>7-Day Client Return System Sprint</h3><p>Install two focused repeat-booking or reactivation assets within the agreed scope, subject to access, readiness and approvals.</p><strong>£997</strong><p className="small-note">Scope and dependencies are agreed before the seven-working-day build begins.</p></article>
-          <article className="offer"><span>ONGOING</span><h3>Optimisation</h3><p>Monitor, repair, test and improve suitable live systems, including Revenue Recovery Watch where scoped.</p><strong>£595/mo</strong><p className="small-note">Prescribed after diagnosis or implementation when ongoing work is justified.</p></article>
+          <article className="offer"><span>LEARN</span><h3>Client Return Field Guides</h3><p>Vertical-specific diagnosis and implementation guidance for aesthetics, dental, salons and training academies.</p><strong>Free</strong><a className="button secondary" href="/client-return-guides/">Choose my guide</a></article>
+          <article className="offer featured"><span>CLEAN-FIT FRONT END</span><h3>14-Day Reactivation Pilot</h3><p>One eligible segment. One controlled campaign. Up to 250 eligible contacts. Measure what actually comes back.</p><strong>£0</strong><a className="button primary" href="/14-day-reactivation-pilot/">Check Pilot fit</a><p className="small-note">No card. No automatic charge. No booking or revenue guarantee.</p></article>
+          <article className="offer"><span>BROADER DIAGNOSIS</span><h3>Revenue Recovery Check</h3><p>Deeper evidence-led diagnosis when the leakage is broader, unclear or not suitable for a clean reactivation test.</p><strong>£197</strong><p className="small-note">Prescribed only when the problem genuinely needs deeper diagnosis.</p></article>
+          <article className="offer"><span>IMPLEMENTATION</span><h3>Client Return System Build</h3><p>Downstream implementation for a defined, ready scope where the evidence justifies building the system.</p><strong>£995</strong><p className="small-note">Scope, access, approvals and dependencies are agreed in writing before build work starts.</p></article>
         </div>
       </div>
     </section>
@@ -289,13 +289,13 @@ function Home() {
         <details><summary>Is this just email marketing?</summary><p>No. Email can be one part of a Client Return System, but the diagnosis starts with the commercial journey. Depending on the gap, that can include booking software, CRM fields, SMS, email, human handoffs, permissions, reporting or a simpler operational fix.</p></details>
         <details><summary>Do I need to change my software?</summary><p>Not by default. We prefer to use your existing technology wherever it can do the job properly. Changing tools is a recommendation of last resort, not the starting point.</p></details>
         <details><summary>Do you only work in Lancashire?</summary><p>No. 222Emails is based in Great Harwood, Lancashire and works with suitable appointment-led businesses across the UK. Most system work can be delivered remotely.</p></details>
-        <details><summary>Do I need a sales call?</summary><p>No mandatory discovery call is required to start the Free Revenue Recovery Check. A short call can be used later when it genuinely helps clarify a higher-value or more complex opportunity.</p></details>
+        <details><summary>Do I need a sales call?</summary><p>No mandatory discovery call is required to read a field guide or submit a Pilot fit check. A short call can be used later when it genuinely helps clarify access, eligibility or a more complex opportunity.</p></details>
         <details><summary>Do you guarantee revenue?</summary><p>No. Revenue depends on factors no responsible operator can control completely. We can define and QA the deliverables we control, but we do not fabricate certainty around commercial outcomes.</p></details>
       </div>
     </section>
 
     <section className="final-cta">
-      <div className="wrap final-cta-inner"><div><p className="eyebrow light">START WITH THE EVIDENCE</p><h2>Find the strongest gap between the client you already earned and the booking that never came back.</h2></div><a className="button light-button" href="/revenue-recovery-check">Get my Free Revenue Recovery Check</a></div>
+      <div className="wrap final-cta-inner"><div><p className="eyebrow light">START WITH EXISTING DEMAND</p><h2>Use the free field guide to find the gap. If there is a clean reactivation opportunity, test it for 14 days.</h2></div><a className="button light-button" href="/14-day-reactivation-pilot/">See the 14-Day Pilot</a></div>
     </section>
   </Shell>;
 }
