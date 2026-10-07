@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "batchId": "tte-case-no-needle-skin-clinic-2026-10-23",
+  "generatedAt": "2026-10-07T08:48:53.786Z",
+  "sourceBasis": {
+    "command": "222E governed single-image intake",
+    "purpose": "Exact-media LinkedIn scheduling through GitHub -> Buffer",
+    "media": "lossless PNG, immutable SHA/byte/dimension locked"
+  },
+  "approvalRule": "Review-only until repository-owner [APPROVED LINKEDIN] approval.",
+  "posts": [
+    {
+      "id": "tte-case-no-needle-skin-clinic-2026-10-23",
+      "revision": 1,
+      "title": "No Needle Skin Clinic | Recovering delayed course intent",
+      "rating": 99,
+      "category": "client_return_systems",
+      "contentRole": "proof",
+      "funnelStage": "mof",
+      "format": "image",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-23T08:20:00+01:00"
+      },
+      "copy": {
+        "default": "A course enquiry saying “not right now” still tells you something useful.\n\nThe outcome mattered enough for them to enquire. The timing just didn't work.\n\nNo Needle Skin Clinic gave us a strong example of why those enquiries shouldn't disappear into a newsletter list with no next step.\n\nThe 222Emails process revisited genuine past interest when the context had changed, restarted the conversation and created a clear route into a course place.\n\nThere is a big difference between chasing a lead and returning to relevant intent at the right time.\n\nMost training businesses have more of the second sitting in their database than they realise."
+      },
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/3db2e085daff45bdf600513b41cdae45d660d139/apps/linkedin-review/media/intake-image/tte-case-no-needle-skin-clinic-2026-10-23/r1/no-needle-skin-clinic-case-study.png",
+      "mediaAlt": "222Emails client case study for No Needle Skin Clinic showing a 14-day reactivation campaign for past course enquiries, enrolment conversations, booked places and attributable potential booking value.",
+      "mediaBytes": 3632075,
+      "mediaSha256": "461a7a214c163a4511eaa1b85147d3feb37b083dd219619fd992599aed59615b",
+      "safeZoneQa": "pass",
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-10-07T08:48:53.785Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact PNG media pinned to immutable commit 3db2e085daff45bdf600513b41cdae45d660d139"
+        }
+      ]
+    }
+  ]
+}
