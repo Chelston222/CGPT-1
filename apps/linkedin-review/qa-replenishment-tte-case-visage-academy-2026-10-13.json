@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "batchId": "tte-case-visage-academy-2026-10-13",
+  "generatedAt": "2026-10-07T08:40:33.759Z",
+  "sourceBasis": {
+    "command": "222E governed single-image intake",
+    "purpose": "Exact-media LinkedIn scheduling through GitHub -> Buffer",
+    "media": "lossless PNG, immutable SHA/byte/dimension locked"
+  },
+  "approvalRule": "Review-only until repository-owner [APPROVED LINKEDIN] approval.",
+  "posts": [
+    {
+      "id": "tte-case-visage-academy-2026-10-13",
+      "revision": 1,
+      "title": "Visage Academy | Reactivating old course enquiries",
+      "rating": 99,
+      "category": "client_return_systems",
+      "contentRole": "proof",
+      "funnelStage": "mof",
+      "format": "image",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-13T08:20:00+01:00"
+      },
+      "copy": {
+        "default": "The expensive mistake in training isn't always losing the lead.\n\nSometimes it's deciding that “not now” means “never”.\n\nA course enquiry can go quiet because of timing, confidence, money or workload while the original intent is still there.\n\nFor Visage Academy, the 222Emails process went back to that unfinished intent instead of starting with another batch of new leads.\n\nWe identified relevant past enquiries, reopened the conversation with a clear reason to respond, and made the next step easy to understand.\n\nThat is the retention problem training businesses often miss: the buyer journey can pause without actually ending.\n\nHow is “not right now” handled in your academy today?"
+      },
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/505b9c0354ee8b3c5e58d719fb4fec9c41bf18f1/apps/linkedin-review/media/intake-image/tte-case-visage-academy-2026-10-13/r1/visage-academy-case-study.png",
+      "mediaAlt": "222Emails client case study for Visage Academy showing a 14-day reactivation campaign for past course enquiries, enrolment conversations, reserved places and attributable potential booking value.",
+      "mediaBytes": 3725037,
+      "mediaSha256": "d905311b9d26d1b9c4c1fc5daafee7af8555d8c5dee00bea476cafabe2e82444",
+      "safeZoneQa": "pass",
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-10-07T08:40:33.759Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact PNG media pinned to immutable commit 505b9c0354ee8b3c5e58d719fb4fec9c41bf18f1"
+        }
+      ]
+    }
+  ]
+}
