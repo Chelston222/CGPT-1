@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "batchId": "tte-case-chic-aesthetics-london-2026-10-27",
+  "generatedAt": "2026-10-07T08:50:14.924Z",
+  "sourceBasis": {
+    "command": "222E governed single-image intake",
+    "purpose": "Exact-media LinkedIn scheduling through GitHub -> Buffer",
+    "media": "lossless PNG, immutable SHA/byte/dimension locked"
+  },
+  "approvalRule": "Review-only until repository-owner [APPROVED LINKEDIN] approval.",
+  "posts": [
+    {
+      "id": "tte-case-chic-aesthetics-london-2026-10-27",
+      "revision": 1,
+      "title": "Chic Aesthetics London | Turning the database into an operating system",
+      "rating": 99,
+      "category": "client_return_systems",
+      "contentRole": "proof",
+      "funnelStage": "mof",
+      "format": "image",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-27T08:20:00+00:00"
+      },
+      "copy": {
+        "default": "A database can be worth a lot on paper and still do almost nothing operationally.\n\nThe difference is whether the business knows who went quiet, who is due back, who showed intent without booking, and what should happen next.\n\nFor Chic Aesthetics London, we treated the database as an operating list rather than storage.\n\nThe 222Emails method was simple:\n\n→ identify the dormant opportunity\n→ reopen the right conversations\n→ make the route to booking clear\n\nThat is the distinction I want 222Emails to become known for.\n\nRetention is not owning contact data.\n\nIt is having a system that knows what should happen next."
+      },
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/af45391b392b927ca990c6796067650b474707c8/apps/linkedin-review/media/intake-image/tte-case-chic-aesthetics-london-2026-10-27/r1/chic-aesthetics-london-case-study.png",
+      "mediaAlt": "222Emails client case study for Chic Aesthetics London showing a 14-day dormant-client reactivation campaign, booking conversations, appointments booked and attributable potential booking value.",
+      "mediaBytes": 3522156,
+      "mediaSha256": "10662a9494f326e733ec7ad9e3de1289af502a5c0e48517bceaefa97dfb40c10",
+      "safeZoneQa": "pass",
+      "sourceType": "qa_replenishment",
+      "status": "review",
+      "qa": {
+        "status": "ready_for_human_review",
+        "publishable": true,
+        "approvalEligible": true,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-10-07T08:50:14.924Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact PNG media pinned to immutable commit af45391b392b927ca990c6796067650b474707c8"
+        }
+      ]
+    }
+  ]
+}
