@@ -84,6 +84,7 @@ if (stage === 'retrieve') {
     logger: false,
   });
   let found = null;
+  const diagnostics = [];
   try {
     await client.connect();
     const mailboxes = (await client.list()).filter((m) => !m.flags?.has('\\Noselect'));
@@ -98,6 +99,20 @@ if (stage === 'retrieve') {
       for (const message of messages) {
         const from = String(message.envelope?.from?.[0]?.address || '').toLowerCase();
         const subject = String(message.envelope?.subject || '');
+        const related = from === expectedSender || subject.startsWith('TTE LINKEDIN IMAGE INTAKE ');
+        if (related) {
+          const parsedForDiag = await simpleParser(message.source, { skipTextToHtml: true, maxHtmlLengthToParse: 200000 });
+          diagnostics.push({
+            mailbox: mailbox.path,
+            uid: message.uid,
+            from,
+            subject,
+            attachments: (parsedForDiag.attachments || []).map((a) => ({
+              filename: a.filename || null,
+              bytes: a.content?.length || 0,
+            })),
+          });
+        }
         if (from !== expectedSender || subject !== String(config.expectedSubject)) continue;
         const parsed = await simpleParser(message.source, { skipTextToHtml: true, maxHtmlLengthToParse: 200000 });
         const attachment = (parsed.attachments || []).find((a) => a.filename === filename && a.content?.length);
@@ -114,7 +129,16 @@ if (stage === 'retrieve') {
   } finally {
     try { await client.logout(); } catch {}
   }
-  if (!found) throw new Error('Exact locked image attachment not found');
+  if (!found) {
+    console.error(JSON.stringify({
+      expectedSender,
+      expectedSubject: String(config.expectedSubject),
+      expectedFilename: filename,
+      expectedBytes: config.expectedBytes,
+      diagnostics: diagnostics.slice(0, 30),
+    }, null, 2));
+    throw new Error('Exact locked image attachment not found');
+  }
   if (statSync(mediaPath).size !== config.expectedBytes || sha(readFileSync(mediaPath)) !== String(config.expectedSha256).toLowerCase()) {
     throw new Error('Written media failed exact byte/SHA verification');
   }
