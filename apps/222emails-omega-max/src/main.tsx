@@ -57,7 +57,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <a href="/#how-it-works">How it works</a>
           <a href="/#proof">Proof</a>
           <a href="/#pricing">Pricing</a>
-          <a className="nav-cta" href="/revenue-recovery-check">Free Recovery Check</a>
+          <a className="nav-cta" href="/14-day-reactivation-pilot/">14-Day Pilot</a>
         </nav>
       </div>
     </header>
@@ -365,7 +365,7 @@ function ThankYou() {
 
 function NotFound() {
   useEffect(() => setMeta('Page not found | 222Emails', 'The page you requested could not be found.', 'https://222emails.com/404'), []);
-  return <Shell><section className="section thank-you"><div className="wrap narrow"><p className="eyebrow">404</p><h1>This page is not part of the current 222Emails journey.</h1><p className="hero-copy">Return to the homepage or start the Free Revenue Recovery Check.</p><div className="cta-row"><a className="button dark" href="/">Homepage</a><a className="button primary" href="/revenue-recovery-check">Free Recovery Check</a></div></div></section></Shell>;
+  return <Shell><section className="section thank-you"><div className="wrap narrow"><p className="eyebrow">404</p><h1>This page is not part of the current 222Emails journey.</h1><p className="hero-copy">Return to the homepage, choose a Client Return field guide or check whether the 14-Day Reactivation Pilot fits.</p><div className="cta-row"><a className="button dark" href="/">Homepage</a><a className="button primary" href="/14-day-reactivation-pilot/">14-Day Pilot</a></div></div></section></Shell>;
 }
 
 function App() {
