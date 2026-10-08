@@ -44,7 +44,25 @@
         "future Francis calendar series",
         "active Francis automations and handoff dependencies",
         "Francis-labelled prospect views as active execution queues"
-      ]
+      ],
+      "latest_verified_review": {
+        "checked_date": "2026-10-08",
+        "automation": "Francis invoice watch disabled; Francis appointment watch remains disabled; no further automated Francis activity authorised.",
+        "command_and_modules": "P0 retirement in live 222E Command and Change 027; seven live Module Delivery role assignments and six live Module OS role instructions replaced.",
+        "archive_preservation": "Nine key owner Drive caller/CRM/launch artifacts renamed RETIRED ARCHIVE, preserving contents and identifiers; signed data-protection and payment records retained.",
+        "apollo_team": "Only Chelston appears in connected Apollo user roster.",
+        "google_drive_permissions": "Inspected key files show owner-only permission metadata; other accounts and previously copied data remain unverified.",
+        "upwork": "Contract 44488908 observed PAUSED, not CLOSED. No contract mutation or message was sent.",
+        "business_office": "Read-only legacy team roster still presents Francis documentedState LIVE with execution held. Current ASTRA Agent Registry marks Francis RETIRED. Legacy roster is not execution authority; correction outstanding.",
+        "technical_gaps": [
+          "VoIPstudio user/seat/access/session revocation not verified",
+          "All shared credentials/API tokens/phone permissions not independently verified or rotated",
+          "Formal Upwork closure not performed to avoid unrequested external notice",
+          "Business Office roster correction unavailable through existing read-only roster interface"
+        ],
+        "no_contact": "No direct messages, invitations, calendar notices or emails to Francis were sent by this retirement audit.",
+        "execution_authority": "NO SEND, NO CALL, NO ACCESS, NO HANDOFF, ARCHIVE ONLY for Francis."
+      }
     }
   },
   "canonical_sources": {
