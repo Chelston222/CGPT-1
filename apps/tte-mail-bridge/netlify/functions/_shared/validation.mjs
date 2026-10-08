@@ -1,5 +1,6 @@
 import { CORPORATE_TYPES, INDIVIDUALISH_TYPES, PROVIDER_PERMISSION_BASES, REQUIRED_OPT_OUT } from './constants.mjs';
 import { validateEmailRevenueOs } from './email-revenue-os.mjs';
+import { validateColdPreAudit } from './preaudit-gate.mjs';
 import { normalizeEmail, safeText } from './util.mjs';
 
 const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
@@ -81,6 +82,7 @@ export function validateOutbound(input, opts = {}) {
 
   const emailGate = normalizeEmailGate(input);
   if (opts.requireEmailGate === true) validateEmailGate(emailGate, errors);
+  errors.push(...validateColdPreAudit({ ...input, emailGate, subject, text }));
 
   const compliance = input?.compliance || {};
   const companyType = String(compliance.companyType || '').toLowerCase();
