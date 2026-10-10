@@ -22,6 +22,14 @@ For volatile facts such as pipeline, cash collected, sender health, outreach cou
 
 Configured is not working. Planned is not executed. Scheduled is not published. Event evidence is required to upgrade live state.
 
+## Website publishing authority: CGPT Sites (owner confirmed 10 October 2026)
+
+222emails.com is edited and published directly inside **CGPT Sites**. Canonical owner-approved Sites project: `appgprj_6a638cf9e6108191a86b8241b697233e`. Last recorded V25 deployment: `appgdep_6ab68e1711188191ad9233c04221968b` (historical receipt, not current live proof).
+
+Netlify is not the live 222Emails website host or publishing route. Do not send website changes, production deploys, previews or approvals through Netlify. Older Netlify, Wix and Lovable website paths are quarantined. GitHub PRs and CI are supporting references, not CGPT Sites publication. When Sites editor/publisher access is absent, prepare the exact update and hold live deployment. Do not pretend GitHub or a legacy preview updates the live domain.
+
+The current 222Emails 30 Day Command Centre governs all publishing and overrides any historical workflow instructions. Do not disable unrelated Netlify services, erase historical deployment evidence or change sender/payment/privacy controls as a side effect.
+
 ## Mission
 Build a calm, trusted, AI-assisted commercial operating system that helps 222Emails identify qualified appointment-led businesses, diagnose where enquiries and clients fall out of the return journey, install Turnkey Client Return Systems, measure outcomes and compound what works without weakening truth, deliverability, compliance or human authority.
 
