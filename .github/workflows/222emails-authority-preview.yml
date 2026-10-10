@@ -1,4 +1,4 @@
-name: 222Emails Authority Preview
+name: 222Emails Website Source Checks (CGPT Sites is publisher)
 
 on:
   pull_request:
@@ -10,62 +10,19 @@ on:
 permissions:
   contents: read
 
-env:
-  NETLIFY_SITE_ID: fc7ccb38-7e6d-4a15-83bc-88bd84ea5687
-
 jobs:
-  draft-preview:
+  build-only:
     runs-on: ubuntu-24.04
-    env:
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Verify draft deployment credential
-        run: test -n "$NETLIFY_AUTH_TOKEN" || { echo 'NETLIFY_AUTH_TOKEN is missing'; exit 2; }
-      - name: Build
+      - name: Build source without publishing
         working-directory: apps/222emails-omega-max
         run: |
-          set -euo pipefail
           npm install --no-audit --no-fund
           npm run build
-      - name: Install Netlify CLI
-        run: npm install -g netlify-cli@latest
-      - name: Deploy isolated draft only
-        working-directory: apps/222emails-omega-max
-        run: |
-          set -euo pipefail
-          netlify deploy --dir=dist --no-build --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="PR ${GITHUB_EVENT_PULL_REQUEST_NUMBER:-manual} authority preview" --json > /tmp/draft.json
-          node - <<'NODE'
-          const fs=require('fs');
-          const j=JSON.parse(fs.readFileSync('/tmp/draft.json','utf8'));
-          const url=j.deploy_url||j.deployUrl||j.url;
-          if(!url) process.exit(1);
-          fs.appendFileSync(process.env.GITHUB_ENV,`DRAFT_URL=${url}\n`);
-          console.log(`DRAFT_URL=${url}`);
-          NODE
-      - name: Smoke test draft authority routes
-        run: |
-          set -euo pipefail
-          for path in / /revenue-recovery-check /14-day-reactivation-pilot/ /client-return-guides/ /client-return-guides/aesthetics/ /client-return-guides/dental/ /client-return-guides/salons/ /client-return-guides/training-academies/ /client-return-training-academies/ /client-return-systems/ /retention-marketing-lancashire/ /client-retention-salons-barbers-lancashire/ /client-reactivation-aesthetics-lancashire/ /patient-reactivation-dental-lancashire/ /client-return-opportunity-calculator/ /about-222emails/ /robots.txt /sitemap.xml /llms.txt; do
-            code=$(curl -L --retry 5 --retry-delay 2 -sS -o /tmp/page -w '%{http_code}' "${DRAFT_URL}${path}")
-            test "$code" = "200" || { echo "Draft ${path} returned ${code}"; exit 1; }
-          done
-          curl -fsSL --retry 5 "$DRAFT_URL/" -o /tmp/home
-          grep -q 'Client Return Systems for appointment-led businesses' /tmp/home
-          curl -fsSL --retry 5 "$DRAFT_URL/retention-marketing-lancashire/" -o /tmp/retention
-          grep -q 'Retention marketing built around getting appointment-led clients to come back' /tmp/retention
-          curl -fsSL --retry 5 "$DRAFT_URL/client-return-opportunity-calculator/" -o /tmp/calculator
-          grep -q 'Illustrative rate, not a benchmark' /tmp/calculator
-          curl -fsSL --retry 5 "$DRAFT_URL/about-222emails/" -o /tmp/about
-          grep -q 'Chelston Phillip' /tmp/about
-          curl -fsSL --retry 5 "$DRAFT_URL/14-day-reactivation-pilot/" -o /tmp/pilot
-          grep -q 'No card, no automatic charge' /tmp/pilot
-          curl -fsSL --retry 5 "$DRAFT_URL/client-return-guides/" -o /tmp/guides
-          grep -q 'Client Return, Made Simple' /tmp/guides
-      - name: Preview summary
-        run: |
-          echo "222Emails isolated preview passed smoke tests."
-          echo "Draft: ${DRAFT_URL}"
+          test -f dist/index.html
+      - name: Clarify publishing authority
+        run: echo 'Build-only verification. Publish and verify directly in CGPT Sites.'
