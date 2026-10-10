@@ -1,5 +1,5 @@
 # 222Emails Buyer Language and Conversion Release Standard
-Status: REVIEW-ONLY SOURCE CHANGE. Not authority to deploy, publish, send or charge.
+Status: REVIEW-ONLY SOURCE CHANGE. Not authority to deploy, publish, send or charge. Website owner confirms CGPT Sites is the direct publisher; GitHub is not the live publishing route.
 Owner request: 10 October 2026. Ari review task: `ari-buyer-language-release-review-20261010` (queued; not yet independently completed).
 
 ## Authority
@@ -42,11 +42,11 @@ The published Tally £197 Check form was read on 10 October 2026. Its form ledge
 Tally all-time records: Pilot 28 visits/1 QA completion; Fit Check 8 visits/2 synthetic completions; Paid Check 4 visits/2 completions from one unique respondent, payment not established. Never claim conversion lift or paying clients from these figures.
 
 ## Release checklist
-1. Verify which Netlify project actually serves the apex 222emails.com domain. The project referenced by production workflows reported an older deploy; no domain parity proof exists.
+1. Publish only in the canonical CGPT Sites project appgprj_6a638cf9e6108191a86b8241b697233e. Netlify is not the website host or release route. Verify current Sites source, preview and production deployment receipts.
 2. Verify source change is exactly the buyer-language subhead, no H1/offer/CTA/price/SEO/asset/consent drift.
-3. Run existing CI, Vite build, isolated preview, browser/mobile accessibility and route tests.
-4. Obtain independent Ari/OMEGA reconciliation and owner release for the exact tested build before any production promotion.
-5. Check live events and form/checkout safety; separately measure genuine qualified leads and retained cash.
+3. Run relevant non-publishing source CI where useful; complete the actual preview, browser/mobile accessibility and route tests in CGPT Sites.
+4. Obtain independent Ari/OMEGA reconciliation and owner release for the exact tested CGPT Sites version before publishing directly in Sites.
+5. Read back the actual CGPT Sites production version and domain, then check live events and form/checkout safety; separately measure genuine qualified leads and retained cash.
 6. Do not claim completion until production and outcomes have receipts.
 
 ## Source provenance
