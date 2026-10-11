@@ -4,11 +4,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { DEFAULT_CADENCE_POLICY, localDate, weekKeyFromLocalDate } = require('./linkedin-buffer-capacity.cjs');
 const { jaccardSimilarity } = require('./linkedin-performance-learning-v2.cjs');
+const { classifyQaPost, readQaBanks } = require('./linkedin-qa-bank-lifecycle.cjs');
 
 const ROOT = path.join(__dirname, '..');
 const REVIEW_DIR = path.join(ROOT, 'apps', 'linkedin-review');
-const QUEUE_PATH = path.join(REVIEW_DIR, 'queue.json');
-const DISTRIBUTION_PATH = path.join(REVIEW_DIR, 'distribution-policy.json');
 
 function words(text = '') {
   return String(text).trim().split(/\s+/).filter(Boolean).length;
@@ -46,14 +45,17 @@ function promotionMatchesQueue(qaPost, queuePost) {
   return JSON.stringify(promotionContract(qaPost)) === JSON.stringify(promotionContract(queuePost));
 }
 
-function auditQaBanks() {
+function auditQaBanks(options = {}) {
+  const reviewDir = options.reviewDir || REVIEW_DIR;
   const errors = [];
   const warnings = [];
   const legacyDebt = [];
   const exactPromotions = [];
-  const queue = loadJson(QUEUE_PATH);
-  const distribution = loadJson(DISTRIBUTION_PATH);
-  const files = fs.readdirSync(REVIEW_DIR).filter((name) => /^qa-replenishment-.*\.json$/.test(name)).sort();
+  const queue = loadJson(path.join(reviewDir, 'queue.json'));
+  const distribution = loadJson(path.join(reviewDir, 'distribution-policy.json'));
+  let banks = [];
+  try { banks = readQaBanks(reviewDir); } catch (error) { errors.push(error.message); }
+  const inactiveRecords = [];
   const queueById = new Map();
   const qaIds = new Map();
   const currentCopies = [];
@@ -68,32 +70,34 @@ function auditQaBanks() {
     queueById.set(post.id, post);
   }
 
-  for (const name of files) {
-    const fullPath = path.join(REVIEW_DIR, name);
-    let payload;
-    try {
-      payload = loadJson(fullPath);
-    } catch (error) {
-      errors.push(`${name}: invalid JSON: ${error.message}`);
-      continue;
-    }
-
-    if (!Number.isInteger(payload.schemaVersion)) errors.push(`${name}: schemaVersion must be an integer.`);
-    if (!Array.isArray(payload.posts)) errors.push(`${name}: posts must be an array.`);
-    if (!Array.isArray(payload.posts)) continue;
-
-    const currentPolicy = payload.posts.length > 0 && payload.posts.every((post) => post.sourceType === 'performance_learning_v2');
+  for (const { name, payload, bankLifecycle, records } of banks) {
+    const activeRecords = records.filter((record) => record.lifecycle === 'active');
+    const currentPolicy = activeRecords.length > 0 && activeRecords.every(({ post }) => post.sourceType === 'performance_learning_v2');
     const slotKeys = new Set();
     const daily = new Map();
     const weekly = new Map();
     let currentPosts = 0;
 
-    for (const post of payload.posts) {
+    for (const { post, lifecycle } of records) {
       const prefix = `${name}/${post.id || '<missing-id>'}`;
+      if (lifecycle !== 'active') {
+        inactiveRecords.push({ name, id: post.id, revision: post.revision, lifecycle });
+        const queued = queueById.get(post.id);
+        if (queued && queued.revision === post.revision && classifyQaPost(queued) === 'active') {
+          errors.push(`${prefix}: non-active QA revision is active in queue.json.`);
+        }
+        // Pinned snapshots retain their original flags. Other non-active records
+        // must keep explicit publication/approval blocks; never auto-repair them.
+        if (!bankLifecycle && (post.qa?.publishPermission !== false
+          || (lifecycle === 'draft' ? post.qa?.approvalEligible === true : post.qa?.approvalEligible !== false))) {
+          errors.push(`${prefix}: ${lifecycle} records must remain ineligible with publishPermission false.`);
+        }
+        continue;
+      }
       const postIsCurrent = post.sourceType === 'performance_learning_v2';
       if (postIsCurrent) currentPosts += 1;
 
-      // Universal integrity checks. These protect dynamic discovery regardless of age.
+      // Active-bank integrity checks apply regardless of age or source type.
       if (!/^[a-z0-9-]+$/.test(String(post.id || ''))) errors.push(`${prefix}: id must be lowercase kebab-case.`);
       if (!Number.isInteger(post.revision) || post.revision < 1) errors.push(`${prefix}: revision must be a positive integer.`);
       if (!post.title || !String(post.title).trim()) errors.push(`${prefix}: title is required.`);
@@ -185,7 +189,7 @@ function auditQaBanks() {
       }
     }
 
-    fileSummaries.push({ name, posts: payload.posts.length, currentPolicy, currentPosts });
+    fileSummaries.push({ name, posts: payload.posts.length, activePosts: activeRecords.length, inactivePosts: records.length - activeRecords.length, currentPolicy, currentPosts });
   }
 
   for (let i = 0; i < currentCopies.length; i += 1) {
@@ -205,6 +209,9 @@ function auditQaBanks() {
     warnings,
     legacyDebt,
     exactPromotions,
+    inactiveRecords,
+    activeQaPosts: fileSummaries.reduce((sum, row) => sum + row.activePosts, 0),
+    inactiveQaPosts: inactiveRecords.length,
     totalQaFiles: fileSummaries.length,
     totalQaPosts: fileSummaries.reduce((sum, row) => sum + row.posts, 0),
     currentPolicyFiles: fileSummaries.filter((row) => row.currentPolicy).length,
@@ -217,7 +224,7 @@ if (require.main === module) {
   if (process.argv.includes('--json')) console.log(JSON.stringify(result, null, 2));
   else {
     console.log(`LinkedIn QA bank audit: ${result.ok ? 'PASS' : 'FAIL'}`);
-    console.log(`QA files: ${result.totalQaFiles}; QA posts: ${result.totalQaPosts}; current-policy posts: ${result.currentPolicyPosts}; exact promotions: ${result.exactPromotions.length}; legacy debt: ${result.legacyDebt.length}`);
+    console.log(`QA files: ${result.totalQaFiles}; QA posts: ${result.totalQaPosts}; active: ${result.activeQaPosts}; non-active: ${result.inactiveQaPosts}; current-policy posts: ${result.currentPolicyPosts}; exact promotions: ${result.exactPromotions.length}; legacy debt: ${result.legacyDebt.length}`);
     for (const warning of result.warnings) console.log(`WARN: ${warning}`);
     for (const error of result.errors) console.error(`ERROR: ${error}`);
   }

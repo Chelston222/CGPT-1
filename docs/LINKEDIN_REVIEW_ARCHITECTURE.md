@@ -66,3 +66,40 @@ Capacity-wait comments are deduplicated so the two-hour check does not spam the 
 `draft` → `live_ready` → `review` → `approved` → `scheduled` → `published`
 
 `review` may become `rejected`; any dispatch can become `failed`. Every transition keeps the immutable post ID/revision, time and evidence. Only separate publication evidence may set `published`.
+
+## QA bank lifecycle and immutable history
+
+Both the QA bank audit and weekly replenishment loader use
+`scripts/linkedin-qa-bank-lifecycle.cjs`. A filename or an old scheduled date does
+not make a bank historical. Unlisted banks remain active and retain the full
+schema, QA, duplicate-ID, exact-promotion, schedule, copy and current-policy audits.
+
+`apps/linkedin-review/qa-bank-lifecycle.json` explicitly lists the copy-only
+preimage and superseded September 28 intermediate banks. Each entry contains its
+state, reason, active replacement bank and SHA-256 of the original file bytes.
+Those source files are preserved unchanged, including old QA flags and the failed
+v2 serialization. Missing files, invalid manifest entries and changed historical
+bytes fail both audit and replenishment closed. Historical flags never create
+eligibility through this manifest.
+
+Within otherwise active banks, explicit `retired`, `hold`/`on_hold`/`held`, and
+`draft`/`owner_copy_approved_pre_media` statuses are non-active. They are excluded
+from replenishment and reported separately. Retired/held records must still have
+`approvalEligible: false` and `publishPermission: false`; drafts must keep
+publication blocked and cannot claim approval eligibility. An ordinary review
+record with bad or missing QA flags remains an active audit error. Duplicate IDs
+among active banks remain errors and now also stop the loader, rather than
+silently selecting whichever filename sorts first. A canonical queue row cannot
+reactivate the same non-active QA ID/revision; that contradiction fails the audit
+and loader. Already retired queue rows remain unchanged, and non-active records
+cannot generate release request bodies. A different, newly reviewed revision is
+not implicitly retired by the history of an earlier revision.
+
+The audit reports active and non-active counts. Passing it is not approval to
+publish. The owner release gate, locked revisions, schedules and provider checks
+still apply. To verify this boundary without network calls:
+
+```sh
+node --test tests/linkedin-qa-bank-audit.test.cjs tests/linkedin-qa-bank-lifecycle.test.cjs tests/linkedin-qa-replenishment.test.cjs tests/linkedin-week-batch.test.cjs
+node scripts/linkedin-qa-bank-audit.cjs --json
+```

@@ -8,7 +8,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const wave1Path = path.join(root, 'apps/linkedin-review/qa-replenishment-2026-08-22.json');
 const wave2Path = path.join(root, 'apps/linkedin-review/qa-replenishment-2026-08-22-rr14-wave2.json');
-const loader = fs.readFileSync(path.join(root, 'scripts/linkedin-week-batch.cjs'), 'utf8');
+const { qaReplenishmentPaths, withQaReplenishment } = require('../scripts/linkedin-week-batch.cjs');
 const wave1 = JSON.parse(fs.readFileSync(wave1Path, 'utf8'));
 const wave2 = JSON.parse(fs.readFileSync(wave2Path, 'utf8'));
 const posts = [...wave1.posts, ...wave2.posts];
@@ -65,9 +65,13 @@ test('RR14 schedules are present, parseable and stay within per-channel daily pl
 });
 
 test('current locked-queue loader discovers QA replenishment files dynamically, including both RR14 waves', () => {
-  assert.match(loader, /readdirSync\(QA_REPLENISHMENT_DIR\)/);
-  assert.match(loader, /\^qa-replenishment-\.\*\\\.json\$/);
-  assert.match(loader, /withQaReplenishment/);
-  assert.ok(fs.existsSync(wave1Path));
-  assert.ok(fs.existsSync(wave2Path));
+  const discovered = qaReplenishmentPaths();
+  assert.ok(discovered.includes(wave1Path));
+  assert.ok(discovered.includes(wave2Path));
+  const effective = withQaReplenishment({ posts: [] }, { applyScheduleOverrides: false });
+  for (const post of posts) {
+    assert.deepEqual(effective.posts.find((candidate) => candidate.id === post.id), post,
+      `${post.id} must be dynamically discoverable without changing its release contract`);
+  }
 });
+

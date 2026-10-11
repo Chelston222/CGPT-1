@@ -20,6 +20,7 @@ jobs:
     if: github.event_name != 'issues' || (startsWith(github.event.issue.title, '[CONTENT OS CHECK]') && github.event.issue.user.login == github.repository_owner)
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Audit closed-loop LinkedIn release and recurring configuration health
         uses: actions/github-script@v7
         env:
@@ -29,6 +30,8 @@ jobs:
           BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID: ${{ secrets.BUFFER_LINKEDIN_SECONDARY_CHANNEL_ID }}
         with:
           script: |
+            const path = require('node:path');
+            const { parseAcceptanceRows, validAnalyticsCaptureIds } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const HARDENING_CUTOFF = Date.parse('2026-08-22T23:25:00Z');
@@ -46,24 +49,11 @@ jobs:
               return { data: payload.data, headers: response.headers };
             }
 
-            function acceptedRows(comments) {
-              const rows = [];
-              for (const comment of comments) {
-                const body = String(comment.body || '');
-                const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+—\s+([^\s\n]+))?/gm;
-                let match;
-                while ((match = regex.exec(body))) rows.push({
-                  bufferId: match[2], dueAt: match[3] || null,
-                  acceptedAt: Date.parse(comment.created_at || comment.updated_at || ''),
-                });
-              }
-              return rows;
-            }
-
             function markers(comments, kind) {
               const out = new Set();
               const regex = new RegExp(`<!-- ${kind} bufferId=([^\\s>]+)`, 'g');
               for (const comment of comments) {
+                if (comment.user?.login !== 'github-actions[bot]') continue;
                 let match;
                 while ((match = regex.exec(String(comment.body || '')))) out.add(match[1]);
               }
@@ -132,7 +122,9 @@ jobs:
 
             const since = new Date(now - 45 * 24 * 60 * 60 * 1000).toISOString();
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
-            const approvalIssues = issues.filter((issue) => !issue.pull_request && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title));
+            const approvalIssues = issues.filter((issue) => !issue.pull_request
+              && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title)
+              && !/^\[(?:APPROVED|FAILED) LINKEDIN\]\s+Buffer acceptance ledger$/i.test(issue.title));
             const openApprovals = approvalIssues.filter((issue) => issue.state === 'open' && issue.title.startsWith('[APPROVED LINKEDIN')).length;
 
             let publicationBacklog = 0;
@@ -151,7 +143,8 @@ jobs:
               const supersededIds = markers(comments, 'LINKEDIN_PUBLICATION_SUPERSEDED');
               const draftRetired = markers(comments, 'LINKEDIN_DRAFT_CANARY_RETIRED');
               const draftVerified = markers(comments, 'LINKEDIN_DRAFT_CANARY_VERIFIED');
-              const analytics = markers(comments, 'LINKEDIN_ANALYTICS_CAPTURED');
+              const ownerAbandoned = markers(comments, 'LINKEDIN_OWNER_ABANDONED_DRAFT');
+              const analytics = validAnalyticsCaptureIds(comments);
               const nativeRequired = markers(comments, 'LINKEDIN_NATIVE_ANALYTICS_REQUIRED');
               const nativeCaptured = markers(comments, 'LINKEDIN_NATIVE_ANALYTICS_CAPTURED');
               publicationFailures += failed.size;
@@ -163,11 +156,11 @@ jobs:
                 if (Number.isFinite(ts) && ts >= HARDENING_CUTOFF && String(comment.body || '').includes('repository-owner-approved-legacy')) legacyDispatchesAfterCutoff += 1;
               }
 
-              for (const row of acceptedRows(comments)) {
-                const terminal = verified.has(row.bufferId) || failed.has(row.bufferId) || supersededIds.has(row.bufferId) || draftRetired.has(row.bufferId) || draftVerified.has(row.bufferId);
+              for (const row of parseAcceptanceRows(comments)) {
+                const terminal = verified.has(row.bufferId) || failed.has(row.bufferId) || supersededIds.has(row.bufferId) || draftRetired.has(row.bufferId) || draftVerified.has(row.bufferId) || ownerAbandoned.has(row.bufferId);
                 const due = Date.parse(row.dueAt || '');
                 const isCurrent = Number.isFinite(row.acceptedAt) && row.acceptedAt >= HARDENING_CUTOFF;
-                if (isCurrent && Number.isFinite(due) && now - due >= 30 * 60 * 1000 && !terminal) publicationBacklog += 1;
+                if (!terminal && (!Number.isFinite(row.acceptedAt) || !Number.isFinite(due) || (isCurrent && now - due >= 30 * 60 * 1000))) publicationBacklog += 1;
                 if (!verified.has(row.bufferId)) continue;
                 if (!analytics.has(row.bufferId) && !nativeRequired.has(row.bufferId) && !nativeCaptured.has(row.bufferId) && isCurrent) currentAnalyticsBacklog += 1;
                 if (nativeRequired.has(row.bufferId) && !nativeCaptured.has(row.bufferId)) {

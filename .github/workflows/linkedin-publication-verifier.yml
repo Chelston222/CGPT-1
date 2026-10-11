@@ -33,6 +33,8 @@ jobs:
             const path = require('node:path');
             const {
               parseAcceptanceEntries,
+              parseAcceptanceRows,
+              parseCompletedCleanup,
               parseIntentKeys,
               selectTrustedLedgerIssue,
             } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
@@ -51,21 +53,6 @@ jobs:
               const messages = (payload.errors || []).map((error) => error.message).filter(Boolean);
               if (!response.ok || messages.length) throw new Error(messages.join('; ') || `Buffer HTTP ${response.status}`);
               return payload.data;
-            }
-
-            function acceptedRows(comments) {
-              const byBufferId = new Map();
-              for (const comment of comments) {
-                if (comment.user?.login !== 'github-actions[bot]') continue;
-                const body = String(comment.body || '');
-                // Supports historical and current audit-line separators.
-                const regex = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+(?:\u2014|\|)\s+([^\s\n|]+))?/gm;
-                let match;
-                while ((match = regex.exec(body))) {
-                  if (!byBufferId.has(match[2])) byBufferId.set(match[2], { label: match[1].trim(), bufferId: match[2], dueAt: match[3] || null, source: 'approval_issue' });
-                }
-              }
-              return [...byBufferId.values()];
             }
 
             function markerSet(comments, kind) {
@@ -126,6 +113,12 @@ jobs:
               ledgerRowsByIssue.set(sourceIssue.number, rows);
             }
 
+            const completedCleanup = new Map();
+            for (const cleanup of ledgerUniverse.filter((item) => /^\[RUN BUFFER CLEANUP\]/.test(item.title || '') && item.user?.login === owner)) {
+              const receipts = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: cleanup.number, per_page: 100 });
+              for (const [id, evidence] of parseCompletedCleanup(cleanup, receipts, owner)) completedCleanup.set(id, evidence);
+            }
+            const lookupFailures = [];
             const now = Date.now();
             for (const issue of candidates) {
               const comments = commentsByIssue.get(issue.number) || [];
@@ -138,7 +131,7 @@ jobs:
               const ownerAbandoned = markerSet(comments, 'LINKEDIN_OWNER_ABANDONED_DRAFT');
               const terminal = new Set([...verified, ...failed, ...draftVerified, ...superseded, ...retiredDrafts, ...ownerAbandoned]);
               const isDraft = /^MODE:\s*draft\s*$/mi.test(String(issue.body || ''));
-              const rowsByBufferId = new Map(acceptedRows(comments).map((row) => [row.bufferId, row]));
+              const rowsByBufferId = new Map(parseAcceptanceRows(comments).map((row) => [row.bufferId, row]));
               for (const row of ledgerRowsByIssue.get(issue.number) || []) {
                 if (!rowsByBufferId.has(row.bufferId)) rowsByBufferId.set(row.bufferId, row);
               }
@@ -149,9 +142,34 @@ jobs:
                 const due = row.dueAt ? Date.parse(row.dueAt) : NaN;
                 if (!isDraft && Number.isFinite(due) && due > now - 5 * 60 * 1000) continue;
 
-                const data = await buffer(`query VerifyPost { post(input: { id: ${JSON.stringify(row.bufferId)} }) { id status dueAt sentAt externalLink channelId error { message supportUrl } } }`);
-                const post = data?.post;
-                if (!post) continue;
+                const cleanup = completedCleanup.get(row.bufferId);
+                if (cleanup) {
+                  await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: [
+                    'Historical Buffer placement intentionally deleted; not published.',
+                    `- Buffer post ID: \`${row.bufferId}\``,
+                    `- Exact owner cleanup #${cleanup.issueNumber}: ${cleanup.evidenceUrl}`,
+                    '- Original acceptance evidence is preserved. This does not authorise recreation.',
+                    `<!-- LINKEDIN_PUBLICATION_SUPERSEDED bufferId=${row.bufferId} cleanupIssue=${cleanup.issueNumber} -->`,
+                  ].join('\n') });
+                  terminal.add(row.bufferId);
+                  continue;
+                }
+                let post;
+                try {
+                  const data = await buffer(`query VerifyPost { post(input: { id: ${JSON.stringify(row.bufferId)} }) { id status dueAt sentAt externalLink channelId error { message supportUrl } } }`);
+                  post = data?.post;
+                  if (!post) throw new Error('Buffer returned no post.');
+                } catch (error) {
+                  lookupFailures.push(`${row.bufferId}: ${error.message}`);
+                  const unknown = markerSet(comments, 'LINKEDIN_PUBLICATION_LOOKUP_UNRESOLVED');
+                  if (!unknown.has(row.bufferId)) await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: [
+                    'Publication lookup unresolved. This placement is not verified or approved for replay.',
+                    `- Buffer post ID: \`${row.bufferId}\``,
+                    `- Provider lookup: ${error.message}`,
+                    `<!-- LINKEDIN_PUBLICATION_LOOKUP_UNRESOLVED bufferId=${row.bufferId} -->`,
+                  ].join('\n') });
+                  continue;
+                }
 
                 if (isDraft) {
                   if (post.status === 'draft') {
@@ -269,16 +287,21 @@ jobs:
               }
             }
 
+            if (lookupFailures.length) throw new Error(`Publication verification incomplete: ${lookupFailures.join('; ')}`);
+
   analytics:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '42 7 * * *'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Capture available sent-post metrics and surface native gaps
         uses: actions/github-script@v7
         env:
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
         with:
           script: |
+            const path = require('node:path');
+            const { validAnalyticsCaptureIds } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             if (!process.env.BUFFER_API_KEY) throw new Error('BUFFER_API_KEY is not configured');
@@ -304,23 +327,30 @@ jobs:
               && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title)
               && !/^\[(?:APPROVED|FAILED) LINKEDIN\]\s+Buffer acceptance ledger$/i.test(issue.title));
 
+            const analyticsFailures = [];
             for (const issue of candidates) {
               if (/^MODE:\s*draft\s*$/mi.test(String(issue.body || ''))) continue;
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
               const body = comments.filter((comment) => comment.user?.login === 'github-actions[bot]').map((comment) => String(comment.body || '')).join('\n');
               const verified = [...body.matchAll(/<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=([^\s>]+)/g)].map((m) => m[1]);
-              const captured = new Set([...body.matchAll(/<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
+              const captured = validAnalyticsCaptureIds(comments);
               const nativeRequired = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_REQUIRED bufferId=([^\s>]+)/g)].map((m) => m[1]));
               const nativeCaptured = new Set([...body.matchAll(/<!-- LINKEDIN_NATIVE_ANALYTICS_CAPTURED bufferId=([^\s>]+)/g)].map((m) => m[1]));
 
               for (const bufferId of [...new Set(verified)]) {
                 if (captured.has(bufferId) || nativeRequired.has(bufferId) || nativeCaptured.has(bufferId)) continue;
-                const data = await buffer(`query Metrics { post(input: { id: ${JSON.stringify(bufferId)} }) { id status sentAt externalLink metricsUpdatedAt metrics { type name value unit } assets { mimeType source } } }`);
-                const post = data?.post;
-                if (!post || post.status !== 'sent') continue;
+                let post;
+                try {
+                  const data = await buffer(`query Metrics { post(input: { id: ${JSON.stringify(bufferId)} }) { id status sentAt externalLink metricsUpdatedAt metrics { type name value unit } assets { mimeType source } } }`);
+                  post = data?.post;
+                  if (!post || post.status !== 'sent' || !post.sentAt) throw new Error('Previously verified post is missing current sent evidence.');
+                } catch (error) {
+                  analyticsFailures.push(`${bufferId}: ${error.message}`);
+                  continue;
+                }
                 const isPdf = (post.assets || []).some((asset) => String(asset.mimeType || '').toLowerCase() === 'application/pdf');
                 const metrics = post.metrics || [];
-                if (metrics.length && post.metricsUpdatedAt) {
+                if (metrics.length && Number.isFinite(Date.parse(post.metricsUpdatedAt || '')) && Date.parse(post.metricsUpdatedAt) >= Date.parse(post.sentAt)) {
                   const lines = metrics.map((metric) => `- ${metric.name || metric.type}: **${metric.value}**${metric.unit === 'percentage' ? '%' : ''}`);
                   await github.rest.issues.createComment({
                     owner, repo, issue_number: issue.number,
@@ -349,3 +379,6 @@ jobs:
                 }
               }
             }
+
+
+            if (analyticsFailures.length) throw new Error(`Analytics capture incomplete: ${analyticsFailures.join('; ')}`);
