@@ -7,7 +7,7 @@ const workflow = fs.readFileSync('.github/workflows/linkedin-content-os-green-ga
 
 test('publication backlog only counts current post-hardening acceptances', () => {
   assert.match(workflow, /const isCurrent = Number\.isFinite\(row\.acceptedAt\) && row\.acceptedAt >= HARDENING_CUTOFF;/);
-  assert.match(workflow, /if \(isCurrent && Number\.isFinite\(due\) && now - due >= 30 \* 60 \* 1000 && !terminal\) publicationBacklog \+= 1;/);
+  assert.ok(workflow.includes('if (!terminal && (!Number.isFinite(row.acceptedAt) || !Number.isFinite(due) || (isCurrent && now - due >= 30 * 60 * 1000))) publicationBacklog += 1;'));
 });
 
 test('historical debt remains visible without poisoning current green state', () => {
@@ -43,3 +43,4 @@ test('company and secondary recurring schedules are capped at five per week', ()
 test('secondary identity must resolve to Retention School before full green', () => {
   assert.match(workflow, /target !== 'secondary' \|\| \/retention school\/i/);
 });
+

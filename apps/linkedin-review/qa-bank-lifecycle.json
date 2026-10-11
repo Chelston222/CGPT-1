@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "description": "Explicit non-active QA-bank history. Unlisted banks remain subject to the full active audit. This manifest grants no approval or publication permission.",
+  "banks": {
+    "qa-replenishment-2026-09-27-preimage-v1.json": {
+      "state": "draft",
+      "sha256": "684cb7254b897deebea62c6999b8e9cb494c851846870b0babd44c3a0f1dad1a",
+      "reason": "Pre-media copy-only snapshot. Its approval explicitly excludes media, scheduling and publication; the later unique-ID bank is the release candidate.",
+      "replacedBy": "qa-replenishment-2026-09-28-icp-direct-unique-v1.json"
+    },
+    "qa-replenishment-2026-09-28-owner-approved-v1.json": {
+      "state": "superseded",
+      "sha256": "507e6ef264dee25c8cd9faf617ff2319defe967858bd1c04224bb818c0a70ce8",
+      "reason": "Original copy revisions retained as evidence after the documented pullback and ICP rebuild. The replacement bank records that all rebuilt assets use fresh release IDs.",
+      "replacedBy": "qa-replenishment-2026-09-28-icp-direct-unique-v1.json"
+    },
+    "qa-replenishment-2026-09-28-icp-callout-v2.json": {
+      "state": "superseded",
+      "sha256": "5e7eecd03522863ee4ecb62ead2c7aca1df8939bac4e2f899f50e042de5fe51c",
+      "reason": "Failed serialization snapshot. The v3 recovery notes record a closed failure before any Buffer write; the unique-ID bank is the final rebuilt release candidate.",
+      "replacedBy": "qa-replenishment-2026-09-28-icp-direct-unique-v1.json"
+    },
+    "qa-replenishment-2026-09-28-icp-callout-v3.json": {
+      "state": "superseded",
+      "sha256": "db4ff46d858bc3690886a7dd60b7ed8969bee6b7c0f6d4f51027849cc6cd74b1",
+      "reason": "Schema-repaired intermediate snapshot. The replacement bank records fresh IDs to avoid collisions with immutable historical owner-approved revisions.",
+      "replacedBy": "qa-replenishment-2026-09-28-icp-direct-unique-v1.json"
+    }
+  }
+}

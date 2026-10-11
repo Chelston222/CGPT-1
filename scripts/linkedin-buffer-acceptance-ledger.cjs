@@ -97,7 +97,63 @@ function acceptanceComment({ key, queueId, revision, targetName, target, bufferI
   ].join('\n');
 }
 
+
+// Publication/health readers share one trusted, de-duplicated receipt contract.
+// A missing or conflicting date remains unknown; it must not make health green.
+function parseAcceptanceRows(comments = [], trustedLogin = ACTIONS_BOT_LOGIN) {
+  const rows = new Map();
+  function add(row) {
+    const prior = rows.get(row.bufferId);
+    if (!prior) { rows.set(row.bufferId, row); return; }
+    if (prior.dueAt && row.dueAt && Date.parse(prior.dueAt) !== Date.parse(row.dueAt)) prior.scheduleConflict = true;
+    if (!prior.dueAt && row.dueAt) prior.dueAt = row.dueAt;
+    if (Number.isFinite(row.acceptedAt)) prior.acceptedAt = Number.isFinite(prior.acceptedAt) ? Math.min(prior.acceptedAt, row.acceptedAt) : row.acceptedAt;
+  }
+  for (const comment of comments) {
+    if (comment?.user?.login !== trustedLogin) continue;
+    const body = String(comment.body || '');
+    const acceptedAt = Date.parse(comment.created_at || comment.updated_at || '');
+    for (const m of body.matchAll(ACCEPTED_PATTERN)) add({label:m[1],bufferId:m[2],dueAt:m[3] || null,acceptedAt,source:'approval_issue'});
+    const legacy = /^-\s+([^\n:]+?):\s+Buffer post ID\s+`([^`]+)`(?:\s+(?:\u2014|\|)\s+([^\s\n|]+))?/gm;
+    for (const m of body.matchAll(legacy)) add({label:m[1].trim(),bufferId:m[2],dueAt:m[3] || null,acceptedAt,source:'approval_issue'});
+  }
+  return [...rows.values()].map(row => ({...row, dueAt: row.scheduleConflict ? null : row.dueAt}));
+}
+
+// Cleanup evidence is a terminal NON-publication result only when a real owner
+// request names the exact ID and the actions bot records successful deletion.
+function parseCompletedCleanup(issue, comments = [], ownerLogin) {
+  const found = new Map();
+  if (issue?.pull_request || issue?.user?.login !== ownerLogin || !/^\[RUN BUFFER CLEANUP\]/.test(issue.title || '')) return found;
+  const ids = new Set((String(issue.body || '').match(/^DELETE_POST_IDS:\s*(.+)$/m)?.[1] || '').split(',').map(s => s.trim()).filter(Boolean));
+  for (const comment of comments) {
+    if (comment?.user?.login !== ACTIONS_BOT_LOGIN || !comment.html_url) continue;
+    for (const m of String(comment.body || '').matchAll(/^- Deleted Buffer post `([^`]+)` \(DeletePostSuccess\)$/gm)) {
+      if (ids.has(m[1])) found.set(m[1], {issueNumber:issue.number,evidenceUrl:comment.html_url});
+    }
+  }
+  return found;
+}
+
+
+function validAnalyticsCaptureIds(comments = []) {
+  const body = comments.filter(comment => comment?.user?.login === ACTIONS_BOT_LOGIN)
+    .map(comment => String(comment.body || '')).join('\n');
+  const publicationTimes = new Map();
+  for (const match of body.matchAll(/<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=([^\s>]+)(?: sentAt=([^\s>]+))?/g)) {
+    const timestamp = Date.parse(match[2] || '');
+    if (!publicationTimes.has(match[1])) publicationTimes.set(match[1], timestamp);
+    else if (publicationTimes.get(match[1]) !== timestamp) publicationTimes.set(match[1], NaN);
+  }
+  return new Set([...body.matchAll(/<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=([^\s>]+) metricsUpdatedAt=([^\s>]+)/g)]
+    .filter(match => Number.isFinite(publicationTimes.get(match[1])) && Date.parse(match[2]) >= publicationTimes.get(match[1]))
+    .map(match => match[1]));
+}
+
 module.exports = {
+  validAnalyticsCaptureIds,
+  parseAcceptanceRows,
+  parseCompletedCleanup,
   ACCEPTED_PATTERN,
   ACTIONS_BOT_LOGIN,
   INTENT_PATTERN,
@@ -113,3 +169,4 @@ module.exports = {
   selectTrustedLedgerIssue,
   unresolvedIntentKeys,
 };
+

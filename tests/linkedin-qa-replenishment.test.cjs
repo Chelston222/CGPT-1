@@ -5,14 +5,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const { withQaReplenishment } = require('../scripts/linkedin-week-batch.cjs');
+const { readQaBanks } = require('../scripts/linkedin-qa-bank-lifecycle.cjs');
 
 const root = path.resolve(__dirname, '..');
 const qaDir = path.join(root, 'apps/linkedin-review');
 const queue = JSON.parse(fs.readFileSync(path.join(qaDir, 'queue.json'), 'utf8'));
 const qa = JSON.parse(fs.readFileSync(path.join(qaDir, 'qa-replenishment-2026-08-11.json'), 'utf8'));
-const supplementalFiles = fs.readdirSync(qaDir)
-  .filter((name) => /^qa-replenishment-.*\.json$/.test(name))
-  .sort();
+const supplementalBanks = readQaBanks(qaDir);
 
 test('original QA replenishment still represents one full 15-placement day without inheriting publish permission', () => {
   assert.equal(qa.posts.length, 15);
@@ -37,9 +36,9 @@ test('effective queue includes every eligible locked supplemental candidate once
   const existingIds = new Set(queue.posts.map((post) => post.id));
   const expectedNewIds = [];
   const seen = new Set(existingIds);
-  for (const file of supplementalFiles) {
-    const batch = JSON.parse(fs.readFileSync(path.join(qaDir, file), 'utf8'));
-    for (const post of batch.posts || []) {
+  for (const { records } of supplementalBanks) {
+    for (const { post, lifecycle } of records) {
+      if (lifecycle !== 'active') continue;
       if (
         seen.has(post.id)
         || post.status !== 'review'
@@ -59,6 +58,8 @@ test('effective queue includes every eligible locked supplemental candidate once
   assert.ok(effective.posts.some((post) => post.id === 'tte-li-qa-001'));
   assert.ok(effective.posts.some((post) => post.id === 'tte-rr14-personal-14'));
   assert.equal(effective.generatedAt, queue.generatedAt);
+  assert.ok(!effective.posts.some((post) => post.id === 'tte-refill-2026-09-27-personal-01'), 'superseded original ID must never re-enter the release pool');
+  assert.ok(!effective.posts.some((post) => post.id === 'tte-context-pass-personal-001'), 'retired content must never be replenished');
 });
 
 test('QA batch is based on approved style and recent live crawl metadata', () => {

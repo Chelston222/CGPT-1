@@ -4,14 +4,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { validateRequest } = require('./linkedin-review-core.cjs');
 const { validateDailyPlacementLimit } = require('./linkedin-buffer-capacity.cjs');
+const { classifyQaPost, qaBankPaths, readQaBanks } = require('./linkedin-qa-bank-lifecycle.cjs');
 
 const QA_REPLENISHMENT_DIR = path.join(__dirname, '..', 'apps', 'linkedin-review');
 
 function qaReplenishmentPaths() {
-  return fs.readdirSync(QA_REPLENISHMENT_DIR)
-    .filter((name) => /^qa-replenishment-.*\.json$/.test(name))
-    .sort()
-    .map((name) => path.join(QA_REPLENISHMENT_DIR, name));
+  return qaBankPaths(QA_REPLENISHMENT_DIR);
 }
 
 function scheduleOverridePaths() {
@@ -24,15 +22,21 @@ function scheduleOverridePaths() {
 function withQaReplenishment(queue, options = {}) {
   const existingIds = new Set((queue.posts || []).map((post) => post.id));
   const additions = [];
-  for (const filePath of qaReplenishmentPaths()) {
-    let supplemental = { posts: [] };
-    try {
-      supplemental = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-      continue;
+  const activeQaIds = new Set();
+  const banks = readQaBanks(options.reviewDir || QA_REPLENISHMENT_DIR);
+  const inactiveKeys = new Set(banks.flatMap(({ records }) => records
+    .filter(({ lifecycle }) => lifecycle !== 'active')
+    .map(({ post }) => `${post.id}@${post.revision}`)));
+  for (const post of queue.posts || []) {
+    if (classifyQaPost(post) === 'active' && inactiveKeys.has(`${post.id}@${post.revision}`)) {
+      throw new Error(`${post.id}@${post.revision} is non-active in QA history and cannot enter release.`);
     }
-    for (const post of supplemental.posts || []) {
+  }
+  for (const { records } of banks) {
+    for (const { post, lifecycle } of records) {
+      if (lifecycle !== 'active') continue;
+      if (activeQaIds.has(post.id)) throw new Error(`${post.id}: duplicate active QA post id.`);
+      activeQaIds.add(post.id);
       if (
         existingIds.has(post.id)
         || post.status !== 'review'
@@ -150,6 +154,7 @@ function storyFirstQaPassed(post = {}) {
 }
 
 function postBody(post) {
+  if (classifyQaPost(post) !== 'active') throw new Error(`${post.id} is non-active and cannot enter release.`);
   if (!storyFirstQaPassed(post)) {
     throw new Error(`${post.id} founder/story content is missing the current story-first QA pass. Random-founder, Image-only, Status-performance, Story and Saveable-story must all pass against real Chelston-supplied context before approval.`);
   }
