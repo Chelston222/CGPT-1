@@ -120,20 +120,7 @@ function parseAcceptanceRows(comments = [], trustedLogin = ACTIONS_BOT_LOGIN) {
   return [...rows.values()].map(row => ({...row, dueAt: row.scheduleConflict ? null : row.dueAt}));
 }
 
-// Cleanup evidence is a terminal NON-publication result only when a real owner
-// request names the exact ID and the actions bot records successful deletion.
-function parseCompletedCleanup(issue, comments = [], ownerLogin) {
-  const found = new Map();
-  if (issue?.pull_request || issue?.user?.login !== ownerLogin || !/^\[RUN BUFFER CLEANUP\]/.test(issue.title || '')) return found;
-  const ids = new Set((String(issue.body || '').match(/^DELETE_POST_IDS:\s*(.+)$/m)?.[1] || '').split(',').map(s => s.trim()).filter(Boolean));
-  for (const comment of comments) {
-    if (comment?.user?.login !== ACTIONS_BOT_LOGIN || !comment.html_url) continue;
-    for (const m of String(comment.body || '').matchAll(/^- Deleted Buffer post `([^`]+)` \(DeletePostSuccess\)$/gm)) {
-      if (ids.has(m[1])) found.set(m[1], {issueNumber:issue.number,evidenceUrl:comment.html_url});
-    }
-  }
-  return found;
-}
+const { isRemovalRequest, parseCompletedCleanup, parseCompletedRepurpose } = require('./linkedin-buffer-removal-receipts.cjs');
 
 
 function validAnalyticsCaptureIds(comments = []) {
@@ -154,6 +141,8 @@ module.exports = {
   validAnalyticsCaptureIds,
   parseAcceptanceRows,
   parseCompletedCleanup,
+  parseCompletedRepurpose,
+  isRemovalRequest,
   ACCEPTED_PATTERN,
   ACTIONS_BOT_LOGIN,
   INTENT_PATTERN,
