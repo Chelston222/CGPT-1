@@ -1,0 +1,156 @@
+{
+  "issues": [
+    {
+      "number": 60,
+      "title": "[BUFFER CLEANUP] Reorder far-future LinkedIn capacity behind 12–13 August",
+      "body": "DELETE_POST_IDS: 6a7afc5f36b53bf4b42ce9fa,6a7afc5fbcea0336b550c758,6a7afc5fce113f7aeb05bb7e,6a7afc60e5e58b60faa88242,6a7afc60bcea0336b550c77d,6a7afc60ce113f7aeb05bba8,6a7afc618c145332da1a51c0,6a7afc6136b53bf4b42cea5a,6a7afc61e5e58b60faa88270,6a7afc618c145332da1a51eb,6a7afc6236b53bf4b42cea7f,6a7afc62bcea0336b550c7c2,6a7afc62ce113f7aeb05bbee,6a7afc62e5e58b60faa882a2,6a7afc63e5e58b60faa882c6,6a7afc638c145332da1a5220,6a7afc63ce113f7aeb05bc12,6a7afc63e5e58b60faa882ea,6a7afc64066b9a1d0b7f0cb1,6a7afc64bcea0336b550c812,6a7afc6436b53bf4b42cead4,6a7afc64066b9a1d0b7f0ce7",
+      "user": {
+        "login": "Chelston222",
+        "id": 246655273,
+        "type": "User"
+      },
+      "author_association": "OWNER"
+    },
+    {
+      "number": 386,
+      "title": "[APPROVED BUFFER MIGRATION] Apply locked v1.12 cadence migration",
+      "body": "MIGRATION_ID: buffer-migration-2026-08-23\nMANIFEST_BLOB_SHA: 9bb89ddf0d8a392f03a4f8c97c5cead8d8faeb1c\nSOURCE_SNAPSHOT_ISSUE: 381\nPLAN_SELFTEST_ISSUE: 382\nEXECUTOR_SELFTEST_ISSUE: 383\nAPPLY: YES",
+      "user": {
+        "login": "Chelston222",
+        "id": 246655273,
+        "type": "User"
+      },
+      "author_association": "OWNER"
+    },
+    {
+      "number": 294,
+      "title": "[APPROVED LINKEDIN] RR14 M06R · Prevention and recovery are different jobs",
+      "body": "POST_ID: tte-rr14-main-06\nREVISION: 1\nCATEGORY: no_show_recovery\nTARGETS: main\nMODE: schedule\nSCHEDULE_AT: 2026-08-29T17:30:00+01:00\nCONTENT_QA: PASS\nMEDIA_URL:",
+      "user": {
+        "login": "Chelston222",
+        "id": 246655273,
+        "type": "User"
+      },
+      "author_association": "OWNER"
+    },
+    {
+      "number": 286,
+      "title": "[APPROVED LINKEDIN] RR14 R04 · Segmentation by customer state",
+      "body": "POST_ID: tte-rr14-secondary-04\nREVISION: 1\nCATEGORY: segmentation\nTARGETS: secondary\nMODE: schedule\nSCHEDULE_AT: 2026-08-27T17:30:00+01:00\nCONTENT_QA: PASS\nMEDIA_URL:",
+      "user": {
+        "login": "Chelston222",
+        "id": 246655273,
+        "type": "User"
+      },
+      "author_association": "OWNER"
+    }
+  ],
+  "comments": {
+    "60": [
+      {
+        "id": 5252125825,
+        "body": "✅ Buffer priority cleanup complete.\n\nDeleted **22** explicitly listed scheduled posts.\n\n- `6a7afc5f36b53bf4b42ce9fa`\n- `6a7afc5fbcea0336b550c758`\n- `6a7afc5fce113f7aeb05bb7e`\n- `6a7afc60e5e58b60faa88242`\n- `6a7afc60bcea0336b550c77d`\n- `6a7afc60ce113f7aeb05bba8`\n- `6a7afc618c145332da1a51c0`\n- `6a7afc6136b53bf4b42cea5a`\n- `6a7afc61e5e58b60faa88270`\n- `6a7afc618c145332da1a51eb`\n- `6a7afc6236b53bf4b42cea7f`\n- `6a7afc62bcea0336b550c7c2`\n- `6a7afc62ce113f7aeb05bbee`\n- `6a7afc62e5e58b60faa882a2`\n- `6a7afc63e5e58b60faa882c6`\n- `6a7afc638c145332da1a5220`\n- `6a7afc63ce113f7aeb05bc12`\n- `6a7afc63e5e58b60faa882ea`\n- `6a7afc64066b9a1d0b7f0cb1`\n- `6a7afc64bcea0336b550c812`\n- `6a7afc6436b53bf4b42cead4`\n- `6a7afc64066b9a1d0b7f0ce7`\n\nNo other Buffer posts were touched.",
+        "user": {
+          "login": "github-actions[bot]",
+          "id": 41898282,
+          "type": "Bot"
+        },
+        "performed_via_github_app": {
+          "id": 15368,
+          "slug": "github-actions"
+        },
+        "html_url": "https://github.com/Chelston222/CGPT-1/issues/60#issuecomment-5252125825"
+      }
+    ],
+    "286": [
+      {
+        "id": 5382237666,
+        "body": "✅ Buffer accepted every remaining requested destination.\n\n- Quality gate mode: **repository-owner-approved-legacy**\n- tte-rr14-secondary-04@1: repository-owner-approved-legacy\n- Audit status: **scheduled**\n- Queue post: **tte-rr14-secondary-04**\n- Already accepted before this run: **0**\n- Accepted in this run: **1**\n- Waiting for a free queue slot: **0**\n- tte-rr14-secondary-04@1 · 222 Emails | Retention Lab: Buffer post ID `6a89fadfdeb4b57dfea8a80c` — 2026-08-27T16:30:00.000Z\n  <!-- BUFFER_ACCEPTED tte-rr14-secondary-04@1:secondary -->\n\nThis records Buffer acceptance, not proof of LinkedIn publication. Publication verification is handled separately after the due time.\n",
+        "user": {
+          "login": "github-actions[bot]",
+          "id": 41898282,
+          "type": "Bot"
+        },
+        "performed_via_github_app": {
+          "id": 15368,
+          "slug": "github-actions"
+        },
+        "html_url": "https://github.com/Chelston222/CGPT-1/issues/286#issuecomment-5382237666"
+      }
+    ],
+    "294": [
+      {
+        "id": 5382260568,
+        "body": "✅ Buffer accepted every remaining requested destination.\n\n- Quality gate mode: **repository-owner-approved-legacy**\n- tte-rr14-main-06@1: repository-owner-approved-legacy\n- Audit status: **scheduled**\n- Queue post: **tte-rr14-main-06**\n- Already accepted before this run: **0**\n- Accepted in this run: **1**\n- Waiting for a free queue slot: **0**\n- tte-rr14-main-06@1 · Main 222 Emails page: Buffer post ID `6a89fc2ddeb4b57dfea8b628` — 2026-08-29T16:30:00.000Z\n  <!-- BUFFER_ACCEPTED tte-rr14-main-06@1:main -->\n\nThis records Buffer acceptance, not proof of LinkedIn publication. Publication verification is handled separately after the due time.\n",
+        "user": {
+          "login": "github-actions[bot]",
+          "id": 41898282,
+          "type": "Bot"
+        },
+        "performed_via_github_app": {
+          "id": 15368,
+          "slug": "github-actions"
+        },
+        "html_url": "https://github.com/Chelston222/CGPT-1/issues/294#issuecomment-5382260568"
+      }
+    ],
+    "386": [
+      {
+        "id": 5389180107,
+        "body": "Migration intent locked before Buffer mutation: tte-rr14-main-06@1:main · REPURPOSE · Buffer `6a89fc2ddeb4b57dfea8b628`.\n<!-- BUFFER_MIGRATION_INTENT key=tte-rr14-main-06@1:main action=REPURPOSE bufferId=6a89fc2ddeb4b57dfea8b628 -->",
+        "user": {
+          "login": "github-actions[bot]",
+          "id": 41898282,
+          "type": "Bot"
+        },
+        "performed_via_github_app": {
+          "id": 15368,
+          "slug": "github-actions"
+        },
+        "html_url": "https://github.com/Chelston222/CGPT-1/issues/386#issuecomment-5389180107"
+      },
+      {
+        "id": 5389180195,
+        "body": "✅ REPURPOSE removed from feed schedule: tte-rr14-main-06@1:main · Buffer `6a89fc2ddeb4b57dfea8b628` · source content preserved via `sales_enablement_or_retention_school_resource`.\n<!-- BUFFER_MIGRATION_APPLIED key=tte-rr14-main-06@1:main action=REPURPOSE bufferId=6a89fc2ddeb4b57dfea8b628 -->",
+        "user": {
+          "login": "github-actions[bot]",
+          "id": 41898282,
+          "type": "Bot"
+        },
+        "performed_via_github_app": {
+          "id": 15368,
+          "slug": "github-actions"
+        },
+        "html_url": "https://github.com/Chelston222/CGPT-1/issues/386#issuecomment-5389180195"
+      },
+      {
+        "id": 5389232537,
+        "body": "Migration recovery intent locked before Buffer mutation: tte-rr14-secondary-04@1:secondary · REPURPOSE · Buffer `6a89fadfdeb4b57dfea8a80c`.\n<!-- BUFFER_MIGRATION_INTENT key=tte-rr14-secondary-04@1:secondary action=REPURPOSE bufferId=6a89fadfdeb4b57dfea8a80c recovery=1 -->",
+        "user": {
+          "login": "github-actions[bot]",
+          "id": 41898282,
+          "type": "Bot"
+        },
+        "performed_via_github_app": {
+          "id": 15368,
+          "slug": "github-actions"
+        },
+        "html_url": "https://github.com/Chelston222/CGPT-1/issues/386#issuecomment-5389232537"
+      },
+      {
+        "id": 5389232625,
+        "body": "✅ REPURPOSE removed during recovery: tte-rr14-secondary-04@1:secondary · Buffer `6a89fadfdeb4b57dfea8a80c` · source content preserved via `retention_school_season_resource`.\n<!-- BUFFER_MIGRATION_APPLIED key=tte-rr14-secondary-04@1:secondary action=REPURPOSE bufferId=6a89fadfdeb4b57dfea8a80c recovery=1 -->",
+        "user": {
+          "login": "github-actions[bot]",
+          "id": 41898282,
+          "type": "Bot"
+        },
+        "performed_via_github_app": {
+          "id": 15368,
+          "slug": "github-actions"
+        },
+        "html_url": "https://github.com/Chelston222/CGPT-1/issues/386#issuecomment-5389232625"
+      }
+    ]
+  }
+}
