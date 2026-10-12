@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "batchId": "tte-case-visage-academy-2026-10-13",
-  "generatedAt": "2026-10-07T08:40:33.759Z",
+  "generatedAt": "2026-10-12T12:09:11.070Z",
   "sourceBasis": {
     "command": "222E governed single-image intake",
     "purpose": "Exact-media LinkedIn scheduling through GitHub -> Buffer",
@@ -34,6 +34,56 @@
       "mediaSha256": "d905311b9d26d1b9c4c1fc5daafee7af8555d8c5dee00bea476cafabe2e82444",
       "safeZoneQa": "pass",
       "sourceType": "qa_replenishment",
+      "status": "retired",
+      "qa": {
+        "status": "retired",
+        "publishable": true,
+        "approvalEligible": false,
+        "publishPermission": false,
+        "evidenceSafe": true,
+        "antiDnaPass": true,
+        "publicTrustBoundary": true
+      },
+      "history": [
+        {
+          "state": "media_ready",
+          "at": "2026-10-07T08:40:33.759Z",
+          "actor": "github-actions[bot]",
+          "note": "Exact PNG media pinned to immutable commit 505b9c0354ee8b3c5e58d719fb4fec9c41bf18f1"
+        },
+        {
+          "state": "superseded",
+          "at": "2026-10-12T12:09:11.070Z",
+          "actor": "Chelston222",
+          "note": "Superseded by owner-authorised original-caption restoration at revision 2; historical copy retained, no release eligibility."
+        }
+      ]
+    },
+    {
+      "id": "tte-case-visage-academy-2026-10-13",
+      "revision": 2,
+      "title": "Visage Academy | Reactivating old course enquiries",
+      "rating": 99,
+      "category": "client_return_systems",
+      "contentRole": "proof",
+      "funnelStage": "mof",
+      "format": "image",
+      "targets": [
+        "personal"
+      ],
+      "mode": "schedule",
+      "scheduledAt": {
+        "personal": "2026-10-13T08:20:00+01:00"
+      },
+      "copy": {
+        "default": "27 old course enquiries re-engaged. Eight places reserved. £8,940 in attributable potential booking value.\n\nThe interesting part was how many of these leads had never really rejected the offer.\n\nThey had simply never reached a decision.\n\nTraining businesses can easily treat ‘not now’ like ‘no’. When timing, confidence or cash changes, the original intent can still be there.\n\nThe 222Emails job was to find that unfinished intent and restart the conversation with a clear reason to respond.\n\nFor academy owners: what happens to someone who says, ‘I’m interested, just not yet’?"
+      },
+      "mediaUrl": "https://raw.githubusercontent.com/Chelston222/CGPT-1/505b9c0354ee8b3c5e58d719fb4fec9c41bf18f1/apps/linkedin-review/media/intake-image/tte-case-visage-academy-2026-10-13/r1/visage-academy-case-study.png",
+      "mediaAlt": "222Emails client case study for Visage Academy showing a 14-day reactivation campaign for past course enquiries, enrolment conversations, reserved places and attributable potential booking value.",
+      "mediaBytes": 3725037,
+      "mediaSha256": "d905311b9d26d1b9c4c1fc5daafee7af8555d8c5dee00bea476cafabe2e82444",
+      "safeZoneQa": "pass",
+      "sourceType": "qa_replenishment",
       "status": "review",
       "qa": {
         "status": "ready_for_human_review",
@@ -50,6 +100,12 @@
           "at": "2026-10-07T08:40:33.759Z",
           "actor": "github-actions[bot]",
           "note": "Exact PNG media pinned to immutable commit 505b9c0354ee8b3c5e58d719fb4fec9c41bf18f1"
+        },
+        {
+          "state": "original_caption_restored",
+          "at": "2026-10-12T12:09:11.070Z",
+          "actor": "Chelston222",
+          "note": "Original publishing-pack caption restored with explicit 12 October 2026 owner authorisation. Original exact image, personal destination and 13 October 08:20 Europe/London schedule retained. Figures are owner-attested; booking value is potential, not earned revenue."
         }
       ]
     }
