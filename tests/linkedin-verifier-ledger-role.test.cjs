@@ -7,7 +7,7 @@ const workflowPath = process.env.VERIFIER_WORKFLOW || path.join(__dirname, '../.
 const workflow = fs.readFileSync(workflowPath, 'utf8');
 const scripts = [...workflow.matchAll(/^          script: \|\n((?:            .*\n|\n)+)/gm)].map(m => m[1].split('\n').map(l => l.startsWith('            ') ? l.slice(12) : l).join('\n'));
 assert.equal(scripts.length, 2, 'publication and analytics scripts must both be tested');
-const bot = body => ({user: {login: 'github-actions[bot]'}, body});
+const bot = body => ({id:1,user:{login:'github-actions[bot]',id:41898282,type:'Bot'},performed_via_github_app:{id:15368,slug:'github-actions'},body});
 const key = 'rs-li-fresha-client-return-system-001@2:secondary';
 const intent = bot(`<!-- BUFFER_DISPATCH_INTENT ${key} -->`);
 const past = '2026-01-01T07:45:00.000Z';
@@ -78,13 +78,13 @@ test('unexpected lookup failure remains unresolved and does not starve another p
  assert.ok(!r.writes.some(w=>w.body?.includes('PUBLICATION_VERIFIED bufferId=buffer-1')));
 });
 test('exact owner cleanup and trusted success receipt reconcile non-publication without provider lookup',async()=>{
- const cleanup={number:784,title:'[RUN BUFFER CLEANUP] rebuild',user:{login:'Chelston222'},body:'DELETE_POST_IDS: buffer-1'};
+ const cleanup={number:784,title:'[RUN BUFFER CLEANUP] rebuild',user:{login:'Chelston222',id:246655273},author_association:'OWNER',body:'DELETE_POST_IDS: buffer-1'};
  const receipt={...bot('- Deleted Buffer post `buffer-1` (DeletePostSuccess)'),html_url:'https://github.com/Chelston222/CGPT-1/issues/784#issuecomment-1'};
  const r=await run({issues:[approval,cleanup],comments:{637:[intent,accepted],784:[receipt]}});
  assert.equal(r.queries,0);assert.match(r.writes[0].body,/PUBLICATION_SUPERSEDED bufferId=buffer-1/);assert.doesNotMatch(r.writes[0].body,/PUBLICATION_VERIFIED/);
 });
 test('untrusted cleanup receipt cannot hide a missing post',async()=>{
- const cleanup={number:784,title:'[RUN BUFFER CLEANUP] rebuild',user:{login:'Chelston222'},body:'DELETE_POST_IDS: buffer-1'};
+ const cleanup={number:784,title:'[RUN BUFFER CLEANUP] rebuild',user:{login:'Chelston222',id:246655273},author_association:'OWNER',body:'DELETE_POST_IDS: buffer-1'};
  const receipt={user:{login:'someone'},body:'- Deleted Buffer post `buffer-1` (DeletePostSuccess)',html_url:'https://github.com/x'};
  const r=await run({issues:[approval,cleanup],comments:{637:[intent,accepted],784:[receipt]},providerError:'missing',captureError:true});
  assert.equal(r.queries,1);assert.ok(r.error);assert.ok(!r.writes.some(w=>w.body?.includes('PUBLICATION_SUPERSEDED')));
@@ -112,4 +112,26 @@ test('stale pre-publication captured marker is refreshed rather than trusted for
 test('valid post-publication captured marker remains idempotent',async()=>{
  const v=bot('<!-- LINKEDIN_PUBLICATION_VERIFIED bufferId=buffer-1 sentAt=2026-01-02T00:00:00Z -->\n<!-- LINKEDIN_ANALYTICS_CAPTURED bufferId=buffer-1 metricsUpdatedAt=2026-01-03T00:00:00Z -->');
  const r=await run({analytics:true,issues:[approval],comments:{637:[v]}});assert.equal(r.queries,0);assert.equal(r.writes.length,0);
+});
+
+test('actual historical receipt set resolves 24 removals without publication or provider mutation',async()=>{
+ const f=require('./fixtures/linkedin-historical-removal-receipts.json');
+ const ids=f.issues.find(i=>i.number===60).body.split(': ')[1].split(',');
+ const legacy={number:56,title:'[APPROVED LINKEDIN WEEK] historical batch',body:'MODE: schedule'};
+ const receipt=bot(ids.map((id,n)=>'- Legacy '+n+': Buffer post ID '+String.fromCharCode(96)+id+String.fromCharCode(96)+' | '+past).join('\n'));
+ const r=await run({issues:[...f.issues,legacy],comments:{...f.comments,56:[receipt]},providerError:'Post not found',captureError:true});
+ assert.equal(r.error,undefined);assert.equal(r.queries,0);assert.equal(r.writes.length,24);
+ for(const write of r.writes){assert.match(write.body,/PUBLICATION_SUPERSEDED/);assert.doesNotMatch(write.body,/PUBLICATION_VERIFIED|ANALYTICS_CAPTURED|OWNER_ABANDONED_DRAFT/);}
+});
+test('historical removals never count as publication or analytics evidence',async()=>{
+ const f=require('./fixtures/linkedin-historical-removal-receipts.json');
+ const comments={294:[...f.comments[294],bot('<!-- LINKEDIN_PUBLICATION_SUPERSEDED bufferId=6a89fc2ddeb4b57dfea8b628 cleanupIssue=386 -->')]};
+ const r=await run({analytics:true,issues:f.issues,comments});assert.equal(r.queries,0);assert.equal(r.writes.length,0);
+});
+test('old scheduled approval returning provider draft remains unresolved without retirement',async()=>{
+ const r=await run({post:{status:'draft',dueAt:past}});
+ assert.equal(r.queries,1);assert.match(r.writes[0].body,/PUBLICATION_PENDING/);
+ assert.ok(!r.writes.some(w=>/SUPERSEDED|ABANDONED|PUBLICATION_VERIFIED|DRAFT_CANARY_RETIRED/.test(w.body||'')));
+ const {validateRequest}=require('../scripts/linkedin-review-core.cjs');
+ for(let n=100;n<=104;n++)assert.throws(()=>validateRequest('POST_ID: stale-'+n+'\nTARGETS: personal\nMODE: schedule\nSCHEDULE_AT: '+past+'\n---\nHistorical copy',{BUFFER_API_KEY:'test',BUFFER_LINKEDIN_PERSONAL_CHANNEL_ID:'test'}),/CONTENT_QA: PASS is required/);
 });
