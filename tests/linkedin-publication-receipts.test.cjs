@@ -1,7 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {parseAcceptanceRows,parseCompletedCleanup}=require('../scripts/linkedin-buffer-acceptance-ledger.cjs');
-const bot=body=>({user:{login:'github-actions[bot]'},created_at:'2026-10-01T00:00:00Z',body});
+const bot=body=>({id:1,user:{login:'github-actions[bot]',id:41898282,type:'Bot'},performed_via_github_app:{id:15368,slug:'github-actions'},created_at:'2026-10-01T00:00:00Z',body});
 test('both historical and current date separators parse with marker deduplication',()=>{
  for(const sep of ['—','|']){
   const rows=parseAcceptanceRows([bot(`- Test: Buffer post ID \`id1\` ${sep} 2026-10-02T09:00:00Z\n<!-- BUFFER_ACCEPTED test@1:main bufferId=id1 dueAt=2026-10-02T09:00:00Z -->`)]);
@@ -15,9 +15,9 @@ test('conflicting or missing receipt dates remain unknown',()=>{
  assert.equal(parseAcceptanceRows([bot('- Test: Buffer post ID `id2`')])[0].dueAt,null);
 });
 test('cleanup requires owner, exact ID, success and bot evidence',()=>{
- const issue={number:784,user:{login:'Chelston222'},title:'[RUN BUFFER CLEANUP] rebuild',body:'DELETE_POST_IDS: id1'};
- const receipt={...bot('- Deleted Buffer post `id1` (DeletePostSuccess)\n- Deleted Buffer post `id2` (DeletePostSuccess)'),html_url:'https://github.com/example/receipt'};
- assert.deepEqual([...parseCompletedCleanup(issue,[receipt],'Chelston222').keys()],['id1']);
+ const issue={number:784,user:{login:'Chelston222',id:246655273},author_association:'OWNER',title:'[RUN BUFFER CLEANUP] rebuild',body:'DELETE_POST_IDS: id1,id2'};
+ const receipt={...bot('- Deleted Buffer post `id1` (DeletePostSuccess)\n- Deleted Buffer post `id2` (DeletePostSuccess)'),html_url:'https://github.com/Chelston222/CGPT-1/issues/784#issuecomment-1'};
+ assert.deepEqual([...parseCompletedCleanup(issue,[receipt],'Chelston222').keys()],['id1','id2']);
  assert.equal(parseCompletedCleanup({...issue,user:{login:'other'}},[receipt],'Chelston222').size,0);
  assert.equal(parseCompletedCleanup(issue,[{...receipt,html_url:null}],'Chelston222').size,0);
 });

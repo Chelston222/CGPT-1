@@ -35,6 +35,8 @@ jobs:
               parseAcceptanceEntries,
               parseAcceptanceRows,
               parseCompletedCleanup,
+              parseCompletedRepurpose,
+              isRemovalRequest,
               parseIntentKeys,
               selectTrustedLedgerIssue,
             } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
@@ -114,9 +116,13 @@ jobs:
             }
 
             const completedCleanup = new Map();
-            for (const cleanup of ledgerUniverse.filter((item) => /^\[RUN BUFFER CLEANUP\]/.test(item.title || '') && item.user?.login === owner)) {
+            for (const cleanup of ledgerUniverse.filter((item) => isRemovalRequest(item) && item.user?.login === owner)) {
               const receipts = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: cleanup.number, per_page: 100 });
-              for (const [id, evidence] of parseCompletedCleanup(cleanup, receipts, owner)) completedCleanup.set(id, evidence);
+              const removals = [
+                ...parseCompletedCleanup(cleanup, receipts, owner),
+                ...parseCompletedRepurpose(cleanup, receipts, owner, { approvalIssues: candidates, commentsByIssue }),
+              ];
+              for (const [id, evidence] of removals) completedCleanup.set(id, evidence);
             }
             const lookupFailures = [];
             const now = Date.now();
@@ -147,7 +153,7 @@ jobs:
                   await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: [
                     'Historical Buffer placement intentionally deleted; not published.',
                     `- Buffer post ID: \`${row.bufferId}\``,
-                    `- Exact owner cleanup #${cleanup.issueNumber}: ${cleanup.evidenceUrl}`,
+                    `- Exact owner ${cleanup.kind} #${cleanup.issueNumber}: ${cleanup.evidenceUrl}`,
                     '- Original acceptance evidence is preserved. This does not authorise recreation.',
                     `<!-- LINKEDIN_PUBLICATION_SUPERSEDED bufferId=${row.bufferId} cleanupIssue=${cleanup.issueNumber} -->`,
                   ].join('\n') });
