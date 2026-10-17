@@ -74,3 +74,21 @@ Internal direct-SMTP controls must use `INTERNAL_OPERATIONAL` and `INTERNAL ONLY
 ## Deployment
 
 This gate should be reviewed and tested on a branch before production deployment. Do not merge solely because the code compiles. Confirm upstream systems can populate the required gate snapshot without weakening the canonical controls in the 222Emails Module OS.
+
+## P0 Evidence-first acquisition overlay (staged review, not production-released)
+
+Every external `COLD_B2B` queue item and each cold follow-up MUST carry a `preAudit` object in addition to all existing legal, address, suppression, sender, gate-reference, opt-out and approval requirements. Queue intake, human approval and final provider dispatch repeat the same checks. The direct PrivateEmail SMTP worker performs the check independently. `WARM_REQUESTED`, `APPOINTMENT`, `CLIENT_LIFECYCLE` and `INTERNAL_OPERATIONAL` retain their distinct permissions and are not forced into a fake cold prospect audit.
+
+Minimum `preAudit` fields:
+- `auditId`, `leadId`, `touchNo`, exact `recipient`
+- `evidenceType: "OBSERVED"`, `observedFinding`, `sourceUrl`, `checkedAt`
+- `commercialRisk` as a clearly qualified hypothesis, plus one `recommendedFix`
+- `observationAnchor` and `fixAnchor`: substantive text present both in the audited finding/fix and in the FINAL actual email body
+- `reviewedBy`, `reviewedAt`, `humanReviewPass: true`, `proofAttributionReviewPass: true`
+- `approvedMessageSha256`: lowercase SHA-256 over exact UTF-8 `subject + "\n" + text`, produced **after** genuine human content approval
+
+Validation rejects absent or mismatched prospect/touch/recipient identity; no source URL; finding not classified OBSERVED; observations over 30 days old; human review over 72 hours old; missing observation or fix in the body; changed approved subject/body; missing human proof review; or £15k→£25k case wording without the fixed **four-month** timeframe. A casual source or generic introductory question cannot substitute for a reviewable observed problem and useful improvement.
+
+**Honest assurance boundary:** A boolean or reviewer label does NOT prove someone actually checked the public website, audited the clinic or approved the message. That truth must come from a real operating review and source record. This code only enforces the presence, freshness, matching and copy integrity of that record. Existing PECR/UK GDPR, provider, sender, suppression and owner-release gates remain separate.
+
+**Deployment status:** This overlay is initially a review-branch change only, with no live send authority. The existing production deploy remains manual, the direct SMTP runner is held at zero ramp and no mailboxes or senders are enabled merely by these changes. Integrations outside this bridge (manual Gmail/UI, LinkedIn, WhatsApp, external automations) need their own validated pre-send wiring.
