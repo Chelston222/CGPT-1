@@ -2,6 +2,11 @@ name: 222Emails Revenue Path Production
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'release/client-return-funnel-2026-10-07.trigger'
 
 permissions:
   contents: read
