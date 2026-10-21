@@ -66,6 +66,15 @@ jobs:
               lines.push(`- Legacy future candidates visible but not counted as current reserve: **${row.legacyCount}**`);
               lines.push(`- Expired current-policy review candidates: **${row.expired.length}**`);
               const weeks = Object.entries(row.byWeek).sort(([a], [b]) => a.localeCompare(b));
+              const candidates = [...row.current, ...row.legacy].sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt));
+              lines.push('- Publication authority: **not established by this report**. Each candidate needs an exact current-revision owner approval and dispatch preflight.');
+              if (!candidates.length) lines.push('- Next dependency: create or revise review-only content, complete QA, then obtain exact copy/media/destination/date approval.');
+              for (const candidate of candidates.slice(0, 10)) {
+                const source = byId.get(candidate.id);
+                const sourceUrl = `https://github.com/${owner}/${repo}/blob/${context.sha}/apps/linkedin-review/${encodeURIComponent(source._sourceFile)}`;
+                lines.push(`- Review candidate: [${candidate.id}@${source.revision}](${sourceUrl}) · ${candidate.dueAt} · ${candidate.sourceType} · **not approved by this monitor**`);
+              }
+              if (candidates.length > 10) lines.push(`- Additional future review candidates: **${candidates.length - 10}**`);
               if (weeks.length) lines.push(`- Current-policy supply by week: ${weeks.map(([week, count]) => `**${week}: ${count}**`).join(' · ')}`);
               lines.push('');
             }
