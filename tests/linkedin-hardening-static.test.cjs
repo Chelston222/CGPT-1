@@ -161,7 +161,8 @@ test('one-shot approvals must exactly match a current locked queue revision', ()
 });
 
 test('production release uses one trusted durable ledger in both Notion modes', () => {
-  assert.match(autopost, /LEDGER_TITLE/);
+  assert.match(autopost, /requireExistingLedgerIssue/);
+  assert.match(autopost, /Automatic ledger creation is disabled/);
   assert.match(autopost, /selectTrustedLedgerIssue/);
   assert.match(autopost, /state: 'all', per_page: 100/);
   assert.match(autopost, /commentWithRetry\(ledgerIssueNumber, acceptedBody\)/);

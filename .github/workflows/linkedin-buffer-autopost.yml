@@ -59,7 +59,6 @@ jobs:
             const { classifyBufferFailure, localDate, parseAcceptedMarkers, planCapacityWindow, validateDailyPlacementLimit } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-capacity.cjs'));
             const { assertLiveNotionQualityGate } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-notion-quality-gate.cjs'));
             const {
-              LEDGER_TITLE,
               acceptanceComment,
               acceptedKeys: ledgerAcceptedKeys,
               dispatchIntentComment,
@@ -132,15 +131,13 @@ jobs:
               });
             }
 
-            async function getOrCreateLedgerIssue() {
+            async function requireExistingLedgerIssue() {
               const all = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 });
               const existing = selectTrustedLedgerIssue(all, owner);
-              if (existing) {
-                if (existing.state !== 'open') await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'open' });
-                return existing.number;
-              }
-              const created = await github.rest.issues.create({ owner, repo, title: LEDGER_TITLE, body: 'Durable machine ledger of Buffer dispatch intent and placement acceptance. Bot comments are authoritative for idempotency. Do not delete or manually edit machine markers.' });
-              return created.data.number;
+              // Absence from a discovery response is not evidence that no ledger exists.
+              // Never bootstrap idempotency state inside a scheduled publisher run.
+              if (!existing) throw new Error('Trusted Buffer acceptance ledger was not found. Automatic ledger creation is disabled; reconcile the existing audit history before publishing.');
+              return existing.number;
             }
 
             async function commentWithRetry(issueNumber, body, attempts = 3) {
@@ -157,7 +154,7 @@ jobs:
               throw lastError;
             }
 
-            const ledgerIssueNumber = await getOrCreateLedgerIssue();
+            const ledgerIssueNumber = await requireExistingLedgerIssue();
             const ledgerComments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: ledgerIssueNumber, per_page: 100 });
             const durableAccepted = ledgerAcceptedKeys(ledgerComments);
             const unresolvedIntents = unresolvedIntentKeys(ledgerComments);

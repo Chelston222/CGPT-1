@@ -15,10 +15,11 @@ const bot = body => ({ user: { login: 'github-actions[bot]' }, body, created_at:
 const past = '2026-09-02T09:00:00Z';
 const approval = { number: 782, title: '[APPROVED LINKEDIN] real approval', user: { login: owner }, state: 'closed' };
 const mirror = { number: 607, title: '[FAILED LINKEDIN] Buffer acceptance ledger', user: { login: owner }, state: 'open' };
+const ledger = { number: 677, title: '[BUFFER ACCEPTANCE LEDGER] LinkedIn governed releases', user: { login: 'github-actions[bot]' }, state: 'open' };
 const receipt = dueAt => bot(`<!-- BUFFER_ACCEPTED post@1:main bufferId=post-1${dueAt ? ` dueAt=${dueAt}` : ''} -->`);
 const terminal = kind => bot(`<!-- ${kind} bufferId=post-1 -->`);
 
-async function run({ comments = [receipt(past)], includeMirror = false } = {}) {
+async function run({ comments = [receipt(past)], includeMirror = false, ledgerIssues = [ledger], ledgerComments = [], ledgerReadError = null } = {}) {
   let body = '';
   let failure = null;
   const reads = [];
@@ -30,9 +31,13 @@ async function run({ comments = [receipt(past)], includeMirror = false } = {}) {
     paginate: async (endpoint, args) => {
       if (endpoint === 'comments') {
         reads.push(args.issue_number);
+        if (args.issue_number === ledger.number) {
+          if (ledgerReadError) throw ledgerReadError;
+          return ledgerComments;
+        }
         return args.issue_number === approval.number ? comments : [receipt(past)];
       }
-      return args.state === 'all' ? issues : [];
+      return args.state === 'all' ? (args.creator ? issues : [...issues, ...ledgerIssues]) : [];
     },
   };
   const fetch = async (_url, options) => {
@@ -159,5 +164,39 @@ test('historical acceptance mirror is not a second unresolved approval', async (
   const result = await run({ comments: [receipt(past), terminal('LINKEDIN_PUBLICATION_SUPERSEDED')], includeMirror: true });
   assert.equal(result.backlog, 0);
   assert.equal(result.failure, null);
-  assert.deepEqual(result.reads, [approval.number]);
+  assert.deepEqual(result.reads, [ledger.number, approval.number]);
+});
+
+test('duplicate ledgers prevent a current-verification claim even with zero receipt backlog', async () => {
+  const result = await run({ comments: [], ledgerIssues: [ledger, { ...ledger, number: 822 }] });
+  assert.equal(result.backlog, 0);
+  assert.ok(result.failure);
+  assert.match(result.body, /split-brain/);
+  assert.match(result.body, /❌ Publication verification current/);
+  assert.doesNotMatch(result.body, /✅ Publication verification current/);
+});
+
+test('missing or unreadable durable history cannot make health green', async () => {
+  for (const input of [{ ledgerIssues: [] }, { ledgerReadError: new Error('Ledger comments unavailable') }]) {
+    const result = await run({ comments: [], ...input });
+    assert.ok(result.failure);
+    assert.match(result.body, /Durable ledger validation failed/);
+    assert.match(result.body, /Publication receipt totals below are incomplete evidence/);
+  }
+});
+
+test('unresolved durable intent remains visible without inventing provider acceptance', async () => {
+  const result = await run({ comments: [], ledgerComments: [bot('<!-- BUFFER_DISPATCH_INTENT unaccepted@1:main -->')] });
+  assert.ok(result.failure);
+  assert.match(result.body, /1 durable Buffer dispatch intent\(s\) remain unresolved/);
+  assert.equal(result.backlog, 0);
+});
+
+test('conflicting durable acceptances fail closed while healthy history stays green', async () => {
+  const bad = await run({ comments: [], ledgerComments: [receipt(past), bot('<!-- BUFFER_ACCEPTED post@1:main bufferId=post-2 -->')] });
+  assert.ok(bad.failure);
+  assert.match(bad.body, /Acceptance ledger conflict/);
+  const good = await run({ comments: [], ledgerComments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), receipt(past)] });
+  assert.equal(good.failure, null);
+  assert.match(good.body, /Durable acceptance ledger: \*\*#677\*\*/);
 });
