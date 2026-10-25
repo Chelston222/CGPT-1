@@ -138,7 +138,7 @@ jobs:
             } catch (error) {
               ledgerError = String(error.message || error);
             }
-            const ledgerHealthy = ledgerError === null;
+            let ledgerHealthy = ledgerError === null;
 
             // Old untouched approvals can still carry unresolved publication debt.
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, per_page: 100 });
@@ -177,17 +177,32 @@ jobs:
                 if (Number.isFinite(ts) && ts >= HARDENING_CUTOFF && String(comment.body || '').includes('repository-owner-approved-legacy')) legacyDispatchesAfterCutoff += 1;
               }
 
-              const approvalRows = parseAcceptanceRows(comments);
-              const approvalBufferIds = new Set(approvalRows.map((row) => row.bufferId));
+              const approvalRowsById = new Map(parseAcceptanceRows(comments).map((row) => [row.bufferId, { ...row }]));
+              for (const [key, mirrored] of parseAcceptanceEntries(comments)) {
+                const durable = durableEntries.get(key);
+                if (durable && durable.bufferId !== mirrored.bufferId) {
+                  ledgerHealthy = false;
+                  ledgerError = `Acceptance ledger conflict for ${key}: approval #${issue.number} records a different Buffer ID.`;
+                }
+              }
               // An interrupted acceptance mirror can be recovered only when this
               // genuine owner approval has the exact trusted dispatch intent.
-              for (const key of parseIntentKeys(comments)) {
-                const entry = durableEntries.get(key);
-                if (!entry || approvalBufferIds.has(entry.bufferId)) continue;
-                const row = durableRows.find((candidate) => candidate.bufferId === entry.bufferId);
-                if (row) { approvalRows.push(row); approvalBufferIds.add(row.bufferId); }
+              const intendedBufferIds = new Set([...parseIntentKeys(comments)].map((key) => durableEntries.get(key)?.bufferId).filter(Boolean));
+              for (const row of durableRows) {
+                const mirrored = approvalRowsById.get(row.bufferId);
+                if (!mirrored && !intendedBufferIds.has(row.bufferId)) continue;
+                if (!mirrored) { approvalRowsById.set(row.bufferId, { ...row }); continue; }
+                const dateConflict = mirrored.scheduleConflict || row.scheduleConflict
+                  || (mirrored.dueAt && row.dueAt && Date.parse(mirrored.dueAt) !== Date.parse(row.dueAt));
+                if (dateConflict) {
+                  ledgerHealthy = false;
+                  ledgerError = `Acceptance schedule conflict for ${row.bufferId} between durable history and approval #${issue.number}.`;
+                }
+                mirrored.dueAt = dateConflict ? null : mirrored.dueAt || row.dueAt;
+                mirrored.scheduleConflict = Boolean(dateConflict);
+                if (Number.isFinite(row.acceptedAt)) mirrored.acceptedAt = Number.isFinite(mirrored.acceptedAt) ? Math.min(mirrored.acceptedAt, row.acceptedAt) : row.acceptedAt;
               }
-              for (const row of approvalRows) {
+              for (const row of approvalRowsById.values()) {
                 mappedDurableBufferIds.add(row.bufferId);
                 const terminal = verified.has(row.bufferId) || failed.has(row.bufferId) || supersededIds.has(row.bufferId) || draftRetired.has(row.bufferId) || draftVerified.has(row.bufferId) || ownerAbandoned.has(row.bufferId);
                 const due = Date.parse(row.dueAt || '');

@@ -241,3 +241,18 @@ test('approval history has no recency cutoff and older terminal evidence remains
   assert.equal(ownerReads[0].since, undefined);
   assert.equal(ownerReads[0].state, 'all');
 });
+
+test('conflicting approval and durable schedules cannot hide overdue acceptance behind a future mirror', async () => {
+  const result = await run({ comments: [receipt('2099-01-01T09:00:00Z')], ledgerComments: [receipt(past)] });
+  assert.ok(result.failure);
+  assert.equal(result.backlog, 1);
+  assert.match(result.body, /Acceptance schedule conflict/);
+  assert.match(result.body, /❌ Publication verification current/);
+});
+
+test('one placement key cannot name different Buffer IDs in approval and durable history', async () => {
+  const result = await run({ comments: [bot('<!-- BUFFER_ACCEPTED post@1:main bufferId=other-post dueAt=2099-01-01T09:00:00Z -->')], ledgerComments: [receipt(past)] });
+  assert.ok(result.failure);
+  assert.match(result.body, /Acceptance ledger conflict/);
+  assert.match(result.body, /❌ Publication verification current/);
+});
