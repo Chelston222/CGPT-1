@@ -23,6 +23,7 @@ async function run({ comments = [receipt(past)], includeMirror = false, ledgerIs
   let body = '';
   let failure = null;
   const reads = [];
+  const issueReads = [];
   const writes = [];
   const issues = includeMirror ? [approval, mirror] : [approval];
   const recordWrite = async args => { writes.push(args); if (args.body) body = args.body; };
@@ -37,6 +38,7 @@ async function run({ comments = [receipt(past)], includeMirror = false, ledgerIs
         }
         return args.issue_number === approval.number ? comments : [receipt(past)];
       }
+      issueReads.push(args);
       return args.state === 'all' ? (args.creator ? issues : [...issues, ...ledgerIssues]) : [];
     },
   };
@@ -69,7 +71,7 @@ async function run({ comments = [receipt(past)], includeMirror = false, ledgerIs
   );
   const backlog = Number(body.match(/Publication verification backlog: \*\*(\d+)/)?.[1]);
   assert.ok(Number.isInteger(backlog), 'health report must expose a publication backlog');
-  return { body, failure, backlog, reads, writes };
+  return { body, failure, backlog, reads, writes, issueReads };
 }
 
 test('health fails closed for marker-only overdue acceptance', async () => {
@@ -196,7 +198,46 @@ test('conflicting durable acceptances fail closed while healthy history stays gr
   const bad = await run({ comments: [], ledgerComments: [receipt(past), bot('<!-- BUFFER_ACCEPTED post@1:main bufferId=post-2 -->')] });
   assert.ok(bad.failure);
   assert.match(bad.body, /Acceptance ledger conflict/);
-  const good = await run({ comments: [], ledgerComments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), receipt(past)] });
+  const good = await run({ comments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), terminal('LINKEDIN_PUBLICATION_SUPERSEDED')], ledgerComments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), receipt(past)] });
   assert.equal(good.failure, null);
   assert.match(good.body, /Durable acceptance ledger: \*\*#677\*\*/);
+});
+
+test('durable acceptance without owner-approval provenance stays unknown at any due time', async () => {
+  for (const dueAt of [past, '2099-01-01T09:00:00Z']) {
+    const result = await run({ comments: [], ledgerComments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), receipt(dueAt)] });
+    assert.ok(result.failure);
+    assert.equal(result.backlog, 1);
+    assert.match(result.body, /Durable acceptances without owner-approval provenance: \*\*1\*\*/);
+    assert.match(result.body, /❌ Publication verification current/);
+  }
+});
+
+test('missing approval acceptance mirror uses exact trusted intent and preserves overdue debt', async () => {
+  const result = await run({ comments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->')], ledgerComments: [receipt(past)] });
+  assert.ok(result.failure);
+  assert.equal(result.backlog, 1);
+  assert.match(result.body, /Durable acceptances without owner-approval provenance: \*\*0\*\*/);
+});
+
+test('matching durable and approval receipts are counted once', async () => {
+  const result = await run({ comments: [receipt(past), bot(`- Mirror: Buffer post ID \`post-1\` | ${past}`)], ledgerComments: [receipt(past), receipt(past)] });
+  assert.equal(result.backlog, 1);
+});
+
+test('a different or untrusted approval intent cannot claim durable acceptance', async () => {
+  for (const comment of [bot('<!-- BUFFER_DISPATCH_INTENT another@1:main -->'), { ...bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), user: { login: 'outside-user' } }]) {
+    const result = await run({ comments: [comment], ledgerComments: [receipt(past)] });
+    assert.ok(result.failure);
+    assert.match(result.body, /Durable acceptances without owner-approval provenance: \*\*1\*\*/);
+  }
+});
+
+test('approval history has no recency cutoff and older terminal evidence remains usable', async () => {
+  const result = await run({ comments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), terminal('LINKEDIN_PUBLICATION_SUPERSEDED')], ledgerComments: [receipt(past)] });
+  assert.equal(result.failure, null);
+  const ownerReads = result.issueReads.filter(args => args.creator === owner);
+  assert.equal(ownerReads.length, 1);
+  assert.equal(ownerReads[0].since, undefined);
+  assert.equal(ownerReads[0].state, 'all');
 });
