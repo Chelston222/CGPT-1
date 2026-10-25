@@ -31,7 +31,7 @@ jobs:
         with:
           script: |
             const path = require('node:path');
-            const { parseAcceptanceRows, validAnalyticsCaptureIds } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
+            const { parseAcceptanceEntries, parseAcceptanceRows, parseIntentKeys, selectTrustedLedgerIssue, unresolvedIntentKeys, validAnalyticsCaptureIds } = require(path.join(process.env.GITHUB_WORKSPACE, 'scripts/linkedin-buffer-acceptance-ledger.cjs'));
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const HARDENING_CUTOFF = Date.parse('2026-08-22T23:25:00Z');
@@ -120,8 +120,28 @@ jobs:
               }];
             }));
 
-            const since = new Date(now - 45 * 24 * 60 * 60 * 1000).toISOString();
-            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, since, per_page: 100 });
+            let durableLedger = null;
+            let ledgerError = null;
+            let durableEntries = new Map();
+            let durableRows = [];
+            try {
+              // Ledger discovery must include bot-created and closed history, without
+              // the recency/creator filters used for the approval reporting window.
+              const ledgerUniverse = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 });
+              durableLedger = selectTrustedLedgerIssue(ledgerUniverse, owner);
+              if (!durableLedger) throw new Error('Trusted Buffer acceptance ledger does not exist.');
+              const ledgerComments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: durableLedger.number, per_page: 100 });
+              durableEntries = parseAcceptanceEntries(ledgerComments);
+              durableRows = parseAcceptanceRows(ledgerComments);
+              const unresolved = unresolvedIntentKeys(ledgerComments);
+              if (unresolved.size) throw new Error(`${unresolved.size} durable Buffer dispatch intent(s) remain unresolved; reconcile provider evidence before publishing.`);
+            } catch (error) {
+              ledgerError = String(error.message || error);
+            }
+            let ledgerHealthy = ledgerError === null;
+
+            // Old untouched approvals can still carry unresolved publication debt.
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', creator: owner, per_page: 100 });
             const approvalIssues = issues.filter((issue) => !issue.pull_request
               && /\[(?:APPROVED|FAILED) LINKEDIN(?: WEEK)?\]/.test(issue.title)
               && !/^\[(?:APPROVED|FAILED) LINKEDIN\]\s+Buffer acceptance ledger$/i.test(issue.title));
@@ -135,6 +155,7 @@ jobs:
             let legacyDispatchesAfterCutoff = 0;
             let superseded = 0;
             let retiredDrafts = 0;
+            const mappedDurableBufferIds = new Set();
 
             for (const issue of approvalIssues) {
               const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
@@ -156,7 +177,33 @@ jobs:
                 if (Number.isFinite(ts) && ts >= HARDENING_CUTOFF && String(comment.body || '').includes('repository-owner-approved-legacy')) legacyDispatchesAfterCutoff += 1;
               }
 
-              for (const row of parseAcceptanceRows(comments)) {
+              const approvalRowsById = new Map(parseAcceptanceRows(comments).map((row) => [row.bufferId, { ...row }]));
+              for (const [key, mirrored] of parseAcceptanceEntries(comments)) {
+                const durable = durableEntries.get(key);
+                if (durable && durable.bufferId !== mirrored.bufferId) {
+                  ledgerHealthy = false;
+                  ledgerError = `Acceptance ledger conflict for ${key}: approval #${issue.number} records a different Buffer ID.`;
+                }
+              }
+              // An interrupted acceptance mirror can be recovered only when this
+              // genuine owner approval has the exact trusted dispatch intent.
+              const intendedBufferIds = new Set([...parseIntentKeys(comments)].map((key) => durableEntries.get(key)?.bufferId).filter(Boolean));
+              for (const row of durableRows) {
+                const mirrored = approvalRowsById.get(row.bufferId);
+                if (!mirrored && !intendedBufferIds.has(row.bufferId)) continue;
+                if (!mirrored) { approvalRowsById.set(row.bufferId, { ...row }); continue; }
+                const dateConflict = mirrored.scheduleConflict || row.scheduleConflict
+                  || (mirrored.dueAt && row.dueAt && Date.parse(mirrored.dueAt) !== Date.parse(row.dueAt));
+                if (dateConflict) {
+                  ledgerHealthy = false;
+                  ledgerError = `Acceptance schedule conflict for ${row.bufferId} between durable history and approval #${issue.number}.`;
+                }
+                mirrored.dueAt = dateConflict ? null : mirrored.dueAt || row.dueAt;
+                mirrored.scheduleConflict = Boolean(dateConflict);
+                if (Number.isFinite(row.acceptedAt)) mirrored.acceptedAt = Number.isFinite(mirrored.acceptedAt) ? Math.min(mirrored.acceptedAt, row.acceptedAt) : row.acceptedAt;
+              }
+              for (const row of approvalRowsById.values()) {
+                mappedDurableBufferIds.add(row.bufferId);
                 const terminal = verified.has(row.bufferId) || failed.has(row.bufferId) || supersededIds.has(row.bufferId) || draftRetired.has(row.bufferId) || draftVerified.has(row.bufferId) || ownerAbandoned.has(row.bufferId);
                 const due = Date.parse(row.dueAt || '');
                 const isCurrent = Number.isFinite(row.acceptedAt) && row.acceptedAt >= HARDENING_CUTOFF;
@@ -170,19 +217,26 @@ jobs:
               }
             }
 
+            // Ledger-only acceptance is not proof of an owner-approved release.
+            // Missing provenance remains UNKNOWN even when its due time is future.
+            const orphanedDurableRows = durableRows.filter((row) => !mappedDurableBufferIds.has(row.bufferId));
+            publicationBacklog += orphanedDurableRows.length;
+
             const paginationIncomplete = scheduled.data?.posts?.pageInfo?.hasNextPage === true;
             const queueHealthy = Object.values(queue).every((row) => row.scheduled > 0 && row.scheduled <= 10);
             const noPastDue = Object.values(queue).every((row) => row.pastDue === 0);
             const fixedTimeQueue = slotDrivenPosts.length === 0;
-            const green = providerConfigHealthy && fixedTimeQueue && queueHealthy && noPastDue && !paginationIncomplete && publicationBacklog === 0 && publicationFailures === 0 && currentAnalyticsBacklog === 0 && currentNativeBacklog === 0 && legacyDispatchesAfterCutoff === 0 && openApprovals === 0;
+            const green = ledgerHealthy && providerConfigHealthy && fixedTimeQueue && queueHealthy && noPastDue && !paginationIncomplete && publicationBacklog === 0 && publicationFailures === 0 && currentAnalyticsBacklog === 0 && currentNativeBacklog === 0 && legacyDispatchesAfterCutoff === 0 && openApprovals === 0;
 
             const checks = [
+              ['Durable acceptance ledger unique, readable and reconciled', ledgerHealthy],
+              ['Durable acceptances linked to owner approvals', orphanedDurableRows.length === 0],
               ['Provider recurring schedules, timezone, connection state and Retention School identity aligned', providerConfigHealthy],
               ['Scheduled queue fixed-time and immune to recurring-slot movement', fixedTimeQueue],
               ['Queue healthy and non-empty', queueHealthy],
               ['No past-due scheduled posts', noPastDue],
               ['Buffer pagination complete', !paginationIncomplete],
-              ['Publication verification current', publicationBacklog === 0],
+              ['Publication verification current', ledgerHealthy && publicationBacklog === 0],
               ['No explicit publication failures', publicationFailures === 0],
               ['Current Buffer analytics captured or correctly routed', currentAnalyticsBacklog === 0],
               ['Current native LinkedIn analytics capture current', currentNativeBacklog === 0],
@@ -202,6 +256,9 @@ jobs:
               '# LinkedIn Content OS health', '',
               green ? '🟢 **GREEN** — every current release and recurring-configuration invariant passes.' : '🟠 **NOT GREEN** — at least one release or recurring-configuration invariant still needs evidence or action.', '',
               ...checks.map(([label, pass]) => `- ${pass ? '✅' : '❌'} ${label}`), '',
+              `- Durable acceptance ledger: **${durableLedger ? `#${durableLedger.number}` : 'unavailable'}**`,
+              `- Durable acceptances without owner-approval provenance: **${orphanedDurableRows.length}**`,
+              ...(ledgerError ? [`- Durable ledger validation failed: ${ledgerError}`, '- Publication receipt totals below are incomplete evidence while the durable ledger is unavailable or unreconciled.'] : []), '',
               '### Provider configuration', ...providerLines, '',
               `- Scheduled posts vulnerable to recurring-slot movement: **${slotDrivenPosts.length}**`,
               `- Immutable queue fingerprint: \`${queueFingerprint}\``,

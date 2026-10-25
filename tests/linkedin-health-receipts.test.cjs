@@ -15,13 +15,15 @@ const bot = body => ({ user: { login: 'github-actions[bot]' }, body, created_at:
 const past = '2026-09-02T09:00:00Z';
 const approval = { number: 782, title: '[APPROVED LINKEDIN] real approval', user: { login: owner }, state: 'closed' };
 const mirror = { number: 607, title: '[FAILED LINKEDIN] Buffer acceptance ledger', user: { login: owner }, state: 'open' };
+const ledger = { number: 677, title: '[BUFFER ACCEPTANCE LEDGER] LinkedIn governed releases', user: { login: 'github-actions[bot]' }, state: 'open' };
 const receipt = dueAt => bot(`<!-- BUFFER_ACCEPTED post@1:main bufferId=post-1${dueAt ? ` dueAt=${dueAt}` : ''} -->`);
 const terminal = kind => bot(`<!-- ${kind} bufferId=post-1 -->`);
 
-async function run({ comments = [receipt(past)], includeMirror = false } = {}) {
+async function run({ comments = [receipt(past)], includeMirror = false, ledgerIssues = [ledger], ledgerComments = [], ledgerReadError = null } = {}) {
   let body = '';
   let failure = null;
   const reads = [];
+  const issueReads = [];
   const writes = [];
   const issues = includeMirror ? [approval, mirror] : [approval];
   const recordWrite = async args => { writes.push(args); if (args.body) body = args.body; };
@@ -30,9 +32,14 @@ async function run({ comments = [receipt(past)], includeMirror = false } = {}) {
     paginate: async (endpoint, args) => {
       if (endpoint === 'comments') {
         reads.push(args.issue_number);
+        if (args.issue_number === ledger.number) {
+          if (ledgerReadError) throw ledgerReadError;
+          return ledgerComments;
+        }
         return args.issue_number === approval.number ? comments : [receipt(past)];
       }
-      return args.state === 'all' ? issues : [];
+      issueReads.push(args);
+      return args.state === 'all' ? (args.creator ? issues : [...issues, ...ledgerIssues]) : [];
     },
   };
   const fetch = async (_url, options) => {
@@ -64,7 +71,7 @@ async function run({ comments = [receipt(past)], includeMirror = false } = {}) {
   );
   const backlog = Number(body.match(/Publication verification backlog: \*\*(\d+)/)?.[1]);
   assert.ok(Number.isInteger(backlog), 'health report must expose a publication backlog');
-  return { body, failure, backlog, reads, writes };
+  return { body, failure, backlog, reads, writes, issueReads };
 }
 
 test('health fails closed for marker-only overdue acceptance', async () => {
@@ -159,5 +166,93 @@ test('historical acceptance mirror is not a second unresolved approval', async (
   const result = await run({ comments: [receipt(past), terminal('LINKEDIN_PUBLICATION_SUPERSEDED')], includeMirror: true });
   assert.equal(result.backlog, 0);
   assert.equal(result.failure, null);
-  assert.deepEqual(result.reads, [approval.number]);
+  assert.deepEqual(result.reads, [ledger.number, approval.number]);
+});
+
+test('duplicate ledgers prevent a current-verification claim even with zero receipt backlog', async () => {
+  const result = await run({ comments: [], ledgerIssues: [ledger, { ...ledger, number: 822 }] });
+  assert.equal(result.backlog, 0);
+  assert.ok(result.failure);
+  assert.match(result.body, /split-brain/);
+  assert.match(result.body, /❌ Publication verification current/);
+  assert.doesNotMatch(result.body, /✅ Publication verification current/);
+});
+
+test('missing or unreadable durable history cannot make health green', async () => {
+  for (const input of [{ ledgerIssues: [] }, { ledgerReadError: new Error('Ledger comments unavailable') }]) {
+    const result = await run({ comments: [], ...input });
+    assert.ok(result.failure);
+    assert.match(result.body, /Durable ledger validation failed/);
+    assert.match(result.body, /Publication receipt totals below are incomplete evidence/);
+  }
+});
+
+test('unresolved durable intent remains visible without inventing provider acceptance', async () => {
+  const result = await run({ comments: [], ledgerComments: [bot('<!-- BUFFER_DISPATCH_INTENT unaccepted@1:main -->')] });
+  assert.ok(result.failure);
+  assert.match(result.body, /1 durable Buffer dispatch intent\(s\) remain unresolved/);
+  assert.equal(result.backlog, 0);
+});
+
+test('conflicting durable acceptances fail closed while healthy history stays green', async () => {
+  const bad = await run({ comments: [], ledgerComments: [receipt(past), bot('<!-- BUFFER_ACCEPTED post@1:main bufferId=post-2 -->')] });
+  assert.ok(bad.failure);
+  assert.match(bad.body, /Acceptance ledger conflict/);
+  const good = await run({ comments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), terminal('LINKEDIN_PUBLICATION_SUPERSEDED')], ledgerComments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), receipt(past)] });
+  assert.equal(good.failure, null);
+  assert.match(good.body, /Durable acceptance ledger: \*\*#677\*\*/);
+});
+
+test('durable acceptance without owner-approval provenance stays unknown at any due time', async () => {
+  for (const dueAt of [past, '2099-01-01T09:00:00Z']) {
+    const result = await run({ comments: [], ledgerComments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), receipt(dueAt)] });
+    assert.ok(result.failure);
+    assert.equal(result.backlog, 1);
+    assert.match(result.body, /Durable acceptances without owner-approval provenance: \*\*1\*\*/);
+    assert.match(result.body, /❌ Publication verification current/);
+  }
+});
+
+test('missing approval acceptance mirror uses exact trusted intent and preserves overdue debt', async () => {
+  const result = await run({ comments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->')], ledgerComments: [receipt(past)] });
+  assert.ok(result.failure);
+  assert.equal(result.backlog, 1);
+  assert.match(result.body, /Durable acceptances without owner-approval provenance: \*\*0\*\*/);
+});
+
+test('matching durable and approval receipts are counted once', async () => {
+  const result = await run({ comments: [receipt(past), bot(`- Mirror: Buffer post ID \`post-1\` | ${past}`)], ledgerComments: [receipt(past), receipt(past)] });
+  assert.equal(result.backlog, 1);
+});
+
+test('a different or untrusted approval intent cannot claim durable acceptance', async () => {
+  for (const comment of [bot('<!-- BUFFER_DISPATCH_INTENT another@1:main -->'), { ...bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), user: { login: 'outside-user' } }]) {
+    const result = await run({ comments: [comment], ledgerComments: [receipt(past)] });
+    assert.ok(result.failure);
+    assert.match(result.body, /Durable acceptances without owner-approval provenance: \*\*1\*\*/);
+  }
+});
+
+test('approval history has no recency cutoff and older terminal evidence remains usable', async () => {
+  const result = await run({ comments: [bot('<!-- BUFFER_DISPATCH_INTENT post@1:main -->'), terminal('LINKEDIN_PUBLICATION_SUPERSEDED')], ledgerComments: [receipt(past)] });
+  assert.equal(result.failure, null);
+  const ownerReads = result.issueReads.filter(args => args.creator === owner);
+  assert.equal(ownerReads.length, 1);
+  assert.equal(ownerReads[0].since, undefined);
+  assert.equal(ownerReads[0].state, 'all');
+});
+
+test('conflicting approval and durable schedules cannot hide overdue acceptance behind a future mirror', async () => {
+  const result = await run({ comments: [receipt('2099-01-01T09:00:00Z')], ledgerComments: [receipt(past)] });
+  assert.ok(result.failure);
+  assert.equal(result.backlog, 1);
+  assert.match(result.body, /Acceptance schedule conflict/);
+  assert.match(result.body, /❌ Publication verification current/);
+});
+
+test('one placement key cannot name different Buffer IDs in approval and durable history', async () => {
+  const result = await run({ comments: [bot('<!-- BUFFER_ACCEPTED post@1:main bufferId=other-post dueAt=2099-01-01T09:00:00Z -->')], ledgerComments: [receipt(past)] });
+  assert.ok(result.failure);
+  assert.match(result.body, /Acceptance ledger conflict/);
+  assert.match(result.body, /❌ Publication verification current/);
 });

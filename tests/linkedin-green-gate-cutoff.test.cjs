@@ -20,7 +20,7 @@ test('green requires provider recurring configuration, timezone and connection h
   assert.match(workflow, /postingSchedule \{ day paused times \}/);
   assert.match(workflow, /channel\.timezone === 'Europe\/London'/);
   assert.match(workflow, /!channel\.isDisconnected && !channel\.isLocked && !channel\.isQueuePaused/);
-  assert.match(workflow, /const green = providerConfigHealthy && fixedTimeQueue && queueHealthy/);
+  assert.match(workflow, /const green = ledgerHealthy && providerConfigHealthy && fixedTimeQueue && queueHealthy/);
 });
 
 test('green requires a fixed-time queue fingerprint before recurring settings change', () => {
