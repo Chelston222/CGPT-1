@@ -53,3 +53,5 @@ jobs:
             process.exit(4);
           }
           NODE
+
+# Fresh safety readback after the 27 October paused production recovery.
