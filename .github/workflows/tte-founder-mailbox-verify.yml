@@ -1,0 +1,62 @@
+name: TTE Founder Mailbox Verify
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tte-founder-mailbox-verify.yml'
+permissions:
+  contents: read
+concurrency:
+  group: tte-founder-mailbox-internal-verification
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      TTE_CHELSTON_SMTP_PASS: ${{ secrets.TTE_CHELSTON_SMTP_PASS }}
+      TTE_VERIFY_SHA: ${{ github.sha }}
+    steps:
+      - name: Require the separate founder mailbox credential
+        shell: bash
+        run: |
+          test -n "$TTE_CHELSTON_SMTP_PASS" || {
+            echo 'SETUP REQUIRED: add the chelston@222emails.com app password as repository Actions secret TTE_CHELSTON_SMTP_PASS. Do not post it in chat or reuse the hello@ credential.'
+            exit 2
+          }
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install existing SMTP verification dependency
+        working-directory: apps/tte-mail-bridge
+        run: npm install --omit=dev --no-audit --no-fund --no-package-lock
+      - name: Authenticate and send one fixed internal verification email
+        working-directory: apps/tte-mail-bridge
+        run: |
+          node --input-type=module <<'NODE'
+          import nodemailer from 'nodemailer';
+          const pass=process.env.TTE_CHELSTON_SMTP_PASS;
+          if(!pass) throw new Error('Founder mailbox credential missing');
+          const transporter=nodemailer.createTransport({
+            host:'mail.privateemail.com',port:465,secure:true,
+            auth:{user:'chelston@222emails.com',pass},
+            connectionTimeout:20000,greetingTimeout:20000,socketTimeout:30000
+          });
+          try {
+            await transporter.verify();
+            const stamp=new Date().toISOString();
+            const info=await transporter.sendMail({
+              from:'Chelston Phillip <chelston@222emails.com>',
+              to:'tripletwochelston@gmail.com',
+              replyTo:'chelston@222emails.com',
+              subject:'TTE founder SMTP verification '+process.env.TTE_VERIFY_SHA.slice(0,8),
+              text:'Internal founder mailbox automation verification only.\nTimestamp: '+stamp+'\nNo prospect contacted. No queue dispatch or sending-cap change.',
+              headers:{'X-TTE-Verification':'founder-smtp-internal'}
+            });
+            console.log('FOUNDER_SMTP_ACCEPTED',JSON.stringify({messageId:info.messageId,accepted:info.accepted,rejected:info.rejected,at:stamp}));
+            if(info.rejected?.length||!info.accepted?.length) throw new Error('Internal test was not accepted');
+          } finally { transporter.close(); }
+          NODE
