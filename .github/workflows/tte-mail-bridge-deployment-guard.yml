@@ -1,0 +1,50 @@
+name: TTE Mail Bridge Deployment Guard
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tte-mail-bridge-deployment-guard.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tte-mail-bridge-production
+  cancel-in-progress: false
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: e531326d-60b8-4def-85b9-727a7f708547
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Stop automatic builds and verify retained release
+        run: |
+          node --input-type=module <<'NODE'
+          const id=process.env.NETLIFY_SITE_ID, token=process.env.NETLIFY_AUTH_TOKEN;
+          if(!token) throw new Error('Existing deployment credential missing');
+          const url='https://api.netlify.com/api/v1/sites/'+id;
+          const headers={Authorization:'Bearer '+token,'Content-Type':'application/json'};
+          const before=await fetch(url,{headers});
+          if(!before.ok) throw new Error('Site read HTTP '+before.status);
+          const site=await before.json();
+          if(site.name!=='222emails-mail-bridge') throw new Error('Site identity mismatch');
+          const prior=site.published_deploy?.id;
+          const update=await fetch(url,{method:'PATCH',headers,body:JSON.stringify({build_settings:{stop_builds:true}})});
+          if(!update.ok) throw new Error('Stop automatic builds HTTP '+update.status);
+          const after=await fetch(url,{headers});
+          if(!after.ok) throw new Error('Readback HTTP '+after.status);
+          const current=await after.json();
+          if(current.build_settings?.stop_builds!==true) throw new Error('Automatic builds remain enabled');
+          if(current.published_deploy?.id!==prior) throw new Error('Published release changed during guard update');
+          const res=await fetch('https://222emails-mail-bridge.netlify.app/api/tte/health');
+          if(!res.ok) throw new Error('Health HTTP '+res.status);
+          const h=await res.json();
+          if(h.service!=='tte-mail-bridge'||h.status!=='READY') throw new Error('Restored application health regressed');
+          console.log('DEPLOYMENT_GUARD_VERIFIED',JSON.stringify({site:current.name,stop_builds:current.build_settings.stop_builds,published:current.published_deploy.id,health:h.status}));
+          console.log('No deployment or message dispatch performed. Explicit CI/CLI releases remain the release path.');
+          NODE
