@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { DEFAULTS } from './constants.mjs';
+import { deliveryLimits } from './delivery-limits.mjs';
 import { decryptJsonAny } from './crypto.mjs';
 import { decryptionKeys, googleClientId, googleClientSecret } from './auth.mjs';
 import { refreshAccessToken, sendGmail } from './google.mjs';
@@ -18,11 +18,12 @@ function configNumber(name, fallback, min = 0, max = 100000) {
 function virtualSmtpAccount() {
   const pass = Netlify.env.get('TTE_SMTP_PASS');
   if (!pass) return null;
+  const limits = deliveryLimits((name) => Netlify.env.get(name));
   return {
     id: 'legacy-smtp', provider: 'smtp', email: Netlify.env.get('TTE_SMTP_USER') || 'hello@222emails.com',
     senderName: Netlify.env.get('TTE_SMTP_FROM_NAME') || 'Chelston Phillip', status: 'ACTIVE', enabled: true,
-    dailyCap: configNumber('TTE_DIRECT_DAILY_CAP', DEFAULTS.legacySmtpDailyCap, 1, 100),
-    rolling24hCap: configNumber('TTE_SMTP_ROLLING_24H_CAP', DEFAULTS.legacySmtpDailyCap, 1, 100),
+    dailyCap: limits.smtpDailyCap,
+    rolling24hCap: limits.smtpRolling24hCap,
     minIntervalMinutes: configNumber('TTE_SMTP_MIN_INTERVAL_MINUTES', 4, 0, 120),
     priority: configNumber('TTE_SMTP_PRIORITY', 12, -100, 100), health: { score: 100 },
   };
@@ -99,7 +100,8 @@ export async function deliverApproved(payload, { queueId = null, trigger = 'api'
     }
   }
 
-  const globalCap = configNumber('TTE_GLOBAL_DAILY_CAP', DEFAULTS.globalDailyCap, 1, 1000);
+  const limits = deliveryLimits((name) => Netlify.env.get(name));
+  const globalCap = limits.globalDailyCap;
   const globalToday = await globalSentToday(now);
   if (globalToday >= globalCap) return { ok:false, state:'BLOCKED', code:'GLOBAL_DAILY_CAP', retryable:true, retryAfterMinutes:60 };
 
@@ -107,7 +109,7 @@ export async function deliverApproved(payload, { queueId = null, trigger = 'api'
   const route = await getLeadRoute(leadHash);
   const usageByAccount = {};
   for (const account of accounts) usageByAccount[account.id] = await getUsage(account, to, now);
-  const domainDailyCap = configNumber('TTE_DOMAIN_DAILY_CAP', DEFAULTS.domainDailyCap, 1, 100);
+  const domainDailyCap = limits.domainDailyCap;
   if (await domainSentToday(to, now) >= domainDailyCap) return { ok:false, state:'BLOCKED', code:'RECIPIENT_DOMAIN_DAILY_CAP', retryable:true, retryAfterMinutes:720 };
 
   const continuityRequired = Number(payload.touchNo) > 1 && route?.accountId && payload.allowSenderSwitch !== true;
