@@ -1,0 +1,77 @@
+name: TTE Mail Bridge Paused Recovery
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tte-mail-bridge-paused-recovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tte-mail-bridge-production
+  cancel-in-progress: false
+jobs:
+  recover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: e531326d-60b8-4def-85b9-727a7f708547
+    defaults:
+      run:
+        working-directory: apps/tte-mail-bridge
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Verify existing deployment identity and public DNS
+        run: |
+          node --input-type=module <<'NODE'
+          import dns from 'node:dns/promises';
+          for (const name of ['222emails.com','_dmarc.222emails.com']) {
+            try { console.log('DNS_TXT', name, JSON.stringify(await dns.resolveTxt(name))); }
+            catch(e) { console.log('DNS_LOOKUP_FAILED',name,e.code); }
+          }
+          const token=process.env.NETLIFY_AUTH_TOKEN;
+          if(!token) throw new Error('Existing NETLIFY_AUTH_TOKEN is missing; owner must reconnect deployment access.');
+          const res=await fetch('https://api.netlify.com/api/v1/sites/'+process.env.NETLIFY_SITE_ID,{
+            headers:{Authorization:'Bearer '+token}
+          });
+          if(!res.ok) throw new Error('Existing Netlify deployment access returned HTTP '+res.status+'; no alternate credential or proxy attempted.');
+          const site=await res.json();
+          if(site.name!=='222emails-mail-bridge') throw new Error('Site identity mismatch');
+          const b=site.build_settings||{};
+          console.log('SITE_VERIFIED',JSON.stringify({id:site.id,name:site.name,base:b.base,dir:b.dir,functions_dir:b.functions_dir,published:site.published_deploy?.id}));
+          NODE
+      - name: Install and verify the existing mail bridge
+        run: |
+          npm install --no-audit --no-fund
+          npm run verify
+      - name: Preserve paused delivery during recovery
+        run: |
+          set -euo pipefail
+          npx netlify env:set TTE_SCHEDULED_DISPATCH false --context production --site "$NETLIFY_SITE_ID"
+          npx netlify env:set TTE_ALLOW_MANUAL_DISPATCH false --context production --site "$NETLIFY_SITE_ID"
+          npx netlify env:set TTE_GLOBAL_DAILY_CAP 0 --context production --site "$NETLIFY_SITE_ID"
+          npx netlify env:set TTE_DIRECT_DAILY_CAP 0 --context production --site "$NETLIFY_SITE_ID"
+      - name: Deploy the correct application directory with functions
+        run: |
+          set -euo pipefail
+          npx netlify deploy --prod --dir=public --functions=netlify/functions --site "$NETLIFY_SITE_ID"
+      - name: Verify live function routing without dispatch
+        run: |
+          node --input-type=module <<'NODE'
+          const root='https://222emails-mail-bridge.netlify.app';
+          const res=await fetch(root+'/api/tte/health',{redirect:'error'});
+          const ct=res.headers.get('content-type')||'';
+          if(!res.ok||!ct.includes('application/json')) throw new Error('Health route is not working JSON: HTTP '+res.status+' '+ct);
+          const h=await res.json();
+          console.log('RECOVERED_HEALTH',JSON.stringify({service:h.service,status:h.status,version:h.version,transportConfigured:h.transportConfigured,mode:h.mode}));
+          if(h.service!=='tte-mail-bridge') throw new Error('Wrong health service');
+          if(!['READY','CONFIG_REQUIRED'].includes(h.status)) throw new Error('Unexpected health contract');
+          const api=await fetch(root+'/api/tte/metrics',{redirect:'error'});
+          if(![401,403].includes(api.status)) throw new Error('Metrics must remain authenticated; received HTTP '+api.status);
+          console.log('RECOVERY_VERIFIED_DELIVERY_REMAINS_PAUSED');
+          NODE
