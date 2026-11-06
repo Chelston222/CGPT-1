@@ -139,7 +139,7 @@ function Home() {
         <div>
           <p className="eyebrow">CLIENT RETURN SYSTEMS · LANCASHIRE + UK</p>
           <h1>Bring more clients back before you spend more on finding new ones.</h1>
-          <p className="hero-copy">222Emails builds turnkey Client Return Systems for appointment-led businesses. We tighten the gaps around cold enquiries, no-shows, rebooking and lapsed clients, then install the follow-up, automation, handoffs and measurement needed to keep more of the demand you already worked to create.</p>
+          <p className="hero-copy">When an enquiry goes quiet, a client cancels or somebody leaves without rebooking, the next useful step can get missed. 222Emails helps appointment-led businesses find those gaps and build practical Client Return Systems around the booking tools and people they already use, with clear follow-up, staff handoffs and measurement.</p>
           <div className="cta-row">
             <a className="button primary" href="/14-day-reactivation-pilot/">See the 14-Day Reactivation Pilot</a>
             <a className="text-link" href="/client-return-guides/">Get a free Client Return field guide</a>
