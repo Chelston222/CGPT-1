@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
 import { encryptJson, decryptJson, decryptJsonAny, signState, verifyState } from '../netlify/functions/_shared/crypto.mjs';
 import { validateOutbound } from '../netlify/functions/_shared/validation.mjs';
+import { approvedMessageFingerprint } from '../netlify/functions/_shared/preaudit-gate.mjs';
 import { effectiveDailyCap, selectSender, accountEligibility } from '../netlify/functions/_shared/routing.mjs';
 import { REQUIRED_OPT_OUT } from '../netlify/functions/_shared/constants.mjs';
 import { buildMime } from '../netlify/functions/_shared/mime.mjs';
@@ -27,7 +28,15 @@ test('legal basis alone never satisfies provider permission',()=>{const base={to
 test('provider permission requires evidence and a valid recorded time',()=>{const base={to:['owner@example.co.uk'],subject:'Question',text:`Hi\n${REQUIRED_OPT_OUT}`,leadId:'L3',touchNo:1,idempotencyKey:'I3',emailGate:warmGate(),reviewState:'APPROVED',reviewedBy:'operator',compliance:{companyType:'corporate',legalBasis:'consent',recipientPermission:'consent',permissionEvidence:'CRM record',permissionRecordedAt:'2026-08-10T10:00:00Z'}};assert.equal(validateOutbound(base).ok,true);assert.ok(validateOutbound({...base,compliance:{...base.compliance,permissionEvidence:''}}).errors.includes('permission_evidence_required'));assert.ok(validateOutbound({...base,compliance:{...base.compliance,permissionRecordedAt:'not-a-date'}}).errors.includes('permission_recorded_at_required'));});
 test('sole trader needs consent or soft opt-in',()=>{const base={to:['owner@example.co.uk'],subject:'Question',text:`Hi\n${REQUIRED_OPT_OUT}`,leadId:'L4',touchNo:1,idempotencyKey:'I4',emailGate:warmGate(),reviewState:'APPROVED',reviewedBy:'operator'};assert.equal(validateOutbound({...base,compliance:{companyType:'sole_trader',legalBasis:'legitimate_interests',...permission}}).ok,false);assert.equal(validateOutbound({...base,compliance:{companyType:'sole_trader',legalBasis:'consent',...permission}}).ok,true);});
 test('external email requires final permission, address and sender PASS',()=>{const base={to:['owner@example.co.uk'],subject:'Question',text:`Hi\n${REQUIRED_OPT_OUT}`,leadId:'G1',touchNo:1,idempotencyKey:'G1',emailGate:warmGate(),reviewState:'APPROVED',reviewedBy:'operator',compliance:{companyType:'corporate',legalBasis:'consent',...permission}};assert.equal(validateOutbound(base,{requireEmailGate:true}).ok,true);assert.ok(validateOutbound({...base,emailGate:{...warmGate(),finalPermission:'NO EMAIL'}},{requireEmailGate:true}).errors.includes('final_email_permission_required'));assert.ok(validateOutbound({...base,emailGate:{...warmGate(),addressGate:'HOLD'}},{requireEmailGate:true}).errors.includes('address_gate_pass_required'));assert.ok(validateOutbound({...base,emailGate:{...warmGate(),senderGate:'HOLD'}},{requireEmailGate:true}).errors.includes('sender_gate_pass_required'));});
-test('cold B2B requires evidence score at least 90',()=>{const base={to:['owner@example.co.uk'],subject:'Question',text:`Hi\n${REQUIRED_OPT_OUT}`,leadId:'G2',touchNo:1,idempotencyKey:'G2',emailGate:coldGate(),reviewState:'APPROVED',reviewedBy:'operator',compliance:{companyType:'corporate',legalBasis:'consent',...permission}};assert.equal(validateOutbound(base,{requireEmailGate:true}).ok,true);assert.ok(validateOutbound({...base,emailGate:{...coldGate(),evidenceScore:89}},{requireEmailGate:true}).errors.includes('cold_b2b_evidence_score_below_90'));});
+test('cold B2B requires evidence score at least 90 and specific reviewed pre-audit',()=> {
+  const base={to:['owner@example.co.uk'],subject:'Booking enquiry',text:`I noticed the booking route uses a general enquiry form. I would use Request a consultation and explain when the booking is confirmed.\n${REQUIRED_OPT_OUT}`,leadId:'G2',touchNo:1,idempotencyKey:'G2',emailGate:coldGate(),reviewState:'APPROVED',reviewedBy:'operator',compliance:{companyType:'corporate',legalBasis:'consent',...permission}};
+  const now=new Date().toISOString();
+  base.preAudit={auditId:'AUDIT-G2-TEST',leadId:'G2',touchNo:1,recipient:'owner@example.co.uk',evidenceType:'OBSERVED',observedFinding:'The public booking route uses a general enquiry form rather than immediately confirming an appointment.',sourceUrl:'https://example.co.uk/book',checkedAt:now,commercialRisk:'Prospective clients may confuse an enquiry with a confirmed booking.',recommendedFix:'Use Request a consultation and explain when the team confirms a time.',observationAnchor:'general enquiry form',fixAnchor:'Request a consultation',reviewedBy:'human-reviewer',reviewedAt:now,humanReviewPass:true,proofAttributionReviewPass:true,approvedMessageSha256:approvedMessageFingerprint(base)};
+  const good=validateOutbound(base,{requireEmailGate:true});
+  assert.equal(good.ok,true,good.errors.join(', '));
+  assert.ok(validateOutbound({...base,emailGate:{...coldGate(),evidenceScore:89}},{requireEmailGate:true}).errors.includes('cold_b2b_evidence_score_below_90'));
+});
+
 test('stale warm gate snapshot is blocked',()=>{const stale={...warmGate(),verifiedAt:new Date(Date.now()-2*60*60*1000).toISOString()};const base={to:['owner@example.co.uk'],subject:'Question',text:`Hi\n${REQUIRED_OPT_OUT}`,leadId:'G3',touchNo:1,idempotencyKey:'G3',emailGate:stale,reviewState:'APPROVED',reviewedBy:'operator',compliance:{companyType:'corporate',legalBasis:'consent',...permission}};assert.ok(validateOutbound(base,{requireEmailGate:true}).errors.includes('email_gate_snapshot_stale'));});
 
 test('warmup cap ramps conservatively',()=>{assert.equal(effectiveDailyCap({status:'WARMING',dailyCap:20,connectedAt:'2026-08-10T12:00:00Z'},new Date('2026-08-16T12:00:00Z')),9);});
@@ -51,6 +60,7 @@ test('unsafe direct-send bypass artifacts are absent and authorised direct worke
   assert.match(worker,/idempotency_key_mismatch/);
   assert.match(worker,/cold_b2b_evidence_score_below_90/);
   assert.match(worker,/final_email_permission_required/);
+  assert.match(worker,/validateColdPreAudit/);
   assert.match(worker,/inColdWindow\(\)/);
   assert.match(worker,/TTE_DIRECT_RAMP_CAP/);
   assert.match(worker,/mail\.privateemail\.com/);

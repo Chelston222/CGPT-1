@@ -1,6 +1,7 @@
 import { ImapFlow } from 'imapflow';
 import { simpleParser } from 'mailparser';
 import nodemailer from 'nodemailer';
+import { validateColdPreAudit } from '../netlify/functions/_shared/preaudit-gate.mjs';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -21,7 +22,7 @@ const MAX_JOBS_PER_CONTROL = 5;
 const LOOKBACK_MS = 36 * 60 * 60 * 1000;
 const DEFAULT_RAMP_CAP = 2;
 const DEFAULT_HARD_CAP = 20;
-const VERSION = '2026-10-04-github-direct-v4-gated';
+const VERSION = '2026-10-08-github-direct-v5-evidence-first';
 const REPO_ROOT = resolve(process.cwd(), '../..');
 const LEDGER_RELATIVE = 'apps/tte-mail-bridge/state/direct-ledger.json';
 const LEDGER_PATH = resolve(REPO_ROOT, LEDGER_RELATIVE);
@@ -100,6 +101,8 @@ function validateGateSnapshot(job, recipient) {
   if (finalPermission !== 'EMAIL ALLOWED') return 'final_email_permission_required';
   if (!Number.isFinite(Number(gate.evidenceScore)) || Number(gate.evidenceScore) < 90) return 'cold_b2b_evidence_score_below_90';
   if (Date.now() - verifiedAtMs > 72 * 60 * 60 * 1000) return 'email_gate_snapshot_stale';
+  const preauditErrors = validateColdPreAudit({ ...job, to:[recipient] });
+  if (preauditErrors.length) return preauditErrors[0];
   return null;
 }
 function validateJob(job) {
@@ -139,7 +142,7 @@ async function executeJob(job, location) {
   const sentToday = Number(ledger.daily[dateKey]?.sent || 0);
   if (!isInternal && sentToday >= rampCap) return { status: 'HELD_CAP' };
   const emailGate = { ...job.emailGate, verifiedAt:new Date(job.emailGate.verifiedAt).toISOString() };
-  ledger.idempotency[job.idempotencyKey] = { state:'IN_FLIGHT', idempotencyKey:job.idempotencyKey, leadId:job.leadId, touchNo:job.touchNo, recipient, emailGate, reservedAt:new Date().toISOString(), route:'MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL', version:VERSION };
+  ledger.idempotency[job.idempotencyKey] = { state:'IN_FLIGHT', idempotencyKey:job.idempotencyKey, leadId:job.leadId, touchNo:job.touchNo, recipient, emailGate, preAuditId:job.preAudit?.auditId || null, approvedMessageSha256:job.preAudit?.approvedMessageSha256 || null, reservedAt:new Date().toISOString(), route:'MAILOPOLY_CONTROL_IMAP_GITHUB_PRIVATEEMAIL', version:VERSION };
   try { persistLedger(`reserve ${job.idempotencyKey}`); } catch (error) { console.error(`TTE queue ${location} reservation persistence failed; send aborted: ${error?.message || error}`); return { status: 'HELD_LEDGER' }; }
   let info;
   try {
