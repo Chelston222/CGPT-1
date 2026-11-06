@@ -56,14 +56,14 @@ async function runViewport(label, viewport, isMobile = false) {
   const navLabels = ['Learn','Curriculum','Progress','Settings'];
   const navOutcomes = [];
   for (const nav of navLabels) {
-    const candidate = page.getByText(nav, { exact: true }).first();
+    const candidate = page.getByRole('button', { name: new RegExp(`${nav}$`) }).first();
     if (await candidate.count()) {
       await candidate.click({ timeout: 10000 });
       await page.waitForTimeout(300);
       navOutcomes.push(nav);
     }
   }
-  assert(navOutcomes.length >= 2, `${label}: too few working navigation destinations (${navOutcomes.join(', ')})`);
+  assert(navOutcomes.length === navLabels.length, `${label}: navigation mismatch (${navOutcomes.join(', ')})`);
   await page.screenshot({ path: `apps/n30/qa-artifacts/${label}-after-nav.png`, fullPage: true });
   assert(pageErrors.length === 0, `${label}: page errors: ${pageErrors.join(' | ')}`);
   const seriousConsole = consoleErrors.filter(x => !/favicon|Failed to load resource.*404/i.test(x));
