@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "batchId": "2026-10-11",
+  "status": "draft",
+  "qaStatus": "awaiting_qa",
+  "publishing": false,
+  "approvalEligible": false,
+  "posts": [
+    {
+      "id": "M1",
+      "title": "Help someone choose the next appointment",
+      "account": "@222emails",
+      "caption": "If someone asks which appointment to book, a link to the full service menu may leave them with the same question.\n\nRead the reply from their side. Can they tell which next step is appropriate? If they need help choosing, is there a clear way to get that help?\n\nFor a clinic, that might mean explaining how to arrange a consultation rather than trying to settle a clinical question in a booking message. For a salon, it might mean clarifying which appointment covers the service they asked about.\n\nEnquiry Rescue at 222Emails starts with where that conversation stopped. The follow-up should address the uncertainty that is still there.\n\nWhich booking question does your team answer most often?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "M2",
+      "title": "Check who will handle the replies",
+      "account": "@222emails",
+      "caption": "Before a message goes out to former clients, decide who will answer the replies.\n\nSome people will ask about availability. Others may need help choosing a suitable next step. A response that needs a person should have somewhere to go while that person is actually working.\n\nCheck the diary as well. The campaign needs to reflect the appointments the business can genuinely offer and the team's ability to handle interest.\n\nOur selected-business pilot has a limit of up to 250 eligible contacts. That is a ceiling, not a reason to include everyone. The appropriate segment depends on the objective, eligibility and what the business can manage.\n\nWho currently handles replies when you contact past clients?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "M3",
+      "title": "Count one person once",
+      "account": "@222emails",
+      "caption": "The same person can appear in an enquiry inbox and a list of clients who have not rebooked.\n\nCounting both records would overstate the opportunity.\n\nIn the £197 Revenue Recovery Check, we count a person once for one supported possible next booking. Already booked or committed work is excluded. The value uses a supported net price, and shared appointment capacity is counted once.\n\nThe business checks its underlying records and provides anonymous aggregate evidence. Unsupported entries contribute zero.\n\nThat is part of what qualified potential booking value means. It describes possible next-booking value. Bookings and collected cash still need to be measured separately.\n\nHow does your team spot the same enquiry appearing in more than one place? Please keep customer details out of the comments.",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "M4",
+      "title": "Match the follow-up to the return date",
+      "account": "@222emails",
+      "caption": "When is a past client actually due to return?\n\nThe answer depends on the appointment and what was agreed with them. A single rule based on how many months they have been away can miss that context.\n\nFor routine rebooking, start with the return timing the business already uses. Check whether the next visit is still relevant and whether it has already been arranged before deciding what to send.\n\nIn a clinical setting, the appropriate timing and suitability remain decisions for the qualified team. A follow-up system should use that guidance accurately.\n\nWhere does your team currently keep the next-visit date or return guidance?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "M5",
+      "title": "Agree how a follow-up system will be tested",
+      "account": "@222emails",
+      "caption": "A follow-up system needs an agreed test before it goes live.\n\nFor a Recovery Build, the written scope should say what starts the follow-up, where replies go and what happens when a booking is made. The business should be able to check those behaviours in the agreed systems.\n\nThe test also needs to cover someone deciding against another appointment. The record and follow-up should reflect that decision.\n\nThese pages are an illustrative checklist for that conversation. The actual scope depends on the gap and the systems involved.\n\nWhat would your team need to see in a test before they were comfortable using it?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": [
+        {
+          "path": "assets/M5/M5-01.png",
+          "sha256": "e364d1329a9940330419373f5d7d027758380f384474e89a71f5bfdbaabca62d",
+          "bytes": 112136
+        },
+        {
+          "path": "assets/M5/M5-02.png",
+          "sha256": "db166c481f225f1c12163301d61c5dce120adf8bbce4c37a40096f6ed435d07c",
+          "bytes": 115858
+        },
+        {
+          "path": "assets/M5/M5-03.png",
+          "sha256": "e193631b0314f42cdf18259cb001c988c7b6ab88a95669c4dc76e6f5be5e861b",
+          "bytes": 125414
+        },
+        {
+          "path": "assets/M5/M5-04.png",
+          "sha256": "92a0d420e0048997b8c410f2df4fe08e8f57d6470097fb78fe6cb3320259d637",
+          "bytes": 144503
+        },
+        {
+          "path": "assets/M5/M5-05.png",
+          "sha256": "d9e8aab53461d285cec0cff500ee35effb6bca2a2ff6df769adf5d0b57363a6e",
+          "bytes": 139878
+        },
+        {
+          "path": "assets/M5/M5.pdf",
+          "sha256": "95d404f00cb22bd7d84d9e44afc43302d8c114c23b591a3d7eaf7a30b62d4b22",
+          "bytes": 245768
+        }
+      ]
+    },
+    {
+      "id": "M6",
+      "title": "Is the selected-business pilot a fit?",
+      "account": "@222emails",
+      "caption": "The 14-Day Reactivation Pilot is for a selected appointment-led business with a suitable group of past clients to contact and capacity to handle the response.\n\nIt covers one objective, one eligible segment and one approved campaign, with up to 250 eligible contacts.\n\nThe pilot is £0. There is no card requirement, automatic charge or renewal. The 14 calendar days start with the first approved live send. Applying does not mean acceptance or permission to launch.\n\nThere is no booking or revenue guarantee. Any wider implementation needs its own scope and agreement.\n\nFor your business, what would need checking first before a campaign like this could run responsibly?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "S1",
+      "title": "Follow one cancellation through the process",
+      "account": "@222-emails",
+      "caption": "Choose one recent cancellation and trace what happened afterwards inside your own system.\n\nWas a different appointment arranged? Did the client decide not to return? Or is someone still waiting for a reply?\n\nFind where that outcome is recorded and who was responsible for the next action. If the record stops at “cancelled”, work out what information a colleague would need to pick it up.\n\nThe useful output is a clearer handover for the team. Keep the client's details in your own system.\n\nWhich step was hardest to trace?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": [
+        {
+          "path": "assets/S1/S1.png",
+          "sha256": "2e455440a14b9d5f7d3411d64820e1dea2e84565d5391ed7a2ce41f84069a782",
+          "bytes": 3154879
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "title": "Keep the outcome numbers separate",
+      "account": "@222-emails",
+      "caption": "A useful follow-up report keeps the stages visible.\n\nA reply shows that someone responded. Check what they said before treating it as interest.\n\nA booking has been placed in the diary. It may still be cancelled or moved.\n\nAttendance records whether the appointment went ahead. Collected cash needs its own payment evidence.\n\nRecord the period being measured and how each outcome is linked to the campaign. Where you cannot establish that link, leave the attribution uncertain.\n\nWhich stage is hardest for your team to verify at the moment?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "S3",
+      "title": "Try booking from your own reply",
+      "account": "@222-emails",
+      "caption": "Open one of your standard enquiry replies on a phone and follow the booking link yourself.\n\nCan you find the appointment the message is talking about? Does the wording explain what to do if someone is unsure which option fits?\n\nIf the next step is to call or ask another question, check that this is easy to find too.\n\nStop before making a real booking. Note the first point where you had to guess, then review that point with the person who handles enquiries.\n\nWhere did the next step become unclear?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "S4",
+      "title": "Write the handover for cover staff",
+      "account": "@222-emails",
+      "caption": "Could a colleague covering reception tomorrow pick up an open enquiry without asking the original person what happened?\n\nReview the handover inside your current system. It should make the client's question and the last response clear. Record the next agreed action, who owns it and any relevant date.\n\nIf the person has already booked or decided against the appointment, the handover should show that too.\n\nCheck this with the colleague who would actually cover the work. Their questions will show where the record needs more context.\n\nWhat do cover staff most often have to ask before they can continue a conversation?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "S5",
+      "title": "Check an agreed return date",
+      "account": "@222-emails",
+      "caption": "Take one routine appointment where a return date or next-visit window was agreed.\n\nCheck whether that information appears where the team will look when deciding what happens next. Then check whether another appointment has already been booked.\n\nIf the date only exists in someone's memory, agree where it belongs. If the timing needs professional judgement, make sure the appropriate person supplies it.\n\nA reminder depends on the record it uses. This exercise checks that record before anyone changes the message.\n\nWhere does your team record the agreed next visit?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "S6",
+      "title": "Questions to settle before an implementation",
+      "account": "@222-emails",
+      "caption": "Before agreeing to a follow-up implementation, ask for a written description of what will change in your business.\n\nIt should identify the problem being addressed and the systems involved. You should be able to see what your team will need to do and how the finished work will be checked.\n\nAsk about exclusions too. A new integration or a database clean-up can change the amount of work substantially.\n\nFor a 222Emails Recovery Build, scope is agreed separately around the supported need. There is no universal promise covering a fixed number of messages or integrations.\n\nWhat would you need clarified before agreeing to a project like that?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "P1",
+      "title": "Resolve the enquiry already in front of you",
+      "account": "@chelstonspeaks",
+      "caption": "An enquiry can cost money even when it came through a free channel.\n\nSomeone spent time creating the post, answering the message or building the reputation that brought that person to the clinic.\n\nThen a question arrives. Reception replies. The person says they will have a think.\n\nIf the conversation stays in an inbox with no agreed next step, the team has to work out again whether the person needs an answer or has decided against an appointment.\n\nBefore spending more on enquiries, I would check where the existing conversations stopped and who can help with the question still open.\n\nThat is the starting point for Enquiry Rescue at 222Emails.\n\nHow does your team distinguish a conversation that still needs attention from one that is finished?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": []
+    },
+    {
+      "id": "P2",
+      "title": "A cancellation and a former client need different context",
+      "account": "@chelstonspeaks",
+      "caption": "A cancelled appointment and a quiet former client need different follow-up.\n\nThe person who cancelled may still want the appointment and need help rearranging it. A former client may have changed circumstances or no longer need another visit.\n\nAt 222Emails, that distinction affects the next step. Cancellation Recovery starts with the appointment that did not go ahead. Client Reactivation checks whether a return is relevant for an eligible past-client group.\n\nThe pages show the difference without assuming either person will book.\n\nWhich situation is harder for your team to manage?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": [
+        {
+          "path": "assets/P2/P2-01.png",
+          "sha256": "984cc50a89f2f4e0c3170c6bc1e0955245bb9f74424e684ff5ca31dedf334092",
+          "bytes": 127169
+        },
+        {
+          "path": "assets/P2/P2-02.png",
+          "sha256": "41f7cb3228b0009c82d58df7110dc4e2cd01a552c1376a5275db52aca62b68d2",
+          "bytes": 145000
+        },
+        {
+          "path": "assets/P2/P2-03.png",
+          "sha256": "c5ebe6f3b6837a41bb8a095f2920076982b4a9523066cb17c1bb561c5eee1a2a",
+          "bytes": 139788
+        },
+        {
+          "path": "assets/P2/P2-04.png",
+          "sha256": "cfcfec5dc86f775a3284831e547bb3690a919472e764f5c50c2812d407120cd8",
+          "bytes": 155377
+        },
+        {
+          "path": "assets/P2/P2.pdf",
+          "sha256": "2f8d586fbf84351582354529fa42c8bae989641b2c126067904172921caf12d1",
+          "bytes": 244889
+        }
+      ]
+    },
+    {
+      "id": "P3",
+      "title": "Scope the handover after a reminder",
+      "account": "@chelstonspeaks",
+      "caption": "A reminder goes out. The client replies to cancel.\n\nSomeone now needs to handle that response and check whether another appointment is appropriate. The team needs to know where the reply appears and what to do if the person decides not to return.\n\nThat handover is a useful thing to settle before a Client Return System is built.\n\nThe optional £995 Recovery Build has a written scope based on the actual gap. It needs agreed acceptance criteria so the business can check the behaviour it is buying. It does not guarantee revenue or include an unlimited set of integrations.\n\nWhat would your team need to see before agreeing to a build like this?",
+      "status": "draft",
+      "qaStatus": "awaiting_qa",
+      "publishing": false,
+      "approvalEligible": false,
+      "assets": [
+        {
+          "path": "assets/P3/P3.png",
+          "sha256": "90133bb49470bcae3cff6103afec0c41cdd03b87f6670f98ef630434e80dc023",
+          "bytes": 2779573
+        }
+      ]
+    }
+  ]
+}
