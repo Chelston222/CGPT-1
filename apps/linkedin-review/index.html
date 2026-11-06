@@ -8,6 +8,7 @@
     <title>222 Emails — Content Swiper</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="analytics.css">
   </head>
   <body>
     <a class="skip-link" href="#review-card">Skip to current post</a>
@@ -66,6 +67,62 @@
           <article><span>Retention Lab</span><strong id="capacity-secondary">—</strong><small id="capacity-secondary-detail">Calculating coverage…</small></article>
         </div>
         <p class="capacity-explainer"><strong>Buffer Free holds 10 scheduled posts per account.</strong> At up to ten posts a day, the system keeps a rolling runway and the two-hour refill check releases the next approved placement whenever a slot opens.</p>
+      </section>
+
+      <section class="os-analytics" aria-labelledby="analytics-title">
+        <div class="analytics-heading">
+          <div>
+            <p class="eyebrow">222 Emails OS analytics</p>
+            <h2 id="analytics-title">Post decisions, Buffer status and performance in one place.</h2>
+            <p>The daily analytics refresh writes to a separate data branch, so the Content Swiper can read fresh metrics without spending production Netlify deploys.</p>
+          </div>
+          <div class="analytics-status-card">
+            <span>Status</span>
+            <strong id="analytics-status">Checking analytics…</strong>
+            <small id="analytics-updated">Waiting for the first snapshot.</small>
+            <button class="analytics-refresh" id="analytics-refresh" type="button">Refresh analytics</button>
+          </div>
+        </div>
+        <div class="analytics-kpis" aria-label="Buffer analytics KPIs">
+          <article><strong id="analytics-scheduled">—</strong><span>Scheduled in Buffer</span></article>
+          <article><strong id="analytics-sent-7d">—</strong><span>Sent in last 7 days</span></article>
+          <article><strong id="analytics-reactions">—</strong><span>30-day reactions</span></article>
+          <article><strong id="analytics-comments">—</strong><span>30-day comments</span></article>
+          <article><strong id="analytics-views">—</strong><span>30-day views or impressions</span></article>
+        </div>
+        <div class="analytics-grid">
+          <article class="analytics-panel">
+            <h3>Winning posts to repurpose</h3>
+            <ol id="analytics-top-posts"></ol>
+          </article>
+          <article class="analytics-panel">
+            <h3>Weak posts to fix</h3>
+            <ol id="analytics-weak-posts"></ol>
+          </article>
+          <article class="analytics-panel">
+            <h3>Next actions</h3>
+            <ul id="analytics-next-actions"></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="prompt-os" aria-labelledby="prompt-title">
+        <div class="prompt-heading">
+          <div>
+            <p class="eyebrow">Prompt engine</p>
+            <h2 id="prompt-title">Use the analytics to create the next better post.</h2>
+            <p>Pick a prompt, copy it into ChatGPT, and it will carry the latest winner, weak post and recommended action from the Buffer snapshot.</p>
+          </div>
+        </div>
+        <div class="prompt-library-grid">
+          <div class="prompt-card-list" id="prompt-library-list" aria-label="Prompt library"></div>
+          <div class="prompt-output-wrap">
+            <textarea id="prompt-output" readonly aria-label="Selected analytics prompt"></textarea>
+            <div class="prompt-output-actions">
+              <button class="copy-prompt" id="copy-prompt" type="button">Copy prompt</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="batch-panel" id="batch-panel" aria-label="Weekly approval summary" hidden>
@@ -190,5 +247,6 @@
     <script src="queue-overlay.js" defer></script>
     <script src="app.js" defer></script>
     <script src="sync.js" defer></script>
+    <script src="analytics.js" defer></script>
   </body>
 </html>
